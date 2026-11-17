@@ -2684,3 +2684,175 @@ class AutomationTests(TestCase):
         normal = App.objects.create(name="Normal")
         with self.assertRaises(versions.InvalidSnapshot):
             versions.apply(normal, data)
+
+
+class AiDesignerTests(TestCase):
+    """Apps mit einer KI nach Wahl bauen: MCP-Server /mcp/designer/ (builder/mcp_designer.py)."""
+
+    def setUp(self):
+        from .models import DesignerToken
+        self.designer = User.objects.create_user("designer", password="x", is_staff=True)
+        self.other = User.objects.create_user("andere", password="x", is_staff=True)
+        _obj, self.key = DesignerToken.issue(self.designer, "Claude")
+        self.url = reverse("mcp_designer")
+
+    def rpc(self, method, params=None, key=None):
+        body = {"jsonrpc": "2.0", "id": 1, "method": method, "params": params or {}}
+        return self.client.post(self.url, json.dumps(body), content_type="application/json",
+                                HTTP_AUTHORIZATION=f"Bearer {key or self.key}")
+
+    def call(self, name, arguments=None, key=None):
+        result = self.rpc("tools/call", {"name": name, "arguments": arguments or {}}, key=key).json()["result"]
+        text = result["content"][0]["text"]
+        return result.get("isError"), (json.loads(text) if not result.get("isError") else text)
+
+    def test_needs_personal_token_and_designer_right(self):
+        from .models import ApiKey, DesignerToken
+        self.assertEqual(self.client.post(self.url, "{}", content_type="application/json").status_code, 401)
+        app = App.objects.create(name="X")
+        _obj, app_key = ApiKey.issue(app, "app", can_write=True)
+        self.assertEqual(self.rpc("tools/list", key=app_key).status_code, 401)  # App-Schlüssel gelten hier nicht
+        plain = User.objects.create_user("plain", password="x")
+        _obj, plain_key = DesignerToken.issue(plain, "x")
+        self.assertEqual(self.rpc("tools/list", key=plain_key).status_code, 403)
+        info = self.rpc("initialize", {"protocolVersion": "2025-06-18"}).json()["result"]
+        self.assertEqual(info["serverInfo"]["name"], "baukasten-designer")
+        names = {t["name"] for t in self.rpc("tools/list").json()["result"]["tools"]}
+        self.assertEqual(names, {"guide", "list_apps", "get_app", "validate_app", "create_app", "update_app",
+                                 "list_versions", "restore_version"})
+
+    def test_guide_example_is_valid_and_lists_blocks(self):
+        error, guide = self.call("guide")
+        self.assertFalse(error)
+        self.assertIn("table", {b["type"] for b in guide["blocks"]})
+        self.assertIn("choice", {f["type"] for f in guide["field_types"]})
+        error, result = self.call("validate_app", {"definition": guide["example"]})
+        self.assertEqual(result, {"valid": True, "errors": [], "warnings": []})
+
+    def test_create_app_as_safe_draft(self):
+        from .mcp_designer import EXAMPLE
+        definition = json.loads(json.dumps(EXAMPLE))
+        definition["pages"][0]["public"] = True
+        definition["entities"][0]["api_enabled"] = True
+        definition["scripts"] = [{"name": "Zählen", "trigger": "page", "code": "print(1)", "enabled": True}]
+        error, result = self.call("create_app", {"definition": definition})
+        self.assertFalse(error, result)
+        app = App.objects.get(slug=result["app"]["slug"])
+        self.assertEqual(app.created_by, self.designer)
+        self.assertFalse(app.published)
+        self.assertFalse(app.pages.filter(public=True).exists())
+        self.assertFalse(app.entities.filter(api_enabled=True).exists())
+        self.assertFalse(app.scripts.get().enabled)
+        self.assertEqual(app.entities.get(slug="ausleihen").fields.get(key="geraet").reference.slug, "geraete")
+        self.assertEqual(app.entities.get(slug="geraete").fields.get(key="kategorie").choice_list(),
+                         ["Werkzeug", "Messgerät", "IT"])
+        self.assertEqual(app.pages.get(slug="uebersicht").layout[1]["props"]["entity"], "geraete")
+        self.assertTrue(app.versions.exists())
+        # Sie gehört der Person mit dem Schlüssel; andere Designer sehen sie nicht
+        self.client.force_login(self.other)
+        self.assertEqual(self.client.get(reverse("designer_app", args=[app.slug])).status_code, 403)
+
+    def test_errors_name_path_and_fix(self):
+        bad = {"name": "Kaputt", "entities": [
+            {"name": "A", "fields": [{"label": "X", "type": "string"},
+                                     {"label": "Y", "type": "choice"},
+                                     {"label": "Z", "type": "reference", "reference": "gibtsnicht"}]}],
+            "pages": [{"title": "S", "layout": [{"type": "tabelle"},
+                                                 {"type": "table", "props": {"entity": "b"}},
+                                                 {"type": "stat", "props": {"entity": "a", "field": "q", "aggregate": "max"}},
+                                                 {"type": "heading", "props": {"farbe": "rot"}}]}]}
+        error, result = self.call("validate_app", {"definition": bad})
+        self.assertFalse(result["valid"])
+        text = "\n".join(result["errors"])
+        for expected in ("entities[0].fields[0].type", "entities[0].fields[1].choices",
+                         "entities[0].fields[2].reference", "pages[0].layout[0].type",
+                         "pages[0].layout[1].props.entity", "pages[0].layout[2].props.field",
+                         "pages[0].layout[2].props.aggregate"):
+            self.assertIn(expected, text)
+        self.assertIn("pages[0].layout[3].props.farbe", "\n".join(result["warnings"]))
+        error, message = self.call("create_app", {"definition": bad})
+        self.assertTrue(error)
+        self.assertIn("entities[0].fields[0].type", message)
+        self.assertFalse(App.objects.filter(name="Kaputt").exists())
+
+    def test_update_keeps_human_settings_and_can_be_undone(self):
+        from .mcp_designer import EXAMPLE
+        _e, created = self.call("create_app", {"definition": EXAMPLE})
+        app = App.objects.get(slug=created["app"]["slug"])
+        # Ein Mensch gibt frei
+        app.pages.filter(slug="uebersicht").update(public=True)
+        app.entities.filter(slug="geraete").update(api_enabled=True)
+        from .models import Script
+        Script.objects.create(app=app, name="Prüfen", slug="pruefen", trigger="page", code="print(1)", enabled=True)
+        _e, current = self.call("get_app", {"app": app.slug})
+        geraete = next(e for e in current["entities"] if e["slug"] == "geraete")
+        self.assertEqual(geraete["fields"][1]["choices"], ["Werkzeug", "Messgerät", "IT"])
+        geraete["fields"].append({"label": "Seriennummer", "type": "text"})
+        current["pages"][0]["title"] = "Start"
+        current["scripts"].append({"name": "Neu", "trigger": "page", "code": "print(2)"})
+        error, result = self.call("update_app", {"app": app.slug, "definition": current})
+        self.assertFalse(error, result)
+        self.assertTrue(app.entities.get(slug="geraete").fields.filter(key="seriennummer").exists())
+        self.assertTrue(app.pages.get(slug="uebersicht").public)
+        self.assertTrue(app.entities.get(slug="geraete").api_enabled)
+        self.assertTrue(app.scripts.get(slug="pruefen").enabled)   # unverändert: bleibt an
+        self.assertFalse(app.scripts.get(slug="neu").enabled)      # neu: aus
+        # Nur Seiten mitgeschickt: Tabellen bleiben
+        error, result = self.call("update_app", {"app": app.slug, "definition": {"pages": current["pages"]}})
+        self.assertFalse(error, result)
+        self.assertEqual(app.entities.count(), 2)
+        # Rückgängig
+        error, undone = self.call("restore_version", {"app": app.slug, "number": result["backup_version"] - 1})
+        self.assertFalse(error, undone)
+        self.assertFalse(app.entities.get(slug="geraete").fields.filter(key="seriennummer").exists())
+        error, listing = self.call("list_versions", {"app": app.slug})
+        self.assertGreaterEqual(len(listing["versions"]), 4)
+
+    def test_only_own_apps_and_automations_need_group(self):
+        foreign = App.objects.create(name="Fremd", created_by=self.other)
+        error, message = self.call("get_app", {"app": foreign.slug})
+        self.assertTrue(error)
+        _e, listing = self.call("list_apps")
+        self.assertNotIn("fremd", [a["slug"] for a in listing["apps"]])
+        self.assertFalse(listing["may_create_automations"])
+        error, message = self.call("create_app", {"definition": {"name": "Nacht", "kind": "automation"}})
+        self.assertTrue(error)
+        self.assertIn("Automatisierer", message)
+        self.designer.groups.add(Group.objects.get(name="Automatisierer"))
+        self.designer = User.objects.get(pk=self.designer.pk)
+        error, result = self.call("create_app", {"definition": {
+            "name": "Nacht", "kind": "automation",
+            "scripts": [{"name": "Takt", "trigger": "schedule", "interval_minutes": 15, "code": "import requests"}]}})
+        self.assertFalse(error, result)
+        app = App.objects.get(slug=result["app"]["slug"])
+        self.assertTrue(app.is_automation)
+        self.assertFalse(app.scripts.get().enabled)
+
+    @override_settings(BAUKASTEN_AI_WRITES=2)
+    def test_write_limit(self):
+        from django.core.cache import cache
+        cache.clear()
+        for i in range(2):
+            error, _result = self.call("create_app", {"definition": {"name": f"A{i}", "entities": []}})
+            self.assertFalse(error)
+        error, message = self.call("create_app", {"definition": {"name": "A3"}})
+        self.assertTrue(error)
+        self.assertIn("Zu viele", message)
+
+    def test_profile_issues_shows_once_and_deletes_tokens(self):
+        from .models import DesignerToken
+        self.client.force_login(self.designer)
+        self.client.post(reverse("profile_ai_token_create"), {"name": "Cursor"})
+        page = self.client.get(reverse("profile"))
+        new = page.context["new_ai_token"]
+        self.assertTrue(new.startswith("bkd_"))
+        self.assertContains(page, new)
+        self.assertNotContains(self.client.get(reverse("profile")), new)  # nur einmal
+        token = DesignerToken.objects.get(name="Cursor")
+        self.assertEqual(DesignerToken.find(new), token)
+        self.client.force_login(self.other)
+        self.client.post(reverse("profile_ai_token_delete", args=[token.pk]))
+        self.assertTrue(DesignerToken.objects.filter(pk=token.pk).exists())  # fremde nicht
+        self.client.force_login(self.designer)
+        self.client.post(reverse("profile_ai_token_delete", args=[token.pk]))
+        self.assertFalse(DesignerToken.objects.filter(pk=token.pk).exists())

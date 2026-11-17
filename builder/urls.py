@@ -1,7 +1,7 @@
 from django.urls import path
 from django.views.i18n import JavaScriptCatalog
 
-from . import api, designer, help, mcp, profile, views
+from . import api, designer, help, mcp, mcp_designer, profile, views
 
 urlpatterns = [
     path("jsi18n/", JavaScriptCatalog.as_view(packages=["builder"]), name="javascript-catalog"),
@@ -12,6 +12,8 @@ urlpatterns = [
     path("a/<slug:app>/api-doku/openapi.json", views.api_docs_spec, name="api_docs_spec"),
     path("a/<slug:app>/api-doku/swagger/", views.api_docs_ui, name="api_docs_ui"),
     path("profil/schluessel/<int:pk>/loeschen/", profile.delete_key, name="profile_key_delete"),
+    path("profil/ki-zugang/", profile.create_designer_token, name="profile_ai_token_create"),
+    path("profil/ki-zugang/<int:pk>/loeschen/", profile.delete_designer_token, name="profile_ai_token_delete"),
     # Laufzeit
     path("", views.home, name="home"),
     path("a/<slug:app>/", views.page, name="page"),
@@ -26,6 +28,7 @@ urlpatterns = [
     path("skript-sandbox/", views.script_sandbox, name="script_sandbox"),
     path("a/<slug:app>/t/<slug:entity>/export.csv", views.entity_export, name="entity_export"),
     # MCP-Server je App (für KI-Agenten und n8n), Schlüssel wie bei der API
+    path("mcp/designer/", mcp_designer.endpoint, name="mcp_designer"),
     path("mcp/<slug:app>/", mcp.endpoint, name="mcp"),
     # API
     path("api/v1/<slug:app>/", api.describe, name="api_describe"),

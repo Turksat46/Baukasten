@@ -212,30 +212,39 @@ def _error(msg_id, code, message):
 
 
 def handle(request, key, message):
-    """Eine JSON-RPC-Nachricht. Gibt die Antwort zurück, bei Benachrichtigungen None."""
+    """Eine JSON-RPC-Nachricht an den Server einer App."""
+    app = key.app
+    info = {"name": f"baukasten-{app.slug}", "title": f"Baukasten: {app.name}",
+            "instructions": (f"Zugriff auf die App „{app.name}“ im Baukasten. "
+                             + ("Dieser Schlüssel darf lesen und schreiben." if key.can_write else "Dieser Schlüssel darf nur lesen.")
+                             + " Verweise und Einträge werden über ihre Nummer (id) angesprochen.")}
+    return dispatch(request, message, info, lambda: build_tools(app, key))
+
+
+def dispatch(request, message, info, build):
+    """Eine JSON-RPC-Nachricht. Gibt die Antwort zurück, bei Benachrichtigungen None.
+
+    info: name, title, instructions des Servers; build(): {Tool-Name: (Beschreibung, Ausführung)}."""
     if not isinstance(message, dict) or message.get("jsonrpc") != "2.0" or not isinstance(message.get("method"), str):
         return _error(message.get("id") if isinstance(message, dict) else None, INVALID_REQUEST, "Ungültige Anfrage.")
     method, msg_id, params = message["method"], message.get("id"), message.get("params") or {}
     if "id" not in message:  # Benachrichtigung, z. B. notifications/initialized
         return None
-    app = key.app
     if method == "initialize":
         wanted = params.get("protocolVersion")
         return _result(msg_id, {
             "protocolVersion": wanted if wanted in PROTOCOL_VERSIONS else PROTOCOL_VERSIONS[0],
             "capabilities": {"tools": {"listChanged": False}},
-            "serverInfo": {"name": f"baukasten-{app.slug}", "title": f"Baukasten: {app.name}", "version": SERVER_VERSION},
-            "instructions": (f"Zugriff auf die App „{app.name}“ im Baukasten. "
-                             + ("Dieser Schlüssel darf lesen und schreiben." if key.can_write else "Dieser Schlüssel darf nur lesen.")
-                             + " Verweise und Einträge werden über ihre Nummer (id) angesprochen."),
+            "serverInfo": {"name": info["name"], "title": info["title"], "version": SERVER_VERSION},
+            "instructions": info["instructions"],
         })
     if method == "ping":
         return _result(msg_id, {})
     if method == "tools/list":
-        return _result(msg_id, {"tools": [spec for spec, _run in build_tools(app, key).values()]})
+        return _result(msg_id, {"tools": [spec for spec, _run in build().values()]})
     if method == "tools/call":
         name, args = params.get("name"), params.get("arguments") or {}
-        tool = build_tools(app, key).get(name)
+        tool = build().get(name)
         if tool is None:
             return _error(msg_id, INVALID_PARAMS, f"Das Tool „{name}“ gibt es nicht.")
         if not isinstance(args, dict):
@@ -260,8 +269,9 @@ def handle(request, key, message):
     return _error(msg_id, METHOD_NOT_FOUND, f"Unbekannte Methode „{method}“.")
 
 
-@csrf_exempt
-def endpoint(request, app):
+def serve(request, login, answer_one):
+    """HTTP-Teil: Ursprung, Methode, Anmeldung, JSON. login(request) gibt den Zugang oder eine
+    Antwort (z. B. 401) zurück; answer_one(request, zugang, nachricht) beantwortet eine Nachricht."""
     # Schutz gegen DNS-Rebinding: Aufrufe aus dem Browser nur von derselben Adresse.
     origin = request.headers.get("Origin")
     if origin and not url_has_allowed_host_and_scheme(origin, allowed_hosts={request.get_host()}):
@@ -270,17 +280,22 @@ def endpoint(request, app):
         response = HttpResponse(status=405)  # kein Server-Sent-Events-Strom, nur POST
         response["Allow"] = "POST"
         return response
-    key = authenticate(request, app)
-    if key is None:
-        return unauthorized()
+    access = login(request)
+    if isinstance(access, HttpResponse):
+        return access
     try:
         body = json.loads(request.body)
     except ValueError:
         return JsonResponse(_error(None, PARSE_ERROR, "Der Inhalt ist kein gültiges JSON."), status=400)
     if isinstance(body, list):  # Stapel älterer Protokollversionen
-        answers = [a for a in (handle(request, key, m) for m in body) if a is not None]
+        answers = [a for a in (answer_one(request, access, m) for m in body) if a is not None]
         return JsonResponse(answers, safe=False) if answers else HttpResponse(status=202)
-    answer = handle(request, key, body)
+    answer = answer_one(request, access, body)
     if answer is None:
         return HttpResponse(status=202)
     return JsonResponse(answer, json_dumps_params={"ensure_ascii": False})
+
+
+@csrf_exempt
+def endpoint(request, app):
+    return serve(request, lambda req: authenticate(req, app) or unauthorized(), handle)

@@ -33,7 +33,7 @@ def unique_slug(queryset, base, field="slug", sep="-"):
     return slug
 
 
-RESERVED_APP_SLUGS = {"bausteine", "import"}  # Adressen des Designers, die keine App belegen darf
+RESERVED_APP_SLUGS = {"bausteine", "import", "designer"}  # Adressen des Designers, die keine App belegen darf
 
 
 def can_design(user):
@@ -384,6 +384,41 @@ class ApiKey(models.Model):
         obj = cls.objects.create(app=app, name=name, can_write=can_write, created_by=user,
                                  prefix=key[:9], key_hash=cls.hash(key))
         return obj, key
+
+
+class DesignerToken(models.Model):
+    """Persönlicher Schlüssel für den Designer-MCP-Server (/mcp/designer/): Eine KI nach Wahl
+    baut damit Apps mit den Rechten dieser Person. Gespeichert wird nur der Hash."""
+
+    user = models.ForeignKey(settings_module.AUTH_USER_MODEL, on_delete=models.CASCADE,
+                             related_name="designer_tokens")
+    name = models.CharField(_("Name"), max_length=80,
+                            help_text=_("Wofür der Schlüssel gedacht ist, z. B. „Claude Desktop“ oder „Cursor“."))
+    prefix = models.CharField(max_length=12, editable=False)
+    key_hash = models.CharField(max_length=64, unique=True, editable=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    last_used = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        verbose_name = _("KI-Zugang zum Designer")
+        verbose_name_plural = _("KI-Zugänge zum Designer")
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.name} ({self.prefix}…)"
+
+    @classmethod
+    def issue(cls, user, name):
+        """Erzeugt einen Schlüssel. Der Klartext wird nur hier zurückgegeben."""
+        key = "bkd_" + secrets.token_urlsafe(32)
+        obj = cls.objects.create(user=user, name=name[:80], prefix=key[:10], key_hash=ApiKey.hash(key))
+        return obj, key
+
+    @classmethod
+    def find(cls, key):
+        if not key or not key.startswith("bkd_"):
+            return None
+        return cls.objects.filter(key_hash=ApiKey.hash(key)).select_related("user").first()
 
 
 class Tutorial(models.Model):

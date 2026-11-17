@@ -695,3 +695,5 @@ html:not([data-theme="light"]):not([data-theme="dark"]) .theme-toggle .i-auto { 
 .create-card .tab-panel > p { margin-top: 0; }
 .new-app-form .name-icon { display: grid; grid-template-columns: minmax(0, 1fr) 5.5rem; gap: .6rem; }
 .new-app-form .icon-field input { text-align: center; }
+.ai-hint { margin: .8rem 0 0; padding-top: .6rem; border-top: 1px solid var(--line); }
+.setup-examples summary { cursor: pointer; margin: .6rem 0 .3rem; }

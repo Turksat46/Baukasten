@@ -170,6 +170,9 @@ BAUKASTEN_AUTOMATION_MEMORY_MB = int(os.environ.get("AUTOMATION_MEMORY_MB", "204
 BAUKASTEN_AUTOMATION_MAX_TIMEOUT_MINUTES = int(os.environ.get("AUTOMATION_MAX_TIMEOUT_MINUTES", "240"))
 BAUKASTEN_AUTOMATION_MAX_CALLS = int(os.environ.get("AUTOMATION_MAX_CALLS", "0"))
 
+# KI-Zugang zum Designer (/mcp/designer/): Änderungen je persönlichem Schlüssel in 10 Minuten (0 = keine Grenze)
+BAUKASTEN_AI_WRITES = int(os.environ.get("AI_WRITES", "30"))
+
 # Öffentliche Seiten: höchstens so viele Anfragen von Gästen je Adresse und Minute (0 = keine Grenze).
 # Hinter einem Ingress teilen sich Gäste oft eine Adresse – dann großzügig wählen.
 BAUKASTEN_PUBLIC_RATE = int(os.environ.get("PUBLIC_RATE", "120"))

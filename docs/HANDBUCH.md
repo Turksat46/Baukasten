@@ -1089,6 +1089,56 @@ def buchen(request, app, daten):
 `daten` ist bei POST, PUT und PATCH der JSON-Inhalt, bei GET die
 Abfrageparameter.
 
+### Apps mit KI bauen (MCP für den Designer)
+
+Eine KI deiner Wahl (Claude Desktop, Claude Code, Cursor, n8n …) baut über den
+MCP-Server **`/mcp/designer/`** Apps: anlegen, lesen, ändern, Versionen
+zurückholen. Einen eingebauten KI-Assistenten mit Anbieter-Schlüssel gibt es
+bewusst nicht; Modell und Kosten bleiben bei dir.
+
+**Einrichten.** Auf der Profilseite unter „Apps mit KI bauen“ einen
+**KI-Zugang** erzeugen (Schlüssel `bkd_…`, wird nur einmal angezeigt). Die KI
+bekommt damit genau deine Rechte im Designer: deine Apps, die, zu denen du
+eingeladen bist, und Automatisierungen nur, wenn du Automatisierer bist. Die
+Schlüssel der App-API (`bk_…`) gelten hier nicht. Beispiele:
+
+```
+claude mcp add --transport http baukasten https://baukasten.example.com/mcp/designer/ \
+  --header "Authorization: Bearer bkd_…"
+```
+
+Cursor (`.cursor/mcp.json`):
+`{"mcpServers": {"baukasten": {"url": "https://…/mcp/designer/", "headers": {"Authorization": "Bearer bkd_…"}}}}`.
+Claude Desktop braucht für entfernte Server die Brücke `npx mcp-remote <Adresse> --header "Authorization: Bearer bkd_…"`.
+
+**Werkzeuge:**
+
+| Tool | Wirkung |
+|---|---|
+| `guide` | Format, Feldtypen, alle Bausteine mit ihren Einstellungen, Regeln, ein vollständiges Beispiel |
+| `list_apps` | Apps, die du bearbeiten darfst |
+| `get_app` | vollständige Definition einer App |
+| `validate_app` | prüft eine Definition, ohne zu speichern |
+| `create_app` | legt eine App als Entwurf an |
+| `update_app` | bringt eine App auf den Stand der Definition; vorher wird eine Version gesichert |
+| `list_versions`, `restore_version` | Versionen ansehen und zurückholen |
+
+Das Format ist das der Versionen, nur freundlicher: Kurznamen dürfen fehlen,
+Auswahlwerte sind eine Liste, die App-Angaben stehen oben. Fehlt in einer
+Änderung `entities`, `pages` oder `scripts`, bleibt dieser Teil, wie er ist.
+Fehler nennen den genauen Ort und was erlaubt wäre, etwa
+`pages[0].layout[2].props.entity: Eine Tabelle „geraet“ gibt es nicht.
+Vorhanden: ausleihen, geraete`. So korrigiert die KI sich selbst.
+
+**Was die KI nicht darf:** veröffentlichen, Nutzergruppen setzen, Seiten
+öffentlich machen, Tabellen für die API freigeben, Skripte einschalten,
+Datenquellen und Übersetzungen ändern. Bestehende Einstellungen dieser Art
+bleiben bei einer Änderung erhalten; neue oder geänderte Skripte sind aus, bis
+du sie im Designer prüfst und einschaltest. Tabellen werden nie gelöscht. Je
+Schlüssel sind höchstens `AI_WRITES` Änderungen in 10 Minuten erlaubt
+(Standard 30). Jede Änderung steht als Version mit dem Namen des KI-Zugangs in
+der App.
+
 ### Skripte: Referenz
 
 Python und JavaScript haben dieselben Befehle; in JavaScript gibt jeder Befehl,
@@ -1245,6 +1295,7 @@ Alles Umgebungsabhängige kommt aus Umgebungsvariablen.
 | `AUTOMATION_MAX_CALLS` | Befehle (`app.table`, `db`, `secret`) je Lauf, Standard 0 = unbegrenzt |
 | `SCRIPT_SECRET_<NAME>` | Geheimnis für Automatisierungen, im Skript `secret("NAME")`; nur im Hintergrunddienst setzen |
 | `REDIS_PASSWORD` | Passwort für Redis aus `k8s/redis.yaml` |
+| `AI_WRITES` | Änderungen je KI-Zugang in 10 Minuten (`/mcp/designer/`), Standard 30, 0 = keine Grenze |
 | `PUBLIC_RATE` | Anfragen von Gästen auf öffentlichen Seiten je Adresse und Minute, Standard 120, 0 = keine Grenze |
 | `TABLEAU_HOSTS`, `TABLEAU_CONNECTED_APP_*`, `TABLEAU_USER_ATTRIBUTE` | Tableau einbetten, siehe [Tableau](#tableau) |
 | `DEFAULT_USER_GROUPS` | Gruppen, zu denen jede Person automatisch gehört, Standard `Viewer` |
@@ -1585,7 +1636,11 @@ Nach Änderungen an statischen Dateien muss das Image neu gebaut werden
 - **Web-Requests** gehen nur an freigegebene Hosts (`HTTP_ALLOWED_HOSTS`),
   damit über den Designer keine internen Adressen abgefragt werden können.
   Tableau-Dashboards werden nur von `TABLEAU_HOSTS` eingebettet.
-- **API-Schlüssel** werden nur als Hash gespeichert.
+- **API-Schlüssel** und **KI-Zugänge** werden nur als Hash gespeichert. Ein
+  KI-Zugang handelt mit den Designer-Rechten seiner Person; wer ihn hat, kann in
+  ihrem Namen Apps ändern (nicht veröffentlichen, nichts öffentlich machen,
+  keine Skripte einschalten). Verliert die Person das Designer-Recht, wirkt der
+  Zugang nicht mehr.
 - **Python-Erweiterungen** laufen mit allen Rechten der Anwendung. In den
   Ordner `extensions/` gehört nur geprüfter Code.
 - **Python-Skripte aus dem Designer** laufen dagegen abgeschottet: eigener
@@ -1689,7 +1744,7 @@ Als Verwalter unter `/admin/` → bei der App „Daten ansehen“.
 
 ## Grenzen des jetzigen Stands
 
-- **Getestet** mit SQLite: 194 automatische Tests und Durchläufe im Browser
+- **Getestet** mit SQLite: 203 automatische Tests und Durchläufe im Browser
   (Chrome), darunter Python- und JavaScript-Skripte, Live-Anzeige und Spiegeln
   mit einer SQLite-Datenquelle sowie die Python-Bibliothek gegen einen echten
   Server. Mit PostgreSQL (für den Baukasten und als Datenquelle) und gunicorn

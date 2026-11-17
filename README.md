@@ -29,6 +29,11 @@ Kubernetes.
   nutzen die freigeschalteten Tabellen als Werkzeuge. Die Tools entstehen
   automatisch aus den Tabellen; ein Schlüssel ohne Schreibrecht bekommt nur die
   lesenden.
+- **Apps mit KI bauen:** Eine KI deiner Wahl (Claude, Cursor, n8n …) legt über
+  den MCP-Server `/mcp/designer/` Apps an und ändert sie, mit einem persönlichen
+  KI-Zugang aus der Profilseite und genau deinen Rechten. Verständliche
+  Prüfmeldungen, Version vor jeder Änderung; veröffentlichen und Skripte
+  einschalten bleibt Sache eines Menschen.
 - **Mitbearbeiter:** Wer eine App anlegt, ist Eigentümer/in und lädt weitere
   Designer oder Gruppen ein. Andere Designer sehen fremde Apps im Designer nicht.
 - **Versionen:** Stand einer App speichern, wiederherstellen, als Datei
@@ -119,7 +124,7 @@ an. Einzelheiten im Handbuch unter „Lokal mit Kubernetes“.
 
 ## Stand
 
-Lauffähiger Prototyp. Getestet mit SQLite (194 automatische Tests, Durchläufe im
+Lauffähiger Prototyp. Getestet mit SQLite (203 automatische Tests, Durchläufe im
 Browser). Docker-Build und die lokalen Manifeste laufen auf Kubernetes in Docker
 Desktop mit PostgreSQL 16. Nicht getestet: ein echter Produktions-Cluster (Ingress,
 TLS), der vollständige Login gegen einen echten Keycloak und Verbindungen zu

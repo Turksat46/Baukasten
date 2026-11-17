@@ -78,6 +78,59 @@
       {% endif %}
     </section>
 
+    {% if designer %}
+    <section class="card" id="ki-zugang">
+      <h3>🤖 {% translate "Apps mit KI bauen" %}</h3>
+      <p class="muted">{% translate "Mit einem persönlichen Schlüssel baut eine KI deiner Wahl (Claude, Cursor, n8n …) Apps über den MCP-Server des Designers: anlegen, ändern, Versionen zurückholen. Sie hat dabei genau deine Rechte. Neue Apps sind Entwürfe, Skripte bleiben aus, bis du sie prüfst." %}</p>
+      {% if new_ai_token %}
+        <div class="notice notice-warning key-reveal" role="alert">
+          <strong class="notice-title">{% translate "Neuer KI-Zugang – jetzt kopieren" %}</strong>
+          <span>{% translate "Er wird nur dieses eine Mal angezeigt. Wer ihn hat, kann in deinem Namen Apps ändern." %}</span>
+          <code class="key-value">{{ new_ai_token }}</code>
+        </div>
+      {% endif %}
+      {% if ai_tokens %}
+        <table class="compact-table">
+          <tbody>
+            {% for token in ai_tokens %}
+              <tr>
+                <td>{{ token.name }} <code class="key">{{ token.prefix }}…</code></td>
+                <td class="muted small">{% if token.last_used %}{% translate "zuletzt genutzt" %} {{ token.last_used|date:"SHORT_DATETIME_FORMAT" }}{% else %}{% translate "noch nie genutzt" %}{% endif %}</td>
+                <td class="row-actions">
+                  <form method="post" action="{% url 'profile_ai_token_delete' token.pk %}" data-confirm="{% translate 'KI-Zugang löschen? Die KI verliert sofort den Zugriff.' %}">
+                    {% csrf_token %}<button class="link danger">{% translate "Löschen" %}</button>
+                  </form>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% endif %}
+      <form method="post" action="{% url 'profile_ai_token_create' %}" class="inline-form">
+        {% csrf_token %}
+        <input type="text" name="name" maxlength="80" placeholder="{% translate 'Wofür? z. B. Claude Desktop' %}" aria-label="{% translate 'Name des KI-Zugangs' %}">
+        <button class="btn btn-secondary btn-small">{% translate "KI-Zugang erzeugen" %}</button>
+      </form>
+      <h4 class="spaced">{% translate "Einrichten" %}</h4>
+      <p class="muted small">{% translate "Adresse (Transport „Streamable HTTP“) und Kopfzeile:" %}</p>
+      <pre class="json">{{ ai_url }}
+Authorization: Bearer {% translate 'DEIN_KI_ZUGANG' %}</pre>
+      <details class="setup-examples">
+        <summary>{% translate "Beispiele für Claude Code, Claude Desktop und Cursor" %}</summary>
+        <p class="muted small">Claude Code:</p>
+        <pre class="json">claude mcp add --transport http baukasten {{ ai_url }}   --header "Authorization: Bearer {% translate 'DEIN_KI_ZUGANG' %}"</pre>
+        <p class="muted small">Claude Desktop ({% translate "claude_desktop_config.json, braucht Node.js" %}):</p>
+        <pre class="json">{"mcpServers": {"baukasten": {"command": "npx", "args": [
+  "mcp-remote", "{{ ai_url }}",
+  "--header", "Authorization: Bearer {% translate 'DEIN_KI_ZUGANG' %}"]}}}</pre>
+        <p class="muted small">Cursor (.cursor/mcp.json):</p>
+        <pre class="json">{"mcpServers": {"baukasten": {"url": "{{ ai_url }}",
+  "headers": {"Authorization": "Bearer {% translate 'DEIN_KI_ZUGANG' %}"}}}}</pre>
+        <p class="muted small">{% translate "Danach zum Beispiel: „Bau mir im Baukasten eine App für Raumbuchungen mit Räumen, Buchungen und einer Übersichtsseite.“" %}</p>
+      </details>
+    </section>
+    {% endif %}
+
     {% if keys or designer %}
     <section class="card">
       <h3>{% translate "Meine API-Schlüssel" %}</h3>

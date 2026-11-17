@@ -1089,6 +1089,54 @@ curl -X POST -H "Authorization: Bearer $KEY" -H "Content-Type: application/json"
 
 The host under which n8n calls Baukasten must be listed in `ALLOWED_HOSTS`.
 
+### Building apps with AI (MCP for the Designer)
+
+An AI of your choice (Claude Desktop, Claude Code, Cursor, n8n …) builds apps
+through the MCP server **`/mcp/designer/`**: create, read, change, restore
+versions. There is deliberately no built-in AI assistant with a provider key;
+the model and its cost stay with you.
+
+**Setup.** On the profile page under "Apps mit KI bauen" create an **AI
+access** (key `bkd_…`, shown only once). The AI gets exactly your rights in the
+Designer: your apps, the ones you were invited to, and automations only if you
+are an automator. The app API keys (`bk_…`) do not work here. Examples:
+
+```
+claude mcp add --transport http baukasten https://baukasten.example.com/mcp/designer/ \
+  --header "Authorization: Bearer bkd_…"
+```
+
+Cursor (`.cursor/mcp.json`):
+`{"mcpServers": {"baukasten": {"url": "https://…/mcp/designer/", "headers": {"Authorization": "Bearer bkd_…"}}}}`.
+Claude Desktop needs the bridge `npx mcp-remote <address> --header "Authorization: Bearer bkd_…"` for remote servers.
+
+**Tools:**
+
+| Tool | Effect |
+|---|---|
+| `guide` | format, field types, all blocks with their settings, rules, a complete example |
+| `list_apps` | apps you may edit |
+| `get_app` | complete definition of an app |
+| `validate_app` | checks a definition without saving |
+| `create_app` | creates an app as a draft |
+| `update_app` | brings an app to the state of the definition; a version is saved first |
+| `list_versions`, `restore_version` | look at and restore versions |
+
+The format is the version format, only friendlier: short names may be missing,
+choices are a list, the app details sit at the top. If a change omits
+`entities`, `pages` or `scripts`, that part stays as it is. Errors name the
+exact location and what would be allowed, for example
+`pages[0].layout[2].props.entity: Eine Tabelle „geraet“ gibt es nicht.
+Vorhanden: ausleihen, geraete`. That way the AI corrects itself.
+
+**What the AI may not do:** publish, set user groups, make pages public,
+enable tables for the API, switch scripts on, change data sources and
+translations. Existing settings of this kind are kept on a change; new or
+changed scripts are off until you review and switch them on in the Designer.
+Tables are never deleted. Each key may make at most `AI_WRITES` changes in 10
+minutes (default 30). Every change appears as a version carrying the name of
+the AI access.
+
 ### Scripts: reference
 
 Python and JavaScript have the same commands; in JavaScript every command that
@@ -1243,6 +1291,7 @@ Everything environment-specific comes from environment variables.
 | `AUTOMATION_MAX_CALLS` | commands (`app.table`, `db`, `secret`) per run, default 0 = unlimited |
 | `SCRIPT_SECRET_<NAME>` | secret for automations, `secret("NAME")` in the script; set only in the background service |
 | `REDIS_PASSWORD` | password for the Redis from `k8s/redis.yaml` |
+| `AI_WRITES` | changes per AI access in 10 minutes (`/mcp/designer/`), default 30, 0 = no limit |
 | `PUBLIC_RATE` | guest requests on public pages per address and minute, default 120, 0 = no limit |
 | `TABLEAU_HOSTS`, `TABLEAU_CONNECTED_APP_*`, `TABLEAU_USER_ATTRIBUTE` | embedding Tableau, see [Tableau](#tableau) |
 | `DEFAULT_USER_GROUPS` | groups every person automatically belongs to, default `Viewer` |
@@ -1559,7 +1608,10 @@ the Dockerfile).
 - **Web requests** only go to allowed hosts (`HTTP_ALLOWED_HOSTS`), so internal
   addresses cannot be queried through the Designer. Tableau dashboards are only
   embedded from `TABLEAU_HOSTS`.
-- **API keys** are only stored as a hash.
+- **API keys** and **AI accesses** are only stored as a hash. An AI access acts
+  with the Designer rights of its person; whoever holds it can change apps in
+  that person's name (but not publish, make anything public or switch scripts
+  on). If the person loses the designer right, the access stops working.
 - **Python extensions** run with all permissions of the application. Only
   reviewed code belongs in the folder `extensions/`.
 - **Python scripts from the Designer**, on the other hand, run isolated: own
@@ -1660,7 +1712,7 @@ Select **DE** in the language switch in the top right. The choice is remembered.
 
 ## Current limitations
 
-- **Tested** with SQLite: 194 automated tests and runs in the browser (Chrome),
+- **Tested** with SQLite: 203 automated tests and runs in the browser (Chrome),
   including Python and JavaScript scripts, live display and mirroring with a
   SQLite data source, and the Python library against a real server. With
   PostgreSQL (for Baukasten and as a data source) and gunicorn as in the
