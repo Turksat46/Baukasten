@@ -5,7 +5,8 @@ Daten festlegen, Seiten aus Bausteinen zusammenstellen, veröffentlichen. Wer
 programmieren kann, ergänzt Logik in Python. Technisch ist der Baukasten eine
 Django-Anwendung, die auf Kubernetes läuft.
 
-Dieses Handbuch gibt es auch in der Oberfläche: oben rechts unter „Hilfe“.
+Dieses Handbuch gibt es auch in der Oberfläche: oben rechts unter „Hilfe“. Mit
+dem Sprachumschalter (**DE | EN**) wechselst du zur englischen Fassung.
 
 ## Wo fange ich an?
 
@@ -15,6 +16,8 @@ Dieses Handbuch gibt es auch in der Oberfläche: oben rechts unter „Hilfe“.
 | deine erste eigene App bauen | [Schnellstart](#schnellstart-deine-erste-app-in-15-minuten), dann [2. Apps bauen](#2-apps-bauen) |
 | Daten aus einer Datenbank oder Databricks anzeigen | [Daten aus Datenbanken und Databricks](#daten-aus-datenbanken-und-databricks) |
 | mit einem anderen Programm auf Daten zugreifen | [API](#api) und die API-Dokumentation in der Oberfläche |
+| Tableau-Dashboards anzeigen | [Tableau](#tableau) |
+| KI-Agenten wie n8n anbinden | [MCP-Server](#mcp-server-ki-agenten-n8n) |
 | Logik programmieren | [Skripte](#skripte) und [3. Entwickeln](#3-entwickeln) |
 | fertige Beispiele ansehen | [Beispiel-Apps](#beispiel-apps) |
 | den Baukasten auf dem eigenen Rechner in Kubernetes ausprobieren | [Lokal mit Kubernetes](#lokal-mit-kubernetes-docker-desktop) |
@@ -34,6 +37,7 @@ Baukasten
     ├── Skripte    Python oder JavaScript ← eigene Logik
     ├── Abfragen   SQL an Datenbanken    ← Daten von außen
     ├── API-Schlüssel                    ← Zugang für andere Programme
+    ├── Übersetzungen                    ← die Texte der App in weiteren Sprachen
     └── Versionen                        ← gespeicherte Stände des Aufbaus
 ```
 
@@ -43,7 +47,7 @@ Baukasten
 |---|---|
 | [1. Apps benutzen](#1-apps-benutzen) | alle, die mit fertigen Apps arbeiten |
 | [2. Apps bauen](#2-apps-bauen) | Designer: Fachabteilungen, die Apps anlegen |
-| [3. Entwickeln](#3-entwickeln) | Entwickler: Skripte, Python-Erweiterungen, API, Python-Bibliothek, Aufbau des Codes |
+| [3. Entwickeln](#3-entwickeln) | Entwickler: Skripte, Python-Erweiterungen, API, MCP, Python-Bibliothek, Aufbau des Codes |
 | [4. Betreiben](#4-betreiben) | Betrieb: Installation, Kubernetes, Datenquellen, Keycloak, Sicherheit |
 
 Am Ende stehen [Häufige Fragen](#häufige-fragen),
@@ -160,9 +164,13 @@ lokalen Benutzernamen und Passwort.
 
 ### Startseite
 
-Nach der Anmeldung siehst du deine Apps als Kacheln. Du siehst nur Apps, die
-veröffentlicht und für dich freigegeben sind. Ein Klick öffnet die App; über
-das Logo oben links kommst du jederzeit zurück.
+Nach der Anmeldung siehst du eine Begrüßung mit dem heutigen Datum und deine
+Apps als Kacheln, jede mit eigener Farbe und der Zahl ihrer Seiten. Du siehst nur
+Apps, die veröffentlicht und für dich freigegeben sind; Designer sehen zusätzlich
+ihre Entwürfe. Bei mehr als sechs Apps filtert ein Suchfeld über den Kacheln beim
+Tippen. Unter den Kacheln führt der **Schnellzugriff** zum Handbuch, zum Profil,
+zur API-Dokumentation und für Designer zu den eigenen Bausteinen. Ein Klick auf
+eine Kachel öffnet die App; über das Logo oben links kommst du jederzeit zurück.
 
 ### In einer App arbeiten
 
@@ -173,17 +181,19 @@ die die App gebaut hat. Typisch sind:
   und „Löschen“ stehen am Ende jeder Zeile, sofern erlaubt.
 - **Formulare:** neue Einträge direkt auf der Seite erfassen. Pflichtfelder
   werden beim Speichern geprüft.
-- **Auswertungen:** Kennzahlen, Diagramme und Verläufe. Sie rechnen immer mit
-  den aktuellen Daten.
+- **Auswertungen:** Kennzahlen, Diagramme, Liniendiagramme und Verläufe. Sie
+  rechnen immer mit den aktuellen Daten.
 - **CSV-Export:** lädt alle Einträge einer Tabelle für Excel herunter.
+- **Tableau-Dashboards**, wenn eure Firma Tableau nutzt.
 
 ### Sprache
 
 Die Oberfläche gibt es auf Deutsch und Englisch. Mit „DE | EN“ oben rechts
 wechselst du; die Wahl wird gemerkt. Ohne eigene Wahl gilt die Sprache deines
-Browsers. Übersetzt ist die Oberfläche des Baukastens. Inhalte, die jemand in
-einer App eingetragen hat (Seitentitel, Feldnamen, Daten), bleiben so, wie sie
-eingegeben wurden.
+Browsers. Übersetzt ist die Oberfläche des Baukastens; die Inhalte einer App
+(Seitentitel, Feldnamen, Auswahlwerte, Bausteintexte) erscheinen auf Englisch,
+wenn ihr Designer [Übersetzungen](#übersetzungen) eingetragen hat. Erfasste
+Daten bleiben so, wie sie eingegeben wurden.
 
 ### Hell und Dunkel
 
@@ -230,7 +240,8 @@ zu dir gehört:
 ## 2. Apps bauen
 
 Den Designer sieht, wer das Recht dazu hat (siehe [Rechte](#rechte)). Der Link
-„Designer“ steht oben rechts.
+„Designer“ steht oben rechts. Im Designer siehst du die Apps, die dir gehören
+oder zu denen du als Mitbearbeiter eingeladen bist.
 
 ### In drei Schritten zur App
 
@@ -254,7 +265,7 @@ Eintrag. Das erste Feld dient als Name des Eintrags, etwa in Verweisen.
 | Langer Text | mehrzeilig | |
 | Ganze Zahl | Zahl ohne Komma | für Summe und Durchschnitt nutzbar |
 | Kommazahl | Zahl mit Komma | für Summe und Durchschnitt nutzbar |
-| Datum | Datumsauswahl | für den Baustein „Verlauf“ nutzbar |
+| Datum | Datumsauswahl | für „Verlauf“ und „Liniendiagramm“ nutzbar |
 | Ja/Nein | Kästchen | |
 | Auswahl | feste Werte | ein Wert pro Zeile unter „Auswahlwerte“ |
 | E-Mail, Link | geprüfte Eingabe | |
@@ -353,10 +364,11 @@ prüfen.
 | | Kreisdiagramm | Anteile der fünf häufigsten Werte, Rest als „Sonstige“ |
 | | Verlauf | Einträge pro Monat, nach einem Datumsfeld oder dem Erfassungsdatum |
 | | Liniendiagramm | Anzahl, Summe oder Durchschnitt je Tag, Woche oder Monat als Linie, nach einem Datumsfeld oder dem Erfassungsdatum; Werte beim Überfahren |
-| Navigation | Button | öffnet eine Seite, einen Link oder führt eine Python-Aktion aus |
+| Navigation | Button | öffnet eine Seite oder einen Link, oder führt ein Skript oder eine Python-Aktion aus |
 | | Seitenkacheln | Kacheln zu allen Seiten der App |
 | Layout | Trennlinie, Abstand | gliedern die Seite |
 | Anbindung | Web-Request | ruft JSON von einer freigegebenen Adresse ab und zeigt es |
+| | Datenbank-Abfrage | Live-Daten aus einer Datenquelle, siehe [unten](#daten-aus-datenbanken-und-databricks) |
 | | Tableau-Ansicht | bettet ein Dashboard von eurem Tableau-Server oder Tableau Cloud ein, optional mit Filtern aus der Adresse (siehe [Tableau](#tableau)) |
 | Skripte | Ausgabe | zeigt Werte, Text oder Tabellen, die ein Skript setzt |
 | | Eingabefeld | Text, E-Mail, Zahl oder langer Text, den ein Skript-Button mitschickt (`params["…"]`) |
@@ -484,7 +496,7 @@ du größere Umbauten beginnst.
 ### App löschen
 
 Eine App löschst du in der App-Liste des Designers („Löschen“) oder in der App
-ganz unten („App löschen“). Gelöscht werden Tabellen, Daten, Seiten, Versionen
+ganz unten („App löschen“). Das dürfen nur Eigentümerin und Verwalter. Gelöscht werden Tabellen, Daten, Seiten, Versionen
 und API-Schlüssel. Das lässt sich nicht rückgängig machen. Lade vorher eine
 Version herunter, wenn du den Aufbau behalten willst.
 
@@ -505,7 +517,9 @@ anklicken, Schlüssel eintragen, bei einer Anfrage „Try it out“ und „Execu
 **Vorsicht:** Ausprobierte Anfragen wirken auf echte Daten. Die Dokumentation
 entsteht automatisch aus den Tabellen und ist daher immer aktuell.
 
-Wie die API im Einzelnen funktioniert, steht in [Teil 3](#api).
+Im selben Abschnitt steht auch die Adresse des [MCP-Servers](#mcp-server-ki-agenten-n8n)
+der App für KI-Agenten. Wie die API im Einzelnen funktioniert, steht in
+[Teil 3](#api).
 
 ### Daten aus Datenbanken und Databricks
 
@@ -655,6 +669,7 @@ $env:DEBUG=1                      (cmd: set DEBUG=1, Linux/macOS: export DEBUG=1
 python manage.py migrate
 python manage.py createsuperuser
 python manage.py demo             (Beispiel-App „Inventar“; mit --neu wird sie ersetzt)
+python manage.py beispiel_einwilligung   (Beispiel-App „Aufnahme-Einwilligung“)
 python manage.py runserver
 ```
 
@@ -680,9 +695,13 @@ builder/
                      CustomBlock, ApiKey, AppVersion
   blocks.py          Bausteine: Schema, Datenabfrage, Prüfung des Layouts
   forms.py           Formulare; RecordForm entsteht aus den Feldern einer Tabelle
-  views.py           Laufzeit: Startseite, Seiten, Einträge, CSV-Export
-  designer.py        Designer: Apps, Tabellen, Felder, Seiten, Bausteine, Versionen
+  views.py           Laufzeit: Startseite, Seiten, Einträge, CSV-Export, öffentliche Seiten
+  designer.py        Designer: Apps, Tabellen, Felder, Seiten, Bausteine, Versionen,
+                     Mitbearbeiter, Übersetzungen
   api.py             JSON-API
+  mcp.py             MCP-Server je App
+  tableau.py         Tableau einbetten, Tokens für Connected Apps
+  app_i18n.py        Übersetzungen der App-Inhalte
   versions.py        Versionen: Stand erzeugen, anwenden, importieren
   sanitize.py        Bereinigung des HTML eigener Bausteine
   hooks.py           Erweiterungspunkte für Python
@@ -694,12 +713,13 @@ builder/
   auth.py            Anmeldung über Keycloak
   tours.py           Texte der Führungen
   locale/en/         englische Übersetzung
-  static/builder/    theme.css, theme.js, style.css, designer.js, tour.js, transitions.js, Schrift, Logo
+  static/builder/    theme.css, theme.js, style.css, designer.js, tour.js, transitions.js,
+                     inputs.js, home.js, Schrift, Logo
   templates/         Vorlagen
   tests.py           automatische Tests
 extensions/          eigene Python-Erweiterungen
 clients/python/      Python-Bibliothek baukasten-client für die API
-docs/                dieses Handbuch
+docs/                dieses Handbuch (Deutsch und Englisch)
 k8s/                 Kubernetes-Manifeste (app, migrate-job, cronjob, optional redis)
 gunicorn.conf.py     Prozesse, Threads und Zeitlimits des Webservers
 ```
@@ -964,8 +984,8 @@ als Objekt übergeben.
 | `print(…)` | `console.log(…)` | Ausgabe im Protokoll bzw. Testlauf |
 | `app.name`, `app.slug` | – | Name und Kurzname der App, z. B. für Links (`"/a/" + app.slug + "/p/seite/"`) |
 | `app.t("Text")` | – | Text in der Sprache der Person aus den [Übersetzungen](#übersetzungen) der App, sonst unverändert |
-| `user` | `user` | angemeldete Person: `name`, `username`, `email`, `groups`, `language` (z. B. `"de"`, `"en"`; zeitgesteuert: `None`) |
-| `event`, `params` | `event`, `params` | Auslöser und Parameter der Adresse (`?linie=3` → `params["linie"]`); Button-Skripte bekommen die Parameter der Seite, auf der der Button steht |
+| `user` | `user` | angemeldete Person: `name`, `username`, `email`, `groups`, `language` (z. B. `"de"`, `"en"`; zeitgesteuert oder Gäste: `None`) |
+| `event`, `params` | `event`, `params` | Auslöser und Parameter der Adresse (`?linie=3` → `params["linie"]`); Button-Skripte bekommen die Parameter der Seite, auf der der Button steht, und ihre Eingabefelder |
 | `record` | – | der gespeicherte Eintrag (nur „nach dem Speichern“) |
 
 Einträge sind Dictionaries mit `id`, den Kurznamen der Felder, `created_at` und
@@ -989,7 +1009,7 @@ Verbindungen ins Netz aufbauen. Freie SQL-Abfragen und Web-Requests gibt es
 deshalb nur in Python. Der Code ist für alle, die die Seite öffnen, im Browser
 lesbar: keine Passwörter oder Schlüssel hineinschreiben.
 
-**Fehler.** Ein Fehler bricht nur das Skript ab, nie die Seite. Designer sehen
+**Fehler.** Ein Fehler bricht nur das Skript ab, nie die Seite. Designer der App sehen
 ihn auf der Seite mit Zeilennummer und einem Link zum Skript, andere Nutzer
 nicht. Die letzten 20 Läufe stehen im Editor; bei Seitenaufrufen werden nur
 fehlgeschlagene Läufe protokolliert.
@@ -1059,7 +1079,9 @@ Dafür muss GNU gettext installiert sein. Die kompilierten `.mo`-Dateien liegen
 im Repository, im Container ist gettext nicht nötig. Eine weitere Sprache kommt
 über `LANGUAGES` in `config/settings.py` und einen neuen Ordner unter
 `locale/` dazu; der Sprachumschalter in `templates/builder/_language.html`
-braucht dann einen weiteren Knopf.
+braucht dann einen weiteren Knopf. Das Handbuch hat je Sprache eine Datei in
+`docs/` (`HANDBUCH.md`, `HANDBOOK.en.md`); die Hilfe-Seite zeigt die zur
+Sprache der Oberfläche passende.
 
 ---
 
@@ -1108,18 +1130,31 @@ Zum Ausprobieren der Kubernetes-Installation auf dem eigenen Rechner:
    (ein Knoten, nutzt die lokal gebauten Images direkt).
 2. Im Baukasten-Ordner ausführen:
    ```
-   powershell -ExecutionPolicy Bypass -File k8s\lokal\deploy.ps1
+   powershell -ExecutionPolicy Bypass -File k8s\lokal\deploy.ps1 -OhneBeispiele
    ```
 3. http://localhost:8080 öffnen, mit `admin` anmelden. Das Passwort steht in
    `k8s\lokal\geheim.env` (`ADMIN_PASSWORD`).
 
 Das Skript baut das Image, legt beim ersten Lauf Zufalls-Zugangsdaten an,
-startet PostgreSQL im Cluster, migriert, rollt aus und legt die Beispiel-Apps an.
+startet PostgreSQL im Cluster, migriert, rollt aus und legt das Konto `admin` an.
+Ohne `-OhneBeispiele` versucht es zusätzlich, die Beispiel-Apps anzulegen; die
+Inventar-Demo kann im Cluster ihre Beispiel-Datenquelle nicht schreiben, daher
+bricht das Skript dann am Ende ab. Die Einwilligungs-App legst du danach so an:
+
+```
+kubectl -n baukasten exec deploy/baukasten -- python manage.py beispiel_einwilligung
+```
+
 Für ein Update dasselbe Skript noch einmal ausführen. Es nutzt dieselben
 Manifeste wie die Produktion; was lokal anders ist (kein TLS, Dienst auf
-localhost:8080, keine Registry), steht in `k8s/lokal/kustomization.yaml`.
+localhost:8080, keine Registry, `host.docker.internal` für Container wie n8n
+erlaubt), steht in `k8s/lokal/kustomization.yaml`.
 Protokoll des letzten Laufs: `k8s\lokal\letzter-lauf.log`. Alles wieder
 entfernen: `kubectl delete namespace baukasten`.
+
+Startet Docker Desktop immer wieder neu, hat die WSL-VM meist zu wenig oder zu
+viel Speicher: genug für Kubernetes geben (`memory=` in
+`%USERPROFILE%\.wslconfig`), aber genug für Windows übrig lassen.
 
 ### Kubernetes
 
@@ -1278,12 +1313,13 @@ Passwort wird nie von einem gleichnamigen Keycloak-Konto übernommen.
 
 | Wer | Darf |
 |---|---|
-| Nutzer | veröffentlichte Apps verwenden, die für alle oder für eine seiner Gruppen freigegeben sind |
+| Nutzer | veröffentlichte Apps verwenden, die für alle oder für eine seiner Gruppen freigegeben sind; öffentliche Seiten brauchen gar keine Anmeldung |
 | Designer | eigene Apps und Apps, zu denen sie eingeladen sind, bearbeiten; neue Apps anlegen, eigene Bausteine anlegen |
 | Verwalter (Superuser) | zusätzlich alle Apps im Designer und `/admin/`: Benutzer, Gruppen, alle Daten |
 
 Designer ist, wer in Keycloak die Designer-Rolle hat, oder lokal das Recht
-„Darf Apps im Designer bearbeiten“ bzw. den Mitarbeiter-Status.
+„Darf Apps im Designer bearbeiten“ bzw. den Mitarbeiter-Status. Konten mit
+Mitarbeiter-Status sehen außerdem den Link „Admin“ in der Kopfzeile.
 
 **Eigentümerin und Mitbearbeiter.** Wer eine App anlegt, ist ihre
 Eigentümerin. Im Designer der App, Abschnitt „Mitbearbeiter“:
@@ -1325,7 +1361,8 @@ Die Verwaltung ist nach Apps geordnet:
   Einträge pro Seite, die neuesten zuerst. Ein Klick auf die Nummer öffnet den
   Eintrag.
 - **Eine App öffnen** zeigt ihre Tabellen (mit Link auf die Einträge), Seiten,
-  Skripte, Abfragen, API-Schlüssel und Versionen auf einer Seite.
+  Skripte, Abfragen, API-Schlüssel, Versionen, Eigentümerin und Mitbearbeiter
+  auf einer Seite.
 - **Listen** (Einträge, Felder, Skripte, Skriptläufe, Abfragen, Schlüssel,
   Versionen) lassen sich rechts nach **App** filtern, Einträge zusätzlich nach
   Tabelle. Die Suche bei Einträgen durchsucht den gesamten Inhalt.
@@ -1339,10 +1376,13 @@ Eingaben geprüft und Seiten bleiben stimmig. Die Verwaltung ist für den
 ### Firmenlogo und Design
 
 - **Logo:** Die offizielle Logo-Datei als `logo.svg` oder `logo.png` nach
-  `builder/static/builder/brand/` legen. Sie erscheint in der Kopfzeile und auf
-  der Anmeldeseite. Hinweise stehen in der Datei `LIESMICH.txt` in diesem
-  Ordner. Ein Logo liegt bewusst nicht bei: Verwende die Originaldatei aus dem
-  Marken-Portal und beachte dessen Vorgaben.
+  `builder/static/builder/brand/` legen. Sie erscheint in der Kopfzeile rechts
+  neben „Baukasten“, getrennt durch eine senkrechte Linie, und auf der
+  Anmeldeseite auf weißem Grund. Hinweise stehen in der Datei `LIESMICH.txt` in
+  diesem Ordner. Ein Logo liegt bewusst nicht bei: Verwende die Originaldatei aus
+  dem Marken-Portal und beachte dessen Vorgaben. Logodateien sind per
+  `.gitignore` von Git ausgeschlossen, damit sie nicht in einem öffentlichen
+  Repository landen.
 - **Farben, Schrift, Rundungen:** stehen als Variablen in
   `builder/static/builder/theme.css`. Ein Firmen-Stylesheet lässt sich in
   `templates/base.html` nach `theme.css` einbinden. Die Farben für den Dunkelmodus stehen
@@ -1357,14 +1397,19 @@ Nach Änderungen an statischen Dateien muss das Image neu gebaut werden
 
 ### Sicherheit
 
-- **Anmeldung** ist für alle Seiten Pflicht. Die API verlangt einen Schlüssel.
-- **Rechte** werden auf dem Server geprüft: Zugriff auf Apps, Designer-Recht,
-  Anlegen/Bearbeiten/Löschen je Tabelle, Schreibrecht des API-Schlüssels.
+- **Anmeldung** ist für alle Seiten Pflicht, außer für Seiten, die ein Designer
+  ausdrücklich öffentlich gemacht hat. API und MCP-Server verlangen einen
+  Schlüssel.
+- **Rechte** werden auf dem Server geprüft: Zugriff auf Apps, Designer-Recht je
+  App (Eigentümerin, Mitbearbeiter), Anlegen/Bearbeiten/Löschen je Tabelle,
+  Schreibrecht des API-Schlüssels, und für Gäste nur die Formulare und
+  Skript-Buttons öffentlicher Seiten.
 - **Eingaben** werden in Vorlagen automatisch maskiert. HTML eigener Bausteine
   wird bereinigt (siehe oben). Der CSV-Export entschärft Zellen, die Excel als
   Formel ausführen würde.
 - **Web-Requests** gehen nur an freigegebene Hosts (`HTTP_ALLOWED_HOSTS`),
   damit über den Designer keine internen Adressen abgefragt werden können.
+  Tableau-Dashboards werden nur von `TABLEAU_HOSTS` eingebettet.
 - **API-Schlüssel** werden nur als Hash gespeichert.
 - **Python-Erweiterungen** laufen mit allen Rechten der Anwendung. In den
   Ordner `extensions/` gehört nur geprüfter Code.
@@ -1380,7 +1425,9 @@ Nach Änderungen an statischen Dateien muss das Image neu gebaut werden
 - **Datenquellen:** Zugangsdaten nur in Umgebungsvariablen bzw. Secrets; sie
   erscheinen nie in der Oberfläche und werden aus Fehlermeldungen entfernt.
   Nur-Lese-Benutzer in der Datenbank sind Pflicht.
-- **Nicht enthalten:** eine Begrenzung der Anfragen pro Zeit (für die API am
+- **Öffentliche Seiten** sind auf `PUBLIC_RATE` Anfragen je Adresse und Minute
+  begrenzt.
+- **Nicht enthalten:** eine Begrenzung der Anfragen pro Zeit für die API (am
   Ingress einrichten) und ein Protokoll, wer wann was geändert hat.
 
 ### Sicherung
@@ -1402,6 +1449,10 @@ sieht unter „Einstellungen und Freigabe“, für wen sie freigegeben ist.
 Dir fehlt das Designer-Recht. Mit Firmenkonto vergibt es Keycloak über die
 Rolle `baukasten-designer`, sonst die Verwaltung.
 
+**Ich finde eine App im Designer nicht.**
+Sie gehört jemand anderem. Bitte die Eigentümerin, dich als Mitbearbeiter
+einzuladen.
+
 **Ich habe aus Versehen etwas an einer Seite kaputt gemacht.**
 Wenn eine Version gespeichert ist: in der App unter „Versionen“ wiederherstellen.
 Daten gehen dabei nicht verloren. Ohne Version lässt sich der Aufbau nicht
@@ -1412,7 +1463,7 @@ Ihm fehlt eine Einstellung, meist die Tabelle oder das Feld, oder die Tabelle
 wurde gelöscht. Im Seiten-Designer anklicken und rechts nachtragen.
 
 **Ein Skript meldet einen Fehler.**
-Designer sehen den Fehler auf der Seite mit Zeilennummer und Link. Im Editor
+Designer der App sehen den Fehler auf der Seite mit Zeilennummer und Link. Im Editor
 „Speichern und testen“ zeigt Ausgabe und Fehler; „Letzte Läufe“ und dein Profil
 listen frühere Fehler. Andere Nutzer sehen keine Skriptfehler, nur dass der
 Baustein leer bleibt.
@@ -1426,6 +1477,12 @@ Die Datenquelle bekommt gerade so viele Abfragen, wie der Betrieb erlaubt. Der
 Baustein versucht es von selbst wieder. Passiert das oft: „Ergebnis
 zwischenspeichern“ erhöhen, die Abfrage spiegeln oder den Betrieb bitten,
 `QUERY_PARALLEL` für diese Quelle anzupassen.
+
+**Eine Tableau-Ansicht bleibt leer.**
+Prüfe, ob du bei Tableau angemeldet bist (oder die Connected App eingerichtet
+ist), ob der Server in `TABLEAU_HOSTS` steht und ob Tableau die Einbettung für
+die Adresse des Baukastens erlaubt. Der Link unter dem Baustein öffnet das
+Dashboard direkt in Tableau.
 
 **Mein API-Aufruf liefert 401.**
 Der Schlüssel fehlt, ist falsch oder gehört zu einer anderen App. Er muss im
@@ -1446,15 +1503,17 @@ Als Verwalter unter `/admin/` → bei der App „Daten ansehen“.
 
 ## Grenzen des jetzigen Stands
 
-- **Getestet** mit SQLite: 111 automatische Tests und Durchläufe im Browser
+- **Getestet** mit SQLite: 170 automatische Tests und Durchläufe im Browser
   (Chrome), darunter Python- und JavaScript-Skripte, Live-Anzeige und Spiegeln
   mit einer SQLite-Datenquelle sowie die Python-Bibliothek gegen einen echten
   Server. Mit PostgreSQL (für den Baukasten und als Datenquelle) und gunicorn
   wie im Container lief der Lasttest aus [Skalierung](#skalierung-und-last),
-  einmal mit dem Cache in PostgreSQL und einmal mit Redis.
-  **Nicht getestet:** der Docker-Build, die
-  Kubernetes-Manifeste auf einem echten Cluster, der vollständige Login gegen
-  einen echten Keycloak und Verbindungen zu echten Datenbanken außer SQLite. Für
+  einmal mit dem Cache in PostgreSQL und einmal mit Redis. Docker-Build und die
+  lokalen Manifeste laufen auf Kubernetes in Docker Desktop mit PostgreSQL 16;
+  die Tableau-Einbettung ist mit Tableau Public geprüft.
+  **Nicht getestet:** ein echter Produktions-Cluster (Ingress, TLS), der
+  vollständige Login gegen einen echten Keycloak, eine Tableau Connected App und
+  Verbindungen zu echten Datenbanken außer SQLite und PostgreSQL. Für
   Databricks ist nur geprüft, wie die Adresse an den Treiber übergeben wird und
   wie Fehler ankommen; eine Verbindung zu einem echten Warehouse fehlt.
 - **Skripte:** Jeder Python-Lauf startet einen eigenen Prozess (etwa 0,1 bis
@@ -1464,20 +1523,22 @@ Als Verwalter unter `/admin/` → bei der App „Daten ansehen“.
   nicht im Designer; alle Designer können alle Quellen nutzen. Gespiegelte
   Tabellen lösen keine Skripte „nach dem Speichern“ aus.
 - **Rechte** gelten pro App und pro Tabelle, nicht pro Seite, Eintrag oder
-  Feld. Wer eine App benutzen darf, sieht alle ihre Seiten. Im Designer gibt es
+  Feld (Ausnahme: öffentliche Seiten). Wer eine App benutzen darf, sieht alle ihre Seiten. Im Designer gibt es
   nur „darf die ganze App bearbeiten“, keine Rechte je Seite oder Skript.
   Eigene Bausteine und Vorlagen gelten weiterhin für alle Designer.
 - **Gleichzeitiges Bearbeiten:** Speichern zwei Mitbearbeiter dieselbe Seite
   oder dasselbe Skript, gilt die zuletzt gespeicherte Fassung, ohne Warnung.
 - **Versionen** entstehen nur auf Knopfdruck und enthalten keine Daten.
   Tabellen werden beim Wiederherstellen nie gelöscht.
-- **API:** keine Begrenzung der Anfragen pro Zeit, keine Sortierung, Filter nur
-  auf Gleichheit.
+- **API:** keine Begrenzung der Anfragen pro Zeit, keine Sortierung außer nach
+  `id`, Filter nur auf Gleichheit.
 - **Führung:** Ob jemand sie gesehen hat, merkt sich der Browser, nicht der
   Server.
-- **Übersetzung:** Oberfläche auf Deutsch und Englisch; Inhalte von Apps und die
-  Platzhalter `nutzer`, `app`, `datum` sind einsprachig. Dieses Handbuch gibt es
-  nur auf Deutsch.
+- **Übersetzung:** Oberfläche und Handbuch auf Deutsch und Englisch; Inhalte von
+  Apps lassen sich übersetzen (siehe [Übersetzungen](#übersetzungen)). Die
+  Platzhalter `nutzer`, `app`, `datum` in eigenen Bausteinen sind einsprachig.
+  Einige neuere Oberflächentexte (Übersetzungen, Mitbearbeiter, öffentliche
+  Seiten, MCP- und Tableau-Hinweise im Designer) gibt es noch nur auf Deutsch.
 - **Zugänglichkeit:** Tastaturbedienung und Beschriftungen sind berücksichtigt,
   eine Prüfung nach einem Standard (z. B. WCAG) hat nicht stattgefunden. Das
   Ziehen im Seiten-Designer braucht eine Maus; als Ersatz gibt es Anklicken und
@@ -1492,15 +1553,19 @@ Als Verwalter unter `/admin/` → bei der App „Daten ansehen“.
 | Feld | eine Angabe pro Eintrag, zum Beispiel „Preis“ |
 | Eintrag | ein Datensatz in einer Tabelle |
 | Seite | das, was Nutzer sehen; besteht aus Bausteinen |
+| Öffentliche Seite | eine Seite, die ohne Anmeldung erreichbar ist |
 | Baustein | ein Element einer Seite, zum Beispiel Liste oder Kennzahl |
 | Vorlage | ein fertig eingestellter Baustein zum Wiederverwenden |
 | Kurzname | technischer Name in Adressen, API und Code, zum Beispiel `gerate` |
 | Version | gespeicherter Aufbau einer App, ohne Daten |
 | Designer | Bereich zum Bauen von Apps; auch die Rolle der Personen, die das dürfen |
+| Eigentümerin, Mitbearbeiter | die Person, die eine App angelegt hat, und die Designer, die sie zum Bearbeiten eingeladen hat |
 | Standardgruppe | Gruppe, zu der jede Person automatisch gehört (Viewer) |
 | OpenAPI, Swagger | Standard für API-Beschreibungen bzw. die Oberfläche, die sie anzeigt und ausprobierbar macht |
+| MCP | Model Context Protocol: der Standard, über den KI-Agenten die Tabellen einer App als Werkzeuge nutzen |
 | Verwaltung | der Bereich unter `/admin/` für Benutzer, Gruppen und den Überblick über alle Daten |
 | Datenquelle | eine vom Betrieb eingerichtete externe Datenbank, z. B. ein Databricks SQL-Warehouse |
 | Abfrage | gespeichertes SQL gegen eine Datenquelle, live angezeigt oder gespiegelt |
 | Spiegeln | Ergebnis einer Abfrage regelmäßig in eine Tabelle übernehmen |
 | Skript | Python- oder JavaScript-Code, der zu einem Auslöser läuft |
+| Übersetzung | die englische Fassung der Texte einer App, gepflegt im Designer |
