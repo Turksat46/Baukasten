@@ -14,7 +14,7 @@ English version.
 | You want to … | Read |
 |---|---|
 | use an existing app | [1. Using apps](#1-using-apps), five minutes |
-| build your first own app | [Quick start](#quick-start-your-first-app-in-15-minutes), then [2. Building apps](#2-building-apps) |
+| build your first own app | the [guided introduction](#guided-introduction-your-first-app) in Baukasten, or [Quick start](#quick-start-your-first-app-in-15-minutes), then [2. Building apps](#2-building-apps) |
 | show data from a database or Databricks | [Data from databases and Databricks](#data-from-databases-and-databricks) |
 | access data from another program | [API](#api) and the API documentation in the application |
 | show Tableau dashboards | [Tableau](#tableau) |
@@ -110,7 +110,8 @@ app, only that it is published.
 ## Quick start: your first app in 15 minutes
 
 As an example you build an app for leave requests. You need the "Designer"
-permission (see [Permissions](#permissions)).
+permission (see [Permissions](#permissions)). Prefer to be guided directly in the
+interface? Start the [guided introduction](#guided-introduction-your-first-app).
 
 **1. Create the app (1 minute).** Open "Designer" in the top right. Under "Neue
 App" (new app) enter the name *Leave* and an icon, for example 🌴, then
@@ -252,6 +253,41 @@ Designer you see apps you own or were invited to as a co-editor (see
    immediately gives you a list with search, create, edit and delete.
 
 Then adjust pages in the page designer and publish the app.
+
+### Guided introduction: your first app
+
+The guided introduction walks you through building a leave-request app in about
+20 minutes, directly in Baukasten instead of only in the handbook. Start it in
+the Designer ("New here? → Start introduction") or on the home page under quick
+access ("Introduction").
+
+A **companion** then sits in the bottom right corner. It blocks nothing; you work
+as usual and it shows what comes next:
+
+| # | Step | What you learn |
+|---|---|---|
+| 1 | create the app "Urlaub" (name and icon are pre-filled) | creating apps |
+| 2 | create the table "Anträge" (requests) | tables |
+| 3 | fields From, To (date), Days (number), Status (choice) | field types |
+| 4 | generate a page from the table | ready-made list pages |
+| 5 | enter two requests in the app | the app from the users' point of view |
+| 6 | start page with a metric and a chart | page designer, evaluations |
+| 7 | "after saving" script: calculate days, set status "offen" | scripts (code to copy is included) |
+| 8 | publish | sharing |
+| 9 | save a version | versions |
+
+- **"Go there"** jumps to the page where the step happens; there **"Show me
+  where"** scrolls to the spot and makes it light up briefly.
+- A step **ticks itself off** as soon as the app contains it. What counts is
+  what is in the app, not which buttons you pressed. If you do things in a
+  different order, you still move on.
+- The practice app is the first app you create after starting. It is a normal
+  app: keep it, change it or delete it.
+- At the end the companion suggests next steps: translations, co-editors, API
+  and MCP. "End introduction" hides it at any time; it can be restarted in the
+  Designer.
+- While the introduction runs, the short page tours do not start by themselves
+  (the question mark in the top right still starts them).
 
 ### Tables and fields
 

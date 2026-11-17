@@ -36,6 +36,8 @@ urlpatterns = [
     # Designer: eigene Bausteine (vor den App-Adressen, damit „bausteine“ nicht als App gilt)
     path("designer/", designer.home, name="designer_home"),
     path("designer/import/", designer.app_import, name="designer_app_import"),
+    path("designer/einfuehrung/start/", designer.tutorial_start, name="tutorial_start"),
+    path("designer/einfuehrung/ende/", designer.tutorial_stop, name="tutorial_stop"),
     path("designer/bausteine/", designer.custom_blocks, name="designer_blocks"),
     path("designer/bausteine/neu/", designer.custom_block_edit, name="designer_block_new"),
     path("designer/bausteine/vorlage/", designer.preset_save, name="designer_preset_save"),

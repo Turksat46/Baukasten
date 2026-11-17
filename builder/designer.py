@@ -11,6 +11,7 @@ from django.core.exceptions import PermissionDenied
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
+from django.utils.http import url_has_allowed_host_and_scheme
 from django.utils.translation import gettext as _
 from django.views.decorators.http import require_POST
 
@@ -95,7 +96,12 @@ def entity_page(entity):
 
 @designer_required
 def home(request):
-    form = NewAppForm(request.POST or None)
+    from . import tutorial
+
+    # In der Einführung ist der erste Schritt schon vorausgefüllt.
+    coach = tutorial.state(request.user)
+    initial = {"name": "Urlaub", "icon": "🌴"} if coach and not coach["finished"] and coach["number"] == 1 else None
+    form = NewAppForm(request.POST or None, initial=initial)
     if request.method == "POST" and form.is_valid():
         app = form.save(commit=False)
         app.created_by = request.user
@@ -365,6 +371,29 @@ def page_delete(request, app, pk):
     get_object_or_404(Page, pk=pk, app__slug=app).delete()
     messages.success(request, _("Seite gelöscht."))
     return redirect("designer_app", app)
+
+
+# ---------- Einführung „Deine erste App“ ----------
+
+@designer_required
+@require_POST
+def tutorial_start(request):
+    from . import tutorial
+
+    tutorial.start(request.user)
+    messages.success(request, _("Los geht's! Der Begleiter unten rechts führt dich Schritt für Schritt."))
+    return redirect("designer_home")
+
+
+@login_required
+@require_POST
+def tutorial_stop(request):
+    from . import tutorial
+
+    tutorial.stop(request.user)
+    messages.success(request, _("Einführung beendet. Du kannst sie im Designer jederzeit neu starten."))
+    return redirect(request.POST.get("next") if url_has_allowed_host_and_scheme(
+        request.POST.get("next"), allowed_hosts={request.get_host()}) else "home")
 
 
 # ---------- Übersetzungen ----------

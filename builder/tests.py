@@ -1546,7 +1546,7 @@ class CollaborationTests(Base):
     def test_creator_is_owner_and_others_are_locked_out(self):
         self.assertEqual(self.urlaub.created_by, self.designer)
         self.assertFalse(self.can_open(self.kollegin))
-        self.assertNotContains(self.client.get(reverse("designer_home")), "Urlaub")
+        self.assertNotContains(self.client.get(reverse("designer_home")), reverse("designer_app", args=["urlaub"]))
         page = self.urlaub.pages.get()
         for url in (reverse("designer_page", args=["urlaub", page.pk]),
                     reverse("designer_script_new", args=["urlaub"]),
@@ -1838,6 +1838,92 @@ class TableauTests(Base):
         self.assertContains(response, " hide-tabs")
         self.assertNotContains(response, "<script>x</script>")  # Werte aus der Adresse werden maskiert
         self.assertNotContains(response, 'token="')
+
+
+class TutorialTests(Base):
+    """Einführung „Deine erste App“ (builder/tutorial.py): einmal komplett durchspielen."""
+
+    def coach(self):
+        return self.client.get(reverse("designer_home")).context["coach"]
+
+    def test_walkthrough_from_start_to_finish(self):
+        from .models import Script
+        from . import tutorial, versions
+        self.client.force_login(self.designer)
+        self.assertIsNone(self.coach())
+        self.assertContains(self.client.get(reverse("designer_home")), "Einführung starten")
+        self.client.post(reverse("tutorial_start"))
+
+        # 1: App anlegen – das Formular ist vorausgefüllt.
+        page = self.client.get(reverse("designer_home"))
+        self.assertEqual(page.context["coach"]["number"], 1)
+        self.assertEqual(page.context["form"].initial, {"name": "Urlaub", "icon": "🌴"})
+        self.assertContains(page, 'id="coach"')
+        self.client.post(reverse("designer_home"), {"name": "Urlaub", "description": "", "icon": "🌴"})
+        app = App.objects.get(slug="urlaub")
+        # 2: Tabelle
+        self.assertEqual(self.coach()["number"], 2)
+        self.client.post(reverse("designer_app", args=["urlaub"]), {
+            "kind": "entity", "entity-name": "Anträge", "entity-allow_create": "on", "entity-allow_edit": "on",
+            "entity-allow_delete": "on"})
+        entity = app.entities.get()
+        # 3: Felder
+        coach = self.coach()
+        self.assertEqual((coach["number"], coach["url"]), (3, reverse("designer_entity", args=["urlaub", entity.pk])))
+        Field.objects.create(entity=entity, label="Von", type=Field.DATE, required=True)
+        Field.objects.create(entity=entity, label="Bis", type=Field.DATE, required=True)
+        Field.objects.create(entity=entity, label="Tage", type=Field.NUMBER)
+        Field.objects.create(entity=entity, label="Status", type=Field.CHOICE, choices="offen\ngenehmigt\nabgelehnt")
+        # 4: Seite aus der Tabelle
+        self.assertEqual(self.coach()["number"], 4)
+        self.client.post(reverse("designer_entity_page", args=["urlaub", entity.pk]))
+        # 5: zwei Einträge in der App – der Begleiter zeigt auf die Liste
+        coach = self.coach()
+        self.assertEqual(coach["number"], 5)
+        self.assertContains(self.client.get(coach["url"]), 'data-tour="new-record"')
+        # 7 vorgezogen: Das Beispielskript rechnet Tage aus und setzt den Status.
+        Script.objects.create(app=app, name="Tage", slug="tage", trigger=Script.SAVE, entity=entity,
+                              code=tutorial.SCRIPT_EXAMPLE)
+        for von, bis in (("2026-08-04", "2026-08-15"), ("2026-12-23", "2026-12-23")):
+            self.client.post(reverse("record_create", args=["urlaub", entity.slug]),
+                             {"bezeichnung": "Urlaub", "von": von, "bis": bis})
+        first = entity.records.order_by("id").first()
+        self.assertEqual((first.data["tage"], first.data["status"]), (12, "offen"))
+        # 6: Startseite mit Kennzahl und Diagramm (Schritt 7 ist schon erledigt)
+        coach = self.coach()
+        self.assertEqual(coach["number"], 6)
+        self.assertTrue(coach["steps"][6]["done"])
+        home = app.home_page
+        home.layout = [make_block("stat", entity=entity.slug), make_block("donut", entity=entity.slug, field="status")]
+        home.save()
+        # 8: veröffentlichen, 9: Version
+        self.assertEqual(self.coach()["number"], 8)
+        app.published = True
+        app.save()
+        self.assertEqual(self.coach()["number"], 9)
+        versions.create_version(app, self.designer, "erste Fassung")
+        coach = self.coach()
+        self.assertTrue(coach["finished"])
+        self.assertEqual(coach["done_count"], 9)
+        self.assertContains(self.client.get(reverse("designer_home")), "Geschafft")
+        self.client.post(reverse("tutorial_stop"))
+        self.assertIsNone(self.coach())
+
+    def test_only_apps_after_start_count_and_users_without_design_see_nothing(self):
+        self.client.force_login(self.designer)
+        self.client.post(reverse("tutorial_start"))
+        self.assertIsNone(self.coach()["app"])  # die Demo-App von vorher zählt nicht
+        self.client.force_login(self.user)
+        self.assertIsNone(self.client.get(reverse("home")).context["coach"])
+        self.assertEqual(self.client.post(reverse("tutorial_start")).status_code, 403)
+
+    def test_coach_shows_link_or_highlight(self):
+        self.client.force_login(self.designer)
+        self.client.post(reverse("tutorial_start"))
+        self.assertContains(self.client.get(reverse("home")), "Hierhin")
+        here = self.client.get(reverse("designer_home"))
+        self.assertContains(here, "data-coach-show")
+        self.assertContains(here, 'data-target="[data-tour=new-app-form]"')
 
 
 class HomePageTests(Base):

@@ -40,6 +40,13 @@
     </section>
   </div>
   <div class="col col-4">
+    {% if not coach %}
+      <section class="card coach-invite">
+        <h3>🌴 {% translate "Neu hier?" %}</h3>
+        <p class="muted small">{% translate "Bau in etwa 20 Minuten deine erste App selbst: eine Urlaubsantrag-App mit Tabelle, Seiten, Auswertung, Skript und Freigabe. Ein Begleiter zeigt dir jeden Schritt." %}</p>
+        <form method="post" action="{% url 'tutorial_start' %}">{% csrf_token %}<button class="btn btn-secondary">{% translate "Einführung starten" %}</button></form>
+      </section>
+    {% endif %}
     <section class="card" data-tour="new-app-form">
       <h3>{% translate "Neue App" %}</h3>
       <form method="post" class="form">{% csrf_token %}{{ form.as_div }}<button class="btn">{% translate "Anlegen" %}</button></form>

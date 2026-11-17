@@ -158,5 +158,6 @@
     startButton.hidden = false;
     startButton.addEventListener("click", start);
   }
-  if (!alreadySeen()) window.setTimeout(start, 500);
+  // Läuft die Einführung „Deine erste App“, startet die Führung nicht von selbst dazwischen.
+  if (!alreadySeen() && !document.getElementById("coach")) window.setTimeout(start, 500);
 })();

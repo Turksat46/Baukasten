@@ -13,7 +13,7 @@ dem Sprachumschalter (**DE | EN**) wechselst du zur englischen Fassung.
 | Du willst … | Lies |
 |---|---|
 | eine fertige App benutzen | [1. Apps benutzen](#1-apps-benutzen), fünf Minuten |
-| deine erste eigene App bauen | [Schnellstart](#schnellstart-deine-erste-app-in-15-minuten), dann [2. Apps bauen](#2-apps-bauen) |
+| deine erste eigene App bauen | die [Einführung](#einführung-deine-erste-app) im Baukasten, oder [Schnellstart](#schnellstart-deine-erste-app-in-15-minuten), dann [2. Apps bauen](#2-apps-bauen) |
 | Daten aus einer Datenbank oder Databricks anzeigen | [Daten aus Datenbanken und Databricks](#daten-aus-datenbanken-und-databricks) |
 | mit einem anderen Programm auf Daten zugreifen | [API](#api) und die API-Dokumentation in der Oberfläche |
 | Tableau-Dashboards anzeigen | [Tableau](#tableau) |
@@ -109,7 +109,8 @@ Seiten brauchen keine Rechte an der App, nur dass sie veröffentlicht ist.
 ## Schnellstart: deine erste App in 15 Minuten
 
 Als Beispiel baust du eine App für Urlaubsanträge. Du brauchst das Recht
-„Designer“ (siehe [Rechte](#rechte)).
+„Designer“ (siehe [Rechte](#rechte)). Lieber mit Begleitung direkt in der
+Oberfläche? Dann starte die [Einführung](#einführung-deine-erste-app).
 
 **1. App anlegen (1 Minute).** Oben rechts „Designer“ öffnen. Unter „Neue App“
 den Namen *Urlaub* und ein Symbol, etwa 🌴, eintragen, „Anlegen“. Du landest in
@@ -253,6 +254,41 @@ oder zu denen du als Mitbearbeiter eingeladen bist.
    Löschen.
 
 Danach passt du Seiten im Seiten-Designer an und veröffentlichst die App.
+
+### Einführung: deine erste App
+
+Die Einführung führt dich in etwa 20 Minuten durch den Bau einer
+Urlaubsantrag-App, direkt im Baukasten statt nur im Handbuch. Du startest sie im
+Designer („Neu hier? → Einführung starten“) oder auf der Startseite im
+Schnellzugriff („Einführung“).
+
+Danach steht unten rechts ein **Begleiter**. Er sperrt nichts; du arbeitest ganz
+normal und er zeigt dir, was als Nächstes kommt:
+
+| # | Schritt | Was du lernst |
+|---|---|---|
+| 1 | App „Urlaub“ anlegen (Name und Symbol sind vorausgefüllt) | Apps anlegen |
+| 2 | Tabelle „Anträge“ anlegen | Tabellen |
+| 3 | Felder Von, Bis (Datum), Tage (Zahl), Status (Auswahl) | Feldtypen |
+| 4 | Seite aus der Tabelle erzeugen | fertige Listen-Seiten |
+| 5 | zwei Anträge in der App erfassen | die App aus Sicht der Nutzer |
+| 6 | Startseite mit Kennzahl und Diagramm | Seiten-Designer, Auswertungen |
+| 7 | Skript „nach dem Speichern“: Tage ausrechnen, Status „offen“ | Skripte (Code zum Kopieren ist dabei) |
+| 8 | veröffentlichen | Freigabe |
+| 9 | Version speichern | Versionen |
+
+- **„Hierhin“** springt zur Seite, auf der der Schritt passiert; dort zeigt
+  **„Zeig mir wo“** die Stelle und lässt sie kurz aufleuchten.
+- Ein Schritt **hakt sich von selbst ab**, sobald die App ihn enthält. Gezählt
+  wird, was in der App steht, nicht welche Knöpfe du gedrückt hast. Wer etwas in
+  anderer Reihenfolge macht, kommt trotzdem weiter.
+- Übungs-App ist die erste App, die du nach dem Start anlegst. Sie ist eine ganz
+  normale App: Du kannst sie behalten, umbauen oder löschen.
+- Am Ende schlägt der Begleiter nächste Schritte vor: Übersetzungen,
+  Mitbearbeiter, API und MCP. „Einführung beenden“ blendet ihn jederzeit aus;
+  im Designer lässt sie sich neu starten.
+- Solange die Einführung läuft, starten die kurzen Führungen der Seiten nicht
+  von selbst (das Fragezeichen oben rechts startet sie weiterhin).
 
 ### Tabellen und Felder
 

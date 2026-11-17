@@ -366,6 +366,26 @@ class ApiKey(models.Model):
         return obj, key
 
 
+class Tutorial(models.Model):
+    """Geführte Einführung „Deine erste App“ einer Person (siehe builder/tutorial.py).
+
+    Der Fortschritt wird nicht gespeichert, sondern bei jedem Aufruf aus dem Zustand
+    der App abgeleitet: Ein Schritt ist erledigt, sobald die App ihn enthält."""
+
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="tutorial")
+    app = models.ForeignKey(App, null=True, blank=True, on_delete=models.SET_NULL, related_name="+")
+    started_at = models.DateTimeField()
+    finished_at = models.DateTimeField(null=True, blank=True)
+    active = models.BooleanField(default=True)
+
+    class Meta:
+        verbose_name = _("Einführung")
+        verbose_name_plural = _("Einführungen")
+
+    def __str__(self):
+        return f"{self.user} – {self.app or '…'}"
+
+
 class AppVersion(models.Model):
     """Gespeicherter Stand einer App: Einstellungen, Tabellen, Felder und Seiten, ohne die Daten."""
 

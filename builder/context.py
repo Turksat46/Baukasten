@@ -1,4 +1,5 @@
 from functools import lru_cache
+from urllib.parse import urlparse
 
 from django.conf import settings
 from django.contrib.staticfiles import finders
@@ -28,8 +29,22 @@ def shell(request):
         name = user.get_full_name() or user.get_username()
     parts = name.replace(".", " ").replace("_", " ").split()
     initials = "".join(p[0] for p in parts[:2]).upper() or "?"
+    designer = can_design(user) if user is not None else False
+    coach = None
+    if designer and not request.path.startswith(("/admin/", "/api/", "/mcp/", "/skript-sandbox/")):
+        # Einmal je Anfrage: Bausteine werden einzeln mit diesem Kontext gerendert.
+        if not hasattr(request, "_baukasten_coach"):
+            from .tutorial import state
+
+            coach = state(user)
+            if coach and not coach["finished"]:
+                # Schon auf der Seite des Schritts? Dann „Zeig mir wo“ statt „Hierhin“.
+                coach["here"] = request.path == urlparse(coach["url"]).path
+            request._baukasten_coach = coach
+        coach = request._baukasten_coach
     return {
-        "can_design": can_design(user) if user is not None else False,
+        "can_design": designer,
+        "coach": coach,
         "display_name": name,
         "first_name": (user.first_name if user is not None and user.is_authenticated else "") or name,
         "initials": initials,

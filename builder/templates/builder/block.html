@@ -48,7 +48,7 @@
           </form>
         {% endif %}
         {% if entity.allow_create %}
-          <a class="btn" href="{% url 'record_create' app.slug entity.slug %}?next={{ next|urlencode }}">{% translate "Neu" %}</a>
+          <a class="btn" href="{% url 'record_create' app.slug entity.slug %}?next={{ next|urlencode }}" data-tour="new-record">{% translate "Neu" %}</a>
         {% endif %}
       </div>
     </div>

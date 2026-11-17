@@ -1,0 +1,43 @@
+{% load i18n baukasten %}
+<aside class="coach" id="coach" aria-label="{% translate 'Einführung: Deine erste App' %}" data-target="{{ coach.target|default:'' }}">
+  <div class="coach-head">
+    <span class="coach-badge" aria-hidden="true">🌴</span>
+    <div class="coach-head-text">
+      <strong>{% translate "Deine erste App" %}</strong>
+      <span class="muted small">{% blocktranslate with done=coach.done_count total=coach.total %}{{ done }} von {{ total }} erledigt{% endblocktranslate %}</span>
+    </div>
+    <button type="button" class="icon-btn coach-toggle" aria-expanded="true" aria-controls="coach-body" title="{% translate 'Ein- und ausklappen' %}">
+      <span aria-hidden="true">▾</span><span class="visually-hidden">{% translate "Ein- und ausklappen" %}</span>
+    </button>
+  </div>
+  <div class="coach-progress" aria-hidden="true">{% for s in coach.steps %}<span class="coach-dot{% if s.done %} done{% elif s.current %} current{% endif %}" title="{{ s.title }}"></span>{% endfor %}</div>
+  <div class="coach-body" id="coach-body">
+    {% if coach.finished %}
+      <p class="coach-step">{% translate "Geschafft! 🎉" %}</p>
+      <p>{% blocktranslate with name=coach.app.name %}Deine App „{{ name }}“ ist fertig: mit Tabelle, Seiten, Auswertung, Skript, veröffentlicht und gesichert.{% endblocktranslate %}</p>
+      <p><a class="btn btn-small" href="{{ coach.app_url }}">{% translate "App öffnen" %}</a></p>
+      <p class="muted small">{% translate "Wie es weitergehen kann:" %}</p>
+      <ul class="coach-ideas">{% for idea in coach.ideas %}<li><a href="{{ idea.url }}">{{ idea.title }}</a> – {{ idea.text }}</li>{% endfor %}</ul>
+    {% else %}
+      <p class="coach-step">{% blocktranslate with n=coach.number total=coach.total %}Schritt {{ n }} von {{ total }}{% endblocktranslate %}</p>
+      <h2 class="coach-title">{{ coach.title }}</h2>
+      <p class="coach-text">{{ coach.text }}</p>
+      {% if coach.code %}
+        <pre class="coach-code" id="coach-code">{{ coach.code }}</pre>
+        <button type="button" class="btn btn-secondary btn-small" data-coach-copy>{% translate "Code kopieren" %}</button>
+      {% endif %}
+      <div class="coach-actions">
+        {% if coach.here %}
+          <button type="button" class="btn btn-small" data-coach-show>{% translate "Zeig mir wo" %}</button>
+        {% else %}
+          <a class="btn btn-small" href="{{ coach.url }}">{% translate "Hierhin" %} →</a>
+        {% endif %}
+      </div>
+      <p class="muted small coach-note">{% translate "Der Schritt hakt sich von selbst ab, sobald er erledigt ist. Danach die Seite neu laden oder weiterklicken." %}</p>
+    {% endif %}
+    <form method="post" action="{% url 'tutorial_stop' %}" class="coach-stop">
+      {% csrf_token %}<input type="hidden" name="next" value="{{ request.get_full_path }}">
+      <button class="link small">{% if coach.finished %}{% translate "Begleiter schließen" %}{% else %}{% translate "Einführung beenden" %}{% endif %}</button>
+    </form>
+  </div>
+</aside>

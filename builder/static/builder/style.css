@@ -206,6 +206,43 @@ legend { font-weight: 600; font-size: .88rem; padding: 0 .3rem; }
 .quick-link:hover { border-color: var(--accent); text-decoration: none; }
 .quick-link > span:last-child { display: flex; flex-direction: column; }
 .quick-icon { display: grid; place-items: center; flex: none; width: 36px; height: 36px; border-radius: 10px; background: var(--surface-2); font-size: 1.1rem; }
+.quick-link-form { margin: 0; display: contents; }
+button.quick-link { font: inherit; text-align: left; cursor: pointer; width: 100%; }
+
+/* ---------- Einführung „Deine erste App“: Begleiter unten rechts ---------- */
+.coach { position: fixed; right: 1rem; bottom: 1rem; z-index: 40; width: 360px; max-width: calc(100vw - 2rem);
+  max-height: calc(100vh - 6rem); display: flex; flex-direction: column;
+  background: var(--surface); border: 1px solid var(--accent); border-radius: var(--radius-lg);
+  box-shadow: 0 14px 40px -12px var(--shadow); }
+.coach-head { display: flex; align-items: center; gap: .7rem; padding: .75rem .9rem .5rem; }
+.coach-badge { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 10px; background: var(--accent-soft); font-size: 1.1rem; flex: none; }
+.coach-head-text { display: flex; flex-direction: column; flex: 1; min-width: 0; line-height: 1.25; }
+.coach-toggle span[aria-hidden] { display: inline-block; transition: transform .15s; }
+.coach.collapsed .coach-toggle span[aria-hidden] { transform: rotate(180deg); }
+.coach-progress { display: flex; gap: 4px; padding: 0 .9rem .6rem; }
+.coach-dot { flex: 1; height: 5px; border-radius: 3px; background: var(--line); }
+.coach-dot.done { background: var(--ok); }
+.coach-dot.current { background: var(--accent); }
+.coach-body { padding: 0 .9rem .8rem; overflow-y: auto; }
+.coach.collapsed .coach-body { display: none; }
+.coach-step { margin: 0; color: var(--accent-strong); font-size: .78rem; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
+.coach-title { font-size: 1.05rem; margin: .15rem 0 .35rem; }
+.coach-text { margin: 0 0 .7rem; }
+.coach-code { font-size: .78rem; max-height: 180px; overflow: auto; margin: 0 0 .5rem; }
+.coach-actions { display: flex; gap: .5rem; flex-wrap: wrap; margin: .6rem 0 .4rem; }
+.coach-note { margin: .2rem 0 .4rem; }
+.coach-ideas { margin: .2rem 0 .6rem; padding-left: 1.1rem; }
+.coach-stop { margin: .2rem 0 0; }
+@media (max-width: 720px) {
+  .coach { left: .5rem; right: .5rem; bottom: .5rem; width: auto; max-width: none; max-height: 55vh; }
+}
+/* Platz unter dem Inhalt, damit nichts dauerhaft unter dem Begleiter liegt */
+body:has(#coach) main { padding-bottom: 16rem; }
+body:has(#coach.collapsed) main { padding-bottom: 6rem; }
+/* Ziel des aktuellen Schritts kurz aufleuchten lassen */
+.coach-glow { outline: 3px solid var(--accent); outline-offset: 4px; border-radius: var(--radius); animation: coach-pulse 1.4s ease-out 3; }
+@keyframes coach-pulse { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 55%, transparent); } 100% { box-shadow: 0 0 0 14px transparent; } }
+@media (prefers-reduced-motion: reduce) { .coach-glow { animation: none; } }
 
 /* ---------- Anmeldung ---------- */
 .login { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); min-height: 100vh; }

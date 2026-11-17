@@ -76,6 +76,15 @@
     <span class="quick-icon" aria-hidden="true">🔌</span>
     <span><strong>{% translate "API-Dokumentation" %}</strong><span class="muted small">{% translate "Schnittstellen deiner Apps" %}</span></span>
   </a>
+  {% if can_design and not coach %}
+    <form method="post" action="{% url 'tutorial_start' %}" class="quick-link-form">
+      {% csrf_token %}
+      <button class="quick-link">
+        <span class="quick-icon" aria-hidden="true">🌴</span>
+        <span><strong>{% translate "Einführung" %}</strong><span class="muted small">{% translate "Deine erste App, Schritt für Schritt" %}</span></span>
+      </button>
+    </form>
+  {% endif %}
   {% if can_design %}
     <a class="quick-link" href="{% url 'designer_blocks' %}">
       <span class="quick-icon" aria-hidden="true">🧩</span>

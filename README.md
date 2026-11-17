@@ -59,6 +59,9 @@ Kubernetes.
 - **Standardgruppe „Viewer“** für jede Person (einstellbar über `DEFAULT_USER_GROUPS`).
 - **Handbuch in der Oberfläche** unter „Hilfe“ (Quelle: `docs/HANDBUCH.md`).
 
+**Neu im Baukasten?** Im Designer startet „Einführung“ einen Begleiter, mit dem du
+in etwa 20 Minuten deine erste App selbst baust.
+
 ## In fünf Minuten starten
 
 Voraussetzung: Python 3.10 oder neuer.
