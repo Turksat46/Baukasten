@@ -1,4 +1,8 @@
-# Baukasten
+<p align="center">
+  <img src="builder/static/builder/logo.svg" alt="Baukasten-Logo" width="96" height="96">
+</p>
+
+<h1 align="center">Baukasten</h1>
 
 Ein App-Baukasten auf Basis von Django. Fachabteilungen bauen interne Apps im
 Browser zusammen, Entwickler ergänzen bei Bedarf Logik in Python. Läuft auf
