@@ -9,6 +9,10 @@ updates:
       interval: weekly
       day: monday
     open-pull-requests-limit: 5
+    # requirements.txt nennt Bereiche (z. B. Django>=5.2,<6.0). Nur melden, wenn eine neue Version
+    # außerhalb des Bereichs liegt, statt bei jeder Version die Untergrenze anzuheben.
+    # Sicherheitsupdates kommen davon unabhängig.
+    versioning-strategy: increase-if-necessary
     groups:
       django:
         patterns: ["django", "django-*", "mozilla-django-oidc"]
@@ -19,6 +23,8 @@ updates:
     ignore:
       # Neue Django-Hauptversionen bewusst von Hand einplanen (Django-Versionshinweise lesen)
       - dependency-name: django
+        update-types: [version-update:semver-major]
+      - dependency-name: Django   # so steht es in requirements.txt
         update-types: [version-update:semver-major]
 
   - package-ecosystem: docker
