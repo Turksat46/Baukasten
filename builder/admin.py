@@ -19,8 +19,8 @@ from django.utils.html import format_html, format_html_join
 from django.utils.translation import gettext_lazy as _
 
 from .blocks import display_value, reference_labels
-from .models import (ApiKey, App, AppVersion, CustomBlock, DataQuery, Entity, Field, Page, Record, Script,
-                     ScriptRun, UnicodeJSONEncoder)
+from .models import (ApiKey, App, AppVersion, CustomBlock, DataQuery, DesignerToken, Entity, Field, Page, Record,
+                     Script, ScriptRun, UnicodeJSONEncoder)
 
 admin.site.site_header = "Baukasten – Verwaltung"
 admin.site.site_title = "Baukasten"
@@ -345,6 +345,20 @@ class ApiKeyAdmin(admin.ModelAdmin):
 
     def has_add_permission(self, request):
         return False  # Schlüssel entstehen im Designer, damit der Klartext einmal angezeigt wird
+
+
+@admin.register(DesignerToken)
+class DesignerTokenAdmin(admin.ModelAdmin):
+    """KI-Zugänge zum Designer: Verwalter können fremde Zugänge im Notfall löschen."""
+
+    list_display = ["name", "user", "prefix", "created_at", "last_used"]
+    list_select_related = ["user"]
+    search_fields = ["name", "prefix", "user__username"]
+    readonly_fields = ["user", "prefix", "created_at", "last_used"]
+    exclude = ["key_hash"]
+
+    def has_add_permission(self, request):
+        return False  # entstehen auf der Profilseite, damit der Klartext einmal angezeigt wird
 
 
 @admin.register(AppVersion)

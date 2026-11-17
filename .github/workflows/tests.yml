@@ -1,0 +1,87 @@
+# Prüft jede Änderung automatisch: Tests mit SQLite und PostgreSQL, fehlende Migrationen,
+# und ob das Docker-Image baut. Ergebnis steht im Pull Request bzw. unter „Actions“.
+name: Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  tests:
+    name: Tests (Python ${{ matrix.python }}, ${{ matrix.database }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {python: "3.13", database: postgres}
+          - {python: "3.13", database: sqlite}
+          - {python: "3.10", database: sqlite}   # älteste unterstützte Version (README)
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: baukasten
+          POSTGRES_PASSWORD: baukasten
+          POSTGRES_DB: baukasten
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U baukasten"
+          --health-interval 5s --health-timeout 5s --health-retries 20
+    env:
+      DEBUG: "1"
+      PYTHONUNBUFFERED: "1"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            requirements-automation.txt
+
+      - name: Abhängigkeiten installieren
+        run: pip install -r requirements.txt -r requirements-automation.txt
+
+      - name: Datenbank wählen
+        if: matrix.database == 'postgres'
+        run: echo "DATABASE_URL=postgres://baukasten:baukasten@localhost:5432/baukasten" >> "$GITHUB_ENV"
+
+      - name: Django-Prüfungen
+        run: python manage.py check
+
+      - name: Keine vergessenen Migrationen
+        run: python manage.py makemigrations --check --dry-run
+
+      - name: Tests
+        run: python manage.py test builder --noinput
+
+  docker:
+    name: Docker-Image baut
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Image bauen
+        run: docker build -t baukasten:ci .
+      - name: Image startet und antwortet auf /healthz
+        run: |
+          docker run -d --name baukasten -p 8000:8000 -e SECRET_KEY=nur-fuer-ci baukasten:ci
+          for i in $(seq 1 30); do
+            if curl -fsS http://localhost:8000/healthz; then exit 0; fi
+            sleep 2
+          done
+          docker logs baukasten
+          exit 1

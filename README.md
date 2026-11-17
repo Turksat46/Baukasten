@@ -8,6 +8,8 @@ Ein App-Baukasten auf Basis von Django. Fachabteilungen bauen interne Apps im
 Browser zusammen, Entwickler ergänzen bei Bedarf Logik in Python. Läuft auf
 Kubernetes.
 
+[![Tests](https://github.com/Turksat46/Baukasten/actions/workflows/tests.yml/badge.svg)](https://github.com/Turksat46/Baukasten/actions/workflows/tests.yml)
+
 **Die vollständige Dokumentation steht in [docs/HANDBUCH.md](docs/HANDBUCH.md)**
 (englische Kurzfassung: [docs/HANDBOOK.en.md](docs/HANDBOOK.en.md)).
 
@@ -121,11 +123,15 @@ an. Einzelheiten im Handbuch unter „Lokal mit Kubernetes“.
 | Farben und Schrift | `builder/static/builder/theme.css` |
 | Beispiele für Erweiterungen | `extensions/beispiel.py` |
 | Kubernetes-Manifeste | `k8s/` |
+| Aufbau, Abläufe, Diagramme | `docs/TECHNISCHE_DOKUMENTATION.md` |
+| Betrieb: Zuständigkeiten, Updates, Sicherung, Störfälle, Alarme | `docs/BETRIEB.md` |
+| Warum etwas so gebaut ist | `docs/adr/` |
+| Was sich geändert hat | `CHANGELOG.md` |
 
 ## Stand
 
-Lauffähiger Prototyp. Getestet mit SQLite (203 automatische Tests, Durchläufe im
-Browser). Docker-Build und die lokalen Manifeste laufen auf Kubernetes in Docker
+Version 1.0.0 (siehe `CHANGELOG.md`). 205 automatische Tests laufen bei jeder Änderung
+in GitHub Actions gegen SQLite und PostgreSQL, dazu Durchläufe im Browser. Docker-Build und die lokalen Manifeste laufen auf Kubernetes in Docker
 Desktop mit PostgreSQL 16. Nicht getestet: ein echter Produktions-Cluster (Ingress,
 TLS), der vollständige Login gegen einen echten Keycloak und Verbindungen zu
 echten Datenbanken außer SQLite und PostgreSQL, auch nicht zu Databricks. Alle

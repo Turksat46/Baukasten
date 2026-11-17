@@ -60,7 +60,10 @@ ALIVE_FILE = os.path.join(tempfile.gettempdir(), "baukasten-worker-alive")
 
 
 def alive():
-    """Lebenszeichen für die livenessProbe in k8s/worker.yaml."""
+    """Lebenszeichen für die livenessProbe in k8s/worker.yaml und für /metrics (baukasten_worker_up)."""
+    from ..metrics import worker_heartbeat
+
+    worker_heartbeat()
     try:
         with open(ALIVE_FILE, "a", encoding="utf-8"):
             pass

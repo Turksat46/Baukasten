@@ -170,6 +170,10 @@ BAUKASTEN_AUTOMATION_MEMORY_MB = int(os.environ.get("AUTOMATION_MEMORY_MB", "204
 BAUKASTEN_AUTOMATION_MAX_TIMEOUT_MINUTES = int(os.environ.get("AUTOMATION_MAX_TIMEOUT_MINUTES", "240"))
 BAUKASTEN_AUTOMATION_MAX_CALLS = int(os.environ.get("AUTOMATION_MAX_CALLS", "0"))
 
+# Version (siehe CHANGELOG.md) und Überwachung: /metrics nur mit METRICS_TOKEN (sonst 404)
+BAUKASTEN_VERSION = "1.0.0"
+BAUKASTEN_METRICS_TOKEN = os.environ.get("METRICS_TOKEN", "")
+
 # KI-Zugang zum Designer (/mcp/designer/): Änderungen je persönlichem Schlüssel in 10 Minuten (0 = keine Grenze)
 BAUKASTEN_AI_WRITES = int(os.environ.get("AI_WRITES", "30"))
 

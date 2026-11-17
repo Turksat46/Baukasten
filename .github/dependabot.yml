@@ -1,0 +1,36 @@
+# Automatische Updates: Dependabot öffnet Pull Requests für neue Versionen der Abhängigkeiten.
+# Die CI (.github/workflows/tests.yml) prüft jeden davon. Sicherheitsupdates kommen sofort,
+# alles andere einmal pro Woche, gebündelt. Wer zuständig ist: docs/BETRIEB.md, „Regelmäßige Aufgaben“.
+version: 2
+updates:
+  - package-ecosystem: pip
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    groups:
+      django:
+        patterns: ["django", "django-*", "mozilla-django-oidc"]
+      sonstige:
+        patterns: ["*"]
+        exclude-patterns: ["django", "django-*", "mozilla-django-oidc"]
+        update-types: [minor, patch]
+    ignore:
+      # Neue Django-Hauptversionen bewusst von Hand einplanen (Django-Versionshinweise lesen)
+      - dependency-name: django
+        update-types: [version-update:semver-major]
+
+  - package-ecosystem: docker
+    directory: "/"
+    schedule:
+      interval: weekly
+    ignore:
+      # Python-Minor-Wechsel (3.13 -> 3.14) bewusst von Hand
+      - dependency-name: python
+        update-types: [version-update:semver-minor]
+
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: monthly

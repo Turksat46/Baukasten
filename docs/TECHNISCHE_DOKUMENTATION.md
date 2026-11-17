@@ -840,6 +840,7 @@ Datenbankverbindungen ≈ `Pods × GUNICORN_WORKERS × GUNICORN_THREADS` plus Wo
 | `AUTOMATION_PARALLEL`, `AUTOMATION_MEMORY_MB` | `4`, `2048` | Worker |
 | `AUTOMATION_MAX_TIMEOUT_MINUTES`, `AUTOMATION_MAX_CALLS` | `240`, `0` | Worker |
 | `SCRIPT_SECRET_<NAME>` | – | Geheimnis für Automatisierungen (nur Worker) |
+| `METRICS_TOKEN` | – | Schlüssel für `/metrics`; leer = abgeschaltet |
 | `AI_WRITES` | `30` | Änderungen je KI-Zugang in 10 Minuten |
 | `PUBLIC_RATE` | `120` | Anfragen von Gästen je Adresse und Minute |
 | `DATASOURCE_<NAME>` | – | externe Datenquelle |

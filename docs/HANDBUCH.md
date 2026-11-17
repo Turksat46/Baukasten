@@ -1295,6 +1295,7 @@ Alles Umgebungsabhängige kommt aus Umgebungsvariablen.
 | `AUTOMATION_MAX_CALLS` | Befehle (`app.table`, `db`, `secret`) je Lauf, Standard 0 = unbegrenzt |
 | `SCRIPT_SECRET_<NAME>` | Geheimnis für Automatisierungen, im Skript `secret("NAME")`; nur im Hintergrunddienst setzen |
 | `REDIS_PASSWORD` | Passwort für Redis aus `k8s/redis.yaml` |
+| `METRICS_TOKEN` | Schlüssel für `/metrics` (Kennzahlen für Prometheus, siehe docs/BETRIEB.md); leer = abgeschaltet |
 | `AI_WRITES` | Änderungen je KI-Zugang in 10 Minuten (`/mcp/designer/`), Standard 30, 0 = keine Grenze |
 | `PUBLIC_RATE` | Anfragen von Gästen auf öffentlichen Seiten je Adresse und Minute, Standard 120, 0 = keine Grenze |
 | `TABLEAU_HOSTS`, `TABLEAU_CONNECTED_APP_*`, `TABLEAU_USER_ATTRIBUTE` | Tableau einbetten, siehe [Tableau](#tableau) |
@@ -1744,7 +1745,7 @@ Als Verwalter unter `/admin/` → bei der App „Daten ansehen“.
 
 ## Grenzen des jetzigen Stands
 
-- **Getestet** mit SQLite: 203 automatische Tests und Durchläufe im Browser
+- **Getestet** mit SQLite: 205 automatische Tests und Durchläufe im Browser
   (Chrome), darunter Python- und JavaScript-Skripte, Live-Anzeige und Spiegeln
   mit einer SQLite-Datenquelle sowie die Python-Bibliothek gegen einen echten
   Server. Mit PostgreSQL (für den Baukasten und als Datenquelle) und gunicorn

@@ -26,4 +26,8 @@ class HealthCheckMiddleware:
     def __call__(self, request):
         if request.path == "/healthz":
             return HttpResponse("ok", content_type="text/plain")
+        if request.path == "/metrics":  # Prometheus fragt Pods direkt ab, ohne bekannten Hostnamen
+            from .metrics import response
+
+            return response(request)
         return self.get_response(request)

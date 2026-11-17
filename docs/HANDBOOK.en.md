@@ -1291,6 +1291,7 @@ Everything environment-specific comes from environment variables.
 | `AUTOMATION_MAX_CALLS` | commands (`app.table`, `db`, `secret`) per run, default 0 = unlimited |
 | `SCRIPT_SECRET_<NAME>` | secret for automations, `secret("NAME")` in the script; set only in the background service |
 | `REDIS_PASSWORD` | password for the Redis from `k8s/redis.yaml` |
+| `METRICS_TOKEN` | key for `/metrics` (metrics for Prometheus, see docs/BETRIEB.md); empty = switched off |
 | `AI_WRITES` | changes per AI access in 10 minutes (`/mcp/designer/`), default 30, 0 = no limit |
 | `PUBLIC_RATE` | guest requests on public pages per address and minute, default 120, 0 = no limit |
 | `TABLEAU_HOSTS`, `TABLEAU_CONNECTED_APP_*`, `TABLEAU_USER_ATTRIBUTE` | embedding Tableau, see [Tableau](#tableau) |
@@ -1712,7 +1713,7 @@ Select **DE** in the language switch in the top right. The choice is remembered.
 
 ## Current limitations
 
-- **Tested** with SQLite: 203 automated tests and runs in the browser (Chrome),
+- **Tested** with SQLite: 205 automated tests and runs in the browser (Chrome),
   including Python and JavaScript scripts, live display and mirroring with a
   SQLite data source, and the Python library against a real server. With
   PostgreSQL (for Baukasten and as a data source) and gunicorn as in the

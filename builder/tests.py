@@ -657,10 +657,12 @@ class PythonScriptTests(Base):
             'app.table("gerate").create(kategorie="falsch")': "bezeichnung",
             'http.get_json("https://intern.example/x")': "nicht freigegeben",
             'db.query("lager", "SELECT 1")': "nicht eingerichtet",
-            "for i in range(2000):\n    app.table(\"gerate\").count()": "Zu viele Zugriffe",
+            # Grenze im Test klein, damit das Zeitlimit auch bei langsamer Datenbank nicht zuerst greift
+            "for i in range(200):\n    app.table(\"gerate\").count()": "Zu viele Zugriffe",
         }
         for code, expected in cases.items():
-            result = self.run_code(code)
+            with override_settings(BAUKASTEN_SCRIPT_MAX_CALLS=50):
+                result = self.run_code(code)
             self.assertFalse(result.ok, code)
             self.assertIn(expected, result.error_text(), code)
         timed = self.run_code("while True:\n    pass", timeout=1.5)
@@ -2856,3 +2858,41 @@ class AiDesignerTests(TestCase):
         self.client.force_login(self.designer)
         self.client.post(reverse("profile_ai_token_delete", args=[token.pk]))
         self.assertFalse(DesignerToken.objects.filter(pk=token.pk).exists())
+
+
+class MetricsTests(TestCase):
+    """Überwachung: /metrics im Prometheus-Format (builder/metrics.py)."""
+
+    def test_hidden_without_token_and_needs_bearer(self):
+        with override_settings(BAUKASTEN_METRICS_TOKEN=""):
+            self.assertEqual(self.client.get("/metrics").status_code, 404)
+        with override_settings(BAUKASTEN_METRICS_TOKEN="geheim"):
+            self.assertEqual(self.client.get("/metrics").status_code, 401)
+            self.assertEqual(self.client.get("/metrics", HTTP_AUTHORIZATION="Bearer falsch").status_code, 401)
+            # Antwortet auch ohne bekannten Hostnamen (Prometheus fragt Pods direkt ab)
+            ok = self.client.get("/metrics", HTTP_AUTHORIZATION="Bearer geheim", HTTP_HOST="10.1.2.3:8000")
+            self.assertEqual(ok.status_code, 200)
+            self.assertIn("text/plain", ok["Content-Type"])
+
+    @override_settings(BAUKASTEN_METRICS_TOKEN="geheim")
+    def test_values(self):
+        from django.core.cache import cache
+        from django.utils import timezone
+        from .models import Script, ScriptRun
+        from .scripting.worker import alive
+        cache.clear()
+        auto = App.objects.create(name="Nacht", kind=App.AUTOMATION)
+        script = Script.objects.create(app=auto, name="Lauf", trigger="manual", code="pass",
+                                       running_since=timezone.now(), heartbeat_at=timezone.now())
+        ScriptRun.objects.create(script=script, trigger="manual", status="error", ok=False)
+        get = lambda: self.client.get("/metrics", HTTP_AUTHORIZATION="Bearer geheim").content.decode()
+        text = get()
+        self.assertIn('baukasten_info{version="', text)
+        self.assertIn('baukasten_apps{kind="automation"} 1', text)
+        self.assertIn("baukasten_automation_running 1", text)
+        self.assertIn('baukasten_script_runs_failed_24h{kind="automation"} 1', text)
+        self.assertIn("baukasten_worker_up 0", text)          # noch kein Lebenszeichen
+        self.assertIn("baukasten_worker_heartbeat_age_seconds -1", text)
+        alive()
+        self.assertIn("baukasten_worker_up 1", get())
+        self.assertEqual(text.count("# TYPE baukasten_apps gauge"), 1)
