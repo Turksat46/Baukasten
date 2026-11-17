@@ -23,7 +23,7 @@ from django.utils.translation import get_language
 _current = contextvars.ContextVar("baukasten_app_translations", default={})
 
 # Einstellungen von Bausteinen, die Adressen oder Pfade enthalten, nie Text für Menschen.
-NOT_TEXT = {"url", "path", "param"}
+NOT_TEXT = {"url", "path", "param", "filters"}
 MAX_TEXT = 5000
 
 

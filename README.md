@@ -15,8 +15,8 @@ Kubernetes.
 
 - **Daten → fertige App:** Tabellen und Felder festlegen, daraus entsteht per
   Klick eine Seite mit Liste, Suche, Anlegen, Bearbeiten und Löschen.
-- **Seiten-Designer:** 22 Bausteine per Drag-and-drop, mit Vorschau auf echten
-  Daten (Listen, Karten, Formulare, Kennzahlen, Diagramme, Verlauf, Export,
+- **Seiten-Designer:** 24 Bausteine per Drag-and-drop, mit Vorschau auf echten
+  Daten (Listen, Karten, Formulare, Kennzahlen, Diagramme, Liniendiagramme, Verlauf, Export,
   Eingabefelder …).
 - **Öffentliche Seiten:** einzelne Seiten „ohne Anmeldung erreichbar“ machen, etwa
   für Anmeldeformulare oder Einwilligungen von Externen. Gäste dürfen nur
@@ -38,6 +38,8 @@ Kubernetes.
   dem Server, JavaScript in einer Sandbox im Browser. Python-Skripte haben
   außerdem `session` (Merkzettel je Besucher, auch ohne Konto) und `token()`
   für geheime Links.
+- **Tableau:** Dashboards von Tableau Server oder Tableau Cloud einbetten, mit
+  Filtern aus der Seite und optionaler Anmeldung über eine Connected App.
 - **Datenbanken und Databricks:** lesende Abfragen live anzeigen (mit
   automatischer Aktualisierung) oder regelmäßig in eine Tabelle spiegeln.
 - **Python-Bibliothek** `baukasten-client` für die API, mit denselben Befehlen

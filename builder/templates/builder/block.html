@@ -197,6 +197,42 @@
     </div>
   </section>
 
+{% elif type == "tableau" %}
+  <section class="card tableau-card">
+    {% if p.label %}<div class="card-head"><h3 data-slot="label">{{ p.label }}</h3></div>{% endif %}
+    <script type="module" src="{{ script_url }}"></script>
+    <tableau-viz src="{{ src }}" width="100%" height="{{ height }}" toolbar="{{ toolbar }}"{% if p.hide_tabs %} hide-tabs{% endif %}{% if token %} token="{{ token }}"{% endif %}>
+      {% for f in filters %}<viz-filter field="{{ f.field }}" value="{{ f.value }}"></viz-filter>{% endfor %}
+    </tableau-viz>
+    <p class="muted small tableau-hint">{% blocktranslate %}Lädt das Dashboard nicht, prüfe die Anmeldung bei Tableau oder öffne es <a href="{{ src }}" target="_blank" rel="noopener">direkt in Tableau</a>.{% endblocktranslate %}</p>
+  </section>
+
+{% elif type == "line" %}
+  <section class="card">
+    <div class="card-head">
+      <h3 data-slot="label">{{ p.label }}</h3>
+      <span class="muted small">{% blocktranslate %}nach {{ basis }}{% endblocktranslate %}</span>
+    </div>
+    <div class="line-chart">
+      <div class="line-top muted small">{{ max }}{% if p.unit %} {{ p.unit }}{% endif %}</div>
+      <div class="line-plot">
+        <svg viewBox="0 0 {{ width }} {{ height }}" preserveAspectRatio="none" aria-hidden="true" focusable="false">
+          <line x1="0" y1="0" x2="{{ width }}" y2="0" class="line-grid"/>
+          <line x1="0" y1="{{ height }}" x2="{{ width }}" y2="{{ height }}" class="line-grid"/>
+          {% if area %}<polygon points="{{ area }}" class="line-area"/>{% endif %}
+          {% if line %}<polyline points="{{ line }}" class="line-path"/>{% endif %}
+        </svg>
+        <div class="line-hits">{% for e in entries %}<span title="{{ e.title }}"></span>{% endfor %}</div>
+        {% if empty %}<p class="line-empty muted small">{% translate "Im gewählten Zeitraum gibt es noch keine Werte." %}</p>{% endif %}
+      </div>
+      <div class="line-labels" aria-hidden="true">{% for e in entries %}<span>{{ e.label }}</span>{% endfor %}</div>
+    </div>
+    <table class="visually-hidden">
+      <caption>{{ p.label }}</caption>
+      <tbody>{% for e in entries %}<tr><th scope="row">{{ e.full }}</th><td>{{ e.value }}{% if p.unit %} {{ p.unit }}{% endif %}</td></tr>{% endfor %}</tbody>
+    </table>
+  </section>
+
 {% elif type == "button" %}
   <div class="button-block{% if p.align == 'right' %} align-right{% endif %}">
   {% if js_script %}

@@ -84,7 +84,7 @@ one value per line; reference fields connect entries from different tables.
 ### Page designer and blocks
 
 The page designer arranges blocks on a page. Available blocks include tables,
-forms, metrics, charts, images, links, exports, and web requests. Configure
+forms, metrics, charts, line charts, images, links, exports, and web requests. Configure
 each block in the designer and use the preview before publishing.
 
 ### Scripts
@@ -216,6 +216,22 @@ Authorization: Bearer bk_...
 The interactive API documentation is available from **API documentation**.
 The OpenAPI document can be imported into Postman, Insomnia, or a code
 generator. API responses use JSON and field short names.
+
+### Tableau
+
+The **Tableau view** block embeds a dashboard from your Tableau Server or
+Tableau Cloud using Tableau's Embedding API v3. Enter the dashboard address
+(e.g. `https://tableau.company.com/views/Plants/Overview`), optionally a title,
+height, toolbar position, and filters, one per line as `Field = Value`;
+`{name}` takes the value from the page address (`?name=…`).
+
+Without further setup, users sign in to Tableau themselves. With a Tableau
+**Connected App** (Direct Trust), Baukasten signs signed-in users in with a
+5-minute embed-only token. Operators set `TABLEAU_HOSTS` (allowed servers),
+optionally `TABLEAU_CONNECTED_APP_CLIENT_ID`, `TABLEAU_CONNECTED_APP_SECRET_ID`,
+`TABLEAU_CONNECTED_APP_SECRET_VALUE` (keep it in the Secret), and
+`TABLEAU_USER_ATTRIBUTE` (`email` or `username`). Tableau views are not shown on
+public pages.
 
 ### MCP server
 

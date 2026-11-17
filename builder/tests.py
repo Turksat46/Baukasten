@@ -617,7 +617,8 @@ class LanguageTests(Base):
 class BrandTests(TestCase):
     def test_logo_slot(self):
         from . import context
-        self.assertNotContains(self.client.get(reverse("login")), "brand-logo")
+        with mock.patch.object(context, "brand_logo", return_value=""):  # unabhängig von einer echten Logodatei
+            self.assertNotContains(self.client.get(reverse("login")), "brand-logo")
         with mock.patch.object(context, "brand_logo", return_value="builder/logo.svg"):
             self.assertContains(self.client.get(reverse("login")), 'class="brand-logo"')
 
@@ -1725,6 +1726,118 @@ class AppTranslationTests(Base):
         self.assertEqual(result.log[0], "en Devices unbekannt")
         with translation.override("de"):
             self.assertEqual(run(code, self.app, user=self.user).log[0], "de Geräte unbekannt")
+
+
+class LineChartTests(Base):
+    """Baustein „Liniendiagramm“."""
+
+    def render(self, **props):
+        from .blocks import prep_line
+        from django.test import RequestFactory
+        return prep_line(RequestFactory().get("/"), self.app, make_block("line", entity=self.entity.slug, **props))
+
+    def test_count_by_created_date_per_month(self):
+        ctx = self.render()
+        self.assertEqual(len(ctx["entries"]), 12)
+        # Alle Demo-Einträge sind gerade erst angelegt: Sie zählen im aktuellen Monat.
+        self.assertEqual(ctx["entries"][-1]["value"], str(self.entity.records.count()))
+        self.assertEqual(ctx["basis"], "Erfassungsdatum")
+        self.assertTrue(ctx["line"])
+        self.assertFalse(ctx["empty"])
+
+    def test_sum_and_avg_by_date_field(self):
+        from datetime import date
+
+        from django.utils.formats import date_format, number_format
+        total = sum(r.data["preis"] for r in self.entity.records.all() if r.data.get("anschaffung") == months_ago(1))
+        ctx = self.render(date_field="anschaffung", aggregate="sum", field="preis", unit="€")
+        month = date_format(date.fromisoformat(months_ago(1)), "F Y")
+        entry = next(e for e in ctx["entries"] if e["full"] == month)
+        self.assertEqual(entry["value"], number_format(total, decimal_pos=2, use_l10n=True, force_grouping=True))
+        self.assertIn("€", entry["title"])
+        avg = self.render(date_field="anschaffung", aggregate="avg", field="preis")
+        self.assertIn("–", [e["value"] for e in avg["entries"]])  # Monate ohne Einträge haben keinen Durchschnitt
+
+    def test_periods_and_limits(self):
+        days = self.render(period="day", count=500)
+        self.assertEqual(len(days["entries"]), 90)
+        weeks = self.render(period="week", count=8)
+        self.assertEqual(len(weeks["entries"]), 8)
+        self.assertTrue(weeks["entries"][-1]["full"].startswith("KW"))
+
+    def test_errors_and_page_render(self):
+        self.assertIn("Zahlenfeld", self.render(aggregate="sum", field="bezeichnung")["error"])
+        page = Page.objects.create(app=self.app, title="Linie", layout=[make_block("line", entity=self.entity.slug)])
+        self.client.force_login(self.user)
+        response = self.client.get(reverse("page", args=["inventar", page.slug]))
+        self.assertContains(response, 'class="line-path"')
+        self.assertContains(response, "<caption>")
+
+
+@override_settings(BAUKASTEN_TABLEAU_HOSTS=["tableau.example.com"], BAUKASTEN_TABLEAU_CLIENT_ID="",
+                   BAUKASTEN_TABLEAU_SECRET_ID="", BAUKASTEN_TABLEAU_SECRET_VALUE="")
+class TableauTests(Base):
+    """Baustein „Tableau-Ansicht“ (builder/tableau.py)."""
+
+    URL = "https://tableau.example.com/views/Werke/Uebersicht"
+
+    def render(self, user=None, query="", **props):
+        from django.contrib.auth.models import AnonymousUser
+        from django.test import RequestFactory
+
+        from .blocks import prep_tableau
+        request = RequestFactory().get("/" + query)
+        request.user = user or self.user
+        return prep_tableau(request, self.app, make_block("tableau", url=self.URL, **props))
+
+    def test_embeds_allowed_host_with_filters_from_address(self):
+        ctx = self.render(query="?werk=Stuttgart", filters="Werk = {werk}\nJahr = 2026\nLeer = {fehlt}\nkein Filter")
+        self.assertEqual(ctx["script_url"], "https://tableau.example.com/javascripts/api/tableau.embedding.3.latest.min.js")
+        self.assertEqual(ctx["filters"], [{"field": "Werk", "value": "Stuttgart"}, {"field": "Jahr", "value": "2026"}])
+        self.assertIsNone(ctx["token"])  # ohne Connected App melden sich Nutzer selbst bei Tableau an
+        self.assertEqual((ctx["height"], ctx["toolbar"]), (600, "bottom"))
+
+    def test_rejects_other_hosts_http_and_guests(self):
+        from django.contrib.auth.models import AnonymousUser
+        from .blocks import prep_tableau
+        from django.test import RequestFactory
+        for url in ("https://boese.example.com/views/x", "http://tableau.example.com/views/x", "javascript:alert(1)"):
+            request = RequestFactory().get("/")
+            request.user = self.user
+            self.assertIn("nicht freigegeben", prep_tableau(request, self.app, make_block("tableau", url=url))["error"])
+        self.assertIn("angemeldete", self.render(user=AnonymousUser())["error"])
+
+    def test_connected_app_token(self):
+        import base64
+        import hashlib
+        import hmac
+
+        from . import tableau
+        self.user.email = "max@example.com"
+        self.user.save()
+        with override_settings(BAUKASTEN_TABLEAU_CLIENT_ID="client-1", BAUKASTEN_TABLEAU_SECRET_ID="secret-1",
+                               BAUKASTEN_TABLEAU_SECRET_VALUE="geheim"):
+            token = tableau.connected_app_token(self.user, now=1_800_000_000)
+            ctx = self.render()
+        head, body, signature = token.split(".")
+        decode = lambda part: json.loads(base64.urlsafe_b64decode(part + "=" * (-len(part) % 4)))  # noqa: E731
+        self.assertEqual(decode(head), {"alg": "HS256", "typ": "JWT", "kid": "secret-1", "iss": "client-1"})
+        claims = decode(body)
+        self.assertEqual((claims["sub"], claims["aud"], claims["scp"]), ("max@example.com", "tableau", ["tableau:views:embed"]))
+        self.assertEqual(claims["exp"] - claims["iat"], 300)
+        expected = base64.urlsafe_b64encode(hmac.new(b"geheim", f"{head}.{body}".encode(), hashlib.sha256).digest()).rstrip(b"=").decode()
+        self.assertEqual(signature, expected)
+        self.assertTrue(ctx["token"])
+
+    def test_page_renders_tableau_viz(self):
+        page = Page.objects.create(app=self.app, title="BI", layout=[
+            make_block("tableau", url=self.URL, label="Werke", hide_tabs=True, filters="Werk = <b>{werk}</b>")])
+        self.client.force_login(self.user)
+        response = self.client.get(reverse("page", args=["inventar", page.slug]), {"werk": '"><script>x</script>'})
+        self.assertContains(response, f'<tableau-viz src="{self.URL}"')
+        self.assertContains(response, " hide-tabs")
+        self.assertNotContains(response, "<script>x</script>")  # Werte aus der Adresse werden maskiert
+        self.assertNotContains(response, 'token="')
 
 
 class HomePageTests(Base):

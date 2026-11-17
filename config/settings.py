@@ -197,6 +197,13 @@ if DEBUG and DEMO_DATASOURCE_FILE.exists():
 
 # Web-Requests aus Bausteinen und Erweiterungen dürfen nur diese Hosts erreichen.
 BAUKASTEN_HTTP_ALLOWED_HOSTS = env_list("HTTP_ALLOWED_HOSTS")
+
+# Tableau einbetten (Baustein „Tableau-Ansicht“, siehe builder/tableau.py und Handbuch „Tableau“)
+BAUKASTEN_TABLEAU_HOSTS = env_list("TABLEAU_HOSTS")
+BAUKASTEN_TABLEAU_CLIENT_ID = os.environ.get("TABLEAU_CONNECTED_APP_CLIENT_ID", "")
+BAUKASTEN_TABLEAU_SECRET_ID = os.environ.get("TABLEAU_CONNECTED_APP_SECRET_ID", "")
+BAUKASTEN_TABLEAU_SECRET_VALUE = os.environ.get("TABLEAU_CONNECTED_APP_SECRET_VALUE", "")
+BAUKASTEN_TABLEAU_USER_ATTRIBUTE = os.environ.get("TABLEAU_USER_ATTRIBUTE", "email")
 BAUKASTEN_HTTP_TIMEOUT = float(os.environ.get("HTTP_TIMEOUT", "10"))
 
 LOGGING = {

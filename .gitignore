@@ -5,3 +5,7 @@ staticfiles/
 .venv/
 k8s/secret.yaml
 demo-datenquelle.sqlite3
+# Firmenlogos (Markenrechte): nur lokal bzw. im eigenen Image, nicht im öffentlichen Repository
+builder/static/builder/brand/logo.svg
+builder/static/builder/brand/logo.png
+builder/static/builder/brand/logo-hell.svg

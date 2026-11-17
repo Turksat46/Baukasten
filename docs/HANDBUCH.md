@@ -352,10 +352,12 @@ prüfen.
 | | Balkendiagramm | Einträge je Wert eines Feldes, als Rangliste |
 | | Kreisdiagramm | Anteile der fünf häufigsten Werte, Rest als „Sonstige“ |
 | | Verlauf | Einträge pro Monat, nach einem Datumsfeld oder dem Erfassungsdatum |
+| | Liniendiagramm | Anzahl, Summe oder Durchschnitt je Tag, Woche oder Monat als Linie, nach einem Datumsfeld oder dem Erfassungsdatum; Werte beim Überfahren |
 | Navigation | Button | öffnet eine Seite, einen Link oder führt eine Python-Aktion aus |
 | | Seitenkacheln | Kacheln zu allen Seiten der App |
 | Layout | Trennlinie, Abstand | gliedern die Seite |
 | Anbindung | Web-Request | ruft JSON von einer freigegebenen Adresse ab und zeigt es |
+| | Tableau-Ansicht | bettet ein Dashboard von eurem Tableau-Server oder Tableau Cloud ein, optional mit Filtern aus der Adresse (siehe [Tableau](#tableau)) |
 | Skripte | Ausgabe | zeigt Werte, Text oder Tabellen, die ein Skript setzt |
 | | Eingabefeld | Text, E-Mail, Zahl oder langer Text, den ein Skript-Button mitschickt (`params["…"]`) |
 | Eigene Bausteine | siehe unten | |
@@ -828,6 +830,50 @@ Fehler haben die Form `{"error": "…"}`.
 Erzeugen nicht mehr auslesbar. Ein gelöschter Schlüssel funktioniert sofort
 nicht mehr. Der Designer zeigt, wann ein Schlüssel zuletzt benutzt wurde.
 
+### Tableau
+
+Der Baustein **Tableau-Ansicht** (Gruppe „Anbindung“) zeigt ein Dashboard von
+eurem Tableau-Server oder aus Tableau Cloud direkt auf einer Seite. Eingebettet
+wird mit der offiziellen Embedding API v3 von Tableau.
+
+**Im Designer:**
+
+1. Baustein „Tableau-Ansicht“ auf die Seite ziehen.
+2. **Adresse des Dashboards** eintragen, so wie sie in Tableau unter „Teilen“
+   steht, z. B. `https://tableau.firma.de/views/Werke/Uebersicht`.
+3. Optional Titel, Höhe, Werkzeugleiste (unten, oben, aus) und „Reiter
+   ausblenden“ einstellen.
+4. Optional **Filter**, eine Zeile je Filter im Format `Feld = Wert`, z. B.
+   `Werk = Stuttgart`. Mit `{name}` kommt der Wert aus der Adresse der Seite:
+   `Werk = {werk}` und die Seite `…/p/bericht/?werk=Feuerbach` zeigt das
+   Dashboard für Feuerbach. Ein leerer Wert setzt keinen Filter.
+
+Die Vorschau im Seiten-Designer zeigt das Dashboard nicht; öffne dafür die Seite
+selbst („Vorschau“).
+
+**Anmeldung bei Tableau:** Ohne weitere Einrichtung melden sich die Nutzer
+selbst bei Tableau an, beim ersten Aufruf direkt im eingebetteten Bereich (mit
+SSO meist automatisch). Gesehen wird nur, was die Person auch in Tableau sehen
+darf. Bequemer ist eine **Connected App** (Direct Trust): Der Baukasten meldet
+angemeldete Personen dann selbst bei Tableau an, mit einem Token, das 5 Minuten
+gilt und nur zum Einbetten taugt. Die Person muss in Tableau unter derselben
+E-Mail-Adresse (oder demselben Benutzernamen) existieren.
+
+**Einrichtung durch den Betrieb:**
+
+| Einstellung | Bedeutung |
+|---|---|
+| `TABLEAU_HOSTS` | erlaubte Tableau-Server, kommagetrennt, z. B. `tableau.firma.de`; andere Adressen zeigt der Baustein nicht an |
+| `TABLEAU_CONNECTED_APP_CLIENT_ID`, `TABLEAU_CONNECTED_APP_SECRET_ID`, `TABLEAU_CONNECTED_APP_SECRET_VALUE` | optional: Werte der Connected App aus Tableau (Server-Einstellungen → Connected Apps → Direct Trust). Den geheimen Wert ins Secret, nicht in die ConfigMap |
+| `TABLEAU_USER_ATTRIBUTE` | `email` (Standard) oder `username`: womit eine Person in Tableau heißt |
+
+In Tableau selbst muss die Einbettung für die Adresse des Baukastens erlaubt
+sein (bei Connected Apps: „Domain allowlist“).
+
+**Grenzen:** Tableau-Ansichten gibt es nur für angemeldete Personen, nicht auf
+öffentlichen Seiten. Daten aus Tableau landen nicht im Baukasten; Skripte und
+API sehen sie nicht.
+
 ### MCP-Server (KI-Agenten, n8n)
 
 Jede App ist zusätzlich ein MCP-Server (Model Context Protocol) unter
@@ -1040,6 +1086,7 @@ Alles Umgebungsabhängige kommt aus Umgebungsvariablen.
 | `SCRIPT_MEMORY_MB` | Speichergrenze je Python-Skript (nur Linux), Standard 512 |
 | `SCRIPT_MAX_CALLS` | Befehle je Skriptlauf, Standard 1000 |
 | `PUBLIC_RATE` | Anfragen von Gästen auf öffentlichen Seiten je Adresse und Minute, Standard 120, 0 = keine Grenze |
+| `TABLEAU_HOSTS`, `TABLEAU_CONNECTED_APP_*`, `TABLEAU_USER_ATTRIBUTE` | Tableau einbetten, siehe [Tableau](#tableau) |
 | `DEFAULT_USER_GROUPS` | Gruppen, zu denen jede Person automatisch gehört, Standard `Viewer` |
 | `REDIS_URL` | gemeinsamer Zwischenspeicher in Redis; leer = Tabelle in PostgreSQL, siehe [Skalierung](#skalierung-und-last) |
 | `GUNICORN_WORKERS`, `GUNICORN_THREADS`, `GUNICORN_TIMEOUT` | Prozesse und Threads je Pod, Standard 3, 4 und 60 s |

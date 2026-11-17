@@ -16,9 +16,9 @@
   <a class="skip-link" href="#inhalt">{% translate "Zum Inhalt springen" %}</a>
   <header class="topbar">
     <a class="brand" href="{% url 'home' %}" data-tour="brand">
-      {% if brand_logo %}<img class="brand-logo" src="{% static brand_logo %}" alt="{% translate 'Firmenlogo' %}">{% endif %}
       <img src="{% static 'builder/logo.svg' %}" alt="" width="26" height="26">
       <span>Baukasten</span>
+      {% if brand_logo %}<img class="brand-logo" src="{% static brand_logo %}" alt="{% translate 'Firmenlogo' %}">{% endif %}
     </a>
     <nav class="topnav" aria-label="{% translate 'Seiten der App' %}">{% block nav %}{% endblock %}</nav>
     <button type="button" class="icon-btn menu-toggle" aria-expanded="false" aria-controls="topbar-menu"

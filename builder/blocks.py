@@ -9,7 +9,7 @@ import logging
 import re
 import secrets
 from dataclasses import dataclass, field
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 
 from django.conf import settings
 from django.core.cache import cache
@@ -327,6 +327,147 @@ def prep_timeline(request, app, block):
     }
 
 
+LINE_PERIODS = {"day": (7, 90), "week": (4, 52), "month": (3, 36)}  # (min, max) Anzahl Zeitabschnitte
+
+
+def _line_buckets(period, count, today):
+    """Startdaten der letzten `count` Zeitabschnitte, ältester zuerst, und eine Funktion Datum → Abschnitt."""
+    if period == "day":
+        starts = [today - timedelta(days=i) for i in range(count)]
+        key = lambda d: d  # noqa: E731
+    elif period == "week":
+        monday = today - timedelta(days=today.weekday())
+        starts = [monday - timedelta(weeks=i) for i in range(count)]
+        key = lambda d: d - timedelta(days=d.weekday())  # noqa: E731
+    else:
+        starts, year, month = [], today.year, today.month
+        for _ in range(count):
+            starts.append(date(year, month, 1))
+            year, month = (year, month - 1) if month > 1 else (year - 1, 12)
+        key = lambda d: d.replace(day=1)  # noqa: E731
+    return list(reversed(starts)), key
+
+
+def _line_label(period, start):
+    if period == "day":
+        return date_format(start, "d.m."), date_format(start, "SHORT_DATE_FORMAT")
+    if period == "week":
+        week = start.isocalendar()[1]
+        return gettext("KW %(week)s") % {"week": week}, gettext("KW %(week)s, ab %(date)s") % {
+            "week": week, "date": date_format(start, "SHORT_DATE_FORMAT")}
+    return date_format(start, "M"), date_format(start, "F Y")
+
+
+def prep_line(request, app, block):
+    """Liniendiagramm: Anzahl, Summe oder Durchschnitt je Tag, Woche oder Monat."""
+    props = block["props"]
+    entity = _entity(app, props.get("entity"))
+    if not entity:
+        return {"error": gettext("Für dieses Liniendiagramm ist keine Tabelle ausgewählt.")}
+    aggregate = props.get("aggregate") or "count"
+    value_field = None
+    if aggregate != "count":
+        value_field = entity.fields.filter(key=props.get("field"), type__in=[Field.NUMBER, Field.DECIMAL]).first()
+        if not value_field:
+            return {"error": gettext("Summe und Durchschnitt brauchen ein Zahlenfeld.")}
+    period = props.get("period") if props.get("period") in LINE_PERIODS else "month"
+    low, high = LINE_PERIODS[period]
+    count = min(max(int(props.get("count") or 12), low), high)
+    starts, bucket_of = _line_buckets(period, count, timezone.localdate())
+    date_field = entity.fields.filter(key=props.get("date_field"), type=Field.DATE).first()
+
+    records = entity.records.all()
+    if date_field:
+        records = (records.annotate(_d=Cast(KeyTextTransform(date_field.key, "data"), TextField()))
+                   .filter(_d__gte=starts[0].isoformat()).values_list("_d", "data"))
+    else:
+        records = records.filter(created_at__date__gte=starts[0]).values_list("created_at", "data")
+    sums, counts = {}, {}
+    for raw, data in records:
+        try:
+            day = date.fromisoformat(raw[:10]) if isinstance(raw, str) else timezone.localtime(raw).date()
+        except (TypeError, ValueError):
+            continue
+        bucket = bucket_of(day)
+        if value_field:
+            try:
+                number = float(data.get(value_field.key))
+            except (TypeError, ValueError):
+                continue
+        else:
+            number = 1
+        sums[bucket] = sums.get(bucket, 0) + number
+        counts[bucket] = counts.get(bucket, 0) + 1
+
+    values = []
+    for start in starts:
+        if aggregate == "avg":
+            values.append(sums[start] / counts[start] if counts.get(start) else None)
+        else:
+            values.append(sums.get(start, 0))
+    known = [v for v in values if v is not None]
+    top = max(known, default=0) or 1
+    width, height = 600, 180
+    step = width / len(values)  # jeder Punkt in der Mitte seiner Spalte, wie Beschriftung und Tooltip
+    points = [(round((i + .5) * step, 1), round(height - height * v / top, 1))
+              for i, v in enumerate(values) if v is not None]
+    line = " ".join(f"{x},{y}" for x, y in points)
+    area = f"{points[0][0]},{height} {line} {points[-1][0]},{height}" if points else ""
+    every = max(1, round(len(starts) / 8))  # höchstens etwa 8 Beschriftungen unter der Achse
+    unit = props.get("unit") or ""
+    entries = []
+    for i, (start, value) in enumerate(zip(starts, values)):
+        short, full = _line_label(period, start)
+        shown = _format_number(round(value, 2) if isinstance(value, float) else value) if value is not None else "–"
+        entries.append({"label": short if i % every == 0 or i == len(starts) - 1 else "",
+                        "title": f"{full}: {shown}{(' ' + unit) if unit and value is not None else ''}",
+                        "value": shown, "full": full})
+    return {
+        "line": line, "area": area, "width": width, "height": height, "entries": entries,
+        "max": _format_number(round(top, 2) if isinstance(top, float) else top),
+        "last": entries[-1]["value"], "basis": date_field.label if date_field else gettext("Erfassungsdatum"),
+        "empty": not any(known),
+    }
+
+
+PARAM_RE = re.compile(r"\{([a-z][a-z0-9_]{0,39})\}")
+
+
+def prep_tableau(request, app, block):
+    """Tableau-Ansicht: Dashboard von einem freigegebenen Tableau-Server, optional mit Filtern."""
+    from . import tableau
+
+    props = block["props"]
+    src = str(props.get("url") or "").strip()
+    host = tableau.host_of(src)
+    if not src:
+        return {"error": gettext("Für diese Tableau-Ansicht fehlt die Adresse des Dashboards.")}
+    if not host:
+        return {"error": gettext("Der Tableau-Server ist nicht freigegeben (Einstellung TABLEAU_HOSTS) "
+                                 "oder die Adresse beginnt nicht mit https://.")}
+    user = getattr(request, "user", None)
+    if user is None or not user.is_authenticated:
+        return {"error": gettext("Tableau-Ansichten gibt es nur für angemeldete Personen.")}
+    # Filter: eine Zeile je Filter „Feld = Wert“; {name} setzt Werte aus der Adresse der Seite ein (?name=…).
+    filters = []
+    for line in str(props.get("filters") or "").splitlines()[:20]:
+        field_name, sep, value = line.partition("=")
+        if not sep or not field_name.strip():
+            continue
+        value = PARAM_RE.sub(lambda m: request.GET.get(m.group(1), ""), value.strip())
+        if value:
+            filters.append({"field": field_name.strip()[:200], "value": value[:500]})
+    try:
+        height = min(max(int(props.get("height") or 600), 200), 2000)
+    except (TypeError, ValueError):
+        height = 600
+    toolbar = props.get("toolbar") if props.get("toolbar") in ("bottom", "top", "hidden") else "bottom"
+    return {
+        "src": src, "script_url": tableau.script_url(host), "token": tableau.connected_app_token(user),
+        "filters": filters, "height": height, "toolbar": toolbar,
+    }
+
+
 def prep_cards(request, app, block):
     props, bid = block["props"], block["id"]
     entity = _entity(app, props.get("entity"))
@@ -596,6 +737,17 @@ register("timeline", _("Verlauf"), "📈", [
     {"key": "field", "label": _("Datumsfeld (leer: Erfassungsdatum)"), "type": "field"},
     {"key": "months", "label": _("Anzahl Monate"), "type": "number", "default": 12},
 ], prep_timeline, "Auswertung", _("Einträge pro Monat"))
+register("line", _("Liniendiagramm"), "📉", [
+    {"key": "label", "label": _("Beschriftung"), "type": "text", "default": _("Entwicklung")},
+    ENTITY,
+    {"key": "date_field", "label": _("Datumsfeld (leer: Erfassungsdatum)"), "type": "field"},
+    AGGREGATE,
+    {"key": "field", "label": _("Zahlenfeld (für Summe/Durchschnitt)"), "type": "field"},
+    {"key": "period", "label": _("Zeitraster"), "type": "select", "default": "month",
+     "options": [["day", _("Tage")], ["week", _("Wochen")], ["month", _("Monate")]]},
+    {"key": "count", "label": _("Anzahl Zeitabschnitte"), "type": "number", "default": 12},
+    {"key": "unit", "label": _("Einheit (optional)"), "type": "text", "default": ""},
+], prep_line, "Auswertung", _("Werte je Tag, Woche oder Monat als Linie"))
 
 # Navigation
 register("button", _("Button"), "🔘", [
@@ -630,6 +782,16 @@ register("http", _("Web-Request"), "🌐", [
     {"key": "path", "label": _("Pfad im JSON (optional, z. B. data.items)"), "type": "text", "default": ""},
     {"key": "max_rows", "label": _("Maximale Zeilen"), "type": "number", "default": 20},
 ], prep_http, "Anbindung", _("JSON von einer freigegebenen Adresse"))
+register("tableau", _("Tableau-Ansicht"), "📊", [
+    {"key": "label", "label": _("Titel (optional)"), "type": "text", "default": ""},
+    {"key": "url", "label": _("Adresse des Dashboards (https://…/views/…)"), "type": "text", "default": ""},
+    {"key": "height", "label": _("Höhe in Pixeln"), "type": "number", "default": 600},
+    {"key": "toolbar", "label": _("Werkzeugleiste"), "type": "select", "default": "bottom",
+     "options": [["bottom", _("Unten")], ["top", _("Oben")], ["hidden", _("Ausblenden")]]},
+    {"key": "hide_tabs", "label": _("Reiter ausblenden"), "type": "checkbox", "default": False},
+    {"key": "filters", "label": _("Filter, je Zeile „Feld = Wert“; {name} übernimmt ?name=… aus der Adresse"),
+     "type": "textarea", "default": ""},
+], prep_tableau, "Anbindung", _("Dashboard von eurem Tableau-Server oder Tableau Cloud"))
 register("query", _("Datenbank-Abfrage"), "🗄️", [
     {"key": "query", "label": _("Abfrage"), "type": "query"},
     {"key": "title", "label": _("Titel (optional)"), "type": "text", "default": ""},

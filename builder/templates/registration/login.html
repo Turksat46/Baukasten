@@ -5,9 +5,9 @@
 <div class="login">
   <section class="login-side">
     <div class="login-brand">
-      {% if brand_logo %}<img class="brand-logo" src="{% static brand_logo %}" alt="{% translate 'Firmenlogo' %}">{% endif %}
       <img src="{% static 'builder/logo.svg' %}" alt="" width="34" height="34">
       <span>Baukasten</span>
+      {% if brand_logo %}<img class="brand-logo" src="{% static brand_logo %}" alt="{% translate 'Firmenlogo' %}">{% endif %}
     </div>
     <!-- Skizze einer Seite aus Bausteinen: das, was man hier baut -->
     <svg class="login-art" viewBox="0 0 360 300" fill="none" aria-hidden="true">
