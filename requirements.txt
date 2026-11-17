@@ -8,5 +8,5 @@ mozilla-django-oidc
 RestrictedPython>=8.0
 databricks-sql-connector>=4,<5
 markdown>=3.5
-redis>=5
+redis>=8.1.0
 tzdata>=2024.1
