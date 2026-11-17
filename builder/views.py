@@ -14,6 +14,7 @@ from django.http import HttpResponse, JsonResponse, StreamingHttpResponse
 from django.middleware.csrf import get_token
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
+from django.utils import timezone
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.utils.translation import gettext as _
 from django.views.decorators.clickjacking import xframe_options_sameorigin
@@ -84,8 +85,16 @@ def safe_next(request, fallback):
 
 @login_required
 def home(request):
-    apps = [a for a in App.objects.all() if a.user_can_use(request.user)]
-    return render(request, "builder/home.html", {"apps": apps})
+    apps = [a for a in App.objects.prefetch_related("pages") if a.user_can_use(request.user)]
+    for app in apps:
+        app.page_count = sum(1 for p in app.pages.all() if p.show_in_nav)
+        app.tone = sum(map(ord, app.slug)) % 5 + 1  # feste Farbe je App für die Kachel
+    hour = timezone.localtime().hour
+    greeting = _("Guten Morgen") if 5 <= hour < 11 else _("Guten Tag") if hour < 18 else _("Guten Abend")
+    return render(request, "builder/home.html", {
+        "apps": apps, "greeting": greeting, "today": timezone.localdate(),
+        "drafts": sum(1 for a in apps if not a.published), "show_search": len(apps) > 6,
+    })
 
 
 def runtime_config(request, app, page, blocks):

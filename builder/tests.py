@@ -1727,6 +1727,25 @@ class AppTranslationTests(Base):
             self.assertEqual(run(code, self.app, user=self.user).log[0], "de Geräte unbekannt")
 
 
+class HomePageTests(Base):
+    def test_home_shows_greeting_tiles_and_quick_links(self):
+        self.app.published = True
+        self.app.save()
+        self.client.force_login(self.user)
+        home = self.client.get(reverse("home"))
+        self.assertContains(home, "home-hero")
+        self.assertRegex(home.content.decode(), r"Guten (Morgen|Tag|Abend), nutzer")
+        self.assertContains(home, 'class="tile-icon tone-')
+        self.assertContains(home, reverse("help"))
+        self.assertNotContains(home, reverse("designer_blocks"))  # nur für Designer
+        self.assertNotContains(home, 'id="app-search"')  # Suche erst ab sieben Apps
+        for i in range(7):
+            App.objects.create(name=f"App {i}", slug=f"app-{i}", published=True)
+        self.assertContains(self.client.get(reverse("home")), 'id="app-search"')
+        self.client.force_login(self.designer)
+        self.assertContains(self.client.get(reverse("home")), reverse("designer_blocks"))
+
+
 class AdminLinkTests(Base):
     def test_admin_link_only_for_staff(self):
         self.client.force_login(self.designer)  # is_staff

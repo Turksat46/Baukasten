@@ -1,26 +1,55 @@
 {% extends "base.html" %}
 {% load i18n baukasten %}
 {% block content %}
-<div class="page-head">
-  <div>
-    <h1>{% blocktranslate %}Hallo {{ first_name }}{% endblocktranslate %}</h1>
+<section class="home-hero">
+  <div class="home-hero-text">
+    <p class="home-date">{{ today|date:"l" }}, {{ today|date:"DATE_FORMAT" }}</p>
+    <h1>{{ greeting }}, {{ first_name }}</h1>
     <p class="subtitle">{% if apps %}{% translate "Deine Apps. Wähle eine aus, um loszulegen." %}{% else %}{% translate "Hier erscheinen die Apps, die für dich freigegeben sind." %}{% endif %}</p>
+    {% if apps %}
+      <p class="home-stats">
+        <span class="stat-chip"><strong>{{ apps|length }}</strong> {% blocktranslate count n=apps|length %}App{% plural %}Apps{% endblocktranslate %}</span>
+        {% if can_design and drafts %}<span class="stat-chip"><strong>{{ drafts }}</strong> {% blocktranslate count n=drafts %}Entwurf{% plural %}Entwürfe{% endblocktranslate %}</span>{% endif %}
+      </p>
+    {% endif %}
+    {% if can_design %}
+      <div class="home-actions">
+        <a class="btn" href="{% url 'designer_home' %}" data-tour="new-app">{% translate "Neue App bauen" %}</a>
+        <a class="btn btn-secondary" href="{% url 'designer_home' %}">{% translate "Zum Designer" %}</a>
+      </div>
+    {% endif %}
   </div>
-  {% if can_design %}<a class="btn" href="{% url 'designer_home' %}" data-tour="new-app">{% translate "Neue App bauen" %}</a>{% endif %}
-</div>
+  <!-- Bausteine wie im Logo, rein dekorativ -->
+  <svg class="home-hero-art" viewBox="0 0 220 160" aria-hidden="true" focusable="false">
+    <rect x="10" y="10" width="92" height="64" rx="14" class="art-a"/>
+    <rect x="114" y="10" width="96" height="64" rx="14" class="art-b"/>
+    <rect x="10" y="86" width="64" height="64" rx="14" class="art-b"/>
+    <rect x="86" y="86" width="64" height="64" rx="32" class="art-c"/>
+    <rect x="162" y="86" width="48" height="64" rx="14" class="art-d"/>
+  </svg>
+</section>
 
 {% if apps %}
+  <div class="section-head">
+    <h2>{% translate "Deine Apps" %}</h2>
+    {% if show_search %}
+      <input type="search" id="app-search" placeholder="{% translate 'Apps durchsuchen' %}" aria-label="{% translate 'Apps durchsuchen' %}" autocomplete="off">
+    {% endif %}
+  </div>
   <div class="tiles" data-tour="apps">
     {% for app in apps %}
-      <a class="tile" href="{% url 'page' app.slug %}">
-        <span class="tile-icon" aria-hidden="true">{{ app.icon }}</span>
+      <a class="tile" href="{% url 'page' app.slug %}" data-search="{{ app.name|tr:app|lower }} {{ app.description|tr:app|lower }}">
+        <span class="tile-icon tone-{{ app.tone }}" aria-hidden="true">{{ app.icon }}</span>
         <span class="tile-body">
           <span class="tile-name">{{ app.name|tr:app }}{% if not app.published %} <span class="badge">{% translate "Entwurf" %}</span>{% endif %}</span>
           <span class="tile-text">{{ app.description|tr:app|default:_("Ohne Beschreibung") }}</span>
+          {% if app.page_count %}<span class="tile-meta">{% blocktranslate count n=app.page_count %}{{ n }} Seite{% plural %}{{ n }} Seiten{% endblocktranslate %}</span>{% endif %}
         </span>
+        <span class="tile-arrow" aria-hidden="true">→</span>
       </a>
     {% endfor %}
   </div>
+  {% if show_search %}<p class="empty" id="app-search-empty" hidden>{% translate "Keine App passt zur Suche." %}</p>{% endif %}
 {% else %}
   <div class="empty-state" data-tour="apps">
     <h2>{% translate "Noch keine App vorhanden" %}</h2>
@@ -32,5 +61,28 @@
     {% endif %}
   </div>
 {% endif %}
+
+<div class="section-head"><h2>{% translate "Schnellzugriff" %}</h2></div>
+<div class="quick-links">
+  <a class="quick-link" href="{% url 'help' %}">
+    <span class="quick-icon" aria-hidden="true">📖</span>
+    <span><strong>{% translate "Handbuch" %}</strong><span class="muted small">{% translate "Benutzen, bauen, entwickeln" %}</span></span>
+  </a>
+  <a class="quick-link" href="{% url 'profile' %}">
+    <span class="quick-icon" aria-hidden="true">👤</span>
+    <span><strong>{% translate "Mein Profil" %}</strong><span class="muted small">{% translate "Konto, Gruppen, API-Schlüssel" %}</span></span>
+  </a>
+  <a class="quick-link" href="{% url 'api_index' %}">
+    <span class="quick-icon" aria-hidden="true">🔌</span>
+    <span><strong>{% translate "API-Dokumentation" %}</strong><span class="muted small">{% translate "Schnittstellen deiner Apps" %}</span></span>
+  </a>
+  {% if can_design %}
+    <a class="quick-link" href="{% url 'designer_blocks' %}">
+      <span class="quick-icon" aria-hidden="true">🧩</span>
+      <span><strong>{% translate "Eigene Bausteine" %}</strong><span class="muted small">{% translate "HTML-Bausteine und Vorlagen" %}</span></span>
+    </a>
+  {% endif %}
+</div>
 {% endblock %}
 {% block tour %}{% tour "start" %}{% endblock %}
+{% block scripts %}{% if show_search %}<script src="{% asset 'builder/home.js' %}" defer></script>{% endif %}{% endblock %}
