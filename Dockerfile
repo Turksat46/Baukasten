@@ -6,8 +6,8 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+COPY requirements.txt requirements-automation.txt ./
+RUN pip install --no-cache-dir -r requirements.txt -r requirements-automation.txt
 
 # PostgreSQL und Databricks sind in requirements.txt enthalten. Weitere Treiber, z. B. für MySQL:
 #   docker build --build-arg EXTRA_PACKAGES="pymysql" .

@@ -21,8 +21,8 @@ from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.csrf import csrf_exempt
 
 from . import hooks
-from .api import authenticate, find_records, unauthorized
-from .models import Field, Record
+from .api import authenticate, find_records, start_automation, unauthorized
+from .models import Field, Record, Script, ScriptRun
 from .openapi import TYPE_SCHEMAS
 from .scripting.ops import OpsError, save_record, serialize
 
@@ -141,6 +141,9 @@ def build_tools(app, key):
                 f"Löscht einen Eintrag aus „{entity.name}“ endgültig.",
                 _object({"id": ID}, ["id"]), run_delete, read_only=False, destructive=True)
 
+    if app.is_automation:
+        _automation_tools(app, key, add)
+
     for name, endpoint in hooks.API_ENDPOINTS.items():
         if endpoint["write"] and not key.can_write:
             continue
@@ -154,6 +157,50 @@ def build_tools(app, key):
             {"type": "object", "additionalProperties": True}, run_custom,
             read_only=not endpoint["write"])
     return tools
+
+
+def _automation_tools(app, key, add):
+    """Automatisierungen: Zustand lesen und (mit Schreibrecht) Skripte starten."""
+    scripts = list(app.scripts.all())
+
+    def run_status(args, request):
+        from .scripting.schedule import describe
+        from .scripting.worker import status
+
+        rows = []
+        for sc in scripts:
+            sc.refresh_from_db()
+            last = sc.runs.exclude(status=ScriptRun.SKIPPED).first()
+            rows.append({
+                "script": sc.slug, "name": sc.name, "plan": describe(sc), "state": status(sc),
+                "next_run_at": sc.next_run_at.isoformat() if sc.next_run_at and sc.enabled else None,
+                "last_run": {"status": last.state, "started_at": last.started_at.isoformat(),
+                             "duration_ms": last.duration_ms, "error": last.error[:500]} if last else None,
+            })
+        return {"scripts": rows}
+
+    add("automation_status", "Zustand der Skripte",
+        f"Zeigt für jedes Skript der Automatisierung „{app.name}“, ob es läuft, wann es als Nächstes läuft "
+        "und wie der letzte Lauf ausging.", _object({}), run_status)
+    if not key.can_write:
+        return
+    for sc in scripts:
+        if sc.trigger == Script.CONTINUOUS:
+            continue
+
+        def run_start(args, request, slug=sc.slug):
+            data = args.get("daten")
+            status_code, body = start_automation(app, slug, "mcp", data if isinstance(data, dict) else {}, key.name)
+            if status_code != 202:
+                raise ToolError(body["error"])
+            return body
+
+        add(_tool_name("start", sc.slug), f"{sc.name} starten",
+            f"Startet das Skript „{sc.name}“ der Automatisierung „{app.name}“ im Hintergrund. Die Antwort kommt "
+            "sofort; das Ergebnis zeigt automation_status. Optionale Daten stehen im Skript in event[\"daten\"].",
+            _object({"daten": {"type": "object", "additionalProperties": True,
+                               "description": "Beliebige Daten für das Skript (JSON-Objekt)"}}),
+            run_start, read_only=False)
 
 
 def _result(msg_id, result):

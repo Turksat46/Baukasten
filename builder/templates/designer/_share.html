@@ -1,0 +1,65 @@
+{% load i18n %}
+<section class="card" id="mitbearbeiter">
+      <h3>{% translate "Mitbearbeiter" %}</h3>
+      {% if app.created_by %}
+        <p>{% translate "Eigentümer/in:" %} <strong>{{ app.created_by.get_full_name|default:app.created_by.get_username }}</strong>{% if app.created_by == user %} ({% translate "du" %}){% endif %}</p>
+        <p class="muted small">{% translate "Bearbeiten dürfen die Eigentümerin, die Mitbearbeiter unten und Admins. Mitbearbeiter brauchen das Designer-Recht. Einladen, entfernen und die App löschen dürfen nur Eigentümerin und Admins." %}</p>
+      {% else %}
+        <div class="notice notice-warning">
+          <strong>{% translate "Diese App hat keine Eigentümerin." %}</strong>
+          <span>{% translate "Deshalb dürfen alle Designer sie bearbeiten. Übernimmst du sie, brauchen andere Designer eine Einladung." %}</span>
+        </div>
+        <form method="post" style="margin-top:.6rem">
+          {% csrf_token %}<input type="hidden" name="kind" value="share"><input type="hidden" name="action" value="claim">
+          <button class="btn btn-secondary btn-small">{% translate "App übernehmen" %}</button>
+        </form>
+      {% endif %}
+
+      {% if app.created_by %}
+        <h4 class="spaced">{% translate "Personen" %}</h4>
+        {% if editors %}
+          <table><tbody>
+            {% for person in editors %}
+              <tr>
+                <td>{{ person.get_full_name|default:person.get_username }} <code class="key">{{ person.get_username }}</code></td>
+                <td class="row-actions">{% if can_manage %}
+                  <form method="post">{% csrf_token %}<input type="hidden" name="kind" value="share"><input type="hidden" name="action" value="remove_user"><input type="hidden" name="user" value="{{ person.pk }}"><button class="link danger">{% translate "Entfernen" %}</button></form>
+                {% endif %}</td>
+              </tr>
+            {% endfor %}
+          </tbody></table>
+        {% else %}
+          <p class="muted small">{% translate "Noch keine." %}</p>
+        {% endif %}
+        {% if can_manage %}
+          <form method="post" class="inline-form">
+            {% csrf_token %}<input type="hidden" name="kind" value="share"><input type="hidden" name="action" value="add_user">
+            <input type="text" name="username" placeholder="{% translate 'Benutzername' %}" aria-label="{% translate 'Benutzername' %}" required>
+            <button class="btn btn-secondary btn-small">{% translate "Einladen" %}</button>
+          </form>
+        {% endif %}
+
+        <h4 class="spaced">{% translate "Gruppen" %}</h4>
+        {% if editor_groups %}
+          <table><tbody>
+            {% for group in editor_groups %}
+              <tr>
+                <td>{{ group.name }}</td>
+                <td class="row-actions">{% if can_manage %}
+                  <form method="post">{% csrf_token %}<input type="hidden" name="kind" value="share"><input type="hidden" name="action" value="remove_group"><input type="hidden" name="group" value="{{ group.pk }}"><button class="link danger">{% translate "Entfernen" %}</button></form>
+                {% endif %}</td>
+              </tr>
+            {% endfor %}
+          </tbody></table>
+        {% else %}
+          <p class="muted small">{% translate "Noch keine." %}</p>
+        {% endif %}
+        {% if can_manage and other_groups %}
+          <form method="post" class="inline-form">
+            {% csrf_token %}<input type="hidden" name="kind" value="share"><input type="hidden" name="action" value="add_group">
+            <select name="group" aria-label="{% translate 'Gruppe' %}">{% for group in other_groups %}<option value="{{ group.pk }}">{{ group.name }}</option>{% endfor %}</select>
+            <button class="btn btn-secondary btn-small">{% translate "Gruppe hinzufügen" %}</button>
+          </form>
+        {% endif %}
+      {% endif %}
+    </section>

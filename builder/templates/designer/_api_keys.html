@@ -1,0 +1,24 @@
+{% load i18n %}
+<h4 class="spaced">{% translate "Schlüssel" %}</h4>
+      {% if api_keys %}
+        <table>
+          <tbody>
+            {% for key in api_keys %}
+              <tr>
+                <td>{{ key.name }} <code class="key">{{ key.prefix }}…</code></td>
+                <td class="muted small">{% if key.can_write %}{% translate "lesen und schreiben" %}{% else %}{% translate "nur lesen" %}{% endif %}{% if key.last_used %}, {% translate "zuletzt genutzt" %} {{ key.last_used|date:"SHORT_DATE_FORMAT" }}{% endif %}</td>
+                <td class="row-actions">
+                  <form method="post" action="{% url 'designer_key_delete' app.slug key.pk %}" data-confirm="{% translate 'Schlüssel löschen? Programme, die ihn verwenden, verlieren sofort den Zugriff.' %}">
+                    {% csrf_token %}<button class="link danger">{% translate "Löschen" %}</button>
+                  </form>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% endif %}
+      <form method="post" class="form key-form">
+        {% csrf_token %}<input type="hidden" name="kind" value="key">
+        {{ key_form.as_div }}
+        <button class="btn btn-secondary btn-small">{% translate "Schlüssel erzeugen" %}</button>
+      </form>

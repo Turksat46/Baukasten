@@ -9,7 +9,7 @@
 #   1. Prüfen, ob Kubernetes läuft (Kontext docker-desktop)
 #   2. Beim ersten Mal Zugangsdaten mit Zufallswerten in k8s\lokal\geheim.env anlegen
 #   3. Image baukasten:lokal bauen
-#   4. PostgreSQL, Baukasten und Hintergrund-Job einspielen (Namespace "baukasten")
+#   4. PostgreSQL, Baukasten und Hintergrunddienst einspielen (Namespace "baukasten")
 #   5. Datenbank migrieren, neue Version ausrollen
 #   6. Verwalter-Konto und Beispiel-Apps anlegen, falls sie fehlen
 # Ein Protokoll des letzten Laufs steht in k8s\lokal\letzter-lauf.log.
@@ -31,7 +31,7 @@ function Diagnose {
     Write-Host "==> Diagnose" -ForegroundColor Yellow
     K -n baukasten get 'pods,pvc' -o wide
     K -n baukasten get events --sort-by=.lastTimestamp
-    foreach ($app in "baukasten-db", "baukasten") {
+    foreach ($app in "baukasten-db", "baukasten", "baukasten-worker") {
         K -n baukasten describe pods -l app=$app
         K -n baukasten logs -l app=$app --tail=40 --all-containers
     }
@@ -61,9 +61,16 @@ try {
         )
         [IO.File]::WriteAllText($geheim, (($zeilen -join "`n") + "`n"))
     }
+    # Geheimnisse für Automatisierungen: anfangs leer, Einträge als SCRIPT_SECRET_<NAME>=Wert.
+    $skriptGeheim = Join-Path $hier "skript-geheim.env"
+    if (-not (Test-Path $skriptGeheim)) {
+        [IO.File]::WriteAllText($skriptGeheim, "# Geheimnisse fuer Automatisierungen, z. B.`n# SCRIPT_SECRET_ERP_TOKEN=abc`n")
+    }
     # Nur Unix-Zeilenenden: sonst hängt an jedem Wert ein unsichtbares Wagenrücklauf-Zeichen.
-    $inhalt = [IO.File]::ReadAllText($geheim)
-    if ($inhalt.Contains("`r")) { [IO.File]::WriteAllText($geheim, $inhalt.Replace("`r", "")) }
+    foreach ($datei in $geheim, $skriptGeheim) {
+        $inhalt = [IO.File]::ReadAllText($datei)
+        if ($inhalt.Contains("`r")) { [IO.File]::WriteAllText($datei, $inhalt.Replace("`r", "")) }
+    }
 
     Schritt "Image bauen (baukasten:lokal)"
     docker build -t baukasten:lokal . 2>&1 | Out-Host; Pruefe "docker build"
@@ -72,6 +79,8 @@ try {
     # Die Manifeste der Produktion liegen im Elternordner; das muss kustomize ausdrücklich erlaubt werden.
     kubectl kustomize k8s/lokal --load-restrictor LoadRestrictionsNone | kubectl apply -f - 2>&1 | Out-Host
     Pruefe "kubectl apply"
+    # Früherer CronJob; seine Arbeit macht jetzt der Hintergrunddienst baukasten-worker.
+    K -n baukasten delete cronjob baukasten-hintergrund --ignore-not-found
 
     Schritt "Auf die Datenbank warten"
     # Neu starten, damit der Pod die aktuellen Zugangsdaten bekommt.
@@ -93,6 +102,8 @@ try {
     Schritt "Neue Version ausrollen"
     K -n baukasten rollout restart deploy/baukasten; Pruefe "rollout restart"
     K -n baukasten rollout status deploy/baukasten --timeout=300s; Pruefe "Ausrollen"
+    K -n baukasten rollout restart deploy/baukasten-worker; Pruefe "rollout restart (Hintergrunddienst)"
+    K -n baukasten rollout status deploy/baukasten-worker --timeout=300s; Pruefe "Ausrollen (Hintergrunddienst)"
 
     Schritt "Verwalter-Konto und Beispiel-Apps"
     # '--' in Anführungszeichen: unquotiert verschluckt PowerShell es beim Aufruf von K.

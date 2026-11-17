@@ -1,7 +1,7 @@
 # Baukasten im lokalen Kubernetes von Docker Desktop.
 # Nicht von Hand ausführen, sondern über deploy.ps1 (baut das Image, legt Geheimnisse an,
 # migriert die Datenbank und rollt aus). Nutzt dieselben Manifeste wie die Produktion
-# (../app.yaml, ../cronjob.yaml) und ändert nur, was lokal anders sein muss.
+# (../app.yaml, ../worker.yaml) und ändert nur, was lokal anders sein muss.
 # Weil die Manifeste im Elternordner liegen, braucht kustomize den Schalter
 #   --load-restrictor LoadRestrictionsNone   (setzt deploy.ps1)
 apiVersion: kustomize.config.k8s.io/v1beta1
@@ -12,7 +12,7 @@ resources:
   - namespace.yaml
   - postgres.yaml
   - ../app.yaml
-  - ../cronjob.yaml
+  - ../worker.yaml
 
 # Lokal gebautes Image, kein Registry-Zugriff nötig (Docker Desktop teilt die Images mit Kubernetes).
 images:
@@ -25,6 +25,10 @@ secretGenerator:
   - name: baukasten-secret
     envs:
       - geheim.env
+  # Geheimnisse für Automatisierungen (SCRIPT_SECRET_<NAME>=…), nur für den Worker.
+  - name: baukasten-skript-geheimnisse
+    envs:
+      - skript-geheim.env
 generatorOptions:
   disableNameSuffixHash: true
 
@@ -43,9 +47,12 @@ patches:
       - {op: add, path: /spec/template/spec/containers/0/imagePullPolicy, value: IfNotPresent}
       - {op: replace, path: /spec/template/spec/containers/0/resources/requests/cpu, value: 100m}
       - {op: replace, path: /spec/template/spec/containers/0/resources/requests/memory, value: 256Mi}
-  - target: {kind: CronJob, name: baukasten-hintergrund}
+  - target: {kind: Deployment, name: baukasten-worker}
     patch: |-
-      - {op: add, path: /spec/jobTemplate/spec/template/spec/containers/0/imagePullPolicy, value: IfNotPresent}
+      - {op: add, path: /spec/template/spec/containers/0/imagePullPolicy, value: IfNotPresent}
+      - {op: replace, path: /spec/template/spec/containers/0/resources/requests/cpu, value: 50m}
+      - {op: replace, path: /spec/template/spec/containers/0/resources/requests/memory, value: 256Mi}
+      - {op: replace, path: /spec/template/spec/containers/0/resources/limits/memory, value: 2Gi}
   # Docker Desktop leitet Dienste vom Typ LoadBalancer auf localhost weiter.
   - target: {kind: Service, name: baukasten}
     patch: |-

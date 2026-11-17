@@ -12,18 +12,20 @@ from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils.http import url_has_allowed_host_and_scheme
-from django.utils.translation import gettext as _
+from django.utils.translation import gettext as _, gettext_lazy
 from django.views.decorators.http import require_POST
 
 from . import app_i18n, hooks
 from .blocks import (BUILTIN_PLACEHOLDERS, all_types, clean_layout, designer_config, make_block,
                      render_custom, render_layout)
 from . import datasources
-from .forms import (ApiKeyForm, AppForm, CustomBlockForm, EntityForm, FieldForm, NewAppForm, NewPageForm,
-                    QueryForm, ScriptForm)
+from .forms import (ApiKeyForm, AppForm, AutomationForm, AutomationScriptForm, CustomBlockForm, EntityForm,
+                    FieldForm, NewAppForm, NewPageForm, QueryForm, ScriptForm)
 from . import versions
-from .models import ApiKey, App, AppVersion, CustomBlock, DataQuery, Entity, Field, Page, Script, can_design
+from .models import (ApiKey, App, AppVersion, CustomBlock, DataQuery, Entity, Field, Page, Script, ScriptRun,
+                     can_automate, can_design)
 from .scripting import python as python_scripts
+from .scripting import schedule, worker
 from .scripting.triggers import execute
 
 
@@ -66,6 +68,9 @@ def _share(request, app):
         elif not can_design(user):
             messages.error(request, _("%(name)s hat kein Designer-Recht und könnte die App nicht bearbeiten.")
                            % {"name": user.get_username()})
+        elif app.is_automation and not can_automate(user):
+            messages.error(request, _("%(name)s darf keine Automatisierungen bearbeiten (Gruppe „Automatisierer“ fehlt).")
+                           % {"name": user.get_username()})
         else:
             app.editors.add(user)
             messages.success(request, _("%(name)s darf die App jetzt bearbeiten.") % {"name": user.get_username()})
@@ -101,8 +106,19 @@ def home(request):
     # In der Einführung ist der erste Schritt schon vorausgefüllt.
     coach = tutorial.state(request.user)
     initial = {"name": "Urlaub", "icon": "🌴"} if coach and not coach["finished"] and coach["number"] == 1 else None
-    form = NewAppForm(request.POST or None, initial=initial)
-    if request.method == "POST" and form.is_valid():
+    automator = can_automate(request.user)
+    is_auto = request.method == "POST" and "auto-name" in request.POST
+    if is_auto and not automator:
+        raise PermissionDenied
+    form = NewAppForm(request.POST if request.method == "POST" and not is_auto else None, initial=initial)
+    auto_form = NewAppForm(request.POST if is_auto else None, prefix="auto", initial={"icon": "⚙️"}) if automator else None
+    if is_auto and auto_form.is_valid():
+        app = auto_form.save(commit=False)
+        app.kind = App.AUTOMATION
+        app.created_by = request.user
+        app.save()
+        return redirect("designer_app", app.slug)
+    if request.method == "POST" and not is_auto and form.is_valid():
         app = form.save(commit=False)
         app.created_by = request.user
         app.save()
@@ -111,12 +127,42 @@ def home(request):
             make_block("text", text=_("Willkommen. Diese Seite lässt sich im Designer frei gestalten.")),
         ])
         return redirect("designer_app", app.slug)
-    apps = list(App.editable_by(request.user).select_related("created_by"))
-    for item in apps:
+    everything = list(App.editable_by(request.user).select_related("created_by").prefetch_related("scripts"))
+    for item in everything:
         item.can_manage = item.user_can_manage(request.user)
+    apps = [a for a in everything if not a.is_automation]
+    automations = [_automation_summary(a) for a in everything if a.is_automation]
+    # Welcher Reiter unter „Neu anlegen“ offen ist: nach einem Fehler der betroffene, sonst ?neu=…
+    tab = request.GET.get("neu", "app")
+    if is_auto:
+        tab = "automation"
+    if tab not in ("app", "automation", "datei") or (tab == "automation" and not automator):
+        tab = "app"
     return render(request, "designer/home.html", {
-        "apps": apps, "form": form, "custom_count": CustomBlock.objects.count(),
+        "apps": apps, "automations": automations, "form": form, "auto_form": auto_form, "tab": tab,
+        "custom_count": CustomBlock.objects.count(),
+        "running_total": sum(a.running for a in automations),
+        "error_total": sum(a.errors for a in automations),
     })
+
+
+def _automation_summary(app):
+    """Kurzfassung für die Übersicht: Skripte, wie viele laufen, Fehler, nächster und letzter Lauf."""
+    scripts = list(app.scripts.all())
+    app.script_count = len(scripts)
+    app.running = sum(1 for sc in scripts if sc.running_since)
+    app.errors = 0
+    for sc in scripts:
+        last = sc.runs.exclude(status=ScriptRun.SKIPPED).only("status", "ok").first()
+        if (last and last.state in (ScriptRun.ERROR, ScriptRun.ABORTED)) or (
+                sc.trigger == Script.CONTINUOUS and sc.failures):
+            app.errors += 1
+    planned = [sc.next_run_at for sc in scripts if sc.enabled and sc.next_run_at and sc.trigger in schedule.TIMED]
+    app.next_run = min(planned) if planned else None
+    app.continuous = sum(1 for sc in scripts if sc.trigger == Script.CONTINUOUS and sc.enabled)
+    runs = [sc.last_run_at for sc in scripts if sc.last_run_at]
+    app.last_run = max(runs) if runs else None
+    return app
 
 
 @designer_required
@@ -129,6 +175,9 @@ def app_import(request):
         return redirect("designer_home")
     try:
         app = versions.import_app(json.loads(upload.read().decode("utf-8")), request.user)
+    except versions.AutomationNotAllowed as exc:
+        messages.error(request, str(exc))
+        return redirect("designer_home")
     except (ValueError, UnicodeDecodeError):
         messages.error(request, _("Die Datei ist keine gültige App-Datei."))
         return redirect("designer_home")
@@ -139,7 +188,8 @@ def app_import(request):
 @designer_required
 def app_detail(request, app):
     app = get_object_or_404(App, slug=app)
-    form = AppForm(instance=app, prefix="app")
+    SettingsForm = AutomationForm if app.is_automation else AppForm
+    form = SettingsForm(instance=app, prefix="app")
     entity_form = EntityForm(prefix="entity")
     page_form = NewPageForm(prefix="page")
     key_form = ApiKeyForm(prefix="key")
@@ -147,7 +197,7 @@ def app_detail(request, app):
     if request.method == "POST":
         kind = request.POST.get("kind")
         if kind == "app":
-            form = AppForm(request.POST, instance=app, prefix="app")
+            form = SettingsForm(request.POST, instance=app, prefix="app")
             if form.is_valid():
                 form.save()
                 messages.success(request, _("Einstellungen gespeichert."))
@@ -160,7 +210,7 @@ def app_detail(request, app):
                 entity.save()
                 Field.objects.create(entity=entity, label=_("Bezeichnung"), required=True)
                 return redirect("designer_entity", app.slug, entity.pk)
-        elif kind == "page":
+        elif kind == "page" and not app.is_automation:
             page_form = NewPageForm(request.POST, prefix="page")
             if page_form.is_valid():
                 page = page_form.save(commit=False)
@@ -192,7 +242,12 @@ def app_detail(request, app):
                 key_form = ApiKeyForm(prefix="key")
     entities = list(app.entities.prefetch_related("fields"))
     api_entity = next((e for e in entities if e.api_enabled), None)
-    return render(request, "designer/app.html", {
+    extra = {}
+    if app.is_automation:
+        extra = {"automations": [_automation_row(sc) for sc in app.scripts.all()],
+                 "webhook_base": request.build_absolute_uri(reverse("api_describe", args=[app.slug])) + "ausloesen/"}
+    return render(request, "designer/automation.html" if app.is_automation else "designer/app.html", {
+        **extra,
         "app": app, "form": form, "entity_form": entity_form, "page_form": page_form,
         "entities": entities, "pages": app.pages.all(),
         "key_form": key_form, "api_keys": app.api_keys.all(), "new_key": new_key,
@@ -567,6 +622,8 @@ def _test_run(request, script):
 def script_edit(request, app, pk=None):
     app = get_object_or_404(App, slug=app)
     script = get_object_or_404(Script, pk=pk, app=app) if pk else None
+    if app.is_automation:
+        return automation_script_edit(request, app, script)
     language = request.GET.get("sprache") if request.GET.get("sprache") in (Script.PYTHON, Script.JAVASCRIPT) else Script.PYTHON
     initial = {} if script else {"language": language, "code": _example(app, language), "trigger": Script.PAGE}
     form = ScriptForm(request.POST or None, instance=script, app=app, initial=initial)
@@ -646,3 +703,171 @@ def query_delete(request, app, pk):
     get_object_or_404(DataQuery, pk=pk, app__slug=app).delete()
     messages.success(request, _("Abfrage gelöscht. Eine gespiegelte Tabelle bleibt mit ihren Daten erhalten."))
     return redirect("designer_app", app)
+
+
+# ---------- Automatisierungen ----------
+
+AUTOMATION_EXAMPLE = """# Automatisierung: echtes Python im Hintergrund. Alle Bibliotheken aus
+# requirements-automation.txt stehen zur Verfügung (z. B. requests).
+from datetime import datetime
+
+import requests
+
+print("Start:", datetime.now().isoformat(timespec="seconds"), "Anlass:", event["trigger"])
+
+# Beispiel: Daten abholen und in einer Tabelle der Automatisierung festhalten.
+# antwort = requests.get("https://example.com/api/status", timeout=30)
+# antwort.raise_for_status()
+# app.table("{table}").create(bezeichnung=antwort.json()["status"])
+
+# Zugangsdaten nie in den Code schreiben, sondern als Geheimnis einrichten lassen:
+# token = secret("MEIN_TOKEN")
+print("Fertig.")
+"""
+
+STATE_LABELS = {
+    "running": gettext_lazy("läuft"), "requested": gettext_lazy("startet gleich"), "off": gettext_lazy("aus"),
+    "error": gettext_lazy("Fehler, Neustart geplant"), "waiting": gettext_lazy("wartet"),
+}
+
+
+def _state_label(state):
+    return str(STATE_LABELS[state])
+
+
+def _automation_row(script):
+    script.state = worker.status(script)
+    script.state_label = _state_label(script.state)
+    script.plan = schedule.describe(script)
+    script.last = script.runs.exclude(status=ScriptRun.SKIPPED).first()
+    if script.trigger == Script.CONTINUOUS:
+        script.can_start, script.can_stop = not script.enabled, script.enabled or script.state == "running"
+    else:
+        script.can_stop = script.state in ("running", "requested")
+        script.can_start = not script.can_stop
+    return script
+
+
+def _run_json(run):
+    if run is None:
+        return None
+    return {"id": run.pk, "status": run.state, "label": run.get_status_display() if run.status else (_("ok") if run.ok else _("Fehler")),
+            "started": run.started_at.isoformat(), "finished": run.finished_at.isoformat() if run.finished_at else None,
+            "duration_ms": run.duration_ms, "trigger": run.trigger, "log": run.log, "error": run.error}
+
+
+def _script_json(script):
+    _automation_row(script)
+    return {"id": script.pk, "state": script.state, "label": script.state_label, "plan": script.plan,
+            "running_since": script.running_since.isoformat() if script.running_since else None,
+            "next_run_at": script.next_run_at.isoformat() if script.next_run_at and script.enabled else None,
+            "requested_at": (script.request_event or {}).get("requested_at") if script.run_requested else None,
+            "can_start": script.can_start, "can_stop": script.can_stop,
+            "last": _run_json(script.last)}
+
+
+def _automation_app(slug):
+    app = get_object_or_404(App, slug=slug)
+    if not app.is_automation:
+        raise PermissionDenied
+    return app
+
+
+def start_script(script, user):
+    """Knopf „Jetzt starten“: Dauerläufer einschalten, sonst einen Lauf anfordern. Gibt die Meldung zurück."""
+    if script.trigger == Script.CONTINUOUS:
+        Script.objects.filter(pk=script.pk).update(enabled=True, next_run_at=None, failures=0, stop_requested=False)
+        return True, _("„%(name)s“ ist eingeschaltet und startet in wenigen Sekunden.") % {"name": script.name}
+    if worker.request_run(script, Script.MANUAL, user=user.get_username()):
+        return True, _("„%(name)s“ startet in wenigen Sekunden.") % {"name": script.name}
+    return False, _("Für „%(name)s“ wartet schon ein Start.") % {"name": script.name}
+
+
+def _back(request, app):
+    target = request.POST.get("next", "")
+    if target and url_has_allowed_host_and_scheme(target, allowed_hosts={request.get_host()}):
+        return redirect(target)
+    return redirect("designer_app", app.slug)
+
+
+@designer_required
+@require_POST
+def script_start(request, app, pk):
+    app = _automation_app(app)
+    script = get_object_or_404(Script, pk=pk, app=app)
+    ok, text = start_script(script, request.user)
+    (messages.success if ok else messages.warning)(request, text)
+    return _back(request, app)
+
+
+@designer_required
+@require_POST
+def script_stop(request, app, pk):
+    """Laufenden Lauf stoppen; Dauerläufer zusätzlich ausschalten, sonst startet er neu."""
+    app = _automation_app(app)
+    script = get_object_or_404(Script, pk=pk, app=app)
+    updates = {"run_requested": False, "request_event": None}
+    if script.running_since:
+        updates["stop_requested"] = True
+    if script.trigger == Script.CONTINUOUS:
+        updates["enabled"] = False
+    Script.objects.filter(pk=script.pk).update(**updates)
+    messages.success(request, _("„%(name)s“ wird gestoppt.") % {"name": script.name} if script.running_since
+                     else _("„%(name)s“ ist angehalten.") % {"name": script.name})
+    return _back(request, app)
+
+
+@designer_required
+def automation_status(request, app):
+    """Zustand aller Skripte (für die laufende Aktualisierung der Übersicht)."""
+    app = _automation_app(app)
+    return JsonResponse({"scripts": [_script_json(sc) for sc in app.scripts.all()]})
+
+
+@designer_required
+def script_live(request, app, pk):
+    """Zustand eines Skripts mit dem Protokoll des laufenden oder letzten Laufs."""
+    app = _automation_app(app)
+    script = get_object_or_404(Script, pk=pk, app=app)
+    return JsonResponse(_script_json(script))
+
+
+PLAN_FIELDS = ("trigger", "enabled", "interval_minutes", "daily_time", "weekdays_only")
+
+
+def automation_script_edit(request, app, script):
+    table = app.entities.first()
+    initial = {} if script else {"code": AUTOMATION_EXAMPLE.format(table=table.slug if table else "protokoll"),
+                                 "trigger": Script.SCHEDULE, "interval_minutes": 15, "timeout_minutes": 30}
+    before = tuple(getattr(script, f) for f in PLAN_FIELDS) if script else None
+    form = AutomationScriptForm(request.POST or None, instance=script, initial=initial)
+    if request.method == "POST" and form.is_valid():
+        new = script is None
+        script = form.save(commit=False)
+        script.app = app
+        script.language = Script.PYTHON
+        script.created_by = script.created_by or request.user
+        changed = new or tuple(getattr(script, f) for f in PLAN_FIELDS) != before
+        if changed:
+            script.next_run_at = (schedule.first_run(script) if script.enabled and script.trigger in schedule.TIMED
+                                  else None)
+            script.failures = 0
+        if new:
+            script.save()
+        else:
+            # Nur die Felder des Formulars schreiben: Zustand des Hintergrunddienstes nicht überschreiben.
+            script.save(update_fields=[*form.Meta.fields, "language", "next_run_at", "failures", "updated_at"])
+        if request.POST.get("action") == "run":
+            script.refresh_from_db()
+            ok, text = start_script(script, request.user)
+            (messages.success if ok else messages.warning)(request, text)
+        else:
+            messages.success(request, _("Skript gespeichert."))
+        return redirect("designer_script", app.slug, script.pk)
+    if script:
+        _automation_row(script)
+    return render(request, "designer/automation_script.html", {
+        "app": app, "script": script, "form": form,
+        "runs": script.runs.all()[:15] if script else [],
+        "max_timeout": form.limit,
+    })

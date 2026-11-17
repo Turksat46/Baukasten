@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+{% load i18n baukasten %}
+{% block title %}{{ app.name }} – {% translate "Designer" %}{% endblock %}
+{% block content %}
+<p class="crumbs"><a href="{% url 'designer_home' %}">{% translate "Designer" %}</a> / {{ app.name }}</p>
+<div class="head-row">
+  <h1>{{ app.icon }} {{ app.name }} <span class="badge badge-auto">{% translate "Automatisierung" %}</span></h1>
+  <a class="btn" href="{% url 'designer_script_new' app.slug %}">{% translate "Neues Skript" %}</a>
+</div>
+{% if app.description %}<p class="subtitle">{{ app.description }}</p>{% endif %}
+
+{% if new_key %}
+  <div class="notice notice-warning key-reveal" role="alert">
+    <strong class="notice-title">{% translate "Neuer API-Schlüssel – jetzt kopieren" %}</strong>
+    <span>{% translate "Er wird nur dieses eine Mal angezeigt und lässt sich später nicht wieder auslesen." %}</span>
+    <code class="key-value">{{ new_key }}</code>
+  </div>
+{% endif %}
+
+<div class="notice notice-warning" id="worker-hint" hidden>
+  <strong class="notice-title">{% translate "Der Start lässt auf sich warten." %}</strong>
+  <span>{% blocktranslate %}Skripte von Automatisierungen startet der Hintergrunddienst. Läuft er? Im Cluster ist das der Pod <code>baukasten-worker</code>, beim Entwickeln <code>python manage.py hintergrund --dauerhaft</code>.{% endblocktranslate %}</span>
+</div>
+
+<div class="grid">
+  <div class="col col-7">
+    <section class="card" id="automation-scripts" data-status-url="{% url 'designer_automation_status' app.slug %}">
+      <h3>{% translate "Skripte" %}</h3>
+      <p class="muted">{% translate "Echtes Python im Hintergrund, mit allen Bibliotheken der gemeinsamen Umgebung. Ein Skript läuft nie zweimal gleichzeitig: Ist ein Termin fällig, während der vorige Lauf noch arbeitet, entfällt er." %}</p>
+      {% if automations %}
+        <table class="automation-table">
+          <thead><tr><th>{% translate "Skript" %}</th><th>{% translate "Zustand" %}</th><th>{% translate "Letzter Lauf" %}</th><th></th></tr></thead>
+          <tbody>
+            {% for sc in automations %}
+              <tr data-script="{{ sc.pk }}">
+                <td>
+                  <a href="{% url 'designer_script' app.slug sc.pk %}"><strong>{{ sc.name }}</strong></a>
+                  <span class="muted small block">{{ sc.plan }}{% if sc.enabled and sc.next_run_at and sc.trigger != "continuous" %} · {% translate "nächster Lauf" %} <span data-field="next">{{ sc.next_run_at|date:"SHORT_DATETIME_FORMAT" }}</span>{% endif %}</span>
+                </td>
+                <td><span class="badge state state-{{ sc.state }}" data-field="state">{{ sc.state_label }}</span>
+                  {% if sc.running_since %}<span class="muted small block" data-field="since">{% translate "seit" %} {{ sc.running_since|time:"H:i" }}</span>{% endif %}</td>
+                <td class="small" data-field="last">
+                  {% if sc.last %}<span class="badge state state-run-{{ sc.last.state }}">{{ sc.last.get_status_display|default:sc.last.state }}</span>
+                    <span class="muted block">{{ sc.last.started_at|date:"SHORT_DATETIME_FORMAT" }}</span>
+                  {% else %}<span class="muted">{% translate "noch nie" %}</span>{% endif %}
+                </td>
+                <td class="row-actions">
+                  {% include "designer/_automation_buttons.html" %}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <p class="empty">{% translate "Noch kein Skript. Lege oben rechts das erste an." %}</p>
+      {% endif %}
+    </section>
+
+    <section class="card" data-tour="entities">
+      <h3>{% translate "Tabellen als Speicher" %}</h3>
+      <p class="muted">{% translate "Optional: Hier merken sich Skripte Ergebnisse, Zähler oder was sie zuletzt gesehen haben. Seiten gibt es in Automatisierungen nicht; die Daten siehst du in der Verwaltung oder über die API." %}</p>
+      {% if entities %}
+        <table>
+          <tbody>
+            {% for entity in entities %}
+              <tr>
+                <td><a href="{% url 'designer_entity' app.slug entity.pk %}">{{ entity.name }}</a> <code class="key">{{ entity.slug }}</code></td>
+                <td class="muted">{% blocktranslate count n=entity.fields.all|length %}{{ n }} Feld{% plural %}{{ n }} Felder{% endblocktranslate %}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% endif %}
+      <form method="post" class="form inline-form">
+        {% csrf_token %}<input type="hidden" name="kind" value="entity">
+        {{ entity_form.name.errors }}
+        <input type="text" name="{{ entity_form.name.html_name }}" placeholder="{% translate 'Name der neuen Tabelle, z. B. Protokoll' %}" required maxlength="80" aria-label="{% translate 'Name der neuen Tabelle' %}">
+        <button class="btn btn-secondary">{% translate "Tabelle anlegen" %}</button>
+      </form>
+    </section>
+
+    <section class="card" id="api">
+      <h3>{% translate "Von außen starten: Webhook und MCP" %}</h3>
+      <p class="muted">{% translate "Andere Programme (z. B. n8n) starten ein Skript mit einem Schlüssel, der schreiben darf. Der mitgeschickte JSON-Inhalt steht im Skript in event[\"daten\"]." %}</p>
+      {% if automations %}
+        <pre class="json">curl -X POST -H "Authorization: Bearer {% translate 'DEIN_SCHLÜSSEL' %}" \
+  -H "Content-Type: application/json" -d '{"auftrag": 42}' \
+  {{ webhook_base }}{{ automations.0.slug }}/</pre>
+      {% endif %}
+      <p class="muted small">{% blocktranslate %}Antwort 202: Start angenommen. 409: Für das Skript wartet schon ein Start, oder es läuft ständig. Der MCP-Server bietet dieselben Starts als Tools an:{% endblocktranslate %} <code>{{ request.scheme }}://{{ request.get_host }}{% url 'mcp' app.slug %}</code></p>
+      {% include "designer/_api_keys.html" %}
+      {% if entities %}
+        <h4 class="spaced">{% translate "Tabellen über die API" %}</h4>
+        <form method="post" class="form">
+          {% csrf_token %}<input type="hidden" name="kind" value="api">
+          {% for entity in entities %}
+            <label class="check-line"><input type="checkbox" name="api_entity" value="{{ entity.pk }}"{% if entity.api_enabled %} checked{% endif %}> {{ entity.name }} <code class="key">{{ entity.slug }}</code></label>
+          {% endfor %}
+          <button class="btn btn-secondary btn-small">{% translate "Freigaben speichern" %}</button>
+        </form>
+      {% endif %}
+    </section>
+  </div>
+
+  <div class="col col-5">
+    <section class="card">
+      <h3>{% translate "Einstellungen" %}</h3>
+      <form method="post" class="form">
+        {% csrf_token %}<input type="hidden" name="kind" value="app">
+        {{ form.as_div }}
+        <button class="btn">{% translate "Speichern" %}</button>
+      </form>
+    </section>
+
+    <section class="card">
+      <h3>{% translate "So läuft eine Automatisierung" %}</h3>
+      <ul class="plain small">
+        <li>{% translate "Die Skripte laufen im Hintergrunddienst, nicht im Browser und nicht beim Öffnen einer Seite." %}</li>
+        <li>{% translate "Alle Bibliotheken der gemeinsamen Umgebung sind da (requirements-automation.txt). Neue Bibliotheken trägt der Betrieb dort ein." %}</li>
+        <li>{% translate "Zugangsdaten nie in den Code: secret(\"NAME\") liest ein Geheimnis, das der Betrieb einrichtet." %}</li>
+        <li>{% translate "Speichern übernimmt neuen Code ab dem nächsten Lauf. Dauerläufer übernehmen ihn nach Aus- und Einschalten." %}</li>
+      </ul>
+    </section>
+
+    {% include "designer/_versions.html" %}
+    {% include "designer/_share.html" %}
+    {% include "designer/_delete.html" %}
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}<script src="{% asset 'builder/automation.js' %}"></script>{% endblock %}

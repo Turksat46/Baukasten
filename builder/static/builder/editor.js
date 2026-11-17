@@ -31,7 +31,7 @@
   function updateFields() {
     if (!trigger) return;
     document.querySelectorAll("[data-show-trigger]").forEach(function (el) {
-      el.hidden = el.dataset.showTrigger !== trigger.value;
+      el.hidden = el.dataset.showTrigger.split(" ").indexOf(trigger.value) < 0;  // mehrere Auslöser mit Leerzeichen
     });
     if (language) {
       Array.prototype.forEach.call(trigger.options, function (option) {

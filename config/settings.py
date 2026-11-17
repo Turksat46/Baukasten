@@ -162,6 +162,14 @@ BAUKASTEN_SCRIPT_TIMEOUT = float(os.environ.get("SCRIPT_TIMEOUT", "10"))
 BAUKASTEN_SCRIPT_MEMORY_MB = int(os.environ.get("SCRIPT_MEMORY_MB", "512"))
 BAUKASTEN_SCRIPT_MAX_CALLS = int(os.environ.get("SCRIPT_MAX_CALLS", "1000"))
 
+# Automatisierungen: echtes Python im Hintergrunddienst (siehe Handbuch, Abschnitt „Automatisierungen“)
+# Gleichzeitige Läufe (Dauerläufer zählen nicht mit), Speicher je Lauf, längstes erlaubtes Zeitlimit,
+# Zugriffe auf Tabellen/Abfragen je Lauf (0 = unbegrenzt).
+BAUKASTEN_AUTOMATION_PARALLEL = int(os.environ.get("AUTOMATION_PARALLEL", "4"))
+BAUKASTEN_AUTOMATION_MEMORY_MB = int(os.environ.get("AUTOMATION_MEMORY_MB", "2048"))
+BAUKASTEN_AUTOMATION_MAX_TIMEOUT_MINUTES = int(os.environ.get("AUTOMATION_MAX_TIMEOUT_MINUTES", "240"))
+BAUKASTEN_AUTOMATION_MAX_CALLS = int(os.environ.get("AUTOMATION_MAX_CALLS", "0"))
+
 # Öffentliche Seiten: höchstens so viele Anfragen von Gästen je Adresse und Minute (0 = keine Grenze).
 # Hinter einem Ingress teilen sich Gäste oft eine Adresse – dann großzügig wählen.
 BAUKASTEN_PUBLIC_RATE = int(os.environ.get("PUBLIC_RATE", "120"))

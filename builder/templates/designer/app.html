@@ -90,113 +90,11 @@
     </section>
     {% endif %}
 
-    <section class="card" data-tour="versions">
-      <h3>{% translate "Versionen" %}</h3>
-      <p class="muted">{% translate "Eine Version hält den Aufbau der App fest: Einstellungen, Tabellen, Felder und Seiten. Die erfassten Daten gehören nicht dazu und bleiben beim Wiederherstellen erhalten." %}</p>
-      <form method="post" class="form inline-form">
-        {% csrf_token %}<input type="hidden" name="kind" value="version">
-        <input type="text" name="note" maxlength="200" placeholder="{% translate 'Was hat sich geändert? (optional)' %}" aria-label="{% translate 'Notiz zur Version' %}">
-        <button class="btn">{% translate "Version speichern" %}</button>
-      </form>
-      {% if versions %}
-        <table class="versions">
-          <tbody>
-            {% for version in versions %}
-              <tr>
-                <td><strong>v{{ version.number }}</strong></td>
-                <td>
-                  {{ version.note|default:_("Ohne Notiz") }}
-                  <span class="muted small version-meta">{{ version.created_at|date:"SHORT_DATETIME_FORMAT" }}{% if version.created_by %}, {{ version.created_by.get_username }}{% endif %}</span>
-                </td>
-                <td class="row-actions">
-                  <a href="{% url 'designer_version_download' app.slug version.pk %}">{% translate "Herunterladen" %}</a>
-                  <form method="post" action="{% url 'designer_version_restore' app.slug version.pk %}" data-confirm="{% blocktranslate with number=version.number %}Auf Version {{ number }} zurückgehen? Der jetzige Stand wird vorher als neue Version gesichert.{% endblocktranslate %}">
-                    {% csrf_token %}<button class="link">{% translate "Wiederherstellen" %}</button>
-                  </form>
-                </td>
-              </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      {% else %}
-        <p class="empty">{% translate "Noch keine Version gespeichert." %}</p>
-      {% endif %}
-    </section>
+    {% include "designer/_versions.html" %}
 
-    <section class="card" id="mitbearbeiter">
-      <h3>{% translate "Mitbearbeiter" %}</h3>
-      {% if app.created_by %}
-        <p>{% translate "Eigentümer/in:" %} <strong>{{ app.created_by.get_full_name|default:app.created_by.get_username }}</strong>{% if app.created_by == user %} ({% translate "du" %}){% endif %}</p>
-        <p class="muted small">{% translate "Bearbeiten dürfen die Eigentümerin, die Mitbearbeiter unten und Admins. Mitbearbeiter brauchen das Designer-Recht. Einladen, entfernen und die App löschen dürfen nur Eigentümerin und Admins." %}</p>
-      {% else %}
-        <div class="notice notice-warning">
-          <strong>{% translate "Diese App hat keine Eigentümerin." %}</strong>
-          <span>{% translate "Deshalb dürfen alle Designer sie bearbeiten. Übernimmst du sie, brauchen andere Designer eine Einladung." %}</span>
-        </div>
-        <form method="post" style="margin-top:.6rem">
-          {% csrf_token %}<input type="hidden" name="kind" value="share"><input type="hidden" name="action" value="claim">
-          <button class="btn btn-secondary btn-small">{% translate "App übernehmen" %}</button>
-        </form>
-      {% endif %}
+    {% include "designer/_share.html" %}
 
-      {% if app.created_by %}
-        <h4 class="spaced">{% translate "Personen" %}</h4>
-        {% if editors %}
-          <table><tbody>
-            {% for person in editors %}
-              <tr>
-                <td>{{ person.get_full_name|default:person.get_username }} <code class="key">{{ person.get_username }}</code></td>
-                <td class="row-actions">{% if can_manage %}
-                  <form method="post">{% csrf_token %}<input type="hidden" name="kind" value="share"><input type="hidden" name="action" value="remove_user"><input type="hidden" name="user" value="{{ person.pk }}"><button class="link danger">{% translate "Entfernen" %}</button></form>
-                {% endif %}</td>
-              </tr>
-            {% endfor %}
-          </tbody></table>
-        {% else %}
-          <p class="muted small">{% translate "Noch keine." %}</p>
-        {% endif %}
-        {% if can_manage %}
-          <form method="post" class="inline-form">
-            {% csrf_token %}<input type="hidden" name="kind" value="share"><input type="hidden" name="action" value="add_user">
-            <input type="text" name="username" placeholder="{% translate 'Benutzername' %}" aria-label="{% translate 'Benutzername' %}" required>
-            <button class="btn btn-secondary btn-small">{% translate "Einladen" %}</button>
-          </form>
-        {% endif %}
-
-        <h4 class="spaced">{% translate "Gruppen" %}</h4>
-        {% if editor_groups %}
-          <table><tbody>
-            {% for group in editor_groups %}
-              <tr>
-                <td>{{ group.name }}</td>
-                <td class="row-actions">{% if can_manage %}
-                  <form method="post">{% csrf_token %}<input type="hidden" name="kind" value="share"><input type="hidden" name="action" value="remove_group"><input type="hidden" name="group" value="{{ group.pk }}"><button class="link danger">{% translate "Entfernen" %}</button></form>
-                {% endif %}</td>
-              </tr>
-            {% endfor %}
-          </tbody></table>
-        {% else %}
-          <p class="muted small">{% translate "Noch keine." %}</p>
-        {% endif %}
-        {% if can_manage and other_groups %}
-          <form method="post" class="inline-form">
-            {% csrf_token %}<input type="hidden" name="kind" value="share"><input type="hidden" name="action" value="add_group">
-            <select name="group" aria-label="{% translate 'Gruppe' %}">{% for group in other_groups %}<option value="{{ group.pk }}">{{ group.name }}</option>{% endfor %}</select>
-            <button class="btn btn-secondary btn-small">{% translate "Gruppe hinzufügen" %}</button>
-          </form>
-        {% endif %}
-      {% endif %}
-    </section>
-
-    {% if can_manage %}
-    <section class="card">
-      <h3>{% translate "App löschen" %}</h3>
-      <p class="muted">{% translate "Löscht die App mit allen Tabellen, Daten, Seiten und Versionen. Das lässt sich nicht rückgängig machen. Tipp: Lade vorher eine Version herunter, dann lässt sich zumindest der Aufbau wieder importieren." %}</p>
-      <form method="post" action="{% url 'designer_app_delete' app.slug %}" data-confirm="{% blocktranslate with name=app.name %}App „{{ name }}“ mit allen Tabellen, Daten, Seiten und Versionen endgültig löschen?{% endblocktranslate %}">
-        {% csrf_token %}<button class="btn btn-danger">{% translate "App löschen" %}</button>
-      </form>
-    </section>
-    {% endif %}
+    {% include "designer/_delete.html" %}
   </div>
 
   <div class="col col-6">
@@ -260,29 +158,7 @@
         <p class="empty">{% translate "Lege zuerst eine Tabelle an." %}</p>
       {% endif %}
 
-      <h4 class="spaced">{% translate "Schlüssel" %}</h4>
-      {% if api_keys %}
-        <table>
-          <tbody>
-            {% for key in api_keys %}
-              <tr>
-                <td>{{ key.name }} <code class="key">{{ key.prefix }}…</code></td>
-                <td class="muted small">{% if key.can_write %}{% translate "lesen und schreiben" %}{% else %}{% translate "nur lesen" %}{% endif %}{% if key.last_used %}, {% translate "zuletzt genutzt" %} {{ key.last_used|date:"SHORT_DATE_FORMAT" }}{% endif %}</td>
-                <td class="row-actions">
-                  <form method="post" action="{% url 'designer_key_delete' app.slug key.pk %}" data-confirm="{% translate 'Schlüssel löschen? Programme, die ihn verwenden, verlieren sofort den Zugriff.' %}">
-                    {% csrf_token %}<button class="link danger">{% translate "Löschen" %}</button>
-                  </form>
-                </td>
-              </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      {% endif %}
-      <form method="post" class="form key-form">
-        {% csrf_token %}<input type="hidden" name="kind" value="key">
-        {{ key_form.as_div }}
-        <button class="btn btn-secondary btn-small">{% translate "Schlüssel erzeugen" %}</button>
-      </form>
+      {% include "designer/_api_keys.html" %}
 
       <p><a class="btn btn-secondary btn-small" href="{% url 'api_docs' app.slug %}">{% translate "API-Dokumentation öffnen" %}</a></p>
       <h4 class="spaced">{% translate "So rufst du die API auf" %}</h4>

@@ -2,19 +2,29 @@
 {% load i18n baukasten %}
 {% block title %}{% translate "Designer" %} – Baukasten{% endblock %}
 {% block content %}
-<div class="page-head">
+<div class="page-head designer-head">
   <div>
     <h1>{% translate "Designer" %}</h1>
     <p class="subtitle">{% translate "Apps anlegen und bearbeiten. Nutzer sehen eine App erst, wenn du sie veröffentlichst." %}</p>
   </div>
-  <a class="btn btn-secondary" href="{% url 'designer_blocks' %}" data-tour="custom-blocks">{% translate "Eigene Bausteine" %}{% if custom_count %} ({{ custom_count }}){% endif %}</a>
+  <div class="head-tools">
+    <ul class="stat-chips" aria-label="{% translate 'Überblick' %}">
+      <li><strong>{{ apps|length }}</strong> {% blocktranslate count n=apps|length %}App{% plural %}Apps{% endblocktranslate %}</li>
+      {% if auto_form or automations %}<li><strong>{{ automations|length }}</strong> {% blocktranslate count n=automations|length %}Automatisierung{% plural %}Automatisierungen{% endblocktranslate %}</li>{% endif %}
+      {% if running_total %}<li class="chip-running"><strong>{{ running_total }}</strong> {% blocktranslate count n=running_total %}Skript läuft{% plural %}Skripte laufen{% endblocktranslate %}</li>{% endif %}
+      {% if error_total %}<li class="chip-error"><strong>{{ error_total }}</strong> {% blocktranslate count n=error_total %}Fehler{% plural %}Fehler{% endblocktranslate %}</li>{% endif %}
+    </ul>
+    <a class="btn btn-secondary btn-small" href="{% url 'designer_blocks' %}" data-tour="custom-blocks">{% translate "Eigene Bausteine" %}{% if custom_count %} ({{ custom_count }}){% endif %}</a>
+  </div>
 </div>
+
 <div class="grid">
   <div class="col col-8">
     <section class="card" data-tour="app-list">
-      <h3>{% translate "Apps" %}</h3>
+      <div class="card-head"><h3>📦 {% translate "Apps" %}</h3></div>
       {% if apps %}
-        <table>
+        <div class="table-wrap">
+        <table class="compact-table">
           <thead><tr><th>{% translate "App" %}</th><th>{% translate "Status" %}</th><th>{% translate "Eigentümer/in" %}</th><th></th></tr></thead>
           <tbody>
             {% for app in apps %}
@@ -34,33 +44,93 @@
             {% endfor %}
           </tbody>
         </table>
+        </div>
       {% else %}
         <p class="empty">{% translate "Noch keine App. Lege rechts die erste an." %}</p>
       {% endif %}
     </section>
+
+    {% if auto_form or automations %}
+    <section class="card" id="automatisierungen">
+      <div class="card-head"><h3>⚙️ {% translate "Automatisierungen" %}</h3>
+        <span class="muted small">{% translate "Python-Skripte im Hintergrund" %}</span></div>
+      {% if automations %}
+        <div class="table-wrap">
+        <table class="compact-table automation-overview">
+          <thead><tr><th>{% translate "Automatisierung" %}</th><th>{% translate "Zustand" %}</th><th>{% translate "Nächster Lauf" %}</th><th>{% translate "Letzter Lauf" %}</th><th></th></tr></thead>
+          <tbody>
+            {% for auto in automations %}
+              <tr>
+                <td><a href="{% url 'designer_app' auto.slug %}">{{ auto.icon }} {{ auto.name }}</a>
+                  <span class="muted small block">{% blocktranslate count n=auto.script_count %}{{ n }} Skript{% plural %}{{ n }} Skripte{% endblocktranslate %}{% if auto.continuous %}, {% blocktranslate count n=auto.continuous %}{{ n }} ständig{% plural %}{{ n }} ständig{% endblocktranslate %}{% endif %}</span></td>
+                <td class="state-cell">
+                  {% if auto.running %}<span class="badge state state-running">{% blocktranslate count n=auto.running %}{{ n }} läuft{% plural %}{{ n }} laufen{% endblocktranslate %}</span>{% endif %}
+                  {% if auto.errors %}<span class="badge state state-error">{% blocktranslate count n=auto.errors %}{{ n }} Fehler{% plural %}{{ n }} Fehler{% endblocktranslate %}</span>{% endif %}
+                  {% if not auto.running and not auto.errors %}{% if auto.script_count %}<span class="badge state state-run-ok">{% translate "bereit" %}</span>{% else %}<span class="badge">{% translate "leer" %}</span>{% endif %}{% endif %}
+                </td>
+                <td class="small">{% if auto.next_run %}{{ auto.next_run|date:"SHORT_DATETIME_FORMAT" }}{% else %}<span class="muted">–</span>{% endif %}</td>
+                <td class="small">{% if auto.last_run %}{{ auto.last_run|timesince }}{% else %}<span class="muted">{% translate "noch nie" %}</span>{% endif %}</td>
+                <td class="row-actions">
+                  {% if auto.can_manage %}
+                  <form method="post" action="{% url 'designer_app_delete' auto.slug %}" data-confirm="{% blocktranslate with name=auto.name %}Automatisierung „{{ name }}“ mit allen Skripten, Tabellen und Versionen endgültig löschen? Laufende Skripte werden gestoppt.{% endblocktranslate %}">
+                    {% csrf_token %}<button class="link danger">{% translate "Löschen" %}</button>
+                  </form>
+                  {% endif %}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        </div>
+      {% else %}
+        <p class="empty">{% translate "Noch keine Automatisierung. Lege rechts unter „Neu anlegen“ die erste an." %}</p>
+      {% endif %}
+    </section>
+    {% endif %}
   </div>
+
   <div class="col col-4">
     {% if not coach %}
-      <section class="card coach-invite">
-        <h3>🌴 {% translate "Neu hier?" %}</h3>
-        <p class="muted small">{% translate "Bau in etwa 20 Minuten deine erste App selbst: eine Urlaubsantrag-App mit Tabelle, Seiten, Auswertung, Skript und Freigabe. Ein Begleiter zeigt dir jeden Schritt." %}</p>
-        <form method="post" action="{% url 'tutorial_start' %}">{% csrf_token %}<button class="btn btn-secondary">{% translate "Einführung starten" %}</button></form>
+      <section class="card coach-invite compact-invite">
+        <div>
+          <strong>🌴 {% translate "Neu hier?" %}</strong>
+          <span class="muted small block">{% translate "In etwa 20 Minuten mit Begleiter die erste App bauen." %}</span>
+        </div>
+        <form method="post" action="{% url 'tutorial_start' %}">{% csrf_token %}<button class="btn btn-secondary btn-small">{% translate "Einführung starten" %}</button></form>
       </section>
     {% endif %}
-    <section class="card" data-tour="new-app-form">
-      <h3>{% translate "Neue App" %}</h3>
-      <form method="post" class="form">{% csrf_token %}{{ form.as_div }}<button class="btn">{% translate "Anlegen" %}</button></form>
-    </section>
-    <section class="card">
-      <h3>{% translate "App aus Datei anlegen" %}</h3>
-      <p class="muted small">{% translate "Für Apps, die in einer anderen Umgebung als Version heruntergeladen wurden. Daten werden nicht übertragen." %}</p>
-      <form method="post" action="{% url 'designer_app_import' %}" enctype="multipart/form-data" class="form">
-        {% csrf_token %}
-        <div><input type="file" name="file" accept="application/json,.json" required aria-label="{% translate 'App-Datei' %}"></div>
-        <button class="btn btn-secondary">{% translate "Importieren" %}</button>
-      </form>
+
+    <section class="card create-card" data-tabs>
+      <h3>{% translate "Neu anlegen" %}</h3>
+      <div class="segmented tabs" role="tablist">
+        <a href="?neu=app" role="tab" data-tab="app"{% if tab == "app" %} class="current" aria-selected="true"{% endif %}>{% translate "App" %}</a>
+        {% if auto_form %}<a href="?neu=automation" role="tab" data-tab="automation"{% if tab == "automation" %} class="current" aria-selected="true"{% endif %}>{% translate "Automatisierung" %}</a>{% endif %}
+        <a href="?neu=datei" role="tab" data-tab="datei"{% if tab == "datei" %} class="current" aria-selected="true"{% endif %}>{% translate "Aus Datei" %}</a>
+      </div>
+
+      <div class="tab-panel" data-panel="app" data-tour="new-app-form"{% if tab != "app" %} hidden{% endif %}>
+        <p class="muted small">{% translate "Mit Tabellen, Seiten und Bausteinen. Startet als Entwurf mit einer leeren Startseite." %}</p>
+        {% include "designer/_new_app_fields.html" with f=form %}
+        </div>
+
+      {% if auto_form %}
+      <div class="tab-panel" data-panel="automation" id="neue-automatisierung"{% if tab != "automation" %} hidden{% endif %}>
+        <p class="muted small">{% translate "Keine Seiten, nur Python-Skripte im Hintergrund: zeitgesteuert, täglich, ständig laufend oder per Webhook. Echtes Python mit allen Bibliotheken der gemeinsamen Umgebung." %}</p>
+        {% include "designer/_new_app_fields.html" with f=auto_form button=_("Automatisierung anlegen") %}
+      </div>
+      {% endif %}
+
+      <div class="tab-panel" data-panel="datei"{% if tab != "datei" %} hidden{% endif %}>
+        <p class="muted small">{% translate "Für Apps und Automatisierungen, die in einer anderen Umgebung als Version heruntergeladen wurden. Daten werden nicht übertragen." %}</p>
+        <form method="post" action="{% url 'designer_app_import' %}" enctype="multipart/form-data" class="form">
+          {% csrf_token %}
+          <div><input type="file" name="file" accept="application/json,.json" required aria-label="{% translate 'App-Datei' %}"></div>
+          <button class="btn btn-secondary">{% translate "Importieren" %}</button>
+        </form>
+      </div>
     </section>
   </div>
 </div>
 {% endblock %}
 {% block tour %}{% tour "designer" %}{% endblock %}
+{% block scripts %}<script src="{% asset 'builder/tabs.js' %}"></script>{% endblock %}

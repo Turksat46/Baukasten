@@ -688,6 +688,100 @@ muss der [Hintergrunddienst](#hintergrundarbeiten) laufen.
 Alle Befehle stehen in der Kurzreferenz neben dem Code-Feld und in
 [Teil 3](#skripte-referenz).
 
+### Automatisierungen
+
+Eine **Automatisierung** ist die zweite Art von App: keine Seiten, keine
+Nutzer, nur Python-Skripte, die im Hintergrund laufen. Typisch sind Abgleiche
+mit anderen Systemen, Exporte, Prüfungen oder ein Dienst, der ständig auf etwas
+wartet. Anders als die Skripte normaler Apps laufen sie mit **echtem Python**:
+alle Bibliotheken der gemeinsamen Umgebung (etwa `requests`, `openpyxl`),
+Dateien im eigenen Arbeitsordner, Threads, beliebig lange Läufe.
+
+Anlegen dürfen sie nur Mitglieder der Gruppe **Automatisierer** und Verwalter
+(siehe [Rechte](#rechte)). Für sie gibt es auf der Designer-Startseite die
+Karte „Neue Automatisierung“. Normale Nutzer sehen Automatisierungen nirgends.
+
+**Wann ein Skript läuft:**
+
+| Auslöser | Verhalten |
+|---|---|
+| Zeitgesteuert, alle N Minuten | Termine im Abstand N. Läuft der vorige Lauf noch, entfällt der Termin; der nächste Lauf startet zum nächsten Termin nach dem Ende. Es wird nichts nachgeholt. |
+| Täglich zu einer Uhrzeit | wahlweise nur Montag bis Freitag, in der Zeitzone des Baukastens |
+| Läuft ständig | ohne Zeitlimit. Endet das Skript oder stürzt es ab, startet es von selbst neu; nach Fehlern mit wachsender Wartezeit (10 Sekunden, 30 Sekunden, 2, 5, 10 Minuten). „Ausschalten“ stoppt es. |
+| Nur von Hand oder per Webhook | per Knopf „Jetzt starten“, über die API oder den MCP-Server |
+
+Ein Skript läuft **nie zweimal gleichzeitig**, auch nicht, wenn es von Hand
+gestartet wird, während ein geplanter Lauf arbeitet. Jeder Lauf hat ein
+**Zeitlimit** in Minuten (Standard 30, höchstens 240), danach wird er
+abgebrochen. Beispiel: Ein Skript alle 15 Minuten braucht 20 Minuten. Dann
+läuft es um 10:00, der Termin 10:15 entfällt (das Protokoll vermerkt ihn als
+„übersprungen“), der nächste Lauf startet um 10:30.
+
+**Übersicht und Live-Protokoll.** Die Seite der Automatisierung zeigt jedes
+Skript mit Zeitplan, Zustand (läuft, wartet, aus, Fehler), letztem Lauf und
+nächstem Termin, mit den Knöpfen „Jetzt starten“ und „Stoppen“ (bei
+Dauerläufern „Einschalten“ und „Ausschalten“). Im Skript-Editor erscheint
+alles, was das Skript mit `print()` ausgibt, nach ein bis zwei Sekunden im
+Live-Protokoll; dazu die letzten 15 Läufe. „Speichern und jetzt starten“
+probiert eine Änderung sofort aus. Neuer Code gilt ab dem nächsten Lauf;
+Dauerläufer übernehmen ihn nach Aus- und Einschalten.
+
+```python
+import requests
+
+antwort = requests.get("https://erp.example.com/api/auftraege",
+                       headers={"Authorization": "Bearer " + secret("ERP_TOKEN")}, timeout=60)
+antwort.raise_for_status()
+neu = 0
+for auftrag in antwort.json():
+    if not app.table("auftraege").first(nummer=auftrag["id"]):
+        app.table("auftraege").create(nummer=auftrag["id"], kunde=auftrag["kunde"])
+        neu += 1
+print(neu, "neue Aufträge")
+```
+
+Ein Dauerläufer ist meist eine Schleife:
+
+```python
+import time
+
+while True:
+    for datei in neue_dateien():          # eigene Funktion
+        verarbeite(datei)
+    time.sleep(30)
+```
+
+**Tabellen als Speicher.** Eine Automatisierung kann Tabellen haben, etwa für
+Ergebnisse, Zähler oder „zuletzt gesehen“. Seiten dazu gibt es nicht; die Daten
+siehst du unter `/admin/` oder über die API.
+
+**Von außen starten (Webhook).** Mit einem API-Schlüssel der Automatisierung,
+der schreiben darf:
+
+```
+curl -X POST -H "Authorization: Bearer SCHLÜSSEL" -H "Content-Type: application/json" \
+  -d '{"auftrag": 42}' https://baukasten.example.com/api/v1/<automatisierung>/ausloesen/<skript>/
+```
+
+Antwort `202`: Start angenommen; der Lauf beginnt innerhalb weniger Sekunden.
+`409`: Für das Skript wartet schon ein Start, oder es läuft ständig. Der
+JSON-Inhalt steht im Skript in `event["daten"]` (höchstens 256 KB). Der
+MCP-Server der Automatisierung bietet dieselben Starts als Tools
+`start_<skript>` an, dazu `automation_status` mit dem Zustand aller Skripte.
+
+**Zugangsdaten** gehören nie in den Code. Der Betrieb richtet sie als
+Geheimnis ein (siehe [Hintergrunddienst](#hintergrundarbeiten)), das Skript
+liest sie mit `secret("NAME")`.
+
+**Bibliotheken.** Alle Automatisierungen teilen sich eine Umgebung: die
+Bibliotheken aus `requirements.txt` und `requirements-automation.txt`. Fehlt
+eine, trägt der Betrieb sie in `requirements-automation.txt` ein und baut das
+Image neu. Eigene Installationen je Skript gibt es bewusst nicht.
+
+Versionen, Export und Import, Mitbearbeiter und Löschen funktionieren wie bei
+normalen Apps. Eine exportierte Automatisierung lässt sich nur von
+Automatisierern importieren.
+
 ---
 
 ## 3. Entwickeln
@@ -709,8 +803,9 @@ python manage.py beispiel_einwilligung   (Beispiel-App „Aufnahme-Einwilligung�
 python manage.py runserver
 ```
 
-Zeitgesteuerte Skripte und das Spiegeln von Abfragen erledigt ein eigener
-Befehl. Beim Entwickeln in einem zweiten Terminal starten:
+Automatisierungen, zeitgesteuerte Skripte und das Spiegeln von Abfragen
+erledigt der Hintergrunddienst. Beim Entwickeln in einem zweiten Terminal
+starten:
 
 ```
 python manage.py hintergrund --dauerhaft
@@ -756,7 +851,7 @@ builder/
 extensions/          eigene Python-Erweiterungen
 clients/python/      Python-Bibliothek baukasten-client für die API
 docs/                dieses Handbuch (Deutsch und Englisch)
-k8s/                 Kubernetes-Manifeste (app, migrate-job, cronjob, optional redis)
+k8s/                 Kubernetes-Manifeste (app, migrate-job, worker, optional redis)
 gunicorn.conf.py     Prozesse, Threads und Zeitlimits des Webservers
 ```
 
@@ -1013,6 +1108,7 @@ als Objekt übergeben.
 | `db.saved("abfrage")` | `await db.saved("abfrage")` | Ergebnis einer gespeicherten Abfrage (Liste von Zeilen) |
 | `db.query("quelle", sql, {"x": 1})` | – | freie lesende Abfrage mit Parametern `:x` |
 | `http.get_json(url)` / `http.post_json(url, daten)` | – | anderes System aufrufen (nur freigegebene Hosts) |
+| `secret("NAME")` | – | nur [Automatisierungen](#automatisierungen): Geheimnis `SCRIPT_SECRET_NAME` lesen |
 | `ui.set("name", …)` / `ui.hide("name")` | `ui.set("name", {…})` / `ui.hide("name")` | Baustein füllen bzw. ausblenden |
 | `message("Text")` | `message("Text")` | Meldung für die Person, die das Skript ausgelöst hat |
 | `token()` / `token(32)` | – | zufälliger, nicht erratbarer Code, z. B. für geheime Links |
@@ -1143,6 +1239,12 @@ Alles Umgebungsabhängige kommt aus Umgebungsvariablen.
 | `SCRIPT_TIMEOUT` | Zeitlimit für Python-Skripte in Sekunden, Standard 10 |
 | `SCRIPT_MEMORY_MB` | Speichergrenze je Python-Skript (nur Linux), Standard 512 |
 | `SCRIPT_MAX_CALLS` | Befehle je Skriptlauf, Standard 1000 |
+| `AUTOMATION_PARALLEL` | gleichzeitige Läufe von Automatisierungen (Dauerläufer zählen nicht mit), Standard 4 |
+| `AUTOMATION_MEMORY_MB` | Speichergrenze je Lauf einer Automatisierung (nur Linux), Standard 2048, im Manifest 1024 |
+| `AUTOMATION_MAX_TIMEOUT_MINUTES` | längstes Zeitlimit, das ein Skript einstellen darf, Standard 240 |
+| `AUTOMATION_MAX_CALLS` | Befehle (`app.table`, `db`, `secret`) je Lauf, Standard 0 = unbegrenzt |
+| `SCRIPT_SECRET_<NAME>` | Geheimnis für Automatisierungen, im Skript `secret("NAME")`; nur im Hintergrunddienst setzen |
+| `REDIS_PASSWORD` | Passwort für Redis aus `k8s/redis.yaml` |
 | `PUBLIC_RATE` | Anfragen von Gästen auf öffentlichen Seiten je Adresse und Minute, Standard 120, 0 = keine Grenze |
 | `TABLEAU_HOSTS`, `TABLEAU_CONNECTED_APP_*`, `TABLEAU_USER_ATTRIBUTE` | Tableau einbetten, siehe [Tableau](#tableau) |
 | `DEFAULT_USER_GROUPS` | Gruppen, zu denen jede Person automatisch gehört, Standard `Viewer` |
@@ -1204,7 +1306,7 @@ docker push registry.example.com/baukasten:1.0.0
 kubectl apply -f k8s/secret.yaml          (aus secret.example.yaml erstellen)
 kubectl apply -f k8s/migrate-job.yaml     (legt Tabellen an bzw. aktualisiert sie)
 kubectl apply -f k8s/app.yaml
-kubectl apply -f k8s/cronjob.yaml         (Hintergrundarbeiten, siehe unten)
+kubectl apply -f k8s/worker.yaml          (Hintergrunddienst, siehe unten)
 kubectl exec deploy/baukasten -- python manage.py createsuperuser
 ```
 
@@ -1313,12 +1415,42 @@ Abfragen kann jede Person sehen, die die App benutzen darf.
 
 ### Hintergrundarbeiten
 
-Zeitgesteuerte Skripte und das Spiegeln von Abfragen erledigt der Befehl
-`python manage.py hintergrund`. In Kubernetes ruft ihn der CronJob
-`k8s/cronjob.yaml` jede Minute auf; jedes Skript und jede Abfrage hat
-zusätzlich ein eigenes Intervall. `concurrencyPolicy: Forbid` sorgt dafür, dass
-nie zwei Läufe gleichzeitig arbeiten. Fehler stehen im Protokoll des Jobs und in
-der App (bei Skripten unter „Letzte Läufe“, bei Abfragen unter „Letzter Abgleich“).
+Der **Hintergrunddienst** `python manage.py hintergrund --dauerhaft` startet,
+überwacht und stoppt die Skripte der [Automatisierungen](#automatisierungen).
+Alle 30 Sekunden erledigt er außerdem die zeitgesteuerten Skripte normaler Apps
+und das Spiegeln von Abfragen. In Kubernetes ist das das Deployment
+`baukasten-worker` aus `k8s/worker.yaml`: genau ein Pod, der dauerhaft läuft
+und den früheren CronJob ersetzt (beim Umstieg
+`kubectl delete cronjob baukasten-hintergrund`). Ohne `--dauerhaft` erledigt der
+Befehl nur einmal die Arbeiten normaler Apps, keine Automatisierungen.
+
+So arbeitet der Dienst:
+
+- Jeder Lauf ist ein eigener Prozess. Bis zu `AUTOMATION_PARALLEL` Läufe
+  arbeiten gleichzeitig, Dauerläufer zusätzlich. Der Pod braucht daher Speicher
+  für diese Läufe; im Manifest ist die Grenze 4 GiB.
+- Dass ein Skript nicht zweimal läuft, sichert eine Sperre in der Datenbank mit
+  einem Lebenszeichen alle zwei Sekunden. Stirbt der Pod hart, gibt der nächste
+  Dienst die Sperren nach 90 Sekunden frei und vermerkt den Lauf als
+  „abgebrochen“.
+- Beim Beenden (Deploy, Neustart) bekommen laufende Skripte SIGTERM und haben
+  zehn Sekunden zum Aufräumen. Sie gelten dann als „abgebrochen“; Dauerläufer
+  starten mit dem neuen Pod sofort wieder, geplante Skripte zum nächsten
+  Termin.
+- Ein Lebenszeichen in einer Datei dient der `livenessProbe`: Hängt der Dienst,
+  startet Kubernetes ihn neu.
+
+**Geheimnisse für Skripte** stehen im Secret `baukasten-skript-geheimnisse`
+(Vorlage in `k8s/secret.example.yaml`, lokal `k8s\lokal\skript-geheim.env`),
+je Eintrag `SCRIPT_SECRET_<NAME>`. Nur der Worker-Pod bekommt dieses Secret.
+Alle Automatisierungen sehen alle Einträge; trage dort nur Zugänge ein, die
+Automatisierer benutzen dürfen.
+
+**Bibliotheken** für Automatisierungen stehen in `requirements-automation.txt`
+und landen beim Bauen im Image (eine Umgebung für alle).
+
+Fehler stehen im Protokoll des Pods und in der App (bei Skripten unter „Letzte
+Läufe“, bei Abfragen unter „Letzter Abgleich“).
 
 ### Anmeldung über Keycloak
 
@@ -1351,11 +1483,18 @@ Passwort wird nie von einem gleichnamigen Keycloak-Konto übernommen.
 |---|---|
 | Nutzer | veröffentlichte Apps verwenden, die für alle oder für eine seiner Gruppen freigegeben sind; öffentliche Seiten brauchen gar keine Anmeldung |
 | Designer | eigene Apps und Apps, zu denen sie eingeladen sind, bearbeiten; neue Apps anlegen, eigene Bausteine anlegen |
+| Automatisierer | zusätzlich [Automatisierungen](#automatisierungen) anlegen und bearbeiten (echtes Python im Hintergrund) |
 | Verwalter (Superuser) | zusätzlich alle Apps im Designer und `/admin/`: Benutzer, Gruppen, alle Daten |
 
 Designer ist, wer in Keycloak die Designer-Rolle hat, oder lokal das Recht
 „Darf Apps im Designer bearbeiten“ bzw. den Mitarbeiter-Status. Konten mit
 Mitarbeiter-Status sehen außerdem den Link „Admin“ in der Kopfzeile.
+
+Automatisierer ist, wer zur Gruppe **Automatisierer** gehört (das Update legt
+sie mit beiden Rechten an; Mitglieder trägt ein Verwalter unter `/admin/` →
+Gruppen ein, mit Keycloak eine gleichnamige Gruppe). Der Mitarbeiter-Status
+allein reicht dafür nicht, denn Automatisierungen führen beliebigen Code auf dem
+Server aus. Auch als Mitbearbeiter einladen lassen sich nur Automatisierer.
 
 **Eigentümerin und Mitbearbeiter.** Wer eine App anlegt, ist ihre
 Eigentümerin. Im Designer der App, Abschnitt „Mitbearbeiter“:
@@ -1456,6 +1595,17 @@ Nach Änderungen an statischen Dateien muss das Image neu gebaut werden
   in ihrer App. Restrisiko: Ein Fehler in RestrictedPython könnte einem Skript
   mehr erlauben. Wer sich davor schützen muss, lässt Skripte in einem eigenen
   Container ohne Netzwerkzugang laufen; das ist noch nicht eingebaut.
+- **Automatisierungen** führen echtes Python aus; wer sie bauen darf, kann
+  beliebigen Code im Worker-Pod ausführen. Deshalb nur die Gruppe
+  „Automatisierer“. Abgesichert ist trotzdem: Skripte laufen nur im Worker-Pod,
+  nie im Web-Pod; sie starten ohne Umgebungsvariablen; der Dienst macht sich
+  unter Linux „nicht auslesbar“ (`PR_SET_DUMPABLE`), damit ein Skript nicht über
+  `/proc` an seine Zugangsdaten kommt; der Pod hat keinen Kubernetes-Token;
+  läuft er als root, laufen Skripte als `nobody`. Tabellen erreichen Skripte
+  nur über die Befehle des Baukastens und nur in ihrer App. **Nicht
+  abgeschottet** ist das Netz: Skripte erreichen alles, was der Pod erreicht.
+  Redis verlangt deshalb ein Passwort; mit NetworkPolicies lässt sich der
+  Worker weiter einschränken.
 - **JavaScript-Skripte** laufen im Browser in einer Sandbox ohne Zugriff auf die
   Seite, auf Cookies und auf das Netz, mit den Rechten der jeweiligen Person.
 - **Datenquellen:** Zugangsdaten nur in Umgebungsvariablen bzw. Secrets; sie
@@ -1539,7 +1689,7 @@ Als Verwalter unter `/admin/` → bei der App „Daten ansehen“.
 
 ## Grenzen des jetzigen Stands
 
-- **Getestet** mit SQLite: 170 automatische Tests und Durchläufe im Browser
+- **Getestet** mit SQLite: 194 automatische Tests und Durchläufe im Browser
   (Chrome), darunter Python- und JavaScript-Skripte, Live-Anzeige und Spiegeln
   mit einer SQLite-Datenquelle sowie die Python-Bibliothek gegen einen echten
   Server. Mit PostgreSQL (für den Baukasten und als Datenquelle) und gunicorn
@@ -1555,6 +1705,13 @@ Als Verwalter unter `/admin/` → bei der App „Daten ansehen“.
 - **Skripte:** Jeder Python-Lauf startet einen eigenen Prozess (etwa 0,1 bis
   0,3 Sekunden). Skripte beim Seitenaufruf machen die Seite entsprechend
   langsamer. JavaScript-Skripte brauchen einen aktuellen Browser.
+- **Automatisierungen:** Zeitpläne sind auf wenige Sekunden genau. Es gibt
+  einen Worker-Pod; alle Skripte teilen sich seine CPU und seinen Speicher und
+  eine gemeinsame Bibliotheks-Umgebung (keine eigenen Pakete je Skript).
+  Geheimnisse gelten für alle Automatisierungen. Bei Fehlern gibt es keine
+  E-Mail, nur die Anzeige im Designer. Das Netz des Pods ist nicht
+  eingeschränkt. Unter Windows (Entwicklung) gibt es keine Speichergrenze, und
+  „Stoppen“ beendet den Prozess sofort ohne Aufräumen.
 - **Datenquellen:** werden vom Betrieb über Umgebungsvariablen eingerichtet,
   nicht im Designer; alle Designer können alle Quellen nutzen. Gespiegelte
   Tabellen lösen keine Skripte „nach dem Speichern“ aus.

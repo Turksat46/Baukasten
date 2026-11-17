@@ -1,54 +1,36 @@
-"""Führt fällige Hintergrundarbeiten aus: zeitgesteuerte Skripte und Abgleiche mit Datenquellen.
+"""Hintergrunddienst des Baukastens.
 
-Im Betrieb regelmäßig aufrufen, z. B. jede Minute als Kubernetes-CronJob (k8s/cronjob.yaml):
-    python manage.py hintergrund
-
-Beim Entwickeln in einem zweiten Terminal dauerhaft laufen lassen:
+Dauerhaft (empfohlen, Kubernetes: Deployment baukasten-worker in k8s/worker.yaml; lokal in einem
+zweiten Terminal):
     python manage.py hintergrund --dauerhaft
-"""
-import time
-from datetime import timedelta
+Startet den Aufseher für Automatisierungen (lange und ständig laufende Python-Skripte) und
+erledigt alle 30 Sekunden die übrigen Hintergrundarbeiten: zeitgesteuerte Skripte normaler Apps
+und Abgleiche mit Datenquellen.
 
+Einmal (z. B. als CronJob, wie bis Version 1): nur die übrigen Hintergrundarbeiten, keine
+Automatisierungen.
+    python manage.py hintergrund
+"""
 from django.core.management.base import BaseCommand
-from django.db import close_old_connections
 from django.utils import timezone
 
-from builder.datasources import sync_and_record
-from builder.models import DataQuery
-from builder.scripting.triggers import run_due
+from builder.scripting.worker import Worker, background_once
 
 
 class Command(BaseCommand):
-    help = "Führt fällige zeitgesteuerte Skripte und Abgleiche mit Datenquellen aus."
+    help = "Hintergrunddienst: Automatisierungen, zeitgesteuerte Skripte und Abgleiche mit Datenquellen."
 
     def add_arguments(self, parser):
         parser.add_argument("--dauerhaft", action="store_true",
-                            help="Nicht beenden, sondern alle 30 Sekunden erneut prüfen (für die Entwicklung).")
-        parser.add_argument("--pause", type=int, default=30, help="Sekunden zwischen zwei Durchläufen.")
+                            help="Als Dienst laufen (mit Automatisierungen). Beenden mit Strg+C oder SIGTERM.")
+        parser.add_argument("--parallel", type=int, default=0,
+                            help="Gleichzeitige Läufe von Automatisierungen (Standard: AUTOMATION_PARALLEL).")
 
     def handle(self, *args, **options):
-        if not options["dauerhaft"]:
-            self.run_once()
+        if options["dauerhaft"]:
+            Worker(parallel=options["parallel"] or None, out=self.stdout).serve()
             return
-        self.stdout.write("Läuft dauerhaft. Beenden mit Strg+C.")
-        try:
-            while True:
-                close_old_connections()
-                self.run_once()
-                time.sleep(max(options["pause"], 5))
-        except KeyboardInterrupt:
-            self.stdout.write("Beendet.")
-
-    def run_once(self):
-        now = timezone.now()
-        scripts = run_due(now)
-        syncs = failed = 0
-        for query in DataQuery.objects.filter(sync_interval__gt=0).select_related("app", "sync_entity"):
-            if query.last_sync_at and query.last_sync_at + timedelta(minutes=query.sync_interval) > now:
-                continue
-            syncs += 1
-            if not sync_and_record(query):
-                failed += 1
-                self.stderr.write(f"Abgleich {query.app.slug}/{query.slug}: {query.last_sync_message}")
-        stamp = timezone.localtime(now).strftime("%H:%M:%S")
-        self.stdout.write(f"{stamp} {scripts} Skripte ausgeführt, {syncs} Abgleiche ({failed} fehlgeschlagen).")
+        scripts, syncs, failed = background_once()
+        stamp = timezone.localtime().strftime("%H:%M:%S")
+        self.stdout.write(f"{stamp} {scripts} Skripte ausgeführt, {syncs} Abgleiche ({failed} fehlgeschlagen). "
+                          "Automatisierungen laufen nur mit --dauerhaft.")

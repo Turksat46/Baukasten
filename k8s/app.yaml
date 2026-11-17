@@ -13,6 +13,11 @@ data:
   # Skripte: Zeitlimit in Sekunden, Speicher je Lauf in MB
   SCRIPT_TIMEOUT: "10"
   SCRIPT_MEMORY_MB: "512"
+  # Automatisierungen (Pod baukasten-worker): gleichzeitige Läufe (ohne Dauerläufer),
+  # Speicher je Lauf in MB, längstes Zeitlimit in Minuten
+  AUTOMATION_PARALLEL: "4"
+  AUTOMATION_MEMORY_MB: "1024"
+  AUTOMATION_MAX_TIMEOUT_MINUTES: "240"
   # Anmeldung über Keycloak (leer lassen: nur lokale Konten). Das Client-Secret gehört ins Secret.
   OIDC_ISSUER: ""        # z. B. https://keycloak.example.com/realms/firma
   OIDC_CLIENT_ID: ""

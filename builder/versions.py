@@ -4,6 +4,8 @@ Ein Stand enthält den Aufbau der App (Einstellungen, Tabellen, Felder, Seiten),
 nicht die erfassten Daten. Beim Wiederherstellen gehen deshalb keine Einträge
 verloren: Tabellen, die es im alten Stand noch nicht gab, bleiben bestehen.
 """
+from datetime import time
+
 from django.db import IntegrityError, transaction
 from django.utils.translation import gettext as _
 
@@ -18,7 +20,7 @@ def snapshot(app):
     return {
         "format": FORMAT,
         "app": {"name": app.name, "description": app.description, "icon": app.icon,
-                "translations": app.translations or {}},
+                "translations": app.translations or {}, "kind": app.kind},
         "entities": [
             {
                 "slug": e.slug, "name": e.name, "allow_create": e.allow_create,
@@ -40,7 +42,9 @@ def snapshot(app):
         "scripts": [
             {"slug": sc.slug, "name": sc.name, "language": sc.language, "trigger": sc.trigger,
              "page": sc.page.slug if sc.page else None, "entity": sc.entity.slug if sc.entity else None,
-             "interval_minutes": sc.interval_minutes, "enabled": sc.enabled, "code": sc.code}
+             "interval_minutes": sc.interval_minutes, "enabled": sc.enabled, "code": sc.code,
+             "daily_time": sc.daily_time.strftime("%H:%M") if sc.daily_time else None,
+             "weekdays_only": sc.weekdays_only, "timeout_minutes": sc.timeout_minutes}
             for sc in app.scripts.select_related("page", "entity")
         ],
         "queries": [
@@ -62,6 +66,10 @@ def create_version(app, user=None, note="", automatic=False):
 
 class InvalidSnapshot(ValueError):
     pass
+
+
+class AutomationNotAllowed(InvalidSnapshot):
+    """Datei enthält eine Automatisierung, die Person gehört nicht zu den Automatisierern."""
 
 
 def _text(value, limit):
@@ -140,16 +148,19 @@ def _apply_logic(app, data):
     pages = {p.slug: p for p in app.pages.all()}
     if "scripts" in data:
         app.scripts.all().delete()
-        languages = {key for key, label in Script.LANGUAGES}
-        triggers = {key for key, label in Script.TRIGGERS}
+        # Automatisierungen: nur Python und ihre eigenen Auslöser; normale Apps umgekehrt.
+        languages = {Script.PYTHON} if app.is_automation else {key for key, label in Script.LANGUAGES}
+        triggers = set(Script.AUTOMATION_TRIGGERS if app.is_automation else Script.APP_TRIGGERS)
         for item in data["scripts"]:
             if item.get("language") not in languages or item.get("trigger") not in triggers:
-                raise InvalidSnapshot("Unbekannte Skript-Angaben.")
+                raise InvalidSnapshot(_("Die Skripte passen nicht zu dieser Art von App."))
             Script.objects.create(
                 app=app, slug=_text(item["slug"], 50), name=_text(item.get("name"), 80) or item["slug"],
                 language=item["language"], trigger=item["trigger"], page=pages.get(item.get("page")),
                 entity=entities.get(item.get("entity")), interval_minutes=int(item.get("interval_minutes") or 60),
                 enabled=bool(item.get("enabled", True)), code=_text(item.get("code"), 200000),
+                daily_time=time.fromisoformat(item["daily_time"]) if item.get("daily_time") else None,
+                weekdays_only=bool(item.get("weekdays_only")), timeout_minutes=int(item.get("timeout_minutes") or 30),
             )
     if "queries" in data:
         app.queries.all().delete()
@@ -173,9 +184,14 @@ def restore(version, user=None):
 @transaction.atomic
 def import_app(data, user=None):
     """Legt aus einer exportierten Datei eine neue App an (als Entwurf)."""
+    from .models import can_automate
+
     if not isinstance(data, dict) or data.get("format") != FORMAT or not isinstance(data.get("app"), dict):
         raise InvalidSnapshot("Unbekanntes Format.")
-    app = App.objects.create(name=_text(data["app"].get("name"), 80) or "Importierte App",
+    kind = App.AUTOMATION if data["app"].get("kind") == App.AUTOMATION else App.APP
+    if kind == App.AUTOMATION and not (user and can_automate(user)):
+        raise AutomationNotAllowed(_("Die Datei enthält eine Automatisierung. Importieren dürfen das nur Mitglieder der Gruppe „Automatisierer“."))
+    app = App.objects.create(name=_text(data["app"].get("name"), 80) or "Importierte App", kind=kind,
                              created_by=user if user and user.is_authenticated else None)
     apply(app, data)
     return app

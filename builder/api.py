@@ -11,6 +11,7 @@ Schlüssel der App im Kopf „Authorization: Bearer <Schlüssel>“.
     PATCH  /api/v1/<app>/<tabelle>/<id>/      einzelne Felder ändern
     DELETE /api/v1/<app>/<tabelle>/<id>/      Eintrag löschen
     *      /api/v1/<app>/x/<name>/            eigener Endpunkt aus extensions (hooks.api)
+    POST   /api/v1/<app>/ausloesen/<skript>/  Skript einer Automatisierung starten (Webhook)
 """
 import json
 import logging
@@ -26,7 +27,7 @@ from django.utils.translation import gettext as _
 from django.views.decorators.csrf import csrf_exempt
 
 from . import hooks, openapi
-from .models import ApiKey, App, Field, Record
+from .models import ApiKey, App, Field, Record, Script
 from .scripting.ops import OpsError, coerce, save_record, serialize
 
 log = logging.getLogger(__name__)
@@ -126,8 +127,14 @@ def describe(request, app, key, payload):
                 for f in entity.fields.all()
             ],
         })
+    scripts = []
+    if app.is_automation:
+        scripts = [{"name": sc.name, "slug": sc.slug, "trigger": sc.trigger,
+                    "url": request.build_absolute_uri(reverse("api_trigger", args=[app.slug, sc.slug]))}
+                   for sc in app.scripts.exclude(trigger=Script.CONTINUOUS)]
     return JsonResponse({
         "app": app.name, "slug": app.slug, "write": key.can_write, "tables": tables,
+        **({"scripts": scripts} if app.is_automation else {}),
         "endpoints": [{"name": n, "methods": list(e["methods"]),
                        "url": request.build_absolute_uri(reverse("api_custom", args=[app.slug, n]))}
                       for n, e in hooks.API_ENDPOINTS.items()],
@@ -198,3 +205,33 @@ def openapi_spec(request, app, key, payload):
     if request.method != "GET":
         return error(405, _("Methode nicht erlaubt."))
     return JsonResponse(openapi.build(request, app), json_dumps_params={"ensure_ascii": False})
+
+
+MAX_TRIGGER_BYTES = 256 * 1024
+
+
+def start_automation(app, slug, trigger, payload, key_name):
+    """Gemeinsam für Webhook und MCP: (HTTP-Status, Antwort)."""
+    from .scripting.worker import request_run
+
+    if not app.is_automation:
+        return 404, {"error": _("Diese App ist keine Automatisierung.")}
+    script = app.scripts.filter(slug=slug).first()
+    if script is None:
+        return 404, {"error": _("Das Skript „%(name)s“ gibt es nicht.") % {"name": slug}}
+    if script.trigger == Script.CONTINUOUS:
+        return 409, {"error": _("Das Skript läuft ständig und lässt sich nicht einzeln starten.")}
+    if not request_run(script, trigger, daten=payload, key=key_name):
+        return 409, {"error": _("Für dieses Skript wartet schon ein Start.")}
+    return 202, {"status": "angenommen", "script": script.slug, "running": bool(script.running_since)}
+
+
+@api_view
+def trigger(request, app, key, payload, script):
+    """Webhook: startet ein Skript einer Automatisierung. Der JSON-Inhalt steht im Skript in event["daten"]."""
+    if request.method != "POST":
+        return error(405, _("Methode nicht erlaubt."))
+    if len(request.body) > MAX_TRIGGER_BYTES:
+        return error(413, _("Der Inhalt ist zu groß (höchstens 256 KB)."))
+    status, body = start_automation(app, script, "webhook", payload, key.name)
+    return JsonResponse(body, status=status)

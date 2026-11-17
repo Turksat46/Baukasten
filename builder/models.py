@@ -40,7 +40,17 @@ def can_design(user):
     return user.is_authenticated and (user.is_staff or user.has_perm("builder.design_apps"))
 
 
+def can_automate(user):
+    """Automatisierungen bauen: Skripte mit uneingeschränktem Python. Nur Superuser und die Gruppe
+    „Automatisierer“ (Recht automate_apps), immer zusammen mit dem Designer-Recht."""
+    return can_design(user) and (user.is_superuser or user.has_perm("builder.automate_apps"))
+
+
 class App(models.Model):
+    # Art: normale App mit Seiten oder Automatisierung (nur Python-Skripte im Hintergrund).
+    APP, AUTOMATION = "app", "automation"
+    KINDS = [(APP, _("App")), (AUTOMATION, _("Automatisierung"))]
+
     name = models.CharField(_("Name"), max_length=80)
     slug = models.SlugField(unique=True, blank=True)
     description = models.CharField(_("Beschreibung"), max_length=200, blank=True)
@@ -71,12 +81,14 @@ class App(models.Model):
     )
     # Übersetzungen der Inhalte: {"en": {"Quelltext": "Übersetzung"}}, siehe builder/app_i18n.py
     translations = models.JSONField(default=dict, blank=True, encoder=UnicodeJSONEncoder)
+    kind = models.CharField(_("Art"), max_length=12, choices=KINDS, default=APP)
 
     class Meta:
         verbose_name = _("App")
         verbose_name_plural = _("Apps")
         ordering = ["name"]
-        permissions = [("design_apps", _("Darf Apps im Designer bearbeiten"))]
+        permissions = [("design_apps", _("Darf Apps im Designer bearbeiten")),
+                       ("automate_apps", _("Darf Automatisierungen mit uneingeschränktem Python bauen"))]
 
     def __str__(self):
         return self.name
@@ -96,15 +108,20 @@ class App(models.Model):
             return cls.objects.none()
         if user.is_superuser:
             return cls.objects.all()
-        return cls.objects.filter(
+        apps = cls.objects.filter(
             models.Q(created_by__isnull=True) | models.Q(created_by=user) | models.Q(editors=user)
             | models.Q(editor_groups__in=user.groups.all())
         ).distinct()
+        return apps if can_automate(user) else apps.exclude(kind=cls.AUTOMATION)
+
+    @property
+    def is_automation(self):
+        return self.kind == self.AUTOMATION
 
     def user_can_edit(self, user):
         """Im Designer bearbeiten: Eigentümerin, Mitbearbeiter (einzeln oder per Gruppe), Admins.
         Immer nur mit Designer-Recht."""
-        if not can_design(user):
+        if not can_design(user) or (self.is_automation and not can_automate(user)):
             return False
         if user.is_superuser or self.created_by_id is None or self.created_by_id == user.pk:
             return True
@@ -114,9 +131,12 @@ class App(models.Model):
     def user_can_manage(self, user):
         """Mitbearbeiter verwalten und die App löschen: Eigentümerin und Admins.
         Apps ohne Eigentümerin bleiben wie bisher für alle Designer offen."""
-        return can_design(user) and (user.is_superuser or self.created_by_id in (None, user.pk))
+        return (can_design(user) and (not self.is_automation or can_automate(user))
+                and (user.is_superuser or self.created_by_id in (None, user.pk)))
 
     def user_can_use(self, user):
+        if self.is_automation:  # hat keine Seiten; bedient wird sie nur im Designer
+            return False
         if self.user_can_edit(user):
             return True
         if not self.published:
@@ -416,13 +436,19 @@ class Script(models.Model):
     PYTHON, JAVASCRIPT = "python", "javascript"
     LANGUAGES = [(PYTHON, "Python"), (JAVASCRIPT, "JavaScript")]
     PAGE, BUTTON, SAVE, SCHEDULE = "page", "button", "save", "schedule"
+    DAILY, CONTINUOUS, MANUAL = "daily", "continuous", "manual"
     TRIGGERS = [
         (PAGE, _("Beim Öffnen einer Seite")),
         (BUTTON, _("Per Button")),
         (SAVE, _("Nach dem Speichern eines Eintrags")),
         (SCHEDULE, _("Zeitgesteuert im Hintergrund")),
+        (DAILY, _("Täglich zu einer Uhrzeit")),
+        (CONTINUOUS, _("Läuft ständig")),
+        (MANUAL, _("Nur von Hand oder per Webhook")),
     ]
     PYTHON_ONLY = {SAVE, SCHEDULE}
+    APP_TRIGGERS = (PAGE, BUTTON, SAVE, SCHEDULE)
+    AUTOMATION_TRIGGERS = (SCHEDULE, DAILY, CONTINUOUS, MANUAL)
 
     app = models.ForeignKey(App, related_name="scripts", on_delete=models.CASCADE)
     name = models.CharField(_("Name"), max_length=80)
@@ -434,6 +460,12 @@ class Script(models.Model):
     entity = models.ForeignKey(Entity, null=True, blank=True, on_delete=models.CASCADE, verbose_name=_("Tabelle"),
                                help_text=_("Leer lassen: nach dem Speichern in jeder Tabelle der App."))
     interval_minutes = models.PositiveIntegerField(_("Alle … Minuten"), default=60)
+    # Nur Automatisierungen:
+    daily_time = models.TimeField(_("Uhrzeit"), null=True, blank=True)
+    weekdays_only = models.BooleanField(_("Nur werktags (Mo–Fr)"), default=False)
+    timeout_minutes = models.PositiveIntegerField(
+        _("Zeitlimit in Minuten"), default=30,
+        help_text=_("Dauert ein Lauf länger, wird er abgebrochen. Gilt nicht für „Läuft ständig“."))
     enabled = models.BooleanField(_("Aktiv"), default=True)
     code = models.TextField(_("Code"), blank=True)
     created_by = models.ForeignKey(
@@ -441,6 +473,14 @@ class Script(models.Model):
     )
     updated_at = models.DateTimeField(auto_now=True)
     last_run_at = models.DateTimeField(null=True, blank=True)
+    # Zustand im Hintergrunddienst (nur Automatisierungen, siehe scripting/worker.py)
+    next_run_at = models.DateTimeField(null=True, blank=True)
+    running_since = models.DateTimeField(null=True, blank=True)
+    heartbeat_at = models.DateTimeField(null=True, blank=True)
+    run_requested = models.BooleanField(default=False)
+    request_event = models.JSONField(null=True, blank=True, encoder=UnicodeJSONEncoder)
+    stop_requested = models.BooleanField(default=False)
+    failures = models.PositiveIntegerField(default=0)
 
     class Meta:
         verbose_name = _("Skript")
@@ -458,6 +498,10 @@ class Script(models.Model):
 
 
 class ScriptRun(models.Model):
+    RUNNING, OK, ERROR, SKIPPED, ABORTED, STOPPED = "running", "ok", "error", "skipped", "aborted", "stopped"
+    STATUSES = [(RUNNING, _("läuft")), (OK, _("ok")), (ERROR, _("Fehler")), (SKIPPED, _("übersprungen")),
+                (ABORTED, _("abgebrochen")), (STOPPED, _("gestoppt"))]
+
     script = models.ForeignKey(Script, related_name="runs", on_delete=models.CASCADE)
     started_at = models.DateTimeField(auto_now_add=True)
     trigger = models.CharField(max_length=10)
@@ -465,11 +509,18 @@ class ScriptRun(models.Model):
     ok = models.BooleanField(default=True)
     log = models.TextField(blank=True)
     error = models.TextField(blank=True)
+    # Nur Automatisierungen; ältere Läufe haben keinen Status (dann zählt „ok“).
+    status = models.CharField(max_length=10, choices=STATUSES, blank=True)
+    finished_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         verbose_name = _("Skriptlauf")
         verbose_name_plural = _("Skriptläufe")
         ordering = ["-id"]
+
+    @property
+    def state(self):
+        return self.status or (self.OK if self.ok else self.ERROR)
 
 
 class DataQuery(models.Model):

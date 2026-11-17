@@ -171,6 +171,8 @@ class ScriptForm(forms.ModelForm):
         self.fields["page"].empty_label = _("Alle Seiten")
         self.fields["entity"].queryset = app.entities.all()
         self.fields["entity"].empty_label = _("Alle Tabellen")
+        labels = dict(Script.TRIGGERS)
+        self.fields["trigger"].choices = [(key, labels[key]) for key in Script.APP_TRIGGERS]
 
     def clean(self):
         cleaned = super().clean()
@@ -178,6 +180,50 @@ class ScriptForm(forms.ModelForm):
             self.add_error("trigger", _("JavaScript läuft im Browser und kann nur beim Öffnen einer Seite oder per Button starten."))
         if cleaned.get("trigger") == Script.SCHEDULE and not cleaned.get("interval_minutes"):
             self.add_error("interval_minutes", _("Bitte ein Intervall von mindestens einer Minute angeben."))
+        return cleaned
+
+
+class AutomationForm(forms.ModelForm):
+    """Einstellungen einer Automatisierung: keine Veröffentlichung, keine Nutzergruppen."""
+
+    class Meta:
+        model = App
+        fields = ["name", "description", "icon"]
+
+
+class AutomationScriptForm(forms.ModelForm):
+    """Skript einer Automatisierung: immer Python, eigene Auslöser."""
+
+    class Meta:
+        model = Script
+        fields = ["name", "trigger", "interval_minutes", "daily_time", "weekdays_only", "timeout_minutes",
+                  "enabled", "code"]
+        widgets = {"code": forms.Textarea(attrs={"rows": 26, "spellcheck": "false", "class": "code",
+                                                 "autocapitalize": "off", "autocomplete": "off"}),
+                   "daily_time": forms.TimeInput(attrs={"type": "time"}, format="%H:%M")}
+
+    def __init__(self, *args, **kwargs):
+        from django.conf import settings
+
+        super().__init__(*args, **kwargs)
+        labels = dict(Script.TRIGGERS)
+        self.fields["trigger"].choices = [(key, labels[key]) for key in Script.AUTOMATION_TRIGGERS]
+        self.fields["trigger"].label = _("Wann läuft das Skript?")
+        self.fields["timeout_minutes"].min_value = 1
+        self.fields["timeout_minutes"].widget.attrs.update(
+            min=1, max=settings.BAUKASTEN_AUTOMATION_MAX_TIMEOUT_MINUTES)
+        self.limit = settings.BAUKASTEN_AUTOMATION_MAX_TIMEOUT_MINUTES
+
+    def clean(self):
+        cleaned = super().clean()
+        trigger = cleaned.get("trigger")
+        if trigger == Script.SCHEDULE and not cleaned.get("interval_minutes"):
+            self.add_error("interval_minutes", _("Bitte ein Intervall von mindestens einer Minute angeben."))
+        if trigger == Script.DAILY and not cleaned.get("daily_time"):
+            self.add_error("daily_time", _("Bitte eine Uhrzeit angeben."))
+        minutes = cleaned.get("timeout_minutes")
+        if minutes is not None and not 1 <= minutes <= self.limit:
+            self.add_error("timeout_minutes", _("Erlaubt sind 1 bis %(max)s Minuten.") % {"max": self.limit})
         return cleaned
 
 

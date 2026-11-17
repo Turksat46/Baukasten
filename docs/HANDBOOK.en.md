@@ -691,6 +691,97 @@ data at night or to fetch a value from another system. This requires the
 All commands are listed in the quick reference next to the code field and in
 [Part 3](#scripts-reference).
 
+### Automations
+
+An **automation** is the second kind of app: no pages, no users, only Python
+scripts running in the background. Typical uses are syncing with other systems,
+exports, checks, or a service that constantly waits for something. Unlike the
+scripts of normal apps they run **real Python**: all libraries of the shared
+environment (such as `requests`, `openpyxl`), files in their own working
+folder, threads, runs of any length.
+
+Only members of the group **Automatisierer** and administrators may create them
+(see [Permissions](#permissions)). They get the card "New automation" on the
+Designer start page. Normal users never see automations.
+
+**When a script runs:**
+
+| Trigger | Behaviour |
+|---|---|
+| Scheduled, every N minutes | slots N minutes apart. If the previous run is still working, the slot is dropped; the next run starts at the next slot after the end. Nothing is caught up. |
+| Daily at a time | optionally Monday to Friday only, in Baukasten's time zone |
+| Runs continuously | no time limit. If the script ends or crashes, it restarts by itself; after errors with a growing delay (10 seconds, 30 seconds, 2, 5, 10 minutes). "Switch off" stops it. |
+| Manually or via webhook only | via the "Start now" button, the API or the MCP server |
+
+A script **never runs twice at the same time**, not even when started by hand
+while a scheduled run is working. Every run has a **time limit** in minutes
+(default 30, at most 240), after which it is cancelled. Example: a script every
+15 minutes needs 20 minutes. It runs at 10:00, the 10:15 slot is dropped (the
+log records it as "skipped"), the next run starts at 10:30.
+
+**Overview and live log.** The automation's page shows every script with its
+schedule, state (running, waiting, off, error), last run and next slot, with
+the buttons "Start now" and "Stop" ("Switch on" and "Switch off" for continuous
+scripts). In the script editor everything the script prints with `print()`
+appears in the live log after one or two seconds, together with the last 15
+runs. "Save and start now" tries a change immediately. New code applies from
+the next run; continuous scripts pick it up after switching off and on.
+
+```python
+import requests
+
+response = requests.get("https://erp.example.com/api/orders",
+                        headers={"Authorization": "Bearer " + secret("ERP_TOKEN")}, timeout=60)
+response.raise_for_status()
+new = 0
+for order in response.json():
+    if not app.table("orders").first(number=order["id"]):
+        app.table("orders").create(number=order["id"], customer=order["customer"])
+        new += 1
+print(new, "new orders")
+```
+
+A continuous script is usually a loop:
+
+```python
+import time
+
+while True:
+    for file in new_files():          # your own function
+        process(file)
+    time.sleep(30)
+```
+
+**Tables as storage.** An automation can have tables, for example for results,
+counters or "last seen". There are no pages for them; you see the data under
+`/admin/` or through the API.
+
+**Starting from outside (webhook).** With an API key of the automation that may
+write:
+
+```
+curl -X POST -H "Authorization: Bearer KEY" -H "Content-Type: application/json" \
+  -d '{"order": 42}' https://baukasten.example.com/api/v1/<automation>/ausloesen/<script>/
+```
+
+Response `202`: start accepted; the run begins within a few seconds. `409`: a
+start is already waiting for the script, or it runs continuously. The JSON body
+is available in the script as `event["daten"]` (at most 256 KB). The
+automation's MCP server offers the same starts as tools `start_<script>`, plus
+`automation_status` with the state of all scripts.
+
+**Credentials** never belong in the code. Operations sets them up as a secret
+(see [Background work](#background-work)); the script reads them with
+`secret("NAME")`.
+
+**Libraries.** All automations share one environment: the libraries from
+`requirements.txt` and `requirements-automation.txt`. If one is missing,
+operations adds it to `requirements-automation.txt` and rebuilds the image.
+There are deliberately no separate installations per script.
+
+Versions, export and import, co-editors and deleting work as for normal apps.
+An exported automation can only be imported by members of "Automatisierer".
+
 ---
 
 ## 3. Developing
@@ -714,8 +805,8 @@ python manage.py runserver
 
 Then open http://127.0.0.1:8000 and sign in.
 
-Scheduled scripts and mirroring of queries are handled by a separate command.
-When developing, start it in a second terminal:
+Automations, scheduled scripts and mirroring of queries are handled by the
+background service. When developing, start it in a second terminal:
 
 ```
 python manage.py hintergrund --dauerhaft
@@ -761,7 +852,7 @@ builder/
 extensions/          your own Python extensions
 clients/python/      Python library baukasten-client for the API
 docs/                this handbook (German and English)
-k8s/                 Kubernetes manifests (app, migrate-job, cronjob, optional redis,
+k8s/                 Kubernetes manifests (app, migrate-job, worker, optional redis,
                      lokal/ for Docker Desktop)
 gunicorn.conf.py     processes, threads and timeouts of the web server
 ```
@@ -1017,6 +1108,7 @@ as an object.
 | `db.saved("query")` | `await db.saved("query")` | result of a saved query (list of rows) |
 | `db.query("source", sql, {"x": 1})` | – | free reading query with parameters `:x` |
 | `http.get_json(url)` / `http.post_json(url, data)` | – | call another system (allowed hosts only) |
+| `secret("NAME")` | – | [automations](#automations) only: read the secret `SCRIPT_SECRET_NAME` |
 | `ui.set("name", …)` / `ui.hide("name")` | `ui.set("name", {…})` / `ui.hide("name")` | fill or hide a block |
 | `message("Text")` | `message("Text")` | message for the person who triggered the script |
 | `token()` / `token(32)` | – | random, unguessable code, e.g. for secret links |
@@ -1145,6 +1237,12 @@ Everything environment-specific comes from environment variables.
 | `SCRIPT_TIMEOUT` | timeout for Python scripts in seconds, default 10 |
 | `SCRIPT_MEMORY_MB` | memory limit per Python script (Linux only), default 512 |
 | `SCRIPT_MAX_CALLS` | commands per script run, default 1000 |
+| `AUTOMATION_PARALLEL` | simultaneous runs of automations (continuous scripts do not count), default 4 |
+| `AUTOMATION_MEMORY_MB` | memory limit per automation run (Linux only), default 2048, 1024 in the manifest |
+| `AUTOMATION_MAX_TIMEOUT_MINUTES` | longest time limit a script may set, default 240 |
+| `AUTOMATION_MAX_CALLS` | commands (`app.table`, `db`, `secret`) per run, default 0 = unlimited |
+| `SCRIPT_SECRET_<NAME>` | secret for automations, `secret("NAME")` in the script; set only in the background service |
+| `REDIS_PASSWORD` | password for the Redis from `k8s/redis.yaml` |
 | `PUBLIC_RATE` | guest requests on public pages per address and minute, default 120, 0 = no limit |
 | `TABLEAU_HOSTS`, `TABLEAU_CONNECTED_APP_*`, `TABLEAU_USER_ATTRIBUTE` | embedding Tableau, see [Tableau](#tableau) |
 | `DEFAULT_USER_GROUPS` | groups every person automatically belongs to, default `Viewer` |
@@ -1205,7 +1303,7 @@ docker push registry.example.com/baukasten:1.0.0
 kubectl apply -f k8s/secret.yaml          (create from secret.example.yaml)
 kubectl apply -f k8s/migrate-job.yaml     (creates or updates tables)
 kubectl apply -f k8s/app.yaml
-kubectl apply -f k8s/cronjob.yaml         (background work, see below)
+kubectl apply -f k8s/worker.yaml          (background service, see below)
 kubectl exec deploy/baukasten -- python manage.py createsuperuser
 ```
 
@@ -1312,11 +1410,39 @@ by everyone who may use the app.
 
 ### Background work
 
-Scheduled scripts and mirroring of queries are handled by the command
-`python manage.py hintergrund`. In Kubernetes, the CronJob `k8s/cronjob.yaml`
-calls it every minute; every script and query also has its own interval.
-`concurrencyPolicy: Forbid` makes sure two runs never work at the same time.
-Errors are in the job's log and in the app (for scripts under "Last runs", for
+The **background service** `python manage.py hintergrund --dauerhaft` starts,
+watches and stops the scripts of [automations](#automations). Every 30 seconds
+it also handles the scheduled scripts of normal apps and the mirroring of
+queries. In Kubernetes this is the deployment `baukasten-worker` from
+`k8s/worker.yaml`: exactly one pod that runs permanently and replaces the
+former CronJob (when switching: `kubectl delete cronjob baukasten-hintergrund`).
+Without `--dauerhaft` the command handles the work of normal apps once, no
+automations.
+
+How the service works:
+
+- Every run is its own process. Up to `AUTOMATION_PARALLEL` runs work at the
+  same time, continuous scripts on top. The pod therefore needs memory for these
+  runs; the manifest's limit is 4 GiB.
+- A lock in the database with a heartbeat every two seconds makes sure a script
+  never runs twice. If the pod dies hard, the next service frees the locks after
+  90 seconds and records the run as "aborted".
+- On shutdown (deploy, restart) running scripts get SIGTERM and have ten
+  seconds to clean up. They then count as "aborted"; continuous scripts restart
+  right away with the new pod, scheduled scripts at their next slot.
+- A heartbeat file serves the `livenessProbe`: if the service hangs, Kubernetes
+  restarts it.
+
+**Secrets for scripts** live in the secret `baukasten-skript-geheimnisse`
+(template in `k8s/secret.example.yaml`, locally `k8s\lokal\skript-geheim.env`),
+one entry `SCRIPT_SECRET_<NAME>` each. Only the worker pod gets this secret.
+All automations see all entries; only put credentials there that automators
+may use.
+
+**Libraries** for automations are listed in `requirements-automation.txt` and
+are baked into the image (one environment for all).
+
+Errors are in the pod's log and in the app (for scripts under "Last runs", for
 queries under "Last sync").
 
 ### Sign-in via Keycloak
@@ -1350,11 +1476,18 @@ taken over by a Keycloak account of the same name.
 |---|---|
 | Users | use published apps that are shared with everyone or with one of their groups; public pages need no sign-in at all |
 | Designers | edit their own apps and apps they were invited to; create new apps and custom blocks |
+| Automators | additionally create and edit [automations](#automations) (real Python in the background) |
 | Administrators (superusers) | additionally all apps in the Designer and `/admin/`: users, groups, all data |
 
 A designer is whoever has the designer role in Keycloak, or locally the
 permission "May edit apps in the Designer" or staff status. Staff accounts also
 see the link "Admin" in the header.
+
+An automator is whoever belongs to the group **Automatisierer** (the update
+creates it with both permissions; an administrator adds members under
+`/admin/` → Groups, with Keycloak a group of the same name). Staff status alone
+is not enough, because automations run arbitrary code on the server. Only
+automators can be invited as co-editors of an automation.
 
 **Owners and co-editors.** Whoever creates an app is its owner and can invite
 co-editors; details in [Owners and co-editors](#owners-and-co-editors).
@@ -1436,6 +1569,16 @@ the Dockerfile).
   app. Residual risk: a bug in RestrictedPython could allow a script more. If you
   must protect against that, run scripts in a separate container without network
   access; this is not built in yet.
+- **Automations** run real Python; whoever may build them can run arbitrary
+  code in the worker pod. Hence only the group "Automatisierer". It is still
+  hardened: scripts only run in the worker pod, never in the web pod; they start
+  without environment variables; on Linux the service makes itself
+  "non-dumpable" (`PR_SET_DUMPABLE`) so a script cannot read its credentials
+  through `/proc`; the pod has no Kubernetes token; if it runs as root, scripts
+  run as `nobody`. Scripts reach tables only through Baukasten's commands and
+  only in their own app. **Not isolated** is the network: scripts reach
+  everything the pod reaches. Redis therefore requires a password; NetworkPolicies
+  can restrict the worker further.
 - **JavaScript scripts** run in the browser in a sandbox without access to the
   page, cookies and the network, with the permissions of the respective person.
 - **Data sources:** credentials only in environment variables or Secrets; they
@@ -1517,7 +1660,7 @@ Select **DE** in the language switch in the top right. The choice is remembered.
 
 ## Current limitations
 
-- **Tested** with SQLite: 170 automated tests and runs in the browser (Chrome),
+- **Tested** with SQLite: 194 automated tests and runs in the browser (Chrome),
   including Python and JavaScript scripts, live display and mirroring with a
   SQLite data source, and the Python library against a real server. With
   PostgreSQL (for Baukasten and as a data source) and gunicorn as in the
@@ -1533,6 +1676,12 @@ Select **DE** in the language switch in the top right. The choice is remembered.
 - **Scripts:** every Python run starts its own process (about 0.1 to 0.3
   seconds). Scripts on page load make the page correspondingly slower.
   JavaScript scripts need a current browser.
+- **Automations:** schedules are accurate to a few seconds. There is one worker
+  pod; all scripts share its CPU and memory and one library environment (no
+  packages of their own per script). Secrets apply to all automations. Errors
+  send no e-mail, they are only shown in the Designer. The pod's network is not
+  restricted. On Windows (development) there is no memory limit, and "Stop" ends
+  the process immediately without cleanup.
 - **Data sources:** set up by operations through environment variables, not in
   the Designer; all designers can use all sources. Mirrored tables do not
   trigger "after saving" scripts.

@@ -3,12 +3,15 @@
 # Redis lohnt sich ab mehreren Pods und vielen Live-Abfragen. Gibt es bei euch einen
 # betriebenen Redis-Dienst, diesen nehmen und diese Datei weglassen.
 #
-# Danach im Secret setzen:  REDIS_URL: "redis://baukasten-redis:6379/0"
+# Danach im Secret baukasten-secret setzen:
+#   REDIS_PASSWORD: "<langer Zufallswert>"
+#   REDIS_URL: "redis://:<derselbe Wert>@baukasten-redis:6379/0"
 # Der Cache ist nur Zwischenspeicher: Fällt Redis aus, gehen keine Daten verloren,
 # Abfragen laufen dann ohne Zwischenspeicher direkt an die Datenquellen.
 #
-# Dieser Redis hat kein Passwort und ist nur im Cluster erreichbar. Wenn euer Cluster
-# NetworkPolicies nutzt: Zugriff auf Port 6379 nur für Pods mit app=baukasten erlauben.
+# Redis verlangt das Passwort, weil Skripte von Automatisierungen echtes Python sind und das
+# Netz im Cluster sehen. Wenn euer Cluster NetworkPolicies nutzt: Port 6379 zusätzlich nur
+# für Pods mit app=baukasten und app=baukasten-worker öffnen.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -32,7 +35,20 @@ spec:
         - name: redis
           # Falls ein internes Image vorgeschrieben ist, hier austauschen.
           image: redis:7-alpine
-          args: ["--maxmemory", "200mb", "--maxmemory-policy", "allkeys-lru", "--save", "", "--appendonly", "no"]
+          args: ["--requirepass", "$(REDIS_PASSWORD)", "--maxmemory", "200mb", "--maxmemory-policy", "allkeys-lru",
+                 "--save", "", "--appendonly", "no"]
+          env:
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: baukasten-secret
+                  key: REDIS_PASSWORD
+            # redis-cli in der Probe liest das Passwort hieraus
+            - name: REDISCLI_AUTH
+              valueFrom:
+                secretKeyRef:
+                  name: baukasten-secret
+                  key: REDIS_PASSWORD
           ports:
             - containerPort: 6379
           readinessProbe:

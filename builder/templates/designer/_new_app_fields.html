@@ -1,0 +1,10 @@
+{% load i18n %}<form method="post" class="form new-app-form">
+  {% csrf_token %}
+  {{ f.non_field_errors }}
+  <div class="name-icon">
+    <div>{{ f.name.errors }}{{ f.name.label_tag }}{{ f.name }}</div>
+    <div class="icon-field">{{ f.icon.errors }}{{ f.icon.label_tag }}{{ f.icon }}</div>
+  </div>
+  <div>{{ f.description.errors }}{{ f.description.label_tag }}{{ f.description }}</div>
+  <button class="btn">{% if button %}{{ button }}{% else %}{% translate "Anlegen" %}{% endif %}</button>
+</form>

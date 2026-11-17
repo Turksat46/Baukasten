@@ -7,7 +7,7 @@ from datetime import timedelta
 from django.db.models import Q
 from django.utils import timezone
 
-from ..models import Script, ScriptRun
+from ..models import App, Script, ScriptRun
 from . import python
 from .ops import serialize
 
@@ -116,7 +116,10 @@ def run_due(now=None):
     """Zeitgesteuerte Skripte, deren Intervall abgelaufen ist. Gibt die Anzahl der Läufe zurück."""
     now = now or timezone.now()
     count = 0
-    for script in Script.objects.filter(enabled=True, trigger=Script.SCHEDULE, language=Script.PYTHON).select_related("app"):
+    # Automatisierungen übernimmt der Hintergrunddienst selbst (worker.py).
+    scripts = Script.objects.filter(enabled=True, trigger=Script.SCHEDULE, language=Script.PYTHON,
+                                    app__kind=App.APP).select_related("app")
+    for script in scripts:
         if script.last_run_at and script.last_run_at + timedelta(minutes=max(script.interval_minutes, 1)) > now:
             continue
         execute(script, Script.SCHEDULE, event={"time": now.isoformat()})

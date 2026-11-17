@@ -107,11 +107,14 @@ def _environment():
 class Handler:
     """Beantwortet die Anfragen des Skripts. Alles bleibt auf die eigene App begrenzt."""
 
-    def __init__(self, app, user=None):
+    def __init__(self, app, user=None, secrets=False):
         self.app = app
         self.tables = TableOps(app, user=user, enforce_flags=False)
+        self.secrets = secrets  # nur Automatisierungen (Hintergrunddienst)
 
     def __call__(self, op, args):
+        if op == "secret" and self.secrets:
+            return script_secret(args.get("name"))
         if op.startswith("table."):
             method = op.split(".", 1)[1]
             if method not in ("filter", "get", "count", "aggregate", "create", "update", "delete"):
@@ -132,6 +135,23 @@ class Handler:
                 raise OpsError(_("Die Abfrage „%(name)s“ gibt es in dieser App nicht.") % {"name": args.get("slug")})
             return datasources.run_saved(query)["rows"]
         raise OpsError(_("Unbekannte Anfrage."))
+
+
+SECRET_PREFIX = "SCRIPT_SECRET_"
+
+
+def script_secret(name):
+    """Wert der Umgebungsvariable SCRIPT_SECRET_<NAME> (nur Großbuchstaben, Ziffern, _)."""
+    import re
+
+    key = str(name or "").strip().upper()
+    if not re.fullmatch(r"[A-Z0-9_]{1,64}", key):
+        raise OpsError(_("Ungültiger Name für ein Geheimnis: nur Buchstaben, Ziffern und _."))
+    value = os.environ.get(SECRET_PREFIX + key)
+    if value is None:
+        raise OpsError(_("Das Geheimnis „%(name)s“ ist nicht eingerichtet (Umgebungsvariable %(var)s im Hintergrunddienst).")
+                       % {"name": key, "var": SECRET_PREFIX + key})
+    return value
 
 
 def user_info(user):

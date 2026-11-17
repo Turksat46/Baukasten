@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+{% load static i18n baukasten %}
+{% block title %}{% if script %}{{ script.name }}{% else %}{% translate "Neues Skript" %}{% endif %} – {% translate "Designer" %}{% endblock %}
+{% block content %}
+<p class="crumbs"><a href="{% url 'designer_home' %}">{% translate "Designer" %}</a> / <a href="{% url 'designer_app' app.slug %}">{{ app.name }}</a> / {% if script %}{{ script.name }}{% else %}{% translate "Neues Skript" %}{% endif %}</p>
+<div class="head-row">
+  <h1>{% if script %}{{ script.name }}{% else %}{% translate "Neues Skript" %}{% endif %} <span class="badge">Python</span>
+    {% if script %}<span class="badge state state-{{ script.state }}" id="script-state">{{ script.state_label }}</span>{% endif %}</h1>
+  {% if script %}
+    <div class="actions" data-script="{{ script.pk }}">
+      {% with sc=script button_class="btn btn-secondary" next=request.path %}{% include "designer/_automation_buttons.html" %}{% endwith %}
+    </div>
+  {% endif %}
+</div>
+
+<div class="notice notice-warning" id="worker-hint" hidden>
+  <strong class="notice-title">{% translate "Der Start lässt auf sich warten." %}</strong>
+  <span>{% blocktranslate %}Skripte von Automatisierungen startet der Hintergrunddienst. Läuft er? Im Cluster ist das der Pod <code>baukasten-worker</code>, beim Entwickeln <code>python manage.py hintergrund --dauerhaft</code>.{% endblocktranslate %}</span>
+</div>
+
+<div class="grid">
+  <div class="col col-7">
+    <section class="card">
+      <form method="post" class="form script-form" id="script-form">
+        {% csrf_token %}
+        {{ form.non_field_errors }}
+        <div class="form-row">
+          <div>{{ form.name.errors }}{{ form.name.label_tag }}{{ form.name }}</div>
+          <div>{{ form.trigger.errors }}{{ form.trigger.label_tag }}{{ form.trigger }}</div>
+        </div>
+        <div class="form-row">
+          <div data-show-trigger="schedule">{{ form.interval_minutes.errors }}{{ form.interval_minutes.label_tag }}{{ form.interval_minutes }}</div>
+          <div data-show-trigger="daily">{{ form.daily_time.errors }}{{ form.daily_time.label_tag }}{{ form.daily_time }}</div>
+          <div class="check-cell" data-show-trigger="daily">{{ form.weekdays_only }} {{ form.weekdays_only.label_tag }}</div>
+          <div data-show-trigger="schedule daily manual">{{ form.timeout_minutes.errors }}{{ form.timeout_minutes.label_tag }}{{ form.timeout_minutes }}</div>
+          <div class="check-cell">{{ form.enabled }} {{ form.enabled.label_tag }}</div>
+        </div>
+        <p class="muted small" data-show-trigger="schedule daily manual">{% blocktranslate with max=max_timeout %}Dauert ein Lauf länger als das Zeitlimit, wird er abgebrochen (höchstens {{ max }} Minuten). Fällt während eines Laufs ein Termin an, entfällt er.{% endblocktranslate %}</p>
+        <p class="muted small" data-show-trigger="continuous">{% translate "Läuft ohne Zeitlimit. Endet das Skript oder stürzt es ab, startet es von selbst neu: nach einem Fehler mit wachsender Wartezeit (10 Sekunden bis 10 Minuten). Typisch ist eine Schleife mit time.sleep()." %}</p>
+        <p class="muted small" data-show-trigger="manual">{% translate "Startet nur per Knopf, Webhook oder MCP. „Aktiv“ ist dafür nicht nötig." %}</p>
+        <div>{{ form.code.errors }}<label for="{{ form.code.id_for_label }}">{% translate "Code" %}</label>{{ form.code }}</div>
+        <div class="actions">
+          <button class="btn" name="action" value="save">{% translate "Speichern" %}</button>
+          <button class="btn btn-secondary" name="action" value="run">{% translate "Speichern und jetzt starten" %}</button>
+        </div>
+        <p class="muted small">{% translate "Läufe arbeiten mit echten Daten und echten Verbindungen. Was das Skript anlegt, ändert, sendet oder löscht, geschieht wirklich." %}</p>
+      </form>
+    </section>
+  </div>
+
+  <div class="col col-5">
+    {% if script %}
+      <section class="card live-run" id="live-run" data-live-url="{% url 'designer_script_live' app.slug script.pk %}">
+        <h3>{% translate "Live-Protokoll" %} <span class="badge state" id="live-status">{% if script.last %}{{ script.last.get_status_display|default:script.last.state }}{% endif %}</span></h3>
+        <p class="muted small" id="live-meta">{% if script.last %}{{ script.last.started_at|date:"SHORT_DATETIME_FORMAT" }}{% else %}{% translate "Noch kein Lauf." %}{% endif %}</p>
+        <div class="notice notice-danger" id="live-error"{% if not script.last.error %} hidden{% endif %}><span>{{ script.last.error }}</span></div>
+        <pre class="json live-log" id="live-log">{{ script.last.log }}</pre>
+      </section>
+    {% endif %}
+
+    <section class="card reference">
+      <h3>{% translate "Kurzreferenz" %}</h3>
+      <p class="muted small">{% translate "Echtes Python 3 mit allen Bibliotheken der gemeinsamen Umgebung. print() erscheint sofort im Live-Protokoll." %}</p>
+      <pre class="json">import requests, json, datetime …
+
+app.table("kurzname").filter(feld=wert)
+app.table("kurzname").first(feld=wert)
+app.table("kurzname").create(feld=wert)
+app.table("kurzname").update(id, feld=wert)
+app.table("kurzname").delete(id)
+db.query("quelle", "SELECT … WHERE x = :x", {"x": 1})
+db.saved("abfrage")
+
+secret("NAME")     # Geheimnis, vom Betrieb eingerichtet
+event["trigger"]   # schedule, daily, continuous,
+                   # manual, webhook, mcp
+event["daten"]     # JSON aus Webhook oder MCP
+print(…)           # Live-Protokoll
+raise Exception(…) # Lauf endet als Fehler</pre>
+      <p class="muted small">{% translate "Arbeitsordner: das aktuelle Verzeichnis, wird nach jedem Lauf gelöscht. Mehr im Handbuch, Abschnitt „Automatisierungen“." %}</p>
+    </section>
+
+    {% if runs %}
+      <section class="card">
+        <h3>{% translate "Letzte Läufe" %}</h3>
+        <table class="runs">
+          <tbody>
+            {% for run in runs %}
+              <tr>
+                <td><span class="badge state state-run-{{ run.state }}">{{ run.get_status_display|default:run.state }}</span></td>
+                <td class="small">{{ run.started_at|date:"SHORT_DATETIME_FORMAT" }}<br><span class="muted">{{ run.trigger }}{% if run.status != "skipped" and run.status != "running" %}, {{ run.duration_ms|duration_ms }}{% endif %}</span>
+                  {% if run.error %}<br><span class="danger">{{ run.error|truncatechars:160 }}</span>{% elif run.status == "skipped" %}<br><span class="muted">{{ run.log }}</span>{% endif %}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </section>
+
+    {% endif %}
+    {% if script %}
+      <section class="card">
+        <form method="post" action="{% url 'designer_script_delete' app.slug script.pk %}" data-confirm="{% blocktranslate with name=script.name %}Skript „{{ name }}“ löschen? Ein laufender Lauf wird gestoppt.{% endblocktranslate %}">
+          {% csrf_token %}<button class="link danger">{% translate "Skript löschen" %}</button>
+        </form>
+      </section>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+  <script src="{% asset 'builder/editor.js' %}"></script>
+  <script src="{% asset 'builder/automation.js' %}"></script>
+{% endblock %}

@@ -9,20 +9,29 @@ JSON-Zeilen auf stdin/stdout. Der Elternprozess prüft und begrenzt jede Anfrage
 Das Skript selbst wird mit RestrictedPython übersetzt: kein Dateizugriff, kein
 import außer einer Liste harmloser Module, kein Zugriff auf Namen mit
 Unterstrich.
+
+Ausnahme: Automatisierungen (Modus „full“, nur im Hintergrunddienst). Dort läuft
+echtes Python mit allen installierten Bibliotheken. Ausgaben (print, Fehler)
+gehen laufend als Protokollzeilen an den Elternprozess.
 """
 import json
 import operator
+import os
 import re
 import secrets
+import signal
 import sys
+import threading
 import traceback
 import types
 import warnings
 
 # Der Prozess startet isoliert (python -I) und sieht dann z. B. keine mit „pip install --user“
 # installierten Pakete. Der Elternprozess übergibt deshalb den Ordner, in dem RestrictedPython liegt.
-if len(sys.argv) > 1 and sys.argv[1] not in sys.path:
-    sys.path.append(sys.argv[1])
+# Automatisierungen bekommen zusätzlich die Paketordner des Dienstes (gemeinsame Umgebung).
+for _extra in sys.argv[1:]:
+    if _extra not in sys.path:
+        sys.path.append(_extra)
 
 from RestrictedPython import compile_restricted, limited_builtins, safe_builtins, utility_builtins
 from RestrictedPython.Eval import default_guarded_getitem, default_guarded_getiter
@@ -37,19 +46,26 @@ MAX_LOG_LINES = 500
 _in = sys.stdin
 _out = sys.stdout
 _state = {"calls": 0, "max_calls": 1000, "log": [], "ui": {}, "messages": [], "session": {}}
+_lock = threading.RLock()  # Skripte im Modus „full“ dürfen Threads nutzen
 
 
 class ScriptError(Exception):
     """Fehler, den der Baukasten an das Skript meldet (z. B. ungültige Daten)."""
 
 
+class Stopped(BaseException):
+    """Lauf wurde gestoppt (Knopf „Stoppen“ oder Neustart des Dienstes). Kein Exception,
+    damit „except Exception“ im Skript das Stoppen nicht verschluckt."""
+
+
 def _call(op, **args):
-    _state["calls"] += 1
-    if _state["calls"] > _state["max_calls"]:
-        raise ScriptError(f"Zu viele Zugriffe (höchstens {_state['max_calls']} pro Lauf).")
-    _out.write(json.dumps({"call": op, "args": args}, default=str) + "\n")
-    _out.flush()
-    line = _in.readline()
+    with _lock:
+        _state["calls"] += 1
+        if _state["max_calls"] and _state["calls"] > _state["max_calls"]:
+            raise ScriptError(f"Zu viele Zugriffe (höchstens {_state['max_calls']} pro Lauf).")
+        _out.write(json.dumps({"call": op, "args": args}, default=str) + "\n")
+        _out.flush()
+        line = _in.readline()
     if not line:
         raise SystemExit(1)
     answer = json.loads(line)
@@ -160,6 +176,11 @@ def token(length=16):
     return secrets.token_urlsafe(max(8, min(int(length), 64)))
 
 
+def secret(name):
+    """Geheimnis für Automatisierungen (Umgebungsvariable SCRIPT_SECRET_<NAME> des Hintergrunddienstes)."""
+    return _call("secret", name=str(name))
+
+
 class _Printer:
     def __init__(self, _getattr_=None):
         pass
@@ -250,12 +271,120 @@ def _line_of(exc):
 def _finish(**payload):
     payload.update(done=True, log=_state["log"], ui=_state["ui"], messages=_state["messages"],
                    session=_state["session"])
-    _out.write(json.dumps(payload, default=str) + "\n")
-    _out.flush()
+    with _lock:
+        _out.write(json.dumps(payload, default=str) + "\n")
+        _out.flush()
+
+
+class _LogStream:
+    """Ersetzt sys.stdout/sys.stderr im Modus „full“: jede Zeile geht sofort als Protokoll an den Elternprozess."""
+
+    encoding = "utf-8"
+
+    def __init__(self):
+        self._buffer = ""
+
+    def write(self, text):
+        if not isinstance(text, str):
+            text = str(text)
+        with _lock:
+            self._buffer += text
+            *lines, self._buffer = self._buffer.split("\n")
+            for line in lines:
+                _send({"log": line[:5000]})
+        return len(text)
+
+    def flush(self):
+        with _lock:
+            if self._buffer:
+                _send({"log": self._buffer[:5000]})
+                self._buffer = ""
+
+    def isatty(self):
+        return False
+
+    def writable(self):
+        return True
+
+
+def _send(payload):
+    with _lock:
+        _out.write(json.dumps(payload, default=str) + "\n")
+        _out.flush()
+
+
+def _full_globals(context):
+    app = context.get("app") or {}
+    return {
+        "__name__": "__main__",
+        "__builtins__": __builtins__,
+        "app": App(app.get("name", ""), app.get("slug", ""), app.get("translations")),
+        "http": Http(),
+        "db": Db(),
+        "message": message,
+        "token": token,
+        "secret": secret,
+        "event": context.get("event") or {},
+        "params": context.get("params") or {},
+        "ScriptError": ScriptError,
+        "Stopped": Stopped,
+    }
+
+
+def _stop(signum, frame):
+    raise Stopped()
+
+
+def main_full(context):
+    """Echtes Python. Der Kanal zum Elternprozess bekommt eigene Dateideskriptoren; was das Skript
+    (oder eine Bibliothek) auf stdout/stderr schreibt, landet im Protokoll, stdin ist leer."""
+    global _in, _out
+    _in = os.fdopen(os.dup(0), "r", encoding="utf-8")
+    _out = os.fdopen(os.dup(1), "w", encoding="utf-8")
+    null = os.open(os.devnull, os.O_RDONLY)
+    os.dup2(null, 0)
+    os.dup2(2, 1)  # Ausgaben auf Ebene des Betriebssystems (z. B. Unterprozesse) gehen nach stderr
+    sys.stdin = open(os.devnull, encoding="utf-8")
+    sys.stdout = sys.stderr = _LogStream()
+    try:
+        signal.signal(signal.SIGTERM, _stop)
+    except (ValueError, OSError, AttributeError):
+        pass
+    _state["max_calls"] = int(context.get("max_calls") or 0)
+    glob = _full_globals(context)
+    try:
+        code = compile(context["code"], FILENAME, "exec")
+    except SyntaxError as exc:
+        _finish(ok=False, error=f"SyntaxError: {exc.msg}", line=exc.lineno)
+        return
+    try:
+        exec(code, glob)
+    except Stopped:
+        sys.stdout.flush()
+        _finish(ok=False, stopped=True, error="Gestoppt.")
+        return
+    except SystemExit as exc:
+        sys.stdout.flush()
+        if exc.code in (None, 0):
+            _finish(ok=True)
+        else:
+            _finish(ok=False, error=f"SystemExit: {exc.code}")
+        return
+    except BaseException as exc:  # noqa: BLE001 - jeder Fehler des Skripts wird gemeldet
+        sys.stdout.flush()
+        detail = "".join(traceback.format_exception(type(exc), exc, exc.__traceback__)[-6:])
+        _send({"log": detail.rstrip()[:5000]})
+        _finish(ok=False, error=f"{type(exc).__name__}: {exc}", line=_line_of(exc))
+        return
+    sys.stdout.flush()
+    _finish(ok=True)
 
 
 def main():
     context = json.loads(_in.readline())
+    if context.get("mode") == "full":
+        main_full(context)
+        return
     _state["max_calls"] = int(context.get("max_calls", 1000))
     if isinstance(context.get("session"), dict):
         _state["session"].update(context["session"])

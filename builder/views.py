@@ -30,7 +30,7 @@ from .scripting.ops import OpsError, TableOps
 from .scripting.triggers import execute, page_scripts, run_page
 
 def get_app(request, slug):
-    app = get_object_or_404(App, slug=slug)
+    app = get_object_or_404(App, slug=slug, kind=App.APP)  # Automatisierungen haben keine Seiten
     if not app.user_can_use(request.user):
         raise PermissionDenied
     app_i18n.activate(app)  # Texte der App in der Sprache der Person anzeigen
@@ -49,7 +49,7 @@ def runtime_access(request, slug):
 
     guest=True heißt: Die Person darf die App nicht regulär benutzen (nicht angemeldet oder
     nicht in den Gruppen) und bekommt nur öffentliche Seiten und was auf ihnen steht."""
-    app = get_object_or_404(App, slug=slug)
+    app = get_object_or_404(App, slug=slug, kind=App.APP)
     if request.user.is_authenticated and app.user_can_use(request.user):
         app_i18n.activate(app)
         return app, False

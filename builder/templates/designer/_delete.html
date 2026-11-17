@@ -1,0 +1,10 @@
+{% load i18n %}
+{% if can_manage %}
+    <section class="card">
+      <h3>{% translate "App löschen" %}</h3>
+      <p class="muted">{% translate "Löscht die App mit allen Tabellen, Daten, Seiten und Versionen. Das lässt sich nicht rückgängig machen. Tipp: Lade vorher eine Version herunter, dann lässt sich zumindest der Aufbau wieder importieren." %}</p>
+      <form method="post" action="{% url 'designer_app_delete' app.slug %}" data-confirm="{% blocktranslate with name=app.name %}App „{{ name }}“ mit allen Tabellen, Daten, Seiten und Versionen endgültig löschen?{% endblocktranslate %}">
+        {% csrf_token %}<button class="btn btn-danger">{% translate "App löschen" %}</button>
+      </form>
+    </section>
+{% endif %}

@@ -1,0 +1,67 @@
+# Hintergrunddienst: Automatisierungen (lange und ständig laufende Python-Skripte),
+# zeitgesteuerte Skripte normaler Apps und Abgleiche mit Datenquellen.
+# Ersetzt den früheren CronJob „baukasten-hintergrund“ (beim Umstieg löschen:
+#   kubectl delete cronjob baukasten-hintergrund --ignore-not-found).
+#
+# Genau EIN Pod (Recreate): Er startet jedes Skript als eigenen Prozess. Mehr Pods würden nicht
+# doppelt ausführen (Sperre in der Datenbank), bringen aber nur etwas bei sehr vielen Skripten.
+#
+# Sicherheit: Skripte von Automatisierungen sind echtes Python. Deshalb
+# - nur die Gruppe „Automatisierer“ (und Superuser) darf sie bauen,
+# - kein Kubernetes-Token im Pod (automountServiceAccountToken: false),
+# - Skripte starten ohne Umgebungsvariablen; der Dienst schützt seine eigenen vor dem Auslesen,
+# - Zugangsdaten für Skripte stehen im eigenen Secret baukasten-skript-geheimnisse
+#   (Schlüssel SCRIPT_SECRET_<NAME>, im Skript: secret("NAME")); nur dieser Pod bekommt es.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: baukasten-worker
+  labels:
+    app: baukasten-worker
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: baukasten-worker
+  template:
+    metadata:
+      labels:
+        app: baukasten-worker
+    spec:
+      automountServiceAccountToken: false
+      # Laufende Skripte bekommen SIGTERM und werden als „abgebrochen“ vermerkt; Dauerläufer starten danach neu.
+      terminationGracePeriodSeconds: 45
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+      containers:
+        - name: worker
+          image: registry.example.com/baukasten:1.0.0
+          command: ["python", "manage.py", "hintergrund", "--dauerhaft"]
+          envFrom:
+            - configMapRef:
+                name: baukasten-config
+            - secretRef:
+                name: baukasten-secret
+            - secretRef:
+                name: baukasten-skript-geheimnisse
+                optional: true
+          # Der Dienst schreibt bei jeder Runde ein Lebenszeichen; hängt er, startet Kubernetes ihn neu.
+          livenessProbe:
+            exec:
+              command: ["python", "-c", "import os,sys,time,tempfile; f=os.path.join(tempfile.gettempdir(),'baukasten-worker-alive'); sys.exit(0 if time.time()-os.path.getmtime(f)<120 else 1)"]
+            initialDelaySeconds: 60
+            periodSeconds: 30
+          # Speicher: AUTOMATION_PARALLEL Läufe × AUTOMATION_MEMORY_MB plus Dauerläufer plus ca. 300 MB.
+          resources:
+            requests:
+              cpu: 200m
+              memory: 512Mi
+            limits:
+              memory: 4Gi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
