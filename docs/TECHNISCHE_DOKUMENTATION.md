@@ -1,8 +1,11 @@
 # Baukasten – Technische Dokumentation
 
 > Zielgruppe: Entwickler/innen und Betrieb. Für die Bedienung siehe
-> [HANDBUCH.md](HANDBUCH.md). Alle Diagramme sind in Mermaid geschrieben und werden
-> auf GitHub/GitLab und in den meisten Markdown-Viewern direkt gerendert.
+> [HANDBUCH.md](HANDBUCH.md). Die Diagramme sind in Mermaid geschrieben und werden
+> auf GitHub, GitLab und in den meisten Markdown-Viewern direkt gerendert.
+>
+> Farben in allen Diagrammen: **türkis** = Web-Pods, **orange** = Hintergrunddienst,
+> **blau** = Daten, **grau** = außerhalb des Baukastens.
 
 ## Inhalt
 
@@ -28,21 +31,22 @@
 
 Der Baukasten ist eine **Low-Code-Plattform auf Basis von Django 5.2**. Fachabteilungen
 bauen im Browser interne Apps aus Tabellen, Seiten und Bausteinen; Entwickler/innen
-ergänzen Logik in Python oder JavaScript.
+ergänzen Logik in Python oder JavaScript. Eine zweite App-Art, die **Automatisierung**,
+hat keine Seiten und führt nur Python-Skripte im Hintergrund aus.
 
 | Eigenschaft | Umsetzung |
 |---|---|
-| Sprache / Framework | Python ≥ 3.10, Django ≥ 5.2 |
-| Datenbank | SQLite (lokal), PostgreSQL 16 (produktiv) via `DATABASE_URL` |
-| Cache | Redis, Datenbank-Tabelle oder Arbeitsspeicher |
+| Sprache / Framework | Python ≥ 3.10, Django 5.2 |
+| Datenbank | SQLite (lokal), PostgreSQL 16 (produktiv) über `DATABASE_URL` |
+| Cache | Redis, Datenbank-Tabelle oder Arbeitsspeicher (`CACHE_BACKEND`) |
 | Anwendungsserver | gunicorn (`gunicorn.conf.py`), statische Dateien über WhiteNoise |
 | Anmeldung | lokale Konten oder Keycloak (OpenID Connect, `mozilla-django-oidc`) |
-| Skript-Sandbox | eigener Prozess + RestrictedPython (Python), iframe-Sandbox (JavaScript) |
-| Betrieb | Docker-Image, Kubernetes-Manifeste in `k8s/` |
-| Sprachen | Deutsch (Quelle), Englisch (`builder/locale/en`) |
+| Skripte | Python: Kindprozess mit RestrictedPython; JavaScript: iframe-Sandbox; Automatisierungen: echtes Python im Worker |
+| Betrieb | ein Docker-Image für Web und Worker, Kubernetes-Manifeste in `k8s/` |
+| Sprachen der Oberfläche | Deutsch (Quelle), Englisch (`builder/locale/en`) |
 
-**Kernidee:** Datensätze aller App-Tabellen liegen als JSON in einer gemeinsamen
-Tabelle (`Record.data`). Änderungen im Designer erfordern daher **keine
+**Kernidee:** Die Datensätze aller App-Tabellen liegen als JSON in einer gemeinsamen
+Tabelle (`Record.data`). Änderungen im Designer brauchen daher **keine
 Datenbank-Migration**.
 
 ---
@@ -51,51 +55,61 @@ Datenbank-Migration**.
 
 ```mermaid
 flowchart LR
-    subgraph Clients
-        U["Browser<br/>(Nutzer & Designer)"]
-        G["Gäste<br/>(öffentliche Seiten)"]
-        X["Externe Systeme<br/>(REST-API)"]
-        K["KI-Agenten<br/>(n8n, Claude, Cursor)"]
+    subgraph Zugriff["Zugriff"]
+        direction TB
+        U["Nutzer und Designer"] ~~~ G["Gäste"] ~~~ X["Programme · API"] ~~~ K["KI-Agenten · MCP"]
     end
 
-    subgraph Cluster["Kubernetes / lokal"]
-        ING["Ingress (TLS)"]
-        subgraph Web["Deployment baukasten (2–6 Pods)"]
-            GU["gunicorn + Django"]
-            SB["Skript-Kindprozesse<br/>(RestrictedPython)"]
+    ING["Ingress<br/>TLS"]
+
+    subgraph Pods["Kubernetes"]
+        direction TB
+        subgraph Web["baukasten · 2–6 Pods"]
+            direction TB
+            GU["gunicorn + Django"] -. startet .-> SB["Skripte normaler Apps<br/>RestrictedPython"]
         end
-        subgraph Worker["Deployment baukasten-worker (1 Pod)"]
-            WK["Hintergrunddienst<br/>manage.py hintergrund"]
-            AU["Automatisierungs-<br/>Kindprozesse"]
+        subgraph Worker["baukasten-worker · 1 Pod"]
+            direction TB
+            WK["Hintergrunddienst"] -. startet .-> AU["Automatisierungen<br/>echtes Python"]
         end
-        PG[("PostgreSQL")]
-        RD[("Redis (optional)")]
+        Web ~~~ Worker
     end
 
-    subgraph Extern["Externe Dienste"]
-        KC["Keycloak (OIDC)"]
-        DS[("Datenquellen<br/>Databricks, SQL-DBs")]
-        TB["Tableau Server/Cloud"]
-        HT["Freigegebene HTTP-Hosts"]
+    subgraph Daten["Daten"]
+        direction TB
+        PG[("PostgreSQL")] ~~~ RD[("Redis · optional")]
     end
 
-    U & G & X & K --> ING --> GU
-    GU <--> SB
-    GU --> PG
-    GU --> RD
-    WK <--> AU
-    WK --> PG
-    GU -. Login .-> KC
-    GU & WK --> DS
-    U -. Einbettung .-> TB
-    SB & AU -. über Elternprozess .-> HT
+    subgraph Extern["Außerhalb"]
+        direction TB
+        KC["Keycloak"] ~~~ DS[("Datenquellen<br/>SQL, Databricks")] ~~~ NET["HTTP-Dienste"]
+    end
+
+    Zugriff --> ING --> Web
+    Pods --> Daten
+    Pods --> Extern
+
+    classDef web fill:#e3f4f6,stroke:#0b7285,color:#0b3d47
+    classDef worker fill:#fff4e6,stroke:#d9480f,color:#5c2400
+    classDef data fill:#e7f0ff,stroke:#364fc7,color:#1b2a6b
+    classDef ext fill:#f1f3f5,stroke:#868e96,color:#212529
+    class ING,GU,SB web
+    class WK,AU worker
+    class PG,RD,DS data
+    class U,G,X,K,KC,NET ext
 ```
 
 **Zwei Prozessarten aus demselben Image:**
 
-- **Web** (`gunicorn config.wsgi`): Laufzeit der Apps, Designer, API, MCP, Admin.
+- **Web** (`gunicorn config.wsgi`): Laufzeit der Apps, Designer, API, MCP, Verwaltung.
+  Skripte normaler Apps laufen hier als kurzlebige Kindprozesse; ihre HTTP-Aufrufe
+  macht der Elternprozess, und nur an `HTTP_ALLOWED_HOSTS`.
 - **Worker** (`python manage.py hintergrund --dauerhaft`): Automatisierungen,
-  zeitgesteuerte Skripte normaler Apps, Abgleich von Datenquellen.
+  zeitgesteuerte Skripte normaler Apps, Abgleich mit Datenquellen. Automatisierungen
+  sind echtes Python und erreichen das Netz direkt.
+
+Tableau-Dashboards lädt der Browser selbst (Einbettung); der Server erzeugt nur das
+Token einer Connected App.
 
 ---
 
@@ -110,96 +124,135 @@ baukasten/
 │   ├── views.py            Laufzeit: Seiten, Formulare, Export, Skript-Aufrufe
 │   ├── designer.py         Designer-Oberfläche (Apps, Tabellen, Seiten, Skripte …)
 │   ├── blocks.py           Registry und Rendering der Seiten-Bausteine
-│   ├── forms.py            dynamische Formulare aus Field-Definitionen
-│   ├── api.py / openapi.py REST-API und OpenAPI-Spezifikation
-│   ├── mcp.py              MCP-Server je App
+│   ├── forms.py            Formulare, auch dynamisch aus Feld-Definitionen
+│   ├── api.py, openapi.py  REST-API und OpenAPI-Spezifikation
+│   ├── mcp.py              MCP-Protokoll und Server je App
 │   ├── mcp_designer.py     MCP-Server für den Designer (KI baut Apps)
-│   ├── ai_designer.py      Werkzeuge für den Designer-MCP
+│   ├── ai_designer.py      Prüfen, Schützen und Anwenden von KI-Definitionen
 │   ├── datasources.py      externe Datenbanken, Cache, Parallelitätsgrenzen
-│   ├── versions.py         Snapshots, Export/Import von Apps
+│   ├── versions.py         Snapshots, Export und Import von Apps
 │   ├── app_i18n.py         Übersetzung von App-Inhalten
-│   ├── auth.py             Keycloak-Backend (Gruppen, Designer-Rolle)
+│   ├── auth.py, accounts.py  Keycloak-Backend, Standardgruppen
+│   ├── profile.py, help.py Profilseite, Handbuch in der Oberfläche
 │   ├── hooks.py            Erweiterungspunkte für extensions/
-│   ├── services.py         HTTP-Zugriffe mit Host-Freigabeliste
+│   ├── services.py         HTTP-Zugriffe mit Freigabeliste
 │   ├── sanitize.py         HTML-Bereinigung eigener Bausteine
 │   ├── tableau.py          Tableau-Einbettung (Connected App, JWT)
-│   ├── middleware.py       /healthz, App-Übersetzungen
-│   ├── tutorial.py, tours.py  Einführung und Touren
+│   ├── middleware.py       /healthz, Zurücksetzen der App-Übersetzungen
+│   ├── context.py          Template-Kontext (u. a. Begleiter der Einführung)
+│   ├── tutorial.py, tours.py  Einführung „Deine erste App“ und Führungen
+│   ├── admin.py            Verwaltung unter /admin/
 │   ├── scripting/
-│   │   ├── python.py       Start/Steuerung der Python-Sandbox
-│   │   ├── child.py        Kindprozess (ohne Django-Import)
+│   │   ├── python.py       Start und Steuerung der Python-Sandbox
+│   │   ├── child.py        Kindprozess (importiert kein Django)
 │   │   ├── ops.py          Tabellenzugriff für Skripte und API
 │   │   ├── triggers.py     Auslöser normaler Apps
-│   │   ├── automation.py   Ausführung von Automatisierungen
+│   │   ├── automation.py   ein Lauf einer Automatisierung
 │   │   ├── worker.py       Hintergrunddienst („Aufseher“)
 │   │   └── schedule.py     Zeitpläne
 │   ├── management/commands/  demo, beispiel_einwilligung, hintergrund, lokal_einrichten
-│   ├── templates/, static/   Oberfläche (Vanilla JS/CSS)
+│   ├── templates/, static/   Oberfläche (Vanilla JS und CSS)
 │   └── tests.py            automatische Tests
 ├── extensions/             eigene Python-Erweiterungen (beispiel.py)
 ├── clients/python/         Bibliothek baukasten-client
-├── k8s/                    Kubernetes-Manifeste (+ lokal/ für Docker Desktop)
+├── k8s/                    Kubernetes-Manifeste (lokal/ für Docker Desktop)
 └── docs/                   Dokumentation
 ```
 
-### Modulabhängigkeiten
+### Wie die Module zusammenhängen
+
+Vereinfacht, nur die wichtigen Abhängigkeiten. Alle Module greifen auf `models.py` zu;
+gestrichelt heißt „startet als eigenen Prozess“.
 
 ```mermaid
-flowchart TD
-    urls["urls.py"] --> views & designer & api & mcp & mcp_designer & profile & help
-    views --> blocks & forms & triggers
-    designer --> versions & app_i18n & blocks & forms
-    blocks --> datasources & tableau & sanitize & hooks
-    api --> ops & openapi & hooks
-    mcp --> ops
+flowchart LR
+    subgraph E["Eingänge"]
+        direction TB
+        mcp_designer
+        designer
+        views
+        worker
+        api
+        mcp
+    end
+
+    subgraph F["Seiten und Aufbau"]
+        direction TB
+        ai_designer
+        versions
+        blocks
+    end
+
+    subgraph S["scripting/"]
+        direction TB
+        triggers
+        automation
+        python
+    end
+
+    subgraph B["Grundlagen"]
+        direction TB
+        datasources
+        ops
+        child[["child.py<br/>Kindprozess"]]
+    end
+
     mcp_designer --> ai_designer --> versions
+    designer --> versions
+    designer --> blocks
+    views --> blocks
+    views --> triggers
+    worker --> triggers
+    worker --> automation
     triggers --> python
-    python --> child
-    python --> ops & datasources & services
-    worker --> automation --> child
-    worker --> triggers & datasources & schedule
-    ops & versions & datasources --> models[("models.py")]
+    automation --> python
+    blocks --> datasources
+    python --> datasources
+    python --> ops
+    api --> ops
+    mcp --> ops
+    python -.-> child
+    automation -.-> child
+
+    classDef web fill:#e3f4f6,stroke:#0b7285,color:#0b3d47
+    classDef worker fill:#fff4e6,stroke:#d9480f,color:#5c2400
+    classDef data fill:#e7f0ff,stroke:#364fc7,color:#1b2a6b
+    classDef ext fill:#f1f3f5,stroke:#868e96,color:#212529
+    class views,designer,api,mcp,mcp_designer web
+    class worker,automation worker
+    class ops,datasources,child data
 ```
+
+`automation.py` nutzt den `Handler` aus `python.py`: Beide Skriptarten beantworten die
+Anfragen ihres Kindprozesses gleich (Tabellen, Abfragen, Geheimnisse).
 
 ---
 
 ## 4. Datenmodell
 
+Das Modell ist auf zwei Diagramme verteilt: der Aufbau einer App und alles, was um sie
+herum gespeichert wird.
+
+### Aufbau einer App
+
 ```mermaid
 erDiagram
-    USER ||--o{ APP : "created_by (Eigentümer/in)"
-    USER }o--o{ APP : "editors"
-    GROUP }o--o{ APP : "groups (Nutzung)"
-    GROUP }o--o{ APP : "editor_groups"
-
-    APP ||--o{ ENTITY : "entities"
-    APP ||--o{ PAGE : "pages"
-    APP ||--o{ SCRIPT : "scripts"
-    APP ||--o{ DATAQUERY : "queries"
-    APP ||--o{ APIKEY : "api_keys"
-    APP ||--o{ APPVERSION : "versions"
-
-    ENTITY ||--o{ FIELD : "fields"
-    ENTITY ||--o{ RECORD : "records"
-    FIELD }o--o| ENTITY : "reference"
-    DATAQUERY }o--o| ENTITY : "sync_entity"
-    SCRIPT }o--o| PAGE : "page"
-    SCRIPT }o--o| ENTITY : "entity"
-    SCRIPT ||--o{ SCRIPTRUN : "runs"
-
-    USER ||--o{ DESIGNERTOKEN : "designer_tokens"
-    USER ||--o| TUTORIAL : "tutorial"
+    APP ||--o{ ENTITY : "Tabellen"
+    APP ||--o{ PAGE : "Seiten"
+    ENTITY ||--o{ FIELD : "Felder"
+    ENTITY ||--o{ RECORD : "Einträge"
+    FIELD }o--o| ENTITY : "Verweis (reference)"
 
     APP {
         string name
         slug slug UK
-        string kind "app | automation"
+        string kind "app oder automation"
         bool published
         json translations
     }
     ENTITY {
         string name
-        slug slug "unique je App"
+        slug slug "eindeutig je App"
         bool allow_create
         bool allow_edit
         bool allow_delete
@@ -207,25 +260,42 @@ erDiagram
     }
     FIELD {
         string label
-        slug key "unique je Tabelle"
-        string type "text, number, date, choice, reference ..."
+        slug key "eindeutig je Tabelle"
+        string type "text, number, date, choice, reference …"
         bool required
         text choices
         int order
     }
     RECORD {
-        json data "Feldwerte nach key"
+        json data "Werte nach Feld-key"
         datetime created_at
         datetime updated_at
     }
     PAGE {
         string title
-        slug slug
+        slug slug "eindeutig je App"
         bool public
         json layout "Liste von Bausteinen"
     }
+```
+
+### Logik, Zugänge und Verlauf
+
+```mermaid
+erDiagram
+    APP ||--o{ SCRIPT : "Skripte"
+    APP ||--o{ DATAQUERY : "Abfragen"
+    APP ||--o{ APIKEY : "API-Schlüssel"
+    APP ||--o{ APPVERSION : "Versionen"
+    SCRIPT ||--o{ SCRIPTRUN : "Läufe"
+    USER ||--o{ APP : "Eigentümer/in"
+    USER }o--o{ APP : "Mitbearbeiter"
+    GROUP }o--o{ APP : "Nutzung, Mitbearbeiter-Gruppen"
+    USER ||--o{ DESIGNERTOKEN : "KI-Zugänge"
+    USER ||--o| TUTORIAL : "Einführung"
+
     SCRIPT {
-        string language "python | javascript"
+        string language "python oder javascript"
         string trigger
         text code
         datetime next_run_at
@@ -235,7 +305,7 @@ erDiagram
         bool stop_requested
     }
     SCRIPTRUN {
-        string status
+        string status "running, ok, error, skipped, aborted, stopped"
         text log
         text error
         int duration_ms
@@ -245,33 +315,38 @@ erDiagram
         text sql
         int cache_seconds
         int sync_interval
-        string key_column
     }
     APIKEY {
-        string prefix
+        string prefix "bk_…"
         string key_hash "SHA-256"
         bool can_write
     }
+    DESIGNERTOKEN {
+        string prefix "bkd_…"
+        string key_hash "SHA-256"
+    }
     APPVERSION {
         int number
-        json snapshot
+        json snapshot "Aufbau ohne Daten"
         bool automatic
     }
 ```
 
-Außerdem: `CustomBlock` (eigene HTML-Bausteine und Vorlagen, global) sowie die
-Django-Standardmodelle `User`, `Group`, `Session`.
+Außerdem gibt es `CustomBlock` (eigene HTML-Bausteine und Vorlagen, für alle Apps) und
+die Django-Standardmodelle `User`, `Group` und `Session`. Skripte können an eine Seite
+oder Tabelle gebunden sein, Abfragen an eine Tabelle, in die sie spiegeln; diese
+Verweise fehlen im Diagramm der Übersicht halber.
 
 ### Wichtige Designentscheidungen
 
 | Entscheidung | Begründung |
 |---|---|
 | `Record.data` als JSON | Schemaänderungen im Designer ohne Migration |
-| `UnicodeJSONEncoder` (`ensure_ascii=False`) | Textsuche findet Umlaute auf jeder Datenbank |
-| Slugs automatisch, eindeutig je App | stabile, lesbare URLs und Skript-Namen |
-| `Page.layout` als JSON-Liste | Seiten-Designer speichert Bausteine + Props direkt |
-| API-Schlüssel nur als SHA-256-Hash | Klartext wird nur einmal bei `issue()` ausgegeben |
-| Sperre über `Script.running_since` | kein paralleles Ausführen, auch über Pods hinweg |
+| `UnicodeJSONEncoder` (`ensure_ascii=False`) | die Textsuche findet Umlaute auf jeder Datenbank |
+| Kurznamen automatisch, eindeutig je App bzw. Tabelle | stabile, lesbare Adressen und Namen für Skripte |
+| `Page.layout` als JSON-Liste | der Seiten-Designer speichert Bausteine und Einstellungen direkt |
+| Schlüssel nur als SHA-256-Hash | der Klartext erscheint nur einmal beim Erzeugen |
+| Sperre über `Script.running_since` | ein Skript läuft nie doppelt, auch nicht über Pods hinweg |
 
 ### Feldtypen
 
@@ -282,162 +357,194 @@ Django-Standardmodelle `User`, `Group`, `Session`.
 
 ## 5. Anfrageverarbeitung und Routing
 
-### Middleware-Kette
+### Middleware (in dieser Reihenfolge)
 
-```mermaid
-flowchart LR
-    R["Request"] --> H["HealthCheck<br/>/healthz"] --> S["Security"] --> W["WhiteNoise<br/>static"] --> SE["Session"] --> L["Locale"] --> AT["AppTranslation"] --> C["Common"] --> CS["CSRF"] --> A["Auth"] --> M["Messages"] --> XF["XFrame"] --> V["View"]
-```
+| # | Middleware | Aufgabe |
+|---|---|---|
+| 1 | `HealthCheckMiddleware` | beantwortet `/healthz` vor der Host-Prüfung, damit Kubernetes-Probes immer durchkommen |
+| 2 | `SecurityMiddleware` | HTTPS-Weiterleitung, Sicherheits-Header |
+| 3 | `WhiteNoiseMiddleware` | statische Dateien |
+| 4 | `SessionMiddleware` | Sitzungen (in der Datenbank) |
+| 5 | `LocaleMiddleware` | Sprache der Oberfläche |
+| 6 | `AppTranslationMiddleware` | setzt die Übersetzungen der App je Anfrage zurück |
+| 7 | `CommonMiddleware` | Host-Prüfung, Schrägstriche |
+| 8 | `CsrfViewMiddleware` | CSRF-Schutz (API und MCP sind ausgenommen, sie nutzen Schlüssel) |
+| 9 | `AuthenticationMiddleware` | angemeldete Person |
+| 10 | `MessageMiddleware` | Meldungen nach Aktionen |
+| 11 | `XFrameOptionsMiddleware` | kein Einbetten in fremde Seiten |
 
-`/healthz` wird vor der Host-Prüfung beantwortet, damit Kubernetes-Probes immer
-funktionieren.
+Welche Übersetzungen einer App gelten, setzen die Views selbst (`app_i18n.activate`),
+sobald klar ist, um welche App es geht.
 
 ### URL-Bereiche
 
 | Präfix | Modul | Zweck |
 |---|---|---|
-| `/` , `/a/<app>/…` | `views.py` | Laufzeit: Seiten, Einträge, Export, Skripte, Bausteine |
+| `/`, `/a/<app>/…` | `views.py` | Laufzeit: Seiten, Einträge, Export, Skripte, nachladende Bausteine |
 | `/designer/…` | `designer.py` | Apps, Tabellen, Felder, Seiten, Skripte, Abfragen, Versionen |
 | `/api/v1/<app>/…` | `api.py` | REST-API, OpenAPI, eigene Endpunkte, Webhooks (`ausloesen/`) |
-| `/a/<app>/api-doku/…` | `views.py` | Doku und Swagger-UI je App |
+| `/a/<app>/api-doku/…` | `views.py` | Dokumentation und Swagger je App |
 | `/mcp/<app>/` | `mcp.py` | MCP-Server je App |
 | `/mcp/designer/` | `mcp_designer.py` | MCP-Server für den Designer |
-| `/profil/`, `/hilfe/` | `profile.py`, `help.py` | Profil, Schlüssel, Handbuch |
+| `/profil/`, `/hilfe/` | `profile.py`, `help.py` | Profil, Schlüssel, KI-Zugänge, Handbuch |
 | `/admin/` | Django Admin | Verwaltung, Daten je App |
 
-### Seitenaufruf (Laufzeit)
+### Seitenaufruf
 
 ```mermaid
 sequenceDiagram
     autonumber
     participant B as Browser
     participant V as views.page
-    participant P as App/Page
     participant T as triggers
     participant BL as blocks
     participant DS as datasources
 
     B->>V: GET /a/inventar/p/uebersicht/
-    V->>P: App laden, user_can_use() / page.public prüfen
-    V->>T: Skripte mit Auslöser "page" ausführen
-    T-->>V: ui-Werte, Meldungen
-    loop je Baustein in page.layout
-        V->>BL: render(block, context)
-        alt Baustein mit Abfrage und LAZY_QUERIES
-            BL-->>V: Platzhalter (wird nachgeladen)
-        else
+    V->>V: runtime_access(): benutzen oder Gast auf öffentlicher Seite?
+    V->>T: Python-Skripte mit Auslöser „page“
+    T-->>V: Werte für Bausteine, Meldungen
+    loop je Baustein im Layout
+        V->>BL: render_block()
+        alt Abfrage-Baustein (LAZY_QUERIES)
+            BL-->>V: Platzhalter
+        else alle anderen
             BL->>DS: Daten (Cache, Parallelitätsgrenze)
             DS-->>BL: Zeilen
+            BL-->>V: HTML des Bausteins
         end
     end
-    V-->>B: HTML
-    B->>V: GET /a/inventar/p/uebersicht/b/<block>/ (nachgeladen)
+    V-->>B: Seite
+    B->>V: GET …/b/‹baustein›/ (Platzhalter nachladen)
+    V-->>B: HTML des Bausteins
 ```
+
+JavaScript-Skripte mit Auslöser „page“ startet der Browser nach dem Laden in seiner
+Sandbox.
 
 ---
 
 ## 6. Berechtigungskonzept
 
 ```mermaid
-flowchart TD
-    A["Angemeldete Person"] --> D{"is_staff oder<br/>design_apps?"}
-    D -- nein --> N["Nutzer/in"]
-    D -- ja --> DES["Designer/in"]
-    DES --> AU{"Superuser oder<br/>automate_apps?"}
-    AU -- ja --> AUT["Automatisierer/in"]
-    AU -- nein --> DES2["Designer ohne<br/>Automatisierungen"]
+flowchart LR
+    A(["Anfrage an<br/>eine App"]) --> L{{"angemeldet?"}}
+    L -- ja --> E{{"darf sie<br/>bearbeiten? ¹"}}
+    E -- ja --> FULL["Designer und Laufzeit,<br/>auch als Entwurf"]
+    E -- nein --> U{{"veröffentlicht,<br/>Gruppe passt? ²"}}
+    U -- ja --> USE["App benutzen"]
+    U -- nein --> P
+    L -- nein --> P{{"öffentliche<br/>Seite?"}}
+    P -- ja --> GAST["Gast: Formulare und<br/>Buttons dieser Seite"]
+    P -- nein --> NO["Anmeldung<br/>bzw. 403"]
 
-    N --> USE{"App veröffentlicht<br/>und Gruppe passt<br/>(oder keine Gruppen)?"}
-    USE -- ja --> OK1["App benutzen"]
-
-    DES --> ED{"Eigentümer/in, Mitbearbeiter/in,<br/>Mitbearbeiter-Gruppe,<br/>Superuser oder App ohne Eigentümer?"}
-    ED -- ja --> OK2["App im Designer bearbeiten"]
-    ED -- "nur Eigentümer/in / Admin" --> OK3["Mitbearbeiter verwalten, löschen"]
-
-    G["Gast (nicht angemeldet)"] --> PUB{"Seite public und<br/>App veröffentlicht?"}
-    PUB -- ja --> OK4["Nur Formulare und Skript-Buttons<br/>dieser Seite (App.public_reach)<br/>+ Rate-Limit PUBLIC_RATE"]
+    classDef ok fill:#ebfbee,stroke:#2b8a3e,color:#1b4d2a
+    classDef limited fill:#fff4e6,stroke:#d9480f,color:#5c2400
+    classDef no fill:#fff5f5,stroke:#c92a2a,color:#5c1111
+    class FULL,USE ok
+    class GAST limited
+    class NO no
 ```
+
+¹ Designer-Recht **und** Eigentümer/in, Mitbearbeiter/in (einzeln oder über eine
+Gruppe), Superuser oder App ohne Eigentümer/in. Bei Automatisierungen zusätzlich das
+Recht `automate_apps`. Mitbearbeiter verwalten und die App löschen dürfen nur
+Eigentümer/in und Superuser.
+² Die App hat keine Nutzergruppen, oder die Person ist in einer davon.
+Gäste sind auf `PUBLIC_RATE` Anfragen je Adresse und Minute begrenzt.
+Automatisierungen haben keine Laufzeit; sie werden nur im Designer bedient.
 
 | Rolle | Herkunft | Rechte |
 |---|---|---|
-| Viewer | Standardgruppe (`DEFAULT_USER_GROUPS`) | veröffentlichte Apps benutzen |
-| Designer | Recht `builder.design_apps` / Keycloak-Rolle `baukasten-designer` | eigene + geteilte Apps bauen |
-| Automatisierer | Recht `builder.automate_apps` | zusätzlich Automatisierungen (echtes Python) |
-| Superuser | Django | alles |
+| Gast | nicht angemeldet | nur öffentliche Seiten, deren Formulare und Skript-Buttons |
+| Nutzer/in | jedes Konto, Standardgruppe `Viewer` (`DEFAULT_USER_GROUPS`) | veröffentlichte Apps benutzen, die für alle oder eine eigene Gruppe frei sind |
+| Designer/in | Recht `design_apps`, Mitarbeiter-Status oder Keycloak-Rolle `baukasten-designer` | eigene und geteilte Apps bauen |
+| Automatisierer/in | Gruppe „Automatisierer“ (Recht `automate_apps`) zusätzlich zum Designer-Recht | Automatisierungen mit echtem Python |
+| Superuser | Django | alles, auch `/admin/` |
 | API-Schlüssel | `ApiKey` je App | lesen, optional schreiben; nur Tabellen mit `api_enabled` |
-| Designer-Token | `DesignerToken` je Person | MCP-Designer mit den Rechten dieser Person |
+| KI-Zugang | `DesignerToken` je Person | MCP-Designer mit den Rechten dieser Person |
 
-Bei Keycloak werden Gruppen aus dem Claim `OIDC_GROUPS_CLAIM` übernommen
-(`builder/auth.py`).
+Bei Keycloak kommen die Gruppen aus dem Claim `OIDC_GROUPS_CLAIM` (`builder/auth.py`).
 
 ---
 
 ## 7. Skript-Engine
 
-### Übersicht der Skriptarten
+### Die drei Skriptarten
 
 | | Python (normale App) | JavaScript | Python (Automatisierung) |
 |---|---|---|---|
-| Ausführungsort | Server, Kindprozess | Browser, sandboxed iframe | Worker, Kindprozess |
-| Einschränkung | RestrictedPython | iframe-Sandbox | echtes Python |
+| Läuft | Web-Pod, Kindprozess | Browser, iframe-Sandbox | Worker-Pod, Kindprozess |
+| Einschränkung | RestrictedPython, Modul-Liste | Sandbox ohne Seite, Cookies und Netz | keine (echtes Python) |
 | Auslöser | page, button, save, schedule | page, button | schedule, daily, continuous, manual |
-| Zeitlimit | `SCRIPT_TIMEOUT` (10 s) | – | je Skript, max. `AUTOMATION_MAX_TIMEOUT_MINUTES` |
+| Zeitlimit | `SCRIPT_TIMEOUT` (10 s) | `SCRIPT_TIMEOUT` | je Skript, höchstens `AUTOMATION_MAX_TIMEOUT_MINUTES` |
 | Speicher | `SCRIPT_MEMORY_MB` | Browser | `AUTOMATION_MEMORY_MB` |
-| Tabellenrechte | alle Tabellen der App | wie angemeldete Person | alle Tabellen der App |
+| Tabellen | alle der App | mit den Rechten der Person | alle der App |
+| Netz | `http.get_json` über den Elternprozess, Freigabeliste | – | direkt (z. B. `requests`) |
 | Geheimnisse | – | – | `secret("NAME")` |
 
-### Python-Sandbox: Prozessmodell
+### Python: Kindprozess und Elternprozess
 
 Der Kindprozess (`child.py`) importiert **kein Django**, hat **keine Zugangsdaten**
-und **keine Datenbankverbindung**. Er kommuniziert ausschließlich über JSON-Zeilen
-auf stdin/stdout; der Elternprozess prüft jede Anfrage.
+und **keine Datenbankverbindung**. Er spricht nur über JSON-Zeilen auf stdin/stdout
+mit dem Elternprozess, und der prüft jede Anfrage.
 
 ```mermaid
 sequenceDiagram
     autonumber
-    participant V as View / triggers.execute
-    participant P as python.run (Elternprozess)
-    participant H as Handler
-    participant C as child.py (Kindprozess)
+    participant A as Aufrufer<br/>triggers.execute
+    participant P as python.run<br/>Elternprozess
+    participant C as child.py<br/>Kindprozess
 
-    V->>P: run(code, app, user, event, record)
-    P->>C: Popen(python -I child.py)<br/>leere Umgebung, rlimits (Linux)
-    P->>C: {"code", "app", "user", "event", "record", "session", "max_calls"}
+    A->>P: run(code, app, user, event, …)
+    P->>C: starten: python -I, fast leere Umgebung, rlimits
+    P->>C: Kontext: code, app, user, event, record, params, session
     C->>C: compile_restricted(code)
-    loop während das Skript läuft
-        C->>P: {"call": "table.filter", "args": {...}}
-        P->>H: handler(op, args)
-        H-->>P: Ergebnis oder OpsError
-        P->>C: {"result": ...} / {"error": ...}
+    loop solange das Skript läuft
+        C->>P: {"call": "table.filter", "args": …}
+        P->>P: Handler prüft und führt aus
+        P-->>C: {"result": …} oder {"error": …}
     end
-    C->>P: {"done": true, "ok", "log", "ui", "messages", "record", "session"}
-    P->>P: Prozess beenden, Ressourcen schließen
-    P-->>V: Result
+    C->>P: {"done": true, ok, log, ui, messages, record, session}
+    P->>C: Prozess beenden
+    P-->>A: Result
 ```
 
-**Erlaubte Operationen** (`Handler.__call__`): `table.filter|get|count|aggregate|create|update|delete`,
-`http.get_json`, `http.post_json` (nur `HTTP_ALLOWED_HOSTS`), `db.query`, `db.saved`
-und – nur bei Automatisierungen – `secret`.
+**Anfragen, die der Handler beantwortet:** `table.filter|get|count|aggregate|create|update|delete`,
+`http.get_json`, `http.post_json` (nur `HTTP_ALLOWED_HOSTS`), `db.query`, `db.saved`,
+bei Automatisierungen zusätzlich `secret`.
 
-**Schutzmaßnahmen:**
+**Schutz:**
 
-- eigener Prozess, `python -I`, leere Umgebung (nur `PATH`, `TZ`)
-- Linux: `RLIMIT_CPU`, `RLIMIT_AS`, `RLIMIT_FSIZE=0`, `RLIMIT_NOFILE=32`, eigene Session
-- Zeitlimit mit hartem `kill()`
-- Obergrenze an Aufrufen (`SCRIPT_MAX_CALLS`)
+- eigener Prozess, `python -I`; die Umgebung enthält nur `PATH`, `TZ` und zwei
+  Python-Schalter (unter Windows zusätzlich `SYSTEMROOT`)
+- Linux: `RLIMIT_CPU`, `RLIMIT_AS`, `RLIMIT_FSIZE=0`, `RLIMIT_NOFILE=32`, eigene Sitzung
+- Zeitlimit mit hartem Beenden, höchstens `SCRIPT_MAX_CALLS` Anfragen je Lauf
+
+Automatisierungen nutzen denselben Kindprozess im Modus „full“: echtes `exec`,
+Ausgaben gehen laufend als Protokollzeilen an den Elternprozess, Stoppen per SIGTERM.
 
 ### Auslöser normaler Apps
 
 ```mermaid
 flowchart LR
-    PG["Seite geöffnet"] -->|page| EX["triggers.execute"]
-    BT["Button geklickt<br/>/a/app/skript/name/"] -->|button| EX
-    SV["Eintrag gespeichert"] -->|save| EX
-    WK["Worker alle 30 s<br/>run_due()"] -->|schedule| EX
-    EX --> PR["python.run"] --> RUN[("ScriptRun<br/>(max. 20 je Skript)")]
+    PG["Seite geöffnet"] -- page --> EX
+    BT["Button geklickt"] -- button --> EX
+    SV["Eintrag gespeichert"] -- save --> EX
+    WK["Worker, alle 30 s"] -- schedule --> EX
+    EX["triggers.execute"] --> PR["python.run"] --> RUN[("ScriptRun<br/>letzte 20 je Skript")]
+
+    classDef web fill:#e3f4f6,stroke:#0b7285,color:#0b3d47
+    classDef worker fill:#fff4e6,stroke:#d9480f,color:#5c2400
+    classDef data fill:#e7f0ff,stroke:#364fc7,color:#1b2a6b
+    class PG,BT,SV,EX,PR web
+    class WK worker
+    class RUN data
 ```
 
-Bei Seitenaufrufen werden nur Fehlläufe protokolliert (`store="errors"`).
+Bei Seitenaufrufen werden nur Fehlläufe protokolliert (`store="errors"`), sonst entstünde
+für jeden Aufruf ein Eintrag. Was ein Skript selbst speichert, löst keine weiteren
+„save“-Skripte aus.
 
 ---
 
@@ -447,90 +554,119 @@ Der Worker (`builder/scripting/worker.py`) läuft als genau ein Pod und prüft a
 **2 Sekunden** (`TICK`) den Zustand.
 
 ```mermaid
-flowchart TD
-    S["serve()"] --> T["tick()"]
-    T --> HB["Heartbeat für laufende Jobs<br/>Stopp-Anforderungen prüfen"]
-    HB --> RC["recover(): verwaiste Läufe<br/>(kein Heartbeat > 90 s) freigeben"]
-    RC --> PL["plan(): ersten Termin für<br/>neue zeitgesteuerte Skripte"]
-    PL --> DU["due(): fällige Skripte"]
-    DU --> CL{"claim():<br/>atomares UPDATE<br/>running_since IS NULL"}
-    CL -- gewonnen --> JOB["Job-Thread → automation.run<br/>(Kindprozess, Live-Log)"]
-    CL -- verloren --> T
-    T --> AL["alive(): Datei für livenessProbe"]
-    AL --> LG{"30 s vergangen?"}
-    LG -- ja --> LEG["background_once():<br/>Skripte normaler Apps,<br/>Abgleiche der Datenquellen"]
-    LG --> W["2 s warten"] --> T
+flowchart TB
+    S(["serve()"]) --> Tick
+    S -. SIGTERM .-> END(["shutdown()<br/>Läufe stoppen"])
+
+    subgraph Tick["tick() · alle 2 Sekunden"]
+        direction LR
+        HB["Lebenszeichen,<br/>Stopp-Wünsche"] --> RC["recover()<br/>verwaiste Läufe"] --> PL["plan()<br/>erste Termine"] --> DU["due()<br/>fällige Skripte"] --> CL{{"Platz frei und<br/>claim() gewonnen?"}} -- ja --> JOB["Job-Thread<br/>automation.run"]
+    end
+
+    subgraph Danach["nach jedem tick()"]
+        direction LR
+        AL["alive()<br/>livenessProbe"] ~~~ BG["alle 30 s: background_once()<br/>normale Apps, Abgleiche"]
+    end
+
+    Tick --> Danach
+
+    classDef worker fill:#fff4e6,stroke:#d9480f,color:#5c2400
+    class HB,RC,PL,DU,JOB,AL,BG worker
 ```
 
-### Lebenszyklus eines Automatisierungslaufs
+`claim()` ist ein bedingtes `UPDATE … WHERE running_since IS NULL`. Nur wer die Zeile
+ändert, darf das Skript starten; so läuft es nie doppelt, auch nicht über Pods hinweg.
+
+### Zustände eines Skripts
 
 ```mermaid
 stateDiagram-v2
-    [*] --> Wartend
-    Wartend --> Angefordert: Knopf / Webhook / MCP<br/>(run_requested)
-    Wartend --> Läuft: Termin fällig / Dauerläufer
-    Angefordert --> Läuft: claim()
-    Läuft --> ok: Skript beendet
-    Läuft --> Fehler: Ausnahme
-    Läuft --> gestoppt: stop_requested / deaktiviert
-    Läuft --> abgebrochen: Zeitlimit / SIGTERM / kein Heartbeat
-    ok --> Wartend: next_run_at berechnen
-    Fehler --> Wartend: Dauerläufer: Backoff 10s…600s
-    gestoppt --> Wartend
-    abgebrochen --> Wartend
-    note right of Läuft
-        Sperre: running_since + heartbeat_at
-        Live-Log alle 2 s in ScriptRun.log
-        (max. 50.000 Zeichen)
-    end note
+    direction LR
+    state "wartet" as waiting
+    state "angefordert" as requested
+    state "läuft" as running
+    state "Ergebnis (ScriptRun.status)" as result {
+        direction TB
+        state "ok" as ok
+        state "Fehler" as error
+        state "gestoppt" as stopped
+        state "abgebrochen" as aborted
+    }
+
+    [*] --> waiting
+    waiting --> requested: Knopf, Webhook, MCP
+    requested --> running: claim()
+    waiting --> running: Termin fällig, Dauerläufer
+    running --> ok: Skript endet
+    running --> error: Ausnahme, Zeitlimit
+    running --> stopped: Stoppen, ausgeschaltet
+    running --> aborted: Dienst endet
+    result --> waiting: nächster Termin
 ```
+
+Während eines Laufs hält `running_since` die Sperre, `heartbeat_at` zeigt, dass der
+Dienst lebt, und das Protokoll landet alle 2 Sekunden in `ScriptRun.log` (höchstens
+50.000 Zeichen, das Ende bleibt).
 
 **Garantien:**
 
-- **Kein Überholen:** Ein Skript läuft nie doppelt (DB-Sperre per bedingtem `UPDATE`).
-- **Kein Nachholen:** Verpasste Termine werden als `skipped` vermerkt.
-- **Dauerläufer** starten nach Ende neu; nach Fehlern mit Backoff `10, 30, 120, 300, 600` s.
-  Nach 10 min gesunder Laufzeit wird der Fehlerzähler zurückgesetzt.
-- **Graceful Shutdown:** SIGTERM → laufende Jobs `aborted`, 20 s Wartezeit,
+- **Kein Überholen:** Ein Skript läuft nie doppelt (Sperre per bedingtem `UPDATE`).
+- **Kein Nachholen:** Fällt ein Termin in einen laufenden Lauf, entfällt er und steht als
+  `skipped` im Protokoll. Lag der Dienst länger still, startet der nächste Lauf zum
+  nächsten Termin ab jetzt, ohne Vermerk.
+- **Dauerläufer** starten nach dem Ende neu, nach Fehlern mit 10, 30, 120, 300 und 600 s
+  Wartezeit. Nach 10 Minuten fehlerfreier Laufzeit beginnt die Zählung von vorn.
+- **Sauberes Beenden:** SIGTERM an den Dienst stoppt laufende Skripte (SIGTERM, nach
+  10 s SIGKILL), wartet bis zu 20 s und vermerkt sie als `aborted`;
   `terminationGracePeriodSeconds: 45`.
-- **Parallelität:** `AUTOMATION_PARALLEL` (Dauerläufer zählen nicht mit).
-- Es werden die letzten 30 Läufe je Skript aufbewahrt.
+- **Parallelität:** höchstens `AUTOMATION_PARALLEL` Läufe, Dauerläufer zählen nicht mit.
+- Aufbewahrt werden die letzten 30 Läufe je Skript.
 
 ---
 
 ## 9. Externe Datenquellen
 
-Datenquellen werden **nur über Umgebungsvariablen** konfiguriert:
+Datenquellen richtet nur der Betrieb ein, über Umgebungsvariablen:
 `DATASOURCE_<NAME>=<verbindungs-url>` (z. B. `DATASOURCE_DWH=databricks://…`).
-Im Designer wird nur der Name ausgewählt; Zugangsdaten sind dort nie sichtbar.
+Im Designer wird nur der Name gewählt; Zugangsdaten sind dort nie sichtbar.
+
+### Gespeicherte Abfrage unter Last
 
 ```mermaid
-sequenceDiagram
-    autonumber
-    participant B as Baustein / Skript
-    participant D as datasources.run
-    participant C as Cache (Redis/DB/Memory)
-    participant DB as Externe DB
+flowchart LR
+    A(["Abfrage<br/>angefragt"]) --> B{{"frisch im<br/>Cache?"}}
+    B -- ja --> R(["Zeilen"])
+    B -- nein --> C{{"läuft sie<br/>gerade schon?"}}
+    C -- ja --> D{{"letzter Stand<br/>da?"}}
+    D -- ja --> R
+    D -- nein --> WAIT(["„wird geladen“,<br/>Browser fragt nach"])
+    C -- nein --> F{{"Platz frei?<br/>QUERY_PARALLEL"}}
+    F -- nein --> BUSY(["„ausgelastet“"])
+    F -- ja --> Q["Abfrage an die<br/>Datenbank"]
+    Q -- ok --> SAVE["in den Cache"] --> R
+    Q -- Fehler --> STALE(["letzter Stand<br/>oder Fehler"])
 
-    B->>D: Abfrage (nur SELECT/WITH, Parameter :name)
-    D->>C: Ergebnis im Cache?
-    alt Treffer (cache_seconds)
-        C-->>D: Zeilen
-    else kein Treffer
-        D->>C: Sperre gegen Mehrfachabfrage +<br/>Slot (QUERY_PARALLEL je Quelle, clusterweit)
-        alt Slot innerhalb QUERY_WAIT frei
-            D->>DB: Abfrage (QUERY_TIMEOUT)
-            DB-->>D: Zeilen
-            D->>C: speichern
-        else
-            D-->>B: "wird geladen" – Browser fragt nach
-        end
-    end
-    D-->>B: Zeilen
+    classDef data fill:#e7f0ff,stroke:#364fc7,color:#1b2a6b
+    classDef warn fill:#fff4e6,stroke:#d9480f,color:#5c2400
+    class Q,SAVE,R data
+    class WAIT,BUSY,STALE warn
 ```
 
+- **Frisch** heißt: jünger als `cache_seconds` der Abfrage. Der Cache ist für alle Pods
+  gemeinsam (Redis oder Datenbank).
+- **Läuft gerade** erkennt eine Sperre im Cache, auch in einem anderen Pod. Wer keinen
+  letzten Stand hat, wartet bis zu `QUERY_WAIT` Sekunden; nachladende Bausteine warten gar
+  nicht, sondern fragen nach 2 Sekunden erneut.
+- **Platz frei** zählt die Abfragen je Quelle im ganzen Cluster (`QUERY_PARALLEL`,
+  einzeln `QUERY_PARALLEL_<NAME>`).
+- Die Abfrage selbst darf `QUERY_TIMEOUT` Sekunden dauern, beim Spiegeln im Hintergrund
+  `SYNC_TIMEOUT`. Schlägt sie fehl, kommt der letzte Stand mit `stale: true` zurück.
+
+Erlaubt sind nur Abfragen, die mit `SELECT` oder `WITH` beginnen, mit Parametern als
+`:name`. Die eigentliche Sicherheit ist ein Datenbank-Benutzer, der nur lesen darf.
+
 **Spiegeln:** Eine `DataQuery` mit `sync_entity` schreibt ihr Ergebnis in eine
-App-Tabelle – per Knopf oder alle `sync_interval` Minuten durch den Worker
+App-Tabelle, per Knopf oder alle `sync_interval` Minuten durch den Worker
 (`SYNC_TIMEOUT`). Mit `key_column` wird abgeglichen, sonst neu befüllt.
 
 ---
@@ -543,32 +679,49 @@ App-Tabelle – per Knopf oder alle `sync_interval` Minuten durch den Worker
 |---|---|---|
 | GET | `/api/v1/<app>/` | Beschreibung der App |
 | GET | `/api/v1/<app>/openapi.json` | OpenAPI-Spezifikation |
-| GET/POST | `/api/v1/<app>/<tabelle>/` | Liste (Filter, Paging) / Anlegen |
-| GET/PATCH/PUT/DELETE | `/api/v1/<app>/<tabelle>/<id>/` | Einzelner Eintrag |
-| * | `/api/v1/<app>/x/<name>/` | eigene Endpunkte aus `extensions/` |
+| GET, POST | `/api/v1/<app>/<tabelle>/` | Liste (Filter, Seiten) oder anlegen |
+| GET, PATCH, PUT, DELETE | `/api/v1/<app>/<tabelle>/<id>/` | einzelner Eintrag |
+| beliebig | `/api/v1/<app>/x/<name>/` | eigene Endpunkte aus `extensions/` |
 | POST | `/api/v1/<app>/ausloesen/<skript>/` | Webhook für Automatisierungen |
 
-Authentifizierung über einen API-Schlüssel (`bk_…`) der App. Schlüssel ohne
-`can_write` dürfen nur lesen; nur Tabellen mit `api_enabled` sind erreichbar.
-Der Tabellenzugriff läuft über dieselbe Schicht wie Skripte (`scripting/ops.py`).
+Angemeldet wird mit einem API-Schlüssel der App (`bk_…`). Schlüssel ohne `can_write`
+dürfen nur lesen; erreichbar sind nur Tabellen mit `api_enabled`. Der Tabellenzugriff
+läuft über dieselbe Schicht wie bei Skripten (`scripting/ops.py`).
 
-### MCP-Server
+### Die zwei MCP-Server
+
+Beide sprechen MCP über „Streamable HTTP“ ohne Streaming: jede Anfrage ein POST mit
+einer JSON-RPC-Nachricht. Den Protokollteil teilen sie sich (`mcp.dispatch`, `mcp.serve`).
 
 ```mermaid
 flowchart LR
-    AG["KI-Agent"] -->|"JSON-RPC, API-Schlüssel bk_…"| M["/mcp/&lt;app&gt;/"]
-    M --> TL["Tools automatisch je Tabelle<br/>(lesend; schreibend nur mit can_write)"]
-    TL --> OPS["scripting/ops.py"]
+    subgraph App["MCP je App · /mcp/‹app›/"]
+        direction TB
+        A1["API-Schlüssel der App<br/>bk_…"] --> A2["Tools je freigegebener Tabelle<br/>lesen; schreiben nur mit can_write"]
+        A2 --> A3["bei Automatisierungen:<br/>start_‹skript›, automation_status"]
+    end
+    subgraph Des["MCP für den Designer · /mcp/designer/"]
+        direction TB
+        D1["persönlicher KI-Zugang<br/>bkd_…"] --> D2["guide, list_apps, get_app,<br/>validate_app, create_app,<br/>update_app, restore_version"]
+        D2 --> D3["ai_designer.py: prüfen, schützen,<br/>Version vor jeder Änderung,<br/>höchstens AI_WRITES je 10 min"]
+    end
+    AG(["KI-Agent<br/>n8n, Claude, Cursor"]) --> A1
+    AG --> D1
 
-    AG2["KI-Agent"] -->|"Designer-Token bkd_…"| MD["/mcp/designer/"]
-    MD --> AI["ai_designer.py<br/>Apps, Tabellen, Seiten bauen"]
-    AI --> RL["Rate-Limit AI_WRITES<br/>je 10 min"]
+    classDef web fill:#e3f4f6,stroke:#0b7285,color:#0b3d47
+    classDef ext fill:#f1f3f5,stroke:#868e96,color:#212529
+    class A1,A2,A3,D1,D2,D3 web
+    class AG ext
 ```
+
+Der Designer-Server handelt mit den Rechten der Person, der der Schlüssel gehört. Er
+legt Apps nur als Entwurf an und kann nicht veröffentlichen, nichts öffentlich machen,
+keine Tabelle für die API freigeben und keine Skripte einschalten.
 
 ### Python-Client
 
-`clients/python/baukasten_client` bietet dieselben Befehle wie Skripte
-(`filter`, `get`, `create`, …) gegen die REST-API.
+`clients/python/baukasten_client` bietet gegen die REST-API dieselben Befehle wie
+Skripte (`filter`, `get`, `create`, …).
 
 ---
 
@@ -578,19 +731,30 @@ flowchart LR
 
 ```mermaid
 flowchart LR
-    APP["App<br/>(Einstellungen, Tabellen,<br/>Felder, Seiten, Skripte)"] -->|snapshot| V[("AppVersion.snapshot<br/>JSON, ohne Daten")]
-    V -->|wiederherstellen| APP
-    V -->|herunterladen| F["Datei (.json)"]
-    F -->|/designer/import/| APP2["App in anderer Umgebung"]
+    APP["App<br/>Einstellungen, Tabellen,<br/>Felder, Seiten, Skripte"] -- snapshot --> V[("AppVersion<br/>JSON ohne Daten")]
+    V -- wiederherstellen --> APP
+    V -- herunterladen --> F["Datei .json"]
+    F -- "/designer/import/" --> APP2["App in einer<br/>anderen Umgebung"]
+    KI(["KI-Zugang"]) -- "update_app sichert vorher" --> V
+
+    classDef web fill:#e3f4f6,stroke:#0b7285,color:#0b3d47
+    classDef data fill:#e7f0ff,stroke:#364fc7,color:#1b2a6b
+    classDef ext fill:#f1f3f5,stroke:#868e96,color:#212529
+    class APP,APP2 web
+    class V,F data
+    class KI ext
 ```
 
-Vor riskanten Änderungen entstehen automatische Versionen (`automatic=True`).
+Automatische Versionen (`automatic=True`) entstehen vor dem Wiederherstellen und bei
+jeder Änderung über den KI-Zugang. Tabellen werden beim Wiederherstellen nie gelöscht;
+ihre Einträge bleiben erhalten.
 
 ### Übersetzungen (`app_i18n.py`)
 
 - Oberflächentexte: Django-gettext (`builder/locale/en`).
-- App-Inhalte: `App.translations = {"en": {"Quelltext": "Übersetzung"}}`,
-  angewendet über `AppTranslationMiddleware`. Export/Import als CSV.
+- App-Inhalte: `App.translations = {"en": {"Quelltext": "Übersetzung"}}`, aktiviert in
+  den Views; `AppTranslationMiddleware` setzt sie nach jeder Anfrage zurück. Export und
+  Import als CSV.
 - Gespeicherte Daten, API und Skripte bleiben unübersetzt (stabile Schlüssel).
 
 ---
@@ -598,50 +762,64 @@ Vor riskanten Änderungen entstehen automatische Versionen (`automatic=True`).
 ## 12. Deployment auf Kubernetes
 
 ```mermaid
-flowchart TB
+flowchart LR
+    USR(["Nutzer, Programme,<br/>KI-Agenten"]) --> ING["Ingress<br/>TLS"] --> SVC["Service<br/>:80"] --> WL
+
     subgraph NS["Namespace baukasten"]
-        ING["Ingress<br/>baukasten.example.com (TLS)"] --> SVC["Service baukasten :80"]
-        SVC --> D1["Deployment baukasten<br/>RollingUpdate, maxUnavailable 0<br/>Pods: web :8000"]
-        HPA["HPA 2–6 Pods<br/>CPU 70 %"] -.-> D1
-        PDB["PodDisruptionBudget<br/>minAvailable 1"] -.-> D1
-        D2["Deployment baukasten-worker<br/>1 Pod, Recreate<br/>kein ServiceAccount-Token"]
-        J["Job migrate<br/>manage.py migrate"]
-        CM[["ConfigMap baukasten-config"]]
-        SEC[["Secret baukasten-secret<br/>SECRET_KEY, DATABASE_URL,<br/>DATASOURCE_*, OIDC_CLIENT_SECRET"]]
-        SSEC[["Secret baukasten-skript-geheimnisse<br/>SCRIPT_SECRET_*"]]
-        R[("Redis (optional)")]
+        direction LR
+        subgraph CFGS["Konfiguration"]
+            direction TB
+            CFG[["ConfigMap und Secret<br/>baukasten-config, -secret"]] ~~~ SSEC[["Secret<br/>baukasten-skript-geheimnisse"]]
+        end
+        subgraph WL["Workloads"]
+            direction TB
+            WEB["Deployment baukasten<br/>2–6 Pods · HPA · PDB"] ~~~ WRK["Deployment baukasten-worker<br/>1 Pod · Recreate · kein SA-Token"] ~~~ JOB["Job baukasten-migrate"]
+        end
+        RD[("Redis<br/>optional")]
     end
     PG[("PostgreSQL")]
 
-    CM & SEC --> D1 & D2 & J
-    SSEC --> D2
-    D1 & D2 & J --> PG
-    D1 --> R
+    CFGS -. Umgebung .-> WL
+    WL --> PG
+    WL -.-> RD
+
+    classDef web fill:#e3f4f6,stroke:#0b7285,color:#0b3d47
+    classDef worker fill:#fff4e6,stroke:#d9480f,color:#5c2400
+    classDef data fill:#e7f0ff,stroke:#364fc7,color:#1b2a6b
+    classDef ext fill:#f1f3f5,stroke:#868e96,color:#212529
+    class ING,SVC,WEB,JOB web
+    class WRK,SSEC worker
+    class PG,RD,CFG data
+    class USR ext
 ```
+
+Die Konfiguration bekommen alle drei Workloads; das Secret mit den Geheimnissen für
+Skripte nur der Worker. Der Service leitet nur auf die Web-Pods. Lokal mit Docker
+Desktop läuft PostgreSQL mit im Namespace; Ingress und HPA entfallen dort.
 
 ### Ausrollen
 
 ```mermaid
 sequenceDiagram
+    autonumber
     participant Dev as Entwickler/in
     participant Reg as Registry
     participant K as Kubernetes
-    Dev->>Reg: docker build & push (python:3.13-slim, collectstatic)
-    Dev->>K: kubectl apply -f k8s/migrate-job.yaml
+    Dev->>Reg: docker build und push (python:3.13-slim, collectstatic)
+    Dev->>K: alten Job löschen, k8s/migrate-job.yaml anwenden
     K->>K: manage.py migrate
     Dev->>K: kubectl apply -f k8s/app.yaml -f k8s/worker.yaml
-    K->>K: neue Web-Pods (readiness /healthz), dann alte beenden
-    K->>K: Worker: SIGTERM → Läufe "abgebrochen" → neuer Pod
+    K->>K: Web: neue Pods (readiness /healthz), dann alte beenden
+    K->>K: Worker: SIGTERM, Läufe „abgebrochen“, neuer Pod
 ```
 
-Lokal mit Docker Desktop: `k8s\lokal\deploy.ps1 -OhneBeispiele` (Kustomize,
-eigene PostgreSQL), erreichbar unter http://localhost:8080.
+Lokal mit Docker Desktop erledigt das `k8s\lokal\deploy.ps1 -OhneBeispiele` (Kustomize,
+eigene PostgreSQL); danach unter http://localhost:8080 erreichbar.
 
-### Kapazitätsplanung
+### Kapazität
 
-Datenbankverbindungen ≈ `Pods × GUNICORN_WORKERS × GUNICORN_THREADS` (+ Worker).
-Bei `maxReplicas 6 × 3 × 4 = 72` Verbindungen muss `max_connections` von PostgreSQL
-ausreichend groß sein.
+Datenbankverbindungen ≈ `Pods × GUNICORN_WORKERS × GUNICORN_THREADS` plus Worker. Bei
+6 Pods × 3 × 4 sind das 72; `max_connections` von PostgreSQL muss reichen.
 
 ---
 
@@ -650,54 +828,58 @@ ausreichend groß sein.
 | Variable | Standard | Bedeutung |
 |---|---|---|
 | `DEBUG` | `0` | Entwicklungsmodus |
-| `SECRET_KEY` | – (Pflicht produktiv) | Django-Schlüssel |
+| `SECRET_KEY` | – (produktiv Pflicht) | Django-Schlüssel |
 | `ALLOWED_HOSTS`, `CSRF_TRUSTED_ORIGINS` | `localhost,127.0.0.1` | Hostnamen |
 | `DATABASE_URL` | SQLite | z. B. `postgres://user:pass@host:5432/db` |
-| `DB_CONN_MAX_AGE` | `60` | persistente DB-Verbindungen (s) |
-| `REDIS_URL` / `CACHE_BACKEND` | – / auto | `redis`, `database`, `memory` |
+| `DB_CONN_MAX_AGE` | `60` | Datenbankverbindungen offen halten (s) |
+| `REDIS_URL`, `CACHE_BACKEND` | –, automatisch | `redis`, `database` oder `memory` |
 | `DEFAULT_USER_GROUPS` | `Viewer` | Standardgruppen |
 | `OIDC_ISSUER`, `OIDC_CLIENT_ID`, `OIDC_CLIENT_SECRET` | – | Keycloak |
-| `OIDC_ONLY`, `OIDC_GROUPS_CLAIM`, `OIDC_DESIGNER_ROLE` | `0`, `groups`, `baukasten-designer` | Keycloak-Details |
-| `SCRIPT_TIMEOUT`, `SCRIPT_MEMORY_MB`, `SCRIPT_MAX_CALLS` | `10`, `512`, `1000` | Sandbox-Grenzen |
+| `OIDC_ONLY`, `OIDC_GROUPS_CLAIM`, `OIDC_DESIGNER_ROLE` | `0`, `groups`, `baukasten-designer` | Keycloak im Detail |
+| `SCRIPT_TIMEOUT`, `SCRIPT_MEMORY_MB`, `SCRIPT_MAX_CALLS` | `10`, `512`, `1000` | Grenzen der Python-Sandbox |
 | `AUTOMATION_PARALLEL`, `AUTOMATION_MEMORY_MB` | `4`, `2048` | Worker |
 | `AUTOMATION_MAX_TIMEOUT_MINUTES`, `AUTOMATION_MAX_CALLS` | `240`, `0` | Worker |
-| `SCRIPT_SECRET_<NAME>` | – | Geheimnisse für Automatisierungen (nur Worker) |
-| `AI_WRITES` | `30` | Änderungen je Designer-Token / 10 min |
-| `PUBLIC_RATE` | `120` | Gast-Anfragen je IP / Minute |
+| `SCRIPT_SECRET_<NAME>` | – | Geheimnis für Automatisierungen (nur Worker) |
+| `AI_WRITES` | `30` | Änderungen je KI-Zugang in 10 Minuten |
+| `PUBLIC_RATE` | `120` | Anfragen von Gästen je Adresse und Minute |
 | `DATASOURCE_<NAME>` | – | externe Datenquelle |
-| `QUERY_TIMEOUT`, `SYNC_TIMEOUT` | `25`, `300` | Abfrage-Zeitlimits (s) |
+| `QUERY_TIMEOUT`, `SYNC_TIMEOUT` | `25`, `300` | Zeitlimits für Abfragen (s) |
 | `QUERY_PARALLEL`, `QUERY_PARALLEL_<NAME>`, `QUERY_WAIT` | `4`, –, `2` | Lastbegrenzung |
 | `LAZY_QUERIES` | `true` | Abfrage-Bausteine nachladen |
-| `HTTP_ALLOWED_HOSTS`, `HTTP_TIMEOUT` | –, `10` | ausgehende HTTP-Requests |
+| `HTTP_ALLOWED_HOSTS`, `HTTP_TIMEOUT` | –, `10` | ausgehende HTTP-Aufrufe |
 | `TABLEAU_HOSTS`, `TABLEAU_CONNECTED_APP_*`, `TABLEAU_USER_ATTRIBUTE` | – | Tableau |
 | `GUNICORN_WORKERS`, `GUNICORN_THREADS`, `GUNICORN_TIMEOUT` | `3`, `4`, `60` | Webserver |
+| `REDIS_PASSWORD` | – | Passwort für Redis aus `k8s/redis.yaml` |
 | `COOKIE_SECURE`, `LOG_LEVEL` | `true`, `INFO` | Sonstiges |
 
 ---
 
 ## 14. Sicherheit
 
-```mermaid
-flowchart LR
-    subgraph Schichten
-        A["Netz<br/>Ingress/TLS, ALLOWED_HOSTS,<br/>CSRF, Secure Cookies"]
-        B["Identität<br/>lokale Konten / Keycloak,<br/>gehashte Schlüssel"]
-        C["Autorisierung<br/>Rollen, Eigentümer,<br/>Gruppen, public_reach"]
-        D["Ausführung<br/>Prozess-Isolation,<br/>RestrictedPython, rlimits"]
-        E["Ausgang<br/>HTTP-Allowlist,<br/>nur lesende SQL"]
-        F["Betrieb<br/>non-root, drop ALL caps,<br/>kein SA-Token im Worker"]
-    end
-    A --> B --> C --> D --> E --> F
-```
+Die Schutzmaßnahmen wirken auf mehreren Ebenen nebeneinander:
+
+| Ebene | Maßnahmen |
+|---|---|
+| Netz | Ingress mit TLS, `ALLOWED_HOSTS`, CSRF-Schutz, sichere Cookies, kein Einbetten in fremde Seiten |
+| Identität | lokale Konten oder Keycloak; API-Schlüssel und KI-Zugänge nur als SHA-256-Hash |
+| Rechte | Designer-Recht je App (Eigentümer/in, Mitbearbeiter), Tabellenrechte, Schreibrecht des Schlüssels, `public_reach` für Gäste, `automate_apps` für Automatisierungen |
+| Ausführung | Kindprozesse mit fast leerer Umgebung; RestrictedPython und rlimits für normale Skripte; Sandbox im Browser für JavaScript |
+| Ausgang | HTTP nur an `HTTP_ALLOWED_HOSTS` (normale Skripte, Bausteine), Abfragen nur lesend |
+| Betrieb | Container ohne root, alle Capabilities entfernt, kein ServiceAccount-Token im Worker |
+
+Im Einzelnen:
 
 - **HTML eigener Bausteine** wird über `sanitize.py` bereinigt.
-- **SQL** von Abfragen: nur `SELECT` / `WITH`, Parameterbindung `:name`.
-- **Worker-Härtung:** `PR_SET_DUMPABLE=0` → Skripte können `/proc/<pid>/environ`
-  des Dienstes nicht lesen; Kindprozesse starten mit leerer Umgebung.
+- **Worker-Härtung:** `PR_SET_DUMPABLE=0`, damit Skripte `/proc/<pid>/environ` des
+  Dienstes nicht lesen können; Kindprozesse starten ohne Zugangsdaten. Läuft der Dienst
+  als root, laufen Skripte als `nobody`.
 - **Geheimnisse** für Automatisierungen liegen in einem eigenen Secret, das nur der
-  Worker-Pod erhält.
-- **Öffentliche Seiten:** Gäste erreichen nur die auf der Seite platzierten
-  Formulare/Buttons; Rate-Limit je Adresse.
+  Worker-Pod bekommt.
+- **Nicht abgeschottet** ist das Netz der Automatisierungen: Sie erreichen alles, was
+  der Worker-Pod erreicht. Deshalb dürfen nur Automatisierer sie bauen, Redis verlangt
+  ein Passwort, und NetworkPolicies können den Worker weiter einschränken.
+- **Öffentliche Seiten:** Gäste erreichen nur die Formulare und Buttons dieser Seite,
+  mit Anfragebegrenzung je Adresse.
 
 ---
 
@@ -724,9 +906,8 @@ Module in `extensions/` registrieren über `builder/hooks.py` eigene **Aktionen*
 
 ### Neue Migration
 
-Änderungen an `builder/models.py` (nicht an App-Tabellen!) erfordern
-`python manage.py makemigrations builder` und eine neue Datei in
-`builder/migrations/`.
+Änderungen an `builder/models.py` (nicht an App-Tabellen!) brauchen
+`python manage.py makemigrations builder` und eine neue Datei in `builder/migrations/`.
 
 ---
 
