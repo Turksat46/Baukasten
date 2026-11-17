@@ -8,23 +8,36 @@ Ein App-Baukasten auf Basis von Django. Fachabteilungen bauen interne Apps im
 Browser zusammen, Entwickler ergänzen bei Bedarf Logik in Python. Läuft auf
 Kubernetes.
 
-**Die vollständige Dokumentation steht in [docs/HANDBUCH.md](docs/HANDBUCH.md).**
+**Die vollständige Dokumentation steht in [docs/HANDBUCH.md](docs/HANDBUCH.md)**
+(englische Kurzfassung: [docs/HANDBOOK.en.md](docs/HANDBOOK.en.md)).
 
 ## Was er kann
 
 - **Daten → fertige App:** Tabellen und Felder festlegen, daraus entsteht per
   Klick eine Seite mit Liste, Suche, Anlegen, Bearbeiten und Löschen.
-- **Seiten-Designer:** 21 Bausteine per Drag-and-drop, mit Vorschau auf echten
-  Daten (Listen, Karten, Formulare, Kennzahlen, Diagramme, Verlauf, Export …).
+- **Seiten-Designer:** 22 Bausteine per Drag-and-drop, mit Vorschau auf echten
+  Daten (Listen, Karten, Formulare, Kennzahlen, Diagramme, Verlauf, Export,
+  Eingabefelder …).
+- **Öffentliche Seiten:** einzelne Seiten „ohne Anmeldung erreichbar“ machen, etwa
+  für Anmeldeformulare oder Einwilligungen von Externen. Gäste dürfen nur
+  Formulare und Skript-Buttons dieser Seite benutzen; mit Anfragebegrenzung.
 - **Eigene Bausteine:** HTML-Bausteine mit eigenen Einstellungen und
   wiederverwendbare Vorlagen, ohne Programmierung.
 - **API:** JSON-Schnittstelle je Tabelle mit Schlüsseln; eigene Endpunkte in Python.
   Dokumentation je App mit Swagger zum Ausprobieren und OpenAPI-Datei.
+- **MCP-Server je App** (`/mcp/<app>/`): KI-Agenten wie n8n, Claude oder Cursor
+  nutzen die freigeschalteten Tabellen als Werkzeuge. Die Tools entstehen
+  automatisch aus den Tabellen; ein Schlüssel ohne Schreibrecht bekommt nur die
+  lesenden.
+- **Mitbearbeiter:** Wer eine App anlegt, ist Eigentümer/in und lädt weitere
+  Designer oder Gruppen ein. Andere Designer sehen fremde Apps im Designer nicht.
 - **Versionen:** Stand einer App speichern, wiederherstellen, als Datei
   exportieren und in einer anderen Umgebung importieren.
 - **Skripte in Python und JavaScript:** Bausteine füllen, rechnen, Einträge
   prüfen, zeitgesteuert im Hintergrund arbeiten. Python läuft abgeschottet auf
-  dem Server, JavaScript in einer Sandbox im Browser.
+  dem Server, JavaScript in einer Sandbox im Browser. Python-Skripte haben
+  außerdem `session` (Merkzettel je Besucher, auch ohne Konto) und `token()`
+  für geheime Links.
 - **Datenbanken und Databricks:** lesende Abfragen live anzeigen (mit
   automatischer Aktualisierung) oder regelmäßig in eine Tabelle spiegeln.
 - **Python-Bibliothek** `baukasten-client` für die API, mit denselben Befehlen
@@ -34,9 +47,13 @@ Kubernetes.
 - **Anmeldung:** lokale Konten oder Keycloak (OpenID Connect) mit Gruppen und
   Designer-Rolle.
 - **Zweisprachig:** Deutsch und Englisch, umschaltbar.
+- **Übersetzbare Apps:** alle Texte einer App (Namen, Felder, Auswahlwerte,
+  Seiten, Bausteine) im Designer übersetzen, auch per CSV für Übersetzer.
+  Gespeicherte Daten, API und Skripte bleiben unverändert.
 - **Führung für neue Nutzer**, Platz für das Firmenlogo, Design über Variablen.
 - **Profilseite** mit eigenen Apps, API-Schlüsseln, Skripten und deren Fehlern.
-- **Verwaltung nach Apps:** in `/admin/` alle Daten je App mit echten Spalten.
+- **Verwaltung nach Apps:** in `/admin/` alle Daten je App mit echten Spalten;
+  Admins erreichen sie direkt über „Admin“ in der Kopfzeile.
 - **Standardgruppe „Viewer“** für jede Person (einstellbar über `DEFAULT_USER_GROUPS`).
 - **Handbuch in der Oberfläche** unter „Hilfe“ (Quelle: `docs/HANDBUCH.md`).
 
@@ -67,8 +84,12 @@ Nach einem Update des Baukastens: `pip install -r requirements.txt` und
 `python manage.py migrate` erneut ausführen.
 
 **Lokal in Kubernetes** (Docker Desktop mit eingeschaltetem Kubernetes):
-`powershell -ExecutionPolicy Bypass -File k8s\lokal\deploy.ps1`, danach
-http://localhost:8080. Einzelheiten im Handbuch unter „Lokal mit Kubernetes“.
+`powershell -ExecutionPolicy Bypass -File k8s\lokal\deploy.ps1 -OhneBeispiele`,
+danach http://localhost:8080. Ohne `-OhneBeispiele` bricht das Skript am Ende ab,
+weil die Inventar-Demo im Cluster nicht schreiben darf; die Einwilligungs-App
+legt man danach mit
+`kubectl -n baukasten exec deploy/baukasten -- python manage.py beispiel_einwilligung`
+an. Einzelheiten im Handbuch unter „Lokal mit Kubernetes“.
 
 ## Wo was steht
 
@@ -76,7 +97,8 @@ http://localhost:8080. Einzelheiten im Handbuch unter „Lokal mit Kubernetes“
 |---|---|
 | Benutzen, Apps bauen, Bausteine, Versionen | Handbuch Teil 1 und 2 |
 | Datenquellen und Skripte anwenden | Handbuch Teil 2 |
-| Skript-Referenz, Python-Bibliothek, API, Aufbau des Codes | Handbuch Teil 3 |
+| Öffentliche Seiten, Übersetzungen, Mitbearbeiter | Handbuch Teil 2 und „Rechte“ |
+| Skript-Referenz, Python-Bibliothek, API, MCP-Server, Aufbau des Codes | Handbuch Teil 3 |
 | Kubernetes, Datenquellen einrichten, Keycloak, Sicherheit | Handbuch Teil 4 |
 | Firmenlogo einbinden | `builder/static/builder/brand/LIESMICH.txt` |
 | Farben und Schrift | `builder/static/builder/theme.css` |
@@ -85,8 +107,9 @@ http://localhost:8080. Einzelheiten im Handbuch unter „Lokal mit Kubernetes“
 
 ## Stand
 
-Lauffähiger Prototyp. Getestet mit SQLite (68 automatische Tests, Durchläufe im
-Browser). Nicht getestet: PostgreSQL, Docker-Build, die Manifeste auf einem
-echten Cluster, der vollständige Login gegen einen echten Keycloak und
-Verbindungen zu echten Datenbanken außer SQLite, auch nicht zu Databricks. Alle
+Lauffähiger Prototyp. Getestet mit SQLite (161 automatische Tests, Durchläufe im
+Browser). Docker-Build und die lokalen Manifeste laufen auf Kubernetes in Docker
+Desktop mit PostgreSQL 16. Nicht getestet: ein echter Produktions-Cluster (Ingress,
+TLS), der vollständige Login gegen einen echten Keycloak und Verbindungen zu
+echten Datenbanken außer SQLite und PostgreSQL, auch nicht zu Databricks. Alle
 bekannten Grenzen stehen im Handbuch unter „Grenzen des jetzigen Stands“.
