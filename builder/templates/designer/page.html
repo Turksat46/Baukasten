@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% load static i18n baukasten %}
+{% block title %}{{ page.title }} – {% translate "Designer" %}{% endblock %}
+{% block main_class %}designer{% endblock %}
+{% block content %}
+<div id="designer" data-csrf="{{ csrf_token }}" data-preview-url="{% url 'designer_page_preview' app.slug page.pk %}" data-preset-url="{% url 'designer_preset_save' %}">
+  <div class="designer-bar">
+    <a href="{% url 'designer_app' app.slug %}">{% blocktranslate with name=app.name %}Zurück zu {{ name }}{% endblocktranslate %}</a>
+    <input id="page-title" type="text" value="{{ page.title }}" maxlength="80" aria-label="{% translate 'Seitentitel' %}">
+    <label class="check"><input id="page-nav" type="checkbox"{% if page.show_in_nav %} checked{% endif %}> {% translate "Im Menü anzeigen" %}</label>
+    <label class="check" title="{% translate 'Jeder mit dem Link kann die Seite öffnen, ihre Formulare absenden und ihre Buttons auslösen.' %}"><input id="page-public" type="checkbox"{% if page.public %} checked{% endif %}> {% translate "Ohne Anmeldung erreichbar" %}</label>
+    <span id="status" class="muted" role="status"></span>
+    <span data-tour="save-area" class="designer-actions">
+      <a class="btn btn-secondary" href="{% url 'page' app.slug page.slug %}" target="_blank" rel="noopener">{% translate "Vorschau" %}</a>
+      <a class="btn btn-secondary only-narrow" href="#palette-panel">{% translate "+ Baustein" %}</a>
+      <button id="save" class="btn">{% translate "Speichern" %}</button>
+    </span>
+  </div>
+  <div class="notice notice-warning" id="public-note"{% if not page.public %} hidden{% endif %} role="note">
+    <strong>{% translate "Öffentliche Seite" %}</strong>
+    <span>{% translate "Jeder mit dem Link sieht diese Seite, ohne Anmeldung und ohne Rechte an der App. Listen, Karten, Kennzahlen, Diagramme und Abfragen zeigen ihre Daten dann allen. Gäste dürfen nur die Formulare und Skript-Buttons dieser Seite benutzen; Skripte bekommen für sie user = None. Wirkt erst, wenn die App veröffentlicht ist." %}</span>
+  </div>
+  <div class="designer-body">
+    <aside class="panel" id="palette-panel">
+      <label class="visually-hidden" for="palette-search">{% translate "Bausteine suchen" %}</label>
+      <input id="palette-search" type="search" placeholder="{% translate 'Baustein suchen …' %}">
+      <div id="palette"></div>
+      <p class="small palette-foot"><a href="{% url 'designer_block_new' %}" target="_blank" rel="noopener">{% translate "Eigenen Baustein anlegen" %}</a></p>
+    </aside>
+    <section class="canvas-wrap"><div id="canvas" class="grid"></div></section>
+    <aside class="panel" id="props"></aside>
+  </div>
+</div>
+{{ config|json_script:"designer-config" }}
+{% endblock %}
+{% block tour %}{% tour "seiten-designer" %}{% endblock %}
+{% block scripts %}<script src="{% asset 'builder/designer.js' %}"></script>{% endblock %}

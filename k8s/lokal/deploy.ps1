@@ -1,0 +1,120 @@
+﻿# Baukasten im lokalen Kubernetes von Docker Desktop installieren oder aktualisieren.
+#
+# Voraussetzung: Docker Desktop mit eingeschaltetem Kubernetes (Einstellungen > Kubernetes).
+# Aufruf im Baukasten-Ordner:
+#     powershell -ExecutionPolicy Bypass -File k8s\lokal\deploy.ps1
+# Danach läuft der Baukasten unter http://localhost:8080.
+#
+# Was passiert:
+#   1. Prüfen, ob Kubernetes läuft (Kontext docker-desktop)
+#   2. Beim ersten Mal Zugangsdaten mit Zufallswerten in k8s\lokal\geheim.env anlegen
+#   3. Image baukasten:lokal bauen
+#   4. PostgreSQL, Baukasten und Hintergrund-Job einspielen (Namespace "baukasten")
+#   5. Datenbank migrieren, neue Version ausrollen
+#   6. Verwalter-Konto und Beispiel-Apps anlegen, falls sie fehlen
+# Ein Protokoll des letzten Laufs steht in k8s\lokal\letzter-lauf.log.
+#
+# Wieder entfernen:  kubectl delete namespace baukasten
+param([switch]$OhneBeispiele)
+
+$ErrorActionPreference = "Continue"
+$hier = $PSScriptRoot
+Set-Location (Resolve-Path (Join-Path $hier "..\.."))
+Start-Transcript -Path (Join-Path $hier "letzter-lauf.log") -Force | Out-Null
+
+function Schritt([string]$text) { Write-Host ""; Write-Host "==> $text" -ForegroundColor Cyan }
+function Pruefe([string]$was) { if ($LASTEXITCODE -ne 0) { throw "$was ist fehlgeschlagen (Exit-Code $LASTEXITCODE)." } }
+# Ausgaben externer Programme (kubectl, docker) landen nur über Out-Host im Protokoll.
+function K { & kubectl @args 2>&1 | Out-Host }
+function Diagnose {
+    Write-Host ""
+    Write-Host "==> Diagnose" -ForegroundColor Yellow
+    K -n baukasten get 'pods,pvc' -o wide
+    K -n baukasten get events --sort-by=.lastTimestamp
+    foreach ($app in "baukasten-db", "baukasten") {
+        K -n baukasten describe pods -l app=$app
+        K -n baukasten logs -l app=$app --tail=40 --all-containers
+    }
+}
+function Zufall([int]$bytes) {
+    $puffer = New-Object byte[] $bytes
+    [Security.Cryptography.RandomNumberGenerator]::Create().GetBytes($puffer)
+    ($puffer | ForEach-Object { $_.ToString("x2") }) -join ""
+}
+
+$ok = $false
+try {
+    Schritt "Kubernetes pruefen"
+    K config use-context docker-desktop; Pruefe "Kontext docker-desktop (ist Kubernetes in Docker Desktop eingeschaltet?)"
+    K get nodes; Pruefe "Kubernetes ist nicht erreichbar"
+
+    $geheim = Join-Path $hier "geheim.env"
+    if (-not (Test-Path $geheim)) {
+        Schritt "Zugangsdaten anlegen (k8s\lokal\geheim.env)"
+        $db = Zufall 16
+        $zeilen = @(
+            "SECRET_KEY=$(Zufall 32)",
+            "POSTGRES_PASSWORD=$db",
+            "DATABASE_URL=postgres://baukasten:$db@baukasten-db:5432/baukasten",
+            "ADMIN_USERNAME=admin",
+            "ADMIN_PASSWORD=$(Zufall 8)"
+        )
+        [IO.File]::WriteAllText($geheim, (($zeilen -join "`n") + "`n"))
+    }
+    # Nur Unix-Zeilenenden: sonst hängt an jedem Wert ein unsichtbares Wagenrücklauf-Zeichen.
+    $inhalt = [IO.File]::ReadAllText($geheim)
+    if ($inhalt.Contains("`r")) { [IO.File]::WriteAllText($geheim, $inhalt.Replace("`r", "")) }
+
+    Schritt "Image bauen (baukasten:lokal)"
+    docker build -t baukasten:lokal . 2>&1 | Out-Host; Pruefe "docker build"
+
+    Schritt "Manifeste einspielen"
+    # Die Manifeste der Produktion liegen im Elternordner; das muss kustomize ausdrücklich erlaubt werden.
+    kubectl kustomize k8s/lokal --load-restrictor LoadRestrictionsNone | kubectl apply -f - 2>&1 | Out-Host
+    Pruefe "kubectl apply"
+
+    Schritt "Auf die Datenbank warten"
+    # Neu starten, damit der Pod die aktuellen Zugangsdaten bekommt.
+    K -n baukasten rollout restart deploy/baukasten-db
+    K -n baukasten rollout status deploy/baukasten-db --timeout=240s; Pruefe "Start der Datenbank"
+
+    Schritt "Datenbank migrieren"
+    kubectl -n baukasten delete job baukasten-migrate --ignore-not-found | Out-Null
+    # Derselbe Job wie in der Produktion, nur mit dem lokal gebauten Image.
+    (Get-Content k8s/migrate-job.yaml -Raw) -replace 'image: \S+', 'image: baukasten:lokal' |
+        kubectl -n baukasten apply -f - 2>&1 | Out-Host
+    Pruefe "Migrations-Job anlegen"
+    K -n baukasten wait --for=condition=complete job/baukasten-migrate --timeout=300s
+    if ($LASTEXITCODE -ne 0) {
+        K -n baukasten logs job/baukasten-migrate
+        throw "Die Migration ist fehlgeschlagen (Ausgabe siehe oben)."
+    }
+
+    Schritt "Neue Version ausrollen"
+    K -n baukasten rollout restart deploy/baukasten; Pruefe "rollout restart"
+    K -n baukasten rollout status deploy/baukasten --timeout=300s; Pruefe "Ausrollen"
+
+    Schritt "Verwalter-Konto und Beispiel-Apps"
+    # '--' in Anführungszeichen: unquotiert verschluckt PowerShell es beim Aufruf von K.
+    if ($OhneBeispiele) {
+        K -n baukasten exec deploy/baukasten '--' python manage.py lokal_einrichten --ohne-beispiele
+    } else {
+        K -n baukasten exec deploy/baukasten '--' python manage.py lokal_einrichten
+    }
+    Pruefe "Einrichten"
+
+    Schritt "Fertig"
+    K -n baukasten get 'pods,svc'
+    Write-Host ""
+    Write-Host "Baukasten laeuft unter http://localhost:8080" -ForegroundColor Green
+    Write-Host "Anmelden mit 'admin', das Passwort steht in k8s\lokal\geheim.env (ADMIN_PASSWORD)."
+    $ok = $true
+    Start-Process "http://localhost:8080"
+} catch {
+    Write-Host ""
+    Write-Host "FEHLER: $_" -ForegroundColor Red
+    Diagnose
+} finally {
+    Stop-Transcript | Out-Null
+}
+if (-not $ok) { exit 1 }

@@ -1,0 +1,36 @@
+# Hintergrundarbeiten: zeitgesteuerte Skripte und Abgleiche mit Datenquellen.
+# Läuft jede Minute; jedes Skript bzw. jede Abfrage hat zusätzlich ein eigenes Intervall.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: baukasten-hintergrund
+spec:
+  schedule: "* * * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      activeDeadlineSeconds: 1200
+      template:
+        spec:
+          restartPolicy: Never
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 10001
+          containers:
+            - name: hintergrund
+              image: registry.example.com/baukasten:1.0.0
+              command: ["python", "manage.py", "hintergrund"]
+              envFrom:
+                - configMapRef:
+                    name: baukasten-config
+                - secretRef:
+                    name: baukasten-secret
+              resources:
+                requests:
+                  cpu: 100m
+                  memory: 256Mi
+                limits:
+                  memory: 1Gi

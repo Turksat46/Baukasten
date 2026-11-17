@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% block title %}{% translate "Eigene Bausteine" %} – {% translate "Designer" %}{% endblock %}
+{% block content %}
+<p class="crumbs"><a href="{% url 'designer_home' %}">{% translate "Designer" %}</a> / {% translate "Eigene Bausteine" %}</p>
+<div class="page-head">
+  <div>
+    <h1>{% translate "Eigene Bausteine" %}</h1>
+    <p class="subtitle">{% translate "Eigene Bausteine stehen im Seiten-Designer aller Apps zur Verfügung, unter „Eigene Bausteine“." %}</p>
+  </div>
+  <a class="btn" href="{% url 'designer_block_new' %}">{% translate "Neuen HTML-Baustein anlegen" %}</a>
+</div>
+
+<div class="grid">
+  <div class="col col-6">
+    <section class="card">
+      <h3>{% translate "HTML-Bausteine" %}</h3>
+      <p class="muted">{% translate "Eigenes HTML mit Platzhaltern für Einstellungen, die du selbst festlegst." %}</p>
+      {% if html_blocks %}
+        <table>
+          <tbody>
+            {% for item in html_blocks %}
+              <tr>
+                <td><a href="{% url 'designer_block_edit' item.pk %}">{{ item.name }}</a><br><span class="muted small">{{ item.description }}</span></td>
+                <td class="row-actions">
+                  <form method="post" action="{% url 'designer_block_delete' item.pk %}" data-confirm="{% blocktranslate with name=item.name %}Baustein „{{ name }}“ löschen? Auf Seiten, die ihn verwenden, verschwindet er.{% endblocktranslate %}">
+                    {% csrf_token %}<button class="link danger">{% translate "Löschen" %}</button>
+                  </form>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <p class="empty">{% translate "Noch kein HTML-Baustein angelegt." %}</p>
+      {% endif %}
+    </section>
+  </div>
+  <div class="col col-6">
+    <section class="card">
+      <h3>{% translate "Vorlagen" %}</h3>
+      <p class="muted">{% translate "Fertig eingestellte Bausteine zum Wiederverwenden. Du speicherst sie im Seiten-Designer über „Als Vorlage speichern“." %}</p>
+      {% if presets %}
+        <table>
+          <tbody>
+            {% for item in presets %}
+              <tr>
+                <td>{{ item.name }}<br><span class="muted small">{{ item.description }}</span></td>
+                <td class="row-actions">
+                  <form method="post" action="{% url 'designer_block_delete' item.pk %}" data-confirm="{% blocktranslate with name=item.name %}Vorlage „{{ name }}“ löschen? Bereits eingefügte Bausteine bleiben erhalten.{% endblocktranslate %}">
+                    {% csrf_token %}<button class="link danger">{% translate "Löschen" %}</button>
+                  </form>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <p class="empty">{% translate "Noch keine Vorlage gespeichert." %}</p>
+      {% endif %}
+    </section>
+  </div>
+</div>
+{% endblock %}

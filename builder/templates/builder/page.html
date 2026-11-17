@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% load static i18n baukasten %}
+{% block title %}{% if page %}{{ page.title|tr }} – {% endif %}{{ app.name|tr }}{% endblock %}
+{% block nav %}{% include "builder/_appnav.html" %}{% endblock %}
+{% block content %}
+{% for script, error in script_errors %}
+  <div class="notice notice-danger script-error" role="alert">
+    <strong class="notice-title">{% blocktranslate with name=script.name %}Skript „{{ name }}“ ist fehlgeschlagen{% endblocktranslate %}</strong>
+    <span>{{ error }} <a href="{% url 'designer_script' app.slug script.pk %}">{% translate "Skript öffnen" %}</a></span>
+  </div>
+{% endfor %}
+{% for note in script_notes %}<div class="notice notice-info script-note" role="status"><span>{{ note }}</span></div>{% endfor %}
+{% if not page %}
+  <p class="empty">{% translate "Diese App hat noch keine Seite." %}</p>
+{% elif not blocks %}
+  <p class="empty">{% translate "Diese Seite ist noch leer." %}</p>
+{% endif %}
+<div class="grid">
+  {% for block in blocks %}<div class="col col-{{ block.width }}" data-block="{{ block.id }}"{% if block.name %} data-name="{{ block.name }}"{% endif %}{% if block.refresh %} data-refresh="{{ block.refresh }}"{% endif %}{% if block.lazy %} data-lazy{% endif %}>{{ block.html }}</div>{% endfor %}
+</div>
+<div class="toasts" id="toasts" role="status" aria-live="polite"></div>
+{% if can_design and page %}
+  <a class="edit-link" href="{% url 'designer_page' app.slug page.pk %}">{% translate "Seite im Designer bearbeiten" %}</a>
+{% endif %}
+{% endblock %}
+{% block scripts %}
+<script src="{% asset 'builder/inputs.js' %}" defer></script>
+{% if runtime %}
+  {{ runtime|json_script:"bk-runtime" }}
+  <script src="{% asset 'builder/runtime.js' %}"></script>
+{% endif %}
+{% endblock %}

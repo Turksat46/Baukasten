@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% block title %}{{ field.label }} – {% translate "Designer" %}{% endblock %}
+{% block content %}
+<p class="crumbs"><a href="{% url 'designer_app' app.slug %}">{{ app.name }}</a> / <a href="{% url 'designer_entity' app.slug field.entity.pk %}">{{ field.entity.name }}</a> / {{ field.label }}</p>
+<section class="card narrow">
+  <h1>{% translate "Feld bearbeiten" %}</h1>
+  <p class="muted">{% translate "Der Typ sollte nur geändert werden, solange noch keine Daten erfasst sind." %}</p>
+  <form method="post" class="form">
+    {% csrf_token %}
+    {{ form.as_div }}
+    <div class="actions">
+      <button class="btn">{% translate "Speichern" %}</button>
+      <a class="btn btn-secondary" href="{% url 'designer_entity' app.slug field.entity.pk %}">{% translate "Abbrechen" %}</a>
+    </div>
+  </form>
+</section>
+{% endblock %}

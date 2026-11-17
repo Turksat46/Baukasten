@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+{% load static i18n baukasten %}
+{% block title %}{% if script %}{{ script.name }}{% else %}{% translate "Neues Skript" %}{% endif %} – {% translate "Designer" %}{% endblock %}
+{% block content %}
+<p class="crumbs"><a href="{% url 'designer_home' %}">{% translate "Designer" %}</a> / <a href="{% url 'designer_app' app.slug %}">{{ app.name }}</a> / {% if script %}{{ script.name }}{% else %}{% translate "Neues Skript" %}{% endif %}</p>
+<div class="head-row">
+  <h1>{% if script %}{{ script.name }}{% else %}{% translate "Neues Skript" %}{% endif %} <span class="badge">{% if language == "javascript" %}JavaScript{% else %}Python{% endif %}</span></h1>
+  {% if not script %}
+    <div class="segmented" role="group" aria-label="{% translate 'Sprache' %}">
+      <a href="?sprache=python"{% if language == "python" %} class="current" aria-current="true"{% endif %}>Python</a>
+      <a href="?sprache=javascript"{% if language == "javascript" %} class="current" aria-current="true"{% endif %}>JavaScript</a>
+    </div>
+  {% endif %}
+</div>
+
+<div class="grid">
+  <div class="col col-8">
+    <section class="card">
+      <form method="post" class="form script-form" id="script-form">
+        {% csrf_token %}
+        {{ form.non_field_errors }}
+        <div class="form-row">
+          <div>{{ form.name.errors }}{{ form.name.label_tag }}{{ form.name }}</div>
+          <div class="hidden-field">{{ form.language }}</div>
+          <div data-tour="script-trigger">{{ form.trigger.errors }}{{ form.trigger.label_tag }}{{ form.trigger }}</div>
+        </div>
+        <div class="form-row">
+          <div data-show-trigger="page">{{ form.page.errors }}{{ form.page.label_tag }}{{ form.page }}</div>
+          <div data-show-trigger="save">{{ form.entity.errors }}{{ form.entity.label_tag }}{{ form.entity }}</div>
+          <div data-show-trigger="schedule">{{ form.interval_minutes.errors }}{{ form.interval_minutes.label_tag }}{{ form.interval_minutes }}</div>
+          <div class="check-cell">{{ form.enabled }} {{ form.enabled.label_tag }}</div>
+        </div>
+        <p class="muted small" data-show-trigger="button">{% translate "Im Seiten-Designer einem Button die Aktion „Skript ausführen“ und dieses Skript zuweisen." %}</p>
+        <div data-tour="script-code">{{ form.code.errors }}<label for="{{ form.code.id_for_label }}">{% translate "Code" %}</label>{{ form.code }}</div>
+        <div class="actions">
+          <button class="btn" name="action" value="save">{% translate "Speichern" %}</button>
+          {% if language == "python" %}
+            <button class="btn btn-secondary" name="action" value="test">{% translate "Speichern und testen" %}</button>
+          {% elif script %}
+            <button class="btn btn-secondary" type="button" id="js-test">{% translate "Im Browser testen" %}</button>
+          {% endif %}
+        </div>
+        <p class="muted small">{% translate "Testläufe arbeiten mit echten Daten: Was das Skript anlegt, ändert oder löscht, geschieht wirklich." %}</p>
+      </form>
+    </section>
+  </div>
+
+  <div class="col col-4">
+    {% if result %}
+      <section class="card test-result" id="test-result">
+        <h3>{% translate "Testlauf" %} {% if result.ok %}<span class="badge badge-ok">{% translate "erfolgreich" %}</span>{% else %}<span class="badge badge-error">{% translate "fehlgeschlagen" %}</span>{% endif %}</h3>
+        <p class="muted small">{% blocktranslate with ms=result.duration_ms %}Dauer: {{ ms }} ms{% endblocktranslate %}</p>
+        {% if result.error %}<div class="notice notice-danger"><span>{{ result.error_text }}</span></div>{% endif %}
+        {% if result.log %}<h4>{% translate "Ausgabe" %}</h4><pre class="json">{{ result.log|join:"&#10;" }}</pre>{% endif %}
+        {% if result.ui %}<h4>{% translate "Bausteine gefüllt" %}</h4><pre class="json">{{ result_ui_json }}</pre>{% endif %}
+        {% if result.messages %}<h4>{% translate "Meldungen" %}</h4><ul>{% for m in result.messages %}<li>{{ m }}</li>{% endfor %}</ul>{% endif %}
+      </section>
+    {% endif %}
+    <section class="card test-result" id="js-result" hidden>
+      <h3>{% translate "Testlauf im Browser" %} <span class="badge" id="js-status"></span></h3>
+      <div class="notice notice-danger" id="js-error" hidden><span></span></div>
+      <h4>{% translate "Ausgabe" %}</h4><pre class="json" id="js-log"></pre>
+      <h4>{% translate "Bausteine gefüllt" %}</h4><pre class="json" id="js-ui"></pre>
+    </section>
+
+    <section class="card reference">
+      <h3>{% translate "Kurzreferenz" %}</h3>
+      {% if language == "javascript" %}
+        <p class="muted small">{% translate "Läuft im Browser der Person, die die Seite öffnet, mit ihren Rechten. Mit await auf Ergebnisse warten." %}</p>
+        <pre class="json">await app.table("kurzname").all()
+await app.table("kurzname").filter({feld: wert})
+await app.table("kurzname").first({feld: wert})
+await app.table("kurzname").get(id)
+await app.table("kurzname").count({feld: wert})
+await app.table("kurzname").sum("feld")
+await app.table("kurzname").create({feld: wert})
+await app.table("kurzname").update(id, {feld: wert})
+await app.table("kurzname").delete(id)
+await db.saved("abfrage")   // gespeicherte Abfrage
+
+ui.set("name", {value: 42, label: "…"})
+ui.set("name", {text: "…", tone: "warning"})
+ui.set("name", {rows: [{a: 1}, {a: 2}]})
+ui.set("formular", {values: {feld: wert}})
+ui.hide("name")
+message("Erledigt")
+console.log(…)
+user.name, user.groups, event, params</pre>
+      {% else %}
+        <p class="muted small">{% translate "Läuft auf dem Server, abgeschottet, mit Zugriff auf alle Tabellen dieser App." %}</p>
+        <pre class="json">app.table("kurzname").all()
+app.table("kurzname").filter(feld=wert)
+app.table("kurzname").first(feld=wert)
+app.table("kurzname").get(id)
+app.table("kurzname").count(feld=wert)
+app.table("kurzname").sum("feld")
+app.table("kurzname").create(feld=wert)
+app.table("kurzname").update(id, feld=wert)
+app.table("kurzname").delete(id)
+
+db.query("quelle", "SELECT … WHERE x = :x", {"x": 1})
+db.saved("abfrage")
+http.get_json("https://…")
+
+ui.set("name", value=42, label="…")
+ui.set("name", text="…", tone="warning")
+ui.set("name", rows=[{"a": 1}])
+ui.set("formular", values={"feld": wert})
+ui.hide("name")
+message("Erledigt")
+print(…)
+record["feld"] = …   # nach dem Speichern
+user, event, params
+import math, datetime, statistics, json, re</pre>
+      {% endif %}
+      <p class="muted small">{% translate "Mehr im Handbuch, Abschnitt „Skripte“." %}</p>
+    </section>
+
+    {% if runs %}
+      <section class="card">
+        <h3>{% translate "Letzte Läufe" %}</h3>
+        <table class="runs">
+          <tbody>
+            {% for run in runs %}
+              <tr>
+                <td>{% if run.ok %}<span class="badge badge-ok">{% translate "ok" %}</span>{% else %}<span class="badge badge-error">{% translate "Fehler" %}</span>{% endif %}</td>
+                <td class="small">{{ run.started_at|date:"SHORT_DATETIME_FORMAT" }}<br><span class="muted">{{ run.trigger }}, {{ run.duration_ms }} ms</span>
+                  {% if run.error %}<br><span class="danger">{{ run.error|truncatechars:160 }}</span>{% endif %}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        <p class="muted small">{% translate "Bei Seitenaufrufen werden nur Fehler protokolliert." %}</p>
+      </section>
+    {% endif %}
+
+    {% if script %}
+      <section class="card">
+        <form method="post" action="{% url 'designer_script_delete' app.slug script.pk %}" data-confirm="{% blocktranslate with name=script.name %}Skript „{{ name }}“ löschen?{% endblocktranslate %}">
+          {% csrf_token %}<button class="link danger">{% translate "Skript löschen" %}</button>
+        </form>
+      </section>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+{% block tour %}{% tour "skripte" %}{% endblock %}
+{% block scripts %}
+  {% if runtime %}{{ runtime|json_script:"bk-runtime" }}{% endif %}
+  <script src="{% asset 'builder/runtime.js' %}"></script>
+  <script src="{% asset 'builder/editor.js' %}"></script>
+{% endblock %}

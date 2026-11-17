@@ -1,0 +1,3241 @@
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Baukasten\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-16 23:33+0100\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: en\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: admin.py:27
+msgid "Übersicht"
+msgstr "Overview"
+
+#: admin.py:35 admin.py:145 admin.py:177 admin.py:246 admin.py:289
+#: admin.py:322 models.py:63 templates/admin/index.html:10
+#: templates/builder/api_index.html:13 templates/builder/profile.html:86
+#: templates/builder/profile.html:113 templates/designer/home.html:18
+msgid "App"
+msgstr "App"
+
+#: admin.py:53 admin.py:250 blocks.py:505 models.py:102 models.py:355
+#: templates/designer/entity.html:7
+msgid "Tabelle"
+msgstr "Table"
+
+#: admin.py:75 admin.py:153 admin.py:275 models.py:189
+#: templates/admin/index.html:10
+msgid "Einträge"
+msgstr "Entries"
+
+#: admin.py:149 models.py:103 templates/admin/index.html:10
+msgid "Tabellen"
+msgstr "Tables"
+
+#: admin.py:157 models.py:208 templates/admin/index.html:10
+msgid "Seiten"
+msgstr "Pages"
+
+#: admin.py:161 blocks.py:59 models.py:368 templates/admin/index.html:10
+#: templates/designer/app.html:120 tours.py:67
+msgid "Skripte"
+msgstr "Scripts"
+
+#: admin.py:165 models.py:290 models.py:291
+msgid "API-Schlüssel"
+msgstr "API keys"
+
+#: admin.py:169 templates/designer/home.html:25
+msgid "Öffnen"
+msgstr "Open"
+
+#: admin.py:175 templates/admin/index.html:20
+msgid "Daten ansehen"
+msgstr "View data"
+
+#: admin.py:176 templates/base.html:30 templates/builder/profile.html:22
+#: templates/designer/app.html:3 templates/designer/app.html:5
+#: templates/designer/block_edit.html:3 templates/designer/block_edit.html:5
+#: templates/designer/blocks.html:3 templates/designer/blocks.html:5
+#: templates/designer/entity.html:3 templates/designer/entity.html:5
+#: templates/designer/field.html:3 templates/designer/home.html:3
+#: templates/designer/home.html:7 templates/designer/page.html:3
+#: templates/designer/query.html:3 templates/designer/query.html:5
+#: templates/designer/script.html:3 templates/designer/script.html:5
+#: tours.py:17
+msgid "Designer"
+msgstr "Designer"
+
+#: admin.py:199
+#, python-format
+msgid "Daten von „%(app)s“"
+msgstr "Data of “%(app)s”"
+
+#: admin.py:209 admin.py:360 blocks.py:57 templates/builder/help.html:7
+#: templates/builder/help.html:9
+msgid "Inhalt"
+msgstr "Content"
+
+#: admin.py:211
+msgid "Die Werte des Eintrags, je Feld unter seinem Kurznamen."
+msgstr "The entry’s values, one per field under its short name."
+
+#: admin.py:242 models.py:188
+msgid "Eintrag"
+msgstr "Entry"
+
+#: admin.py:254 models.py:158 templates/designer/entity.html:17
+msgid "Felder"
+msgstr "Fields"
+
+#: api.py:49
+msgid "Gültiger API-Schlüssel fehlt (Authorization: Bearer …)."
+msgstr "A valid API key is missing (Authorization: Bearer …)."
+
+#: api.py:60
+msgid "Der Inhalt der Anfrage ist kein gültiges JSON."
+msgstr "The request body is not valid JSON."
+
+#: api.py:62 scripting/ops.py:60
+msgid "Erwartet wird ein JSON-Objekt."
+msgstr "A JSON object is expected."
+
+#: api.py:65 api.py:169
+msgid "Dieser Schlüssel darf nur lesen."
+msgstr "This key is read-only."
+
+#: api.py:85 api.py:134 api.py:158 api.py:167 api.py:183
+msgid "Methode nicht erlaubt."
+msgstr "Method not allowed."
+
+#: api.py:110 api.py:141
+msgid ""
+"Diese Tabelle gibt es nicht oder sie ist nicht für die API freigeschaltet."
+msgstr "This table does not exist or is not enabled for the API."
+
+#: api.py:131 blocks.py:180 scripting/ops.py:125
+msgid "In dieser Tabelle ist das Anlegen nicht erlaubt."
+msgstr "Creating entries is not allowed in this table."
+
+#: api.py:144 scripting/ops.py:135
+msgid "Diesen Eintrag gibt es nicht."
+msgstr "This entry does not exist."
+
+#: api.py:150 scripting/ops.py:132
+msgid "In dieser Tabelle ist das Bearbeiten nicht erlaubt."
+msgstr "Editing entries is not allowed in this table."
+
+#: api.py:155 scripting/ops.py:142
+msgid "In dieser Tabelle ist das Löschen nicht erlaubt."
+msgstr "Deleting entries is not allowed in this table."
+
+#: api.py:165
+msgid "Diesen Endpunkt gibt es nicht."
+msgstr "This endpoint does not exist."
+
+#: api.py:175
+msgid "Der Endpunkt ist auf einen Fehler gelaufen."
+msgstr "The endpoint ran into an error."
+
+#: blocks.py:57 blocks.py:613 templates/admin/builder/app_data.html:8
+msgid "Daten"
+msgstr "Data"
+
+#: blocks.py:57
+msgid "Auswertung"
+msgstr "Analysis"
+
+#: blocks.py:58
+msgid "Navigation"
+msgstr "Navigation"
+
+#: blocks.py:58
+msgid "Layout"
+msgstr "Layout"
+
+#: blocks.py:58
+msgid "Anbindung"
+msgstr "Integration"
+
+#: blocks.py:59 models.py:248 templates/designer/block_edit.html:5
+#: templates/designer/blocks.html:3 templates/designer/blocks.html:5
+#: templates/designer/blocks.html:8 templates/designer/home.html:10
+#: tours.py:31 tours.py:75
+msgid "Eigene Bausteine"
+msgstr "Custom blocks"
+
+#: blocks.py:74
+msgid "Aus dem Ordner extensions"
+msgstr "From the extensions folder"
+
+#: blocks.py:135 blocks.py:220 templates/builder/api_docs.html:69
+#: templates/designer/entity.html:25 templates/designer/entity.html:26
+msgid "Ja"
+msgstr "Yes"
+
+#: blocks.py:135 blocks.py:220
+msgid "Nein"
+msgstr "No"
+
+#: blocks.py:154
+msgid "Für diese Liste ist keine Tabelle ausgewählt."
+msgstr "No table is selected for this list."
+
+#: blocks.py:178
+msgid "Für dieses Formular ist keine Tabelle ausgewählt."
+msgstr "No table is selected for this form."
+
+#: blocks.py:196 scripting/ops.py:116
+msgid "Summe und Durchschnitt brauchen ein Zahlenfeld."
+msgstr "Sum and average need a number field."
+
+#: blocks.py:218
+msgid "(leer)"
+msgstr "(empty)"
+
+#: blocks.py:239
+msgid "Für diese Kennzahl ist keine Tabelle ausgewählt."
+msgstr "No table is selected for this key figure."
+
+#: blocks.py:248
+msgid "Für diesen Fortschritt ist keine Tabelle ausgewählt."
+msgstr "No table is selected for this progress block."
+
+#: blocks.py:254
+msgid "Für diesen Fortschritt fehlt der Zielwert."
+msgstr "The target value is missing for this progress block."
+
+#: blocks.py:264
+msgid "Für dieses Diagramm fehlen Tabelle und Feld."
+msgstr "Table and field are missing for this chart."
+
+#: blocks.py:279
+msgid "Für dieses Kreisdiagramm fehlen Tabelle und Feld."
+msgstr "Table and field are missing for this donut chart."
+
+#: blocks.py:284
+msgid "Sonstige"
+msgstr "Other"
+
+#: blocks.py:300
+msgid "Für diesen Verlauf ist keine Tabelle ausgewählt."
+msgstr "No table is selected for this timeline."
+
+#: blocks.py:324
+msgid "Erfassungsdatum"
+msgstr "date of entry"
+
+#: blocks.py:332
+msgid "Für diese Karten ist keine Tabelle ausgewählt."
+msgstr "No table is selected for these cards."
+
+#: blocks.py:335
+msgid "Die Tabelle hat noch keine Felder."
+msgstr "The table has no fields yet."
+
+#: blocks.py:356
+msgid "Für dieses Bild ist keine Adresse eingetragen."
+msgstr "No address is entered for this image."
+
+#: blocks.py:358
+msgid "Die Bildadresse muss mit https:// oder / beginnen."
+msgstr "The image address must start with https:// or /."
+
+#: blocks.py:371
+msgid "Für diesen Export ist keine Tabelle ausgewählt."
+msgstr "No table is selected for this export."
+
+#: blocks.py:384
+msgid "Für diesen Button ist kein aktives Skript ausgewählt."
+msgstr "No active script is selected for this button."
+
+#: blocks.py:392
+msgid "Die gewählte Aktion gibt es nicht (mehr)."
+msgstr "The selected action does not exist (any more)."
+
+#: blocks.py:397
+msgid "Der Link muss mit https:// oder / beginnen."
+msgstr "The link must start with https:// or /."
+
+#: blocks.py:402
+msgid "Für diesen Button ist keine Seite ausgewählt."
+msgstr "No page is selected for this button."
+
+#: blocks.py:411
+msgid "Für diesen Web-Request ist keine Adresse eingetragen."
+msgstr "No address is entered for this web request."
+
+#: blocks.py:421
+msgid "Der Web-Request ist fehlgeschlagen."
+msgstr "The web request failed."
+
+#: blocks.py:443
+msgid "Für diesen Baustein ist keine Abfrage ausgewählt."
+msgstr "No query is selected for this block."
+
+#: blocks.py:451 blocks.py:455
+#, python-format
+msgid "Abfrage „%(name)s“: %(error)s"
+msgstr "Query “%(name)s”: %(error)s"
+
+#: blocks.py:506
+msgid "Berechnung"
+msgstr "Calculation"
+
+#: blocks.py:507 blocks.py:558
+msgid "Anzahl"
+msgstr "Count"
+
+#: blocks.py:507
+msgid "Summe"
+msgstr "Sum"
+
+#: blocks.py:507
+msgid "Durchschnitt"
+msgstr "Average"
+
+#: blocks.py:508
+msgid "Feld (für Summe/Durchschnitt)"
+msgstr "Field (for sum/average)"
+
+#: blocks.py:511 blocks.py:512
+msgid "Überschrift"
+msgstr "Heading"
+
+#: blocks.py:512 blocks.py:517 blocks.py:518 blocks.py:522 models.py:120
+msgid "Text"
+msgstr "Text"
+
+#: blocks.py:513
+msgid "Unterzeile (optional)"
+msgstr "Subtitle (optional)"
+
+#: blocks.py:514
+msgid "Größe"
+msgstr "Size"
+
+#: blocks.py:515 blocks.py:608
+msgid "Groß"
+msgstr "Large"
+
+#: blocks.py:515 blocks.py:608
+msgid "Mittel"
+msgstr "Medium"
+
+#: blocks.py:515 blocks.py:608
+msgid "Klein"
+msgstr "Small"
+
+#: blocks.py:516
+msgid "Titel mit optionaler Unterzeile"
+msgstr "Title with an optional subtitle"
+
+#: blocks.py:519
+msgid "Absatz mit Zeilenumbrüchen"
+msgstr "Paragraph with line breaks"
+
+#: blocks.py:520
+msgid "Hinweis"
+msgstr "Notice"
+
+#: blocks.py:521 blocks.py:544 blocks.py:601 blocks.py:620
+msgid "Titel (optional)"
+msgstr "Title (optional)"
+
+#: blocks.py:522
+msgid "Hinweistext"
+msgstr "Notice text"
+
+#: blocks.py:523 templates/builder/profile.html:113
+msgid "Art"
+msgstr "Kind"
+
+#: blocks.py:524
+msgid "Information"
+msgstr "Information"
+
+#: blocks.py:524
+msgid "Erfolg"
+msgstr "Success"
+
+#: blocks.py:524
+msgid "Warnung"
+msgstr "Warning"
+
+#: blocks.py:524
+msgid "Wichtig"
+msgstr "Important"
+
+#: blocks.py:525
+msgid "Farbig hervorgehobener Kasten"
+msgstr "Highlighted coloured box"
+
+#: blocks.py:526
+msgid "Bild"
+msgstr "Image"
+
+#: blocks.py:527
+msgid "Bildadresse (https://… oder /static/…)"
+msgstr "Image address (https://… or /static/…)"
+
+#: blocks.py:528
+msgid "Beschreibung für Screenreader"
+msgstr "Description for screen readers"
+
+#: blocks.py:529
+msgid "Bildunterschrift (optional)"
+msgstr "Caption (optional)"
+
+#: blocks.py:530
+msgid "Bild von einer Adresse"
+msgstr "Image from an address"
+
+#: blocks.py:531
+msgid "Begrüßung"
+msgstr "Greeting"
+
+#: blocks.py:532
+msgid "Zusatztext (optional)"
+msgstr "Additional text (optional)"
+
+#: blocks.py:533
+msgid "Begrüßt den Nutzer mit Namen und Datum"
+msgstr "Greets the user by name and shows the date"
+
+#: blocks.py:536
+msgid "Liste"
+msgstr "List"
+
+#: blocks.py:538
+msgid "Titel (optional, sonst Name der Tabelle)"
+msgstr "Title (optional, otherwise the table name)"
+
+#: blocks.py:539
+msgid "Zeilen pro Seite"
+msgstr "Rows per page"
+
+#: blocks.py:540
+msgid "Suchfeld anzeigen"
+msgstr "Show search field"
+
+#: blocks.py:541
+msgid "Tabelle mit Suche, Anlegen, Bearbeiten"
+msgstr "Table with search, create and edit"
+
+#: blocks.py:542
+msgid "Karten"
+msgstr "Cards"
+
+#: blocks.py:545
+msgid "Karten pro Seite"
+msgstr "Cards per page"
+
+#: blocks.py:546
+msgid "Einträge als Karten statt als Zeilen"
+msgstr "Entries as cards instead of rows"
+
+#: blocks.py:547
+msgid "Formular"
+msgstr "Form"
+
+#: blocks.py:549
+msgid "Beschriftung Button"
+msgstr "Button label"
+
+#: blocks.py:549 templates/builder/block.html:120
+#: templates/builder/record_form.html:14 templates/designer/app.html:80
+#: templates/designer/block_edit.html:19 templates/designer/entity.html:47
+#: templates/designer/field.html:13 templates/designer/page.html:15
+#: templates/designer/query.html:36 templates/designer/script.html:36
+msgid "Speichern"
+msgstr "Save"
+
+#: blocks.py:550
+msgid "Neuen Eintrag direkt erfassen"
+msgstr "Add a new entry right on the page"
+
+#: blocks.py:551
+msgid "CSV-Export"
+msgstr "CSV export"
+
+#: blocks.py:553 blocks.py:558 blocks.py:563 blocks.py:569 blocks.py:574
+#: blocks.py:579 blocks.py:587 blocks.py:613 blocks.py:627
+msgid "Beschriftung"
+msgstr "Label"
+
+#: blocks.py:553 templates/builder/block.html:126
+msgid "Als CSV herunterladen"
+msgstr "Download as CSV"
+
+#: blocks.py:554
+msgid "Alle Einträge für Excel herunterladen"
+msgstr "Download all entries for Excel"
+
+#: blocks.py:557
+msgid "Kennzahl"
+msgstr "Key figure"
+
+#: blocks.py:560
+msgid "Einheit (optional, z. B. €)"
+msgstr "Unit (optional, e.g. €)"
+
+#: blocks.py:561
+msgid "Anzahl, Summe oder Durchschnitt"
+msgstr "Count, sum or average"
+
+#: blocks.py:562 blocks.py:563
+msgid "Fortschritt"
+msgstr "Progress"
+
+#: blocks.py:565
+msgid "Zielwert"
+msgstr "Target value"
+
+#: blocks.py:566 blocks.py:628
+msgid "Einheit (optional)"
+msgstr "Unit (optional)"
+
+#: blocks.py:567
+msgid "Wert im Verhältnis zu einem Ziel"
+msgstr "A value relative to a target"
+
+#: blocks.py:568
+msgid "Balkendiagramm"
+msgstr "Bar chart"
+
+#: blocks.py:569
+msgid "Verteilung"
+msgstr "Distribution"
+
+#: blocks.py:571 blocks.py:576
+msgid "Gruppieren nach"
+msgstr "Group by"
+
+#: blocks.py:572
+msgid "Einträge je Wert als Rangliste"
+msgstr "Entries per value as a ranking"
+
+#: blocks.py:573
+msgid "Kreisdiagramm"
+msgstr "Donut chart"
+
+#: blocks.py:574
+msgid "Anteile"
+msgstr "Shares"
+
+#: blocks.py:577
+msgid "Anteile der häufigsten Werte"
+msgstr "Shares of the most frequent values"
+
+#: blocks.py:578
+msgid "Verlauf"
+msgstr "Timeline"
+
+#: blocks.py:579 blocks.py:583
+msgid "Einträge pro Monat"
+msgstr "Entries per month"
+
+#: blocks.py:581
+msgid "Datumsfeld (leer: Erfassungsdatum)"
+msgstr "Date field (empty: date of entry)"
+
+#: blocks.py:582
+msgid "Anzahl Monate"
+msgstr "Number of months"
+
+#: blocks.py:586
+msgid "Button"
+msgstr "Button"
+
+#: blocks.py:587 templates/admin/builder/app_data.html:55
+#: templates/builder/_pager.html:5
+msgid "Weiter"
+msgstr "Next"
+
+#: blocks.py:588
+msgid "Was passiert beim Klick?"
+msgstr "What happens on click?"
+
+#: blocks.py:589
+msgid "Seite öffnen"
+msgstr "Open a page"
+
+#: blocks.py:589
+msgid "Link öffnen"
+msgstr "Open a link"
+
+#: blocks.py:589
+msgid "Skript ausführen"
+msgstr "Run a script"
+
+#: blocks.py:590
+msgid "Python-Aktion ausführen"
+msgstr "Run a Python action"
+
+#: blocks.py:591 models.py:207 models.py:353
+msgid "Seite"
+msgstr "Page"
+
+#: blocks.py:592 models.py:128
+msgid "Link"
+msgstr "Link"
+
+#: blocks.py:593 models.py:367 templates/designer/entity.html:26
+msgid "Skript"
+msgstr "Script"
+
+#: blocks.py:594
+msgid "Aktion"
+msgstr "Action"
+
+#: blocks.py:595
+msgid "Aussehen"
+msgstr "Appearance"
+
+#: blocks.py:596
+msgid "Hervorgehoben"
+msgstr "Prominent"
+
+#: blocks.py:596
+msgid "Dezent"
+msgstr "Subtle"
+
+#: blocks.py:597
+msgid "Ausrichtung"
+msgstr "Alignment"
+
+#: blocks.py:598
+msgid "Links"
+msgstr "Left"
+
+#: blocks.py:598
+msgid "Rechts"
+msgstr "Right"
+
+#: blocks.py:599
+msgid "Seite, Link oder Python-Aktion"
+msgstr "Page, link or Python action"
+
+#: blocks.py:600
+msgid "Seitenkacheln"
+msgstr "Page tiles"
+
+#: blocks.py:602
+msgid "Kacheln zu allen Seiten der App"
+msgstr "Tiles linking to all pages of the app"
+
+#: blocks.py:605
+msgid "Trennlinie"
+msgstr "Divider"
+
+#: blocks.py:605
+msgid "Waagerechte Linie"
+msgstr "Horizontal line"
+
+#: blocks.py:606
+msgid "Abstand"
+msgstr "Spacer"
+
+#: blocks.py:607
+msgid "Höhe"
+msgstr "Height"
+
+#: blocks.py:609
+msgid "Leerraum zwischen Bausteinen"
+msgstr "Empty space between blocks"
+
+#: blocks.py:612
+msgid "Web-Request"
+msgstr "Web request"
+
+#: blocks.py:614
+msgid "Adresse (liefert JSON)"
+msgstr "Address (returns JSON)"
+
+#: blocks.py:615
+msgid "Pfad im JSON (optional, z. B. data.items)"
+msgstr "Path in the JSON (optional, e.g. data.items)"
+
+#: blocks.py:616 blocks.py:621
+msgid "Maximale Zeilen"
+msgstr "Maximum rows"
+
+#: blocks.py:617
+msgid "JSON von einer freigegebenen Adresse"
+msgstr "JSON from an approved address"
+
+#: blocks.py:618
+msgid "Datenbank-Abfrage"
+msgstr "Database query"
+
+#: blocks.py:619 models.py:422 templates/builder/profile.html:154
+msgid "Abfrage"
+msgstr "Query"
+
+#: blocks.py:622
+msgid "Zeitpunkt der Daten anzeigen"
+msgstr "Show when the data was fetched"
+
+#: blocks.py:623
+msgid "Live-Daten aus einer Datenbank oder Databricks"
+msgstr "Live data from a database or Databricks"
+
+#: blocks.py:626 templates/designer/script.html:54
+#: templates/designer/script.html:62
+msgid "Ausgabe"
+msgstr "Output"
+
+#: blocks.py:627
+msgid "Ergebnis"
+msgstr "Result"
+
+#: blocks.py:629
+msgid "Text, solange nichts gesetzt ist"
+msgstr "Text while nothing is set"
+
+#: blocks.py:630
+msgid "Zeigt Werte, Text oder Tabellen aus einem Skript"
+msgstr "Shows values, text or tables from a script"
+
+#: blocks.py:645
+msgid "Dieser Baustein konnte nicht geladen werden."
+msgstr "This block could not be loaded."
+
+#: blocks.py:760
+msgid "Aus"
+msgstr "Off"
+
+#: blocks.py:760
+msgid "alle 10 Sekunden"
+msgstr "every 10 seconds"
+
+#: blocks.py:760
+msgid "alle 30 Sekunden"
+msgstr "every 30 seconds"
+
+#: blocks.py:761 templates/designer/app.html:128
+#: templates/designer/app.html:149
+#, python-format
+msgid "jede Minute"
+msgid_plural "alle %(n)s Minuten"
+msgstr[0] "every minute"
+msgstr[1] "every %(n)s minutes"
+
+#: blocks.py:761
+msgid "alle 5 Minuten"
+msgstr "every 5 minutes"
+
+#: blocks.py:762
+msgid "Ganze Breite"
+msgstr "Full width"
+
+#: datasources.py:106
+#, python-format
+msgid ""
+"Die Datenquelle „%(name)s“ ist gerade ausgelastet. Bitte gleich noch einmal "
+"versuchen."
+msgstr ""
+"The data source “%(name)s” is busy right now. Please try again in a moment."
+
+#: datasources.py:189
+msgid "Die Abfrage ist leer."
+msgstr "The query is empty."
+
+#: datasources.py:191
+msgid "Bitte nur eine einzelne Abfrage eintragen (kein Semikolon dazwischen)."
+msgstr "Please enter a single query only (no semicolon in between)."
+
+#: datasources.py:193
+msgid "Erlaubt sind nur lesende Abfragen, die mit SELECT oder WITH beginnen."
+msgstr "Only read-only queries starting with SELECT or WITH are allowed."
+
+#: datasources.py:196
+#, python-format
+msgid ""
+"Das Wort „%(word)s“ ist in Abfragen nicht erlaubt, weil es Daten verändern "
+"könnte."
+msgstr ""
+"The word “%(word)s” is not allowed in queries because it could change data."
+
+#: datasources.py:206 datasources.py:212
+#, python-format
+msgid "Für diese Parameter fehlt ein Wert: %(names)s"
+msgstr "A value is missing for these parameters: %(names)s"
+
+#: datasources.py:252
+msgid "Für MySQL fehlt das Paket „pymysql“ (pip install pymysql)."
+msgstr "The package “pymysql” is missing for MySQL (pip install pymysql)."
+
+#: datasources.py:263
+msgid "Für SQL Server fehlt das Paket „pyodbc“ samt ODBC-Treiber."
+msgstr "The package “pyodbc” and an ODBC driver are missing for SQL Server."
+
+#: datasources.py:276
+msgid "Für Databricks fehlt das Paket „databricks-sql-connector“."
+msgstr "The package “databricks-sql-connector” is missing for Databricks."
+
+#: datasources.py:288
+#, python-format
+msgid "Unbekannte Art von Datenquelle: %(kind)s"
+msgstr "Unknown kind of data source: %(kind)s"
+
+#: datasources.py:322
+#, python-format
+msgid "Die Datenquelle „%(name)s“ ist nicht eingerichtet."
+msgstr "The data source “%(name)s” is not configured."
+
+#: datasources.py:336
+#, python-format
+msgid "Keine Verbindung zur Datenquelle: %(message)s"
+msgstr "No connection to the data source: %(message)s"
+
+#: datasources.py:353
+#, python-format
+msgid "Die Datenbank meldet: %(message)s"
+msgstr "The database reports: %(message)s"
+
+#: datasources.py:404
+#, python-format
+msgid ""
+"Die Abfrage „%(name)s“ wird gerade geladen. Bitte gleich noch einmal "
+"versuchen."
+msgstr ""
+"The query “%(name)s” is being loaded right now. Please try again in a "
+"moment."
+
+#: datasources.py:453
+#, python-format
+msgid ""
+"Die Abfrage liefert mehr als %(limit)s Zeilen. Bitte im SQL eingrenzen."
+msgstr ""
+"The query returns more than %(limit)s rows. Please narrow it down in the "
+"SQL."
+
+#: datasources.py:479
+#, python-format
+msgid "Die Schlüsselspalte „%(name)s“ kommt in der Abfrage nicht vor."
+msgstr "The key column “%(name)s” does not occur in the query."
+
+#: datasources.py:512
+#, python-format
+msgid "%(count)s Zeilen übernommen."
+msgstr "%(count)s rows copied."
+
+#: designer.py:56 templates/admin/builder/app_data.html:5
+msgid "Start"
+msgstr "Home"
+
+#: designer.py:58
+msgid "Willkommen. Diese Seite lässt sich im Designer frei gestalten."
+msgstr "Welcome. You can freely design this page in the designer."
+
+#: designer.py:72
+msgid "Bitte eine exportierte App-Datei auswählen (höchstens 5 MB)."
+msgstr "Please choose an exported app file (5 MB at most)."
+
+#: designer.py:77
+msgid "Die Datei ist keine gültige App-Datei."
+msgstr "The file is not a valid app file."
+
+#: designer.py:79
+#, python-format
+msgid "App „%(name)s“ importiert. Sie ist noch ein Entwurf."
+msgstr "App “%(name)s” imported. It is still a draft."
+
+#: designer.py:97
+msgid "Einstellungen gespeichert."
+msgstr "Settings saved."
+
+#: designer.py:105 models.py:133 templates/designer/entity.html:19
+msgid "Bezeichnung"
+msgstr "Label"
+
+#: designer.py:121
+msgid "API-Freigaben gespeichert."
+msgstr "API access saved."
+
+#: designer.py:125
+#, python-format
+msgid "Version %(number)s gespeichert."
+msgstr "Version %(number)s saved."
+
+#: designer.py:155
+#, python-format
+msgid ""
+"Version %(number)s wiederhergestellt. Der vorherige Stand wurde als neue "
+"Version gesichert."
+msgstr ""
+"Version %(number)s restored. The previous state was saved as a new version."
+
+#: designer.py:157
+#, python-format
+msgid ""
+"Diese Tabellen gab es in der Version noch nicht; sie bleiben mit ihren Daten"
+" erhalten: %(names)s"
+msgstr ""
+"These tables did not exist in that version yet; they are kept together with "
+"their data: %(names)s"
+
+#: designer.py:174
+msgid "App gelöscht."
+msgstr "App deleted."
+
+#: designer.py:182 profile.py:45
+msgid "Schlüssel gelöscht. Er funktioniert ab sofort nicht mehr."
+msgstr "Key deleted. It stops working immediately."
+
+#: designer.py:197
+msgid "Tabelle gespeichert."
+msgstr "Table saved."
+
+#: designer.py:216
+msgid "Tabelle samt Daten gelöscht."
+msgstr "Table and its data deleted."
+
+#: designer.py:225
+#, python-format
+msgid "Seite „%(title)s“ erzeugt."
+msgstr "Page “%(title)s” created."
+
+#: designer.py:274 views.py:131 views.py:150
+msgid "Ungültige Daten."
+msgstr "Invalid data."
+
+#: designer.py:304
+msgid "Seite gelöscht."
+msgstr "Page deleted."
+
+#: designer.py:327
+msgid ""
+"Baustein gespeichert. Er steht jetzt im Seiten-Designer unter „Eigene "
+"Bausteine“."
+msgstr ""
+"Block saved. It is now available in the page designer under “Custom blocks”."
+
+#: designer.py:341
+msgid "Baustein gelöscht."
+msgstr "Block deleted."
+
+#: designer.py:356
+msgid "Bitte einen Namen für die Vorlage eintragen."
+msgstr "Please enter a name for the template."
+
+#: designer.py:361
+#, python-format
+msgid "Vorlage: %(type)s"
+msgstr "Template: %(type)s"
+
+#: designer.py:424
+msgid "Skript gespeichert."
+msgstr "Script saved."
+
+#: designer.py:447
+msgid "Skript gelöscht."
+msgstr "Script deleted."
+
+#: designer.py:476
+msgid "Abfrage gespeichert."
+msgstr "Query saved."
+
+#: designer.py:488
+msgid ""
+"Abfrage gelöscht. Eine gespiegelte Tabelle bleibt mit ihren Daten erhalten."
+msgstr "Query deleted. A mirrored table is kept with its data."
+
+#: forms.py:26 forms.py:34
+msgid "– bitte wählen –"
+msgstr "– please choose –"
+
+#: forms.py:122
+msgid "Bitte mindestens einen Auswahlwert eintragen."
+msgstr "Please enter at least one choice."
+
+#: forms.py:124
+msgid "Bitte die Tabelle wählen, auf die verwiesen wird."
+msgstr "Please choose the table this field refers to."
+
+#: forms.py:149
+msgid ""
+"Was man am Baustein einstellen kann. Eine Einstellung pro Zeile: Bezeichnung"
+" = Standardwert"
+msgstr ""
+"What can be configured on the block. One setting per line: Label = default "
+"value"
+
+#: forms.py:150
+msgid ""
+"Erlaubt sind übliche Tags wie div, p, h3, strong, a, img, ul, table. Skripte"
+" werden entfernt."
+msgstr ""
+"Common tags such as div, p, h3, strong, a, img, ul and table are allowed. "
+"Scripts are removed."
+
+#: forms.py:156
+msgid "Nach dem Bereinigen ist kein Inhalt übrig. Bitte HTML eintragen."
+msgstr "No content is left after cleaning. Please enter HTML."
+
+#: forms.py:170
+msgid "Alle Seiten"
+msgstr "All pages"
+
+#: forms.py:172
+msgid "Alle Tabellen"
+msgstr "All tables"
+
+#: forms.py:177
+msgid ""
+"JavaScript läuft im Browser und kann nur beim Öffnen einer Seite oder per "
+"Button starten."
+msgstr ""
+"JavaScript runs in the browser and can only start when a page opens or by "
+"button."
+
+#: forms.py:179
+msgid "Bitte ein Intervall von mindestens einer Minute angeben."
+msgstr "Please enter an interval of at least one minute."
+
+#: forms.py:184 models.py:402
+msgid "Datenquelle"
+msgstr "Data source"
+
+#: forms.py:198
+#, python-format
+msgid "%(name)s (nicht eingerichtet)"
+msgstr "%(name)s (not configured)"
+
+#: forms.py:201
+msgid "– nicht spiegeln oder neue Tabelle anlegen –"
+msgstr "– do not mirror, or create a new table –"
+
+#: models.py:44 models.py:94 models.py:234 models.py:278 models.py:349
+#: models.py:400 templates/builder/profile.html:86
+#: templates/builder/profile.html:113
+msgid "Name"
+msgstr "Name"
+
+#: models.py:46
+msgid "Beschreibung"
+msgstr "Description"
+
+#: models.py:47
+msgid "Symbol"
+msgstr "Icon"
+
+#: models.py:49 templates/designer/app.html:7 templates/designer/home.html:23
+msgid "Veröffentlicht"
+msgstr "Published"
+
+#: models.py:49
+msgid "Erst dann sehen Nutzer die App."
+msgstr "Only then can users see the app."
+
+#: models.py:54 templates/builder/profile.html:25
+msgid "Gruppen"
+msgstr "Groups"
+
+#: models.py:55
+msgid "Leer lassen: alle angemeldeten Nutzer dürfen die App verwenden."
+msgstr "Leave empty: all signed-in users may use the app."
+
+#: models.py:64 templates/admin/builder/app_data.html:6
+#: templates/designer/home.html:15
+msgid "Apps"
+msgstr "Apps"
+
+#: models.py:66
+msgid "Darf Apps im Designer bearbeiten"
+msgstr "May edit apps in the designer"
+
+#: models.py:96
+msgid "Anlegen erlaubt"
+msgstr "Creating allowed"
+
+#: models.py:97
+msgid "Bearbeiten erlaubt"
+msgstr "Editing allowed"
+
+#: models.py:98
+msgid "Löschen erlaubt"
+msgstr "Deleting allowed"
+
+#: models.py:99
+msgid "Über die API erreichbar"
+msgstr "Available through the API"
+
+#: models.py:121
+msgid "Langer Text"
+msgstr "Long text"
+
+#: models.py:122 templates/builder/api_docs.html:63
+msgid "Ganze Zahl"
+msgstr "Whole number"
+
+#: models.py:123
+msgid "Kommazahl"
+msgstr "Decimal number"
+
+#: models.py:124
+msgid "Datum"
+msgstr "Date"
+
+#: models.py:125
+msgid "Ja/Nein"
+msgstr "Yes/No"
+
+#: models.py:126
+msgid "Auswahl"
+msgstr "Choice"
+
+#: models.py:127
+msgid "E-Mail"
+msgstr "Email"
+
+#: models.py:129
+msgid "Verweis auf Tabelle"
+msgstr "Reference to a table"
+
+#: models.py:135 templates/builder/api_docs.html:61
+#: templates/designer/entity.html:19
+msgid "Typ"
+msgstr "Type"
+
+#: models.py:136
+msgid "Pflichtfeld"
+msgstr "Required"
+
+#: models.py:138
+msgid "Auswahlwerte"
+msgstr "Choices"
+
+#: models.py:138
+msgid "Nur für Typ „Auswahl“: ein Wert pro Zeile."
+msgstr "Only for type “Choice”: one value per line."
+
+#: models.py:146
+msgid "Verweist auf"
+msgstr "Refers to"
+
+#: models.py:147
+msgid "Nur für Typ „Verweis auf Tabelle“."
+msgstr "Only for type “Reference to a table”."
+
+#: models.py:149
+msgid "In Listen anzeigen"
+msgstr "Show in lists"
+
+#: models.py:151
+#| msgid "Im Menü anzeigen"
+msgid "Im Formular anzeigen"
+msgstr "Show in form"
+
+#: models.py:152
+msgid ""
+"Aus für Felder, die ein Skript füllt (z. B. ein erzeugter Link). Der Wert "
+"bleibt beim Bearbeiten erhalten."
+msgstr ""
+"Off for fields filled by a script (e.g. a generated link). The value is kept"
+" when editing."
+
+#: models.py:157 templates/builder/api_docs.html:61
+msgid "Feld"
+msgstr "Field"
+
+#: models.py:200
+msgid "Titel"
+msgstr "Title"
+
+#: models.py:202 templates/designer/page.html:10
+msgid "Im Menü anzeigen"
+msgstr "Show in menu"
+
+#: models.py:232
+msgid "HTML-Baustein"
+msgstr "HTML block"
+
+#: models.py:232
+msgid "Vorlage"
+msgstr "Template"
+
+#: models.py:236
+msgid "Kurzbeschreibung"
+msgstr "Short description"
+
+#: models.py:238
+msgid "HTML"
+msgstr "HTML"
+
+#: models.py:239 templates/builder/profile.html:35 tours.py:61
+msgid "Einstellungen"
+msgstr "Settings"
+
+#: models.py:247 templates/designer/block_edit.html:3
+msgid "Eigener Baustein"
+msgstr "Custom block"
+
+#: models.py:278
+msgid "Wofür der Schlüssel gedacht ist, z. B. „Auswertung Excel“."
+msgstr "What the key is for, e.g. “Excel report”."
+
+#: models.py:281
+msgid "Darf schreiben"
+msgstr "May write"
+
+#: models.py:282
+msgid "Ohne Haken kann der Schlüssel nur lesen."
+msgstr "Unchecked, the key can only read."
+
+#: models.py:315
+msgid "Notiz"
+msgstr "Note"
+
+#: models.py:316
+msgid "Was sich geändert hat, z. B. „Auswertung ergänzt“."
+msgstr "What changed, e.g. “Added report”."
+
+#: models.py:325
+msgid "Version"
+msgstr "Version"
+
+#: models.py:326 templates/designer/app.html:85
+msgid "Versionen"
+msgstr "Versions"
+
+#: models.py:341
+msgid "Beim Öffnen einer Seite"
+msgstr "When a page opens"
+
+#: models.py:342
+msgid "Per Button"
+msgstr "By button"
+
+#: models.py:343
+msgid "Nach dem Speichern eines Eintrags"
+msgstr "After an entry is saved"
+
+#: models.py:344
+msgid "Zeitgesteuert im Hintergrund"
+msgstr "Scheduled in the background"
+
+#: models.py:351 templates/builder/_language.html:2
+#: templates/builder/profile.html:36 templates/designer/script.html:9
+#: tours.py:19
+msgid "Sprache"
+msgstr "Language"
+
+#: models.py:352
+msgid "Auslöser"
+msgstr "Trigger"
+
+#: models.py:354
+msgid "Leer lassen: auf allen Seiten der App."
+msgstr "Leave empty: on every page of the app."
+
+#: models.py:356
+msgid "Leer lassen: nach dem Speichern in jeder Tabelle der App."
+msgstr "Leave empty: after saving in any table of the app."
+
+#: models.py:357
+msgid "Alle … Minuten"
+msgstr "Every … minutes"
+
+#: models.py:358
+msgid "Aktiv"
+msgstr "Active"
+
+#: models.py:359 templates/designer/script.html:34
+msgid "Code"
+msgstr "Code"
+
+#: models.py:391
+msgid "Skriptlauf"
+msgstr "Script run"
+
+#: models.py:392
+msgid "Skriptläufe"
+msgstr "Script runs"
+
+#: models.py:403
+msgid "SQL-Abfrage"
+msgstr "SQL query"
+
+#: models.py:403
+msgid "Nur lesende Abfragen (SELECT oder WITH). Parameter als :name."
+msgstr "Read-only queries only (SELECT or WITH). Parameters as :name."
+
+#: models.py:405
+msgid "Ergebnis zwischenspeichern (Sekunden)"
+msgstr "Cache the result (seconds)"
+
+#: models.py:406
+msgid ""
+"Wie lange ein Ergebnis wiederverwendet wird, bevor die Datenbank erneut "
+"gefragt wird."
+msgstr "How long a result is reused before the database is asked again."
+
+#: models.py:408
+msgid "In Tabelle spiegeln"
+msgstr "Mirror into table"
+
+#: models.py:410
+msgid "Schlüsselspalte"
+msgstr "Key column"
+
+#: models.py:411
+msgid ""
+"Spalte, die einen Datensatz eindeutig kennzeichnet. Leer: Tabelle wird bei "
+"jedem Abgleich neu befüllt."
+msgstr ""
+"Column that uniquely identifies a row. Empty: the table is refilled on every"
+" sync."
+
+#: models.py:416
+msgid "Automatisch abgleichen alle … Minuten"
+msgstr "Sync automatically every … minutes"
+
+#: models.py:416
+msgid "0 = nur auf Knopfdruck."
+msgstr "0 = only on demand."
+
+#: models.py:423
+msgid "Abfragen"
+msgstr "Queries"
+
+#: openapi.py:36
+#, python-format
+msgid "Nummer (id) eines Eintrags aus „%(table)s“"
+msgstr "Number (id) of an entry from “%(table)s”"
+
+#: openapi.py:45
+msgid "Seite der Ergebnisliste"
+msgstr "Page of the result list"
+
+#: openapi.py:47
+msgid "Einträge pro Seite, höchstens 200"
+msgstr "Entries per page, at most 200"
+
+#: openapi.py:48
+msgid "Volltextsuche in allen Feldern"
+msgstr "Full-text search across all fields"
+
+#: openapi.py:53
+#, python-format
+msgid "Filter: nur Einträge, bei denen „%(label)s“ genau diesen Wert hat"
+msgstr "Filter: only entries where “%(label)s” has exactly this value"
+
+#: openapi.py:63
+msgid "Ungültige Daten. „fields“ nennt die Fehler je Feld."
+msgstr "Invalid data. “fields” lists the errors per field."
+
+#: openapi.py:64
+msgid "Schlüssel fehlt, ist falsch oder gehört zu einer anderen App."
+msgstr "Key is missing, wrong or belongs to another app."
+
+#: openapi.py:65
+msgid "Schlüssel darf nur lesen, oder die Tabelle erlaubt diese Aktion nicht."
+msgstr "Key is read-only, or the table does not allow this action."
+
+#: openapi.py:66
+msgid "Tabelle nicht freigeschaltet oder Eintrag nicht vorhanden."
+msgstr "Table not enabled or entry does not exist."
+
+#: openapi.py:91 openapi.py:96
+msgid "Überblick"
+msgstr "Overview"
+
+#: openapi.py:92
+msgid "Tabellen, Felder und eigene Endpunkte dieser App"
+msgstr "Tables, fields and custom endpoints of this app"
+
+#: openapi.py:93
+msgid "Beschreibung der App"
+msgstr "App description"
+
+#: openapi.py:105
+#, python-format
+msgid "Felder zum Anlegen oder Ändern eines Eintrags in „%(table)s“"
+msgstr "Fields for creating or changing an entry in “%(table)s”"
+
+#: openapi.py:109 openapi.py:147
+msgid "Nummer des Eintrags"
+msgstr "Entry number"
+
+#: openapi.py:114
+#, python-format
+msgid "Ein Eintrag in „%(table)s“"
+msgstr "An entry in “%(table)s”"
+
+#: openapi.py:116
+msgid "Anzahl aller Treffer"
+msgstr "Total number of matches"
+
+#: openapi.py:123
+msgid "Anlegen ist abgeschaltet."
+msgstr "Creating is disabled."
+
+#: openapi.py:125
+msgid "Bearbeiten ist abgeschaltet."
+msgstr "Editing is disabled."
+
+#: openapi.py:127
+msgid "Löschen ist abgeschaltet."
+msgstr "Deleting is disabled."
+
+#: openapi.py:128
+#, python-format
+msgid "Kurzname: %(slug)s."
+msgstr "Short name: %(slug)s."
+
+#: openapi.py:131
+msgid "Einträge auflisten"
+msgstr "List entries"
+
+#: openapi.py:133
+msgid "Eine Seite der Einträge"
+msgstr "One page of entries"
+
+#: openapi.py:138
+msgid "Eintrag anlegen"
+msgstr "Create entry"
+
+#: openapi.py:139
+msgid ""
+"Braucht einen Schlüssel mit Schreibrecht. Es gelten dieselben Prüfungen wie "
+"im Formular."
+msgstr "Needs a key with write access. The same checks as in the form apply."
+
+#: openapi.py:141
+msgid "Angelegt"
+msgstr "Created"
+
+#: openapi.py:149
+msgid "Eintrag lesen"
+msgstr "Read entry"
+
+#: openapi.py:150
+msgid "Der Eintrag"
+msgstr "The entry"
+
+#: openapi.py:155
+msgid "Eintrag vollständig ersetzen"
+msgstr "Replace entry completely"
+
+#: openapi.py:156
+msgid "Nicht übergebene Felder werden geleert."
+msgstr "Fields not sent are cleared."
+
+#: openapi.py:158 openapi.py:166
+msgid "Gespeichert"
+msgstr "Saved"
+
+#: openapi.py:162
+msgid "Einzelne Felder ändern"
+msgstr "Change individual fields"
+
+#: openapi.py:163
+msgid "Nur die übergebenen Felder ändern sich."
+msgstr "Only the fields sent are changed."
+
+#: openapi.py:171
+msgid "Eintrag löschen"
+msgstr "Delete entry"
+
+#: openapi.py:172
+msgid "Gelöscht"
+msgstr "Deleted"
+
+#: openapi.py:177 openapi.py:182
+msgid "Eigene Endpunkte"
+msgstr "Custom endpoints"
+
+#: openapi.py:177
+msgid "Aus Python-Erweiterungen im Ordner extensions."
+msgstr "From Python extensions in the extensions folder."
+
+#: openapi.py:184
+msgid "Antwort des Endpunkts"
+msgstr "Endpoint response"
+
+#: openapi.py:189
+msgid "Braucht einen Schlüssel mit Schreibrecht."
+msgstr "Needs a key with write access."
+
+#: openapi.py:198
+#, python-format
+msgid "%(app)s – API"
+msgstr "%(app)s – API"
+
+#: openapi.py:201
+#, python-format
+msgid ""
+"Schnittstelle der App „%(app)s“. Jede Anfrage braucht einen API-Schlüssel "
+"dieser App im Kopf „Authorization: Bearer …“. Schlüssel erzeugt ein Designer"
+" in der App unter „Schnittstelle (API)“; dort wird auch festgelegt, welche "
+"Tabellen erreichbar sind."
+msgstr ""
+"API of the app “%(app)s”. Every request needs an API key of this app in the "
+"header “Authorization: Bearer …”. A designer creates keys in the app under "
+"“Interface (API)”, where they also choose which tables are reachable."
+
+#: openapi.py:212
+msgid "API-Schlüssel der App, beginnt mit bk_"
+msgstr "API key of the app, starts with bk_"
+
+#: scripting/ops.py:68
+msgid "Die Daten sind ungültig."
+msgstr "The data is invalid."
+
+#: scripting/ops.py:81
+#, python-format
+msgid "Die Tabelle „%(name)s“ gibt es in dieser App nicht."
+msgstr "The table “%(name)s” does not exist in this app."
+
+#: scripting/ops.py:95
+#, python-format
+msgid "Die Tabelle hat kein Feld „%(name)s“."
+msgstr "The table has no field “%(name)s”."
+
+#: scripting/python.py:55
+#, python-format
+msgid "Zeile %(line)s: %(error)s"
+msgstr "Line %(line)s: %(error)s"
+
+#: scripting/python.py:117 scripting/python.py:133 views.py:151
+msgid "Unbekannte Anfrage."
+msgstr "Unknown request."
+
+#: scripting/python.py:131 views.py:139
+#, python-format
+msgid "Die Abfrage „%(name)s“ gibt es in dieser App nicht."
+msgstr "The query “%(name)s” does not exist in this app."
+
+#: scripting/python.py:167
+#, python-format
+msgid "Skript konnte nicht gestartet werden: %(error)s"
+msgstr "The script could not be started: %(error)s"
+
+#: scripting/python.py:185
+#, python-format
+msgid "Zeitlimit von %(seconds)s Sekunden überschritten."
+msgstr "Time limit of %(seconds)s seconds exceeded."
+
+#: scripting/python.py:193
+msgid "ohne Meldung"
+msgstr "no message"
+
+#: scripting/python.py:194
+#, python-format
+msgid "Das Skript wurde abgebrochen (%(detail)s)."
+msgstr "The script was aborted (%(detail)s)."
+
+#: scripting/python.py:198
+msgid "Ungültige Antwort des Skripts."
+msgstr "Invalid response from the script."
+
+#: services.py:20
+msgid "Nur http- und https-Adressen sind erlaubt."
+msgstr "Only http and https addresses are allowed."
+
+#: services.py:23
+#, python-format
+msgid ""
+"Der Host „%(host)s“ ist nicht freigegeben (Einstellung HTTP_ALLOWED_HOSTS)."
+msgstr "The host “%(host)s” is not approved (setting HTTP_ALLOWED_HOSTS)."
+
+#: templates/admin/builder/app_data.html:24
+#, python-format
+msgid ""
+"Alle Tabellen der App „%(name)s“ mit ihren Einträgen, die neuesten zuerst."
+msgstr "All tables of the app “%(name)s” with their entries, newest first."
+
+#: templates/admin/builder/app_data.html:25 templates/builder/profile.html:73
+msgid "Im Designer öffnen"
+msgstr "Open in designer"
+
+#: templates/admin/builder/app_data.html:26 templates/designer/app.html:8
+msgid "App öffnen"
+msgstr "Open app"
+
+#: templates/admin/builder/app_data.html:33
+#, python-format
+msgid "%(n)s Eintrag"
+msgid_plural "%(n)s Einträge"
+msgstr[0] "%(n)s entry"
+msgstr[1] "%(n)s entries"
+
+#: templates/admin/builder/app_data.html:33
+msgid "gespiegelt aus einer Datenquelle"
+msgstr "mirrored from a data source"
+
+#: templates/admin/builder/app_data.html:37
+msgid "Geändert"
+msgstr "Changed"
+
+#: templates/admin/builder/app_data.html:46 templates/builder/block.html:108
+msgid "Noch keine Einträge."
+msgstr "No entries yet."
+
+#: templates/admin/builder/app_data.html:53 templates/builder/_pager.html:3
+#: templates/designer/block_edit.html:20
+msgid "Zurück"
+msgstr "Back"
+
+#: templates/admin/builder/app_data.html:54 templates/builder/_pager.html:4
+#, python-format
+msgid "Seite %(number)s von %(total)s"
+msgstr "Page %(number)s of %(total)s"
+
+#: templates/admin/builder/app_data.html:56
+msgid "Alle in der Liste"
+msgstr "All in the list"
+
+#: templates/admin/builder/app_data.html:61
+msgid "Diese App hat noch keine Tabelle."
+msgstr "This app has no table yet."
+
+#: templates/admin/index.html:8
+msgid "Apps im Baukasten"
+msgstr "Apps in Baukasten"
+
+#: templates/admin/index.html:15 templates/builder/home.html:18
+#: templates/builder/profile.html:59 templates/designer/app.html:7
+#: templates/designer/home.html:23
+msgid "Entwurf"
+msgstr "Draft"
+
+#: templates/admin/index.html:23
+msgid "Noch keine App."
+msgstr "No app yet."
+
+#: templates/base.html:16
+msgid "Zum Inhalt springen"
+msgstr "Skip to content"
+
+#: templates/base.html:19 templates/registration/login.html:8
+msgid "Firmenlogo"
+msgstr "Company logo"
+
+#: templates/base.html:23
+msgid "Seiten der App"
+msgstr "Pages of the app"
+
+#: templates/base.html:25
+msgid "Menü"
+msgstr "Menu"
+
+#: templates/base.html:31 templates/builder/help.html:3
+msgid "Hilfe"
+msgstr "Help"
+
+#: templates/base.html:34
+msgid "Führung starten"
+msgstr "Start tour"
+
+#: templates/base.html:36 templates/builder/profile.html:3
+#: templates/registration/password_change_form.html:5
+msgid "Mein Profil"
+msgstr "My profile"
+
+#: templates/base.html:40
+msgid "Abmelden"
+msgstr "Sign out"
+
+#: templates/builder/_theme_toggle.html:2
+msgid "Erscheinungsbild: wie das System. Klicken für Hell."
+msgstr "Appearance: same as system. Click for light."
+
+#: templates/builder/_theme_toggle.html:3
+msgid "Erscheinungsbild: Hell. Klicken für Dunkel."
+msgstr "Appearance: light. Click for dark."
+
+#: templates/builder/_theme_toggle.html:4
+msgid "Erscheinungsbild: Dunkel. Klicken für automatisch."
+msgstr "Appearance: dark. Click for automatic."
+
+#: templates/builder/api_docs.html:6 templates/builder/api_index.html:3
+#: templates/builder/api_index.html:7
+msgid "API-Dokumentation"
+msgstr "API documentation"
+
+#: templates/builder/api_docs.html:9
+#, python-format
+msgid "API von „%(name)s“"
+msgstr "API of “%(name)s”"
+
+#: templates/builder/api_docs.html:10
+msgid ""
+"Andere Programme lesen und schreiben hier die Einträge dieser App. Diese "
+"Seite zeigt alle Adressen, Felder und Antworten; unten lässt sich jede "
+"Anfrage direkt ausprobieren."
+msgstr ""
+"Other programs read and write this app’s entries here. This page shows all "
+"addresses, fields and responses; below you can try out every request "
+"directly."
+
+#: templates/builder/api_docs.html:12
+msgid "Freigaben und Schlüssel"
+msgstr "Access and keys"
+
+#: templates/builder/api_docs.html:18
+msgid "In drei Schritten"
+msgstr "In three steps"
+
+#: templates/builder/api_docs.html:20
+msgid ""
+"Ein Designer schaltet die gewünschten Tabellen frei und erzeugt einen "
+"Schlüssel."
+msgstr "A designer enables the tables you need and creates a key."
+
+#: templates/builder/api_docs.html:21
+msgid "Jede Anfrage schickt den Schlüssel im Kopf mit:"
+msgstr "Every request sends the key in the header:"
+
+#: templates/builder/api_docs.html:22
+msgid "Antworten und Daten sind JSON. Felder heißen wie ihr Kurzname."
+msgstr "Responses and data are JSON. Fields are named by their short name."
+
+#: templates/builder/api_docs.html:24
+msgid "Basisadresse"
+msgstr "Base URL"
+
+#: templates/builder/api_docs.html:26 templates/designer/block_edit.html:41
+msgid "Beispiel"
+msgstr "Example"
+
+#: templates/builder/api_docs.html:29
+msgid ""
+"In Python geht es einfacher mit der Bibliothek baukasten-client (siehe "
+"Handbuch)."
+msgstr ""
+"In Python it is easier with the baukasten-client library (see the handbook)."
+
+#: templates/builder/api_docs.html:30
+msgid "Für Werkzeuge"
+msgstr "For tools"
+
+#: templates/builder/api_docs.html:31
+#, python-format
+msgid ""
+"OpenAPI-Beschreibung für Postman, Insomnia oder Code-Generatoren: "
+"<code>%(public_spec_url)s</code> (mit Schlüssel abrufbar)"
+msgstr ""
+"OpenAPI description for Postman, Insomnia or code generators: "
+"<code>%(public_spec_url)s</code> (retrievable with a key)"
+
+#: templates/builder/api_docs.html:32
+msgid "OpenAPI-Datei herunterladen"
+msgstr "Download OpenAPI file"
+
+#: templates/builder/api_docs.html:38
+msgid "Alle Anfragen auf einen Blick"
+msgstr "All requests at a glance"
+
+#: templates/builder/api_docs.html:53
+msgid "Noch keine Tabelle dieser App ist für die API freigeschaltet."
+msgstr "No table of this app is enabled for the API yet."
+
+#: templates/builder/api_docs.html:53
+msgid "Im Designer freischalten"
+msgstr "Enable in designer"
+
+#: templates/builder/api_docs.html:61 templates/designer/query.html:89
+msgid "Kurzname"
+msgstr "Short name"
+
+#: templates/builder/api_docs.html:61 templates/designer/entity.html:19
+msgid "Pflicht"
+msgstr "Required"
+
+#: templates/builder/api_docs.html:63
+msgid "Nummer"
+msgstr "Number"
+
+#: templates/builder/api_docs.html:63
+msgid "automatisch"
+msgstr "automatic"
+
+#: templates/builder/api_docs.html:81
+msgid "Ausprobieren"
+msgstr "Try it out"
+
+#: templates/builder/api_docs.html:82
+msgid ""
+"Auf „Authorize“ klicken und einen Schlüssel dieser App eintragen. Danach bei"
+" einer Anfrage „Try it out“ und „Execute“ wählen. Achtung: Anfragen wirken "
+"auf echte Daten."
+msgstr ""
+"Click “Authorize” and enter a key of this app. Then choose “Try it out” and "
+"“Execute” on a request. Caution: requests act on real data."
+
+#: templates/builder/api_docs.html:83
+msgid "Swagger UI"
+msgstr "Swagger UI"
+
+#: templates/builder/api_index.html:8
+msgid ""
+"Jede App hat eine eigene Schnittstelle. Wähle eine App, um ihre Adressen, "
+"Felder und Antworten zu sehen und Anfragen auszuprobieren."
+msgstr ""
+"Every app has its own API. Choose an app to see its addresses, fields and "
+"responses and to try out requests."
+
+#: templates/builder/api_index.html:13 templates/designer/app.html:166
+msgid "Freigeschaltete Tabellen"
+msgstr "Enabled tables"
+
+#: templates/builder/api_index.html:18
+msgid "keine"
+msgstr "none"
+
+#: templates/builder/api_index.html:19
+msgid "Dokumentation öffnen"
+msgstr "Open documentation"
+
+#: templates/builder/api_index.html:22
+msgid "Keine App für dich freigegeben."
+msgstr "No app is shared with you."
+
+#: templates/builder/api_index.html:26
+msgid "Eigene Endpunkte aus Erweiterungen gibt es in jeder App:"
+msgstr "Custom endpoints from extensions exist in every app:"
+
+#: templates/builder/block.html:4
+msgid "Daten werden geladen …"
+msgstr "Loading data …"
+
+#: templates/builder/block.html:35
+#, python-format
+msgid "Hallo %(name)s"
+msgstr "Hello %(name)s"
+
+#: templates/builder/block.html:46
+msgid "Suchen …"
+msgstr "Search …"
+
+#: templates/builder/block.html:46 templates/builder/block.html:47
+msgid "Suchen"
+msgstr "Search"
+
+#: templates/builder/block.html:51 templates/builder/block.html:90
+#: templates/designer/block_edit.html:5
+msgid "Neu"
+msgstr "New"
+
+#: templates/builder/block.html:58
+msgid "Aktionen"
+msgstr "Actions"
+
+#: templates/builder/block.html:65
+msgid "Bearbeiten"
+msgstr "Edit"
+
+#: templates/builder/block.html:68
+msgid "Eintrag wirklich löschen?"
+msgstr "Really delete this entry?"
+
+#: templates/builder/block.html:70 templates/builder/profile.html:97
+#: templates/designer/app.html:57 templates/designer/app.html:189
+#: templates/designer/blocks.html:27 templates/designer/blocks.html:51
+#: templates/designer/entity.html:31 templates/designer/home.html:27
+msgid "Löschen"
+msgstr "Delete"
+
+#: templates/builder/block.html:81
+#, python-format
+msgid "Keine Treffer für „%(query)s“."
+msgstr "No results for “%(query)s”."
+
+#: templates/builder/block.html:81
+msgid "Noch keine Einträge. Mit „Neu“ legst du den ersten an."
+msgstr "No entries yet. Use “New” to add the first one."
+
+#: templates/builder/block.html:114 templates/builder/record_form.html:7
+msgid "neuer Eintrag"
+msgstr "new entry"
+
+#: templates/builder/block.html:142
+#, python-format
+msgid "%(value)s von %(target)s"
+msgstr "%(value)s of %(target)s"
+
+#: templates/builder/block.html:156 templates/builder/block.html:180
+msgid "Noch keine Daten."
+msgstr "No data yet."
+
+#: templates/builder/block.html:171
+msgid "gesamt"
+msgstr "total"
+
+#: templates/builder/block.html:186
+#, python-format
+msgid "nach %(basis)s"
+msgstr "by %(basis)s"
+
+#: templates/builder/block.html:256
+#, python-format
+msgid "Wird von einem Skript gefüllt (Name „%(name)s“)."
+msgstr "Filled by a script (name “%(name)s”)."
+
+#: templates/builder/block.html:256
+msgid ""
+"Gib dem Baustein im Seiten-Designer einen Namen, damit ein Skript ihn füllen"
+" kann."
+msgstr "Give the block a name in the page designer so a script can fill it."
+
+#: templates/builder/block.html:263
+#, python-format
+msgid "Stand %(fetched)s"
+msgstr "As of %(fetched)s"
+
+#: templates/builder/block.html:265
+msgid ""
+"Die Datenquelle antwortet gerade nicht. Angezeigt wird der letzte Stand."
+msgstr ""
+"The data source is not responding right now. Showing the last known data."
+
+#: templates/builder/block.html:273
+msgid "Es gibt weitere Zeilen, die hier nicht angezeigt werden."
+msgstr "There are more rows that are not shown here."
+
+#: templates/builder/block.html:275 templates/designer/query.html:55
+msgid "Die Abfrage liefert keine Zeilen."
+msgstr "The query returns no rows."
+
+#: templates/builder/help.html:23
+msgid "Handbuch"
+msgstr "Handbook"
+
+#: templates/builder/help.html:24
+msgid ""
+"Alles zum Benutzen, Bauen, Entwickeln und Betreiben. Das Inhaltsverzeichnis "
+"führt zu jedem Abschnitt; mit Strg+F durchsuchst du die ganze Seite."
+msgstr ""
+"Everything about using, building, developing and running Baukasten. The "
+"table of contents leads to every section; press Ctrl+F to search the whole "
+"page."
+
+#: templates/builder/help.html:25
+msgid "Das Handbuch gibt es bisher nur auf Deutsch."
+msgstr "The handbook is currently available in German only."
+
+#: templates/builder/help.html:31
+msgid "Das Handbuch wurde nicht gefunden (docs/HANDBUCH.md)."
+msgstr "The handbook was not found (docs/HANDBUCH.md)."
+
+#: templates/builder/home.html:6
+#, python-format
+msgid "Hallo %(first_name)s"
+msgstr "Hello %(first_name)s"
+
+#: templates/builder/home.html:7
+msgid "Deine Apps. Wähle eine aus, um loszulegen."
+msgstr "Your apps. Pick one to get started."
+
+#: templates/builder/home.html:7
+msgid "Hier erscheinen die Apps, die für dich freigegeben sind."
+msgstr "Apps shared with you appear here."
+
+#: templates/builder/home.html:9
+msgid "Neue App bauen"
+msgstr "Build a new app"
+
+#: templates/builder/home.html:19
+msgid "Ohne Beschreibung"
+msgstr "No description"
+
+#: templates/builder/home.html:26
+msgid "Noch keine App vorhanden"
+msgstr "No apps yet"
+
+#: templates/builder/home.html:28
+msgid ""
+"Im Designer legst du in wenigen Minuten die erste an: Tabelle anlegen, Seite"
+" erzeugen, veröffentlichen."
+msgstr ""
+"Create the first one in the designer in a few minutes: add a table, generate"
+" a page, publish."
+
+#: templates/builder/home.html:29
+msgid "Erste App bauen"
+msgstr "Build the first app"
+
+#: templates/builder/home.html:31
+msgid "Sobald eine App für dich freigegeben ist, findest du sie hier."
+msgstr "As soon as an app is shared with you, you will find it here."
+
+#: templates/builder/page.html:8
+#, python-format
+msgid "Skript „%(name)s“ ist fehlgeschlagen"
+msgstr "Script “%(name)s” failed"
+
+#: templates/builder/page.html:9
+msgid "Skript öffnen"
+msgstr "Open script"
+
+#: templates/builder/page.html:14
+msgid "Diese App hat noch keine Seite."
+msgstr "This app has no page yet."
+
+#: templates/builder/page.html:16
+msgid "Diese Seite ist noch leer."
+msgstr "This page is still empty."
+
+#: templates/builder/page.html:23
+msgid "Seite im Designer bearbeiten"
+msgstr "Edit page in the designer"
+
+#: templates/builder/profile.html:11
+msgid "lokales Konto"
+msgstr "local account"
+
+#: templates/builder/profile.html:11
+msgid "Firmenkonto (Keycloak)"
+msgstr "company account (Keycloak)"
+
+#: templates/builder/profile.html:19 templates/builder/profile.html:86
+msgid "Rechte"
+msgstr "Permissions"
+
+#: templates/builder/profile.html:21
+msgid "Apps benutzen"
+msgstr "Use apps"
+
+#: templates/builder/profile.html:21
+#, python-format
+msgid "%(n)s App"
+msgid_plural "%(n)s Apps"
+msgstr[0] "%(n)s app"
+msgstr[1] "%(n)s apps"
+
+#: templates/builder/profile.html:22
+msgid "ja"
+msgstr "yes"
+
+#: templates/builder/profile.html:22 templates/builder/profile.html:23
+msgid "nein"
+msgstr "no"
+
+#: templates/builder/profile.html:23
+msgid "Verwaltung (/admin/)"
+msgstr "Administration (/admin/)"
+
+#: templates/builder/profile.html:23
+msgid "vollständig"
+msgstr "full"
+
+#: templates/builder/profile.html:23
+msgid "eingeschränkt"
+msgstr "limited"
+
+#: templates/builder/profile.html:27
+msgid "Standard"
+msgstr "Default"
+
+#: templates/builder/profile.html:29
+msgid "Keine Gruppe."
+msgstr "No group."
+
+#: templates/builder/profile.html:31
+msgid ""
+"Gruppen legen fest, welche Apps du siehst. Mit Firmenkonto kommen sie bei "
+"jeder Anmeldung aus Keycloak."
+msgstr ""
+"Groups decide which apps you see. With a company account they come from "
+"Keycloak at every sign-in."
+
+#: templates/builder/profile.html:37 templates/builder/profile.html:38
+msgid "Erscheinungsbild"
+msgstr "Appearance"
+
+#: templates/builder/profile.html:39
+msgid "Hell"
+msgstr "Light"
+
+#: templates/builder/profile.html:40
+msgid "Dunkel"
+msgstr "Dark"
+
+#: templates/builder/profile.html:41
+msgid "System"
+msgstr "System"
+
+#: templates/builder/profile.html:45
+msgid "Führungen"
+msgstr "Tours"
+
+#: templates/builder/profile.html:46
+msgid "Wieder anzeigen"
+msgstr "Show again"
+
+#: templates/builder/profile.html:48
+msgid ""
+"Erledigt. Die Führungen starten beim nächsten Besuch der jeweiligen Seite."
+msgstr "Done. The tours start on your next visit to each page."
+
+#: templates/builder/profile.html:49
+#: templates/registration/password_change_form.html:3
+#: templates/registration/password_change_form.html:5
+#: templates/registration/password_change_form.html:7
+#: templates/registration/password_change_form.html:12
+msgid "Passwort ändern"
+msgstr "Change password"
+
+#: templates/builder/profile.html:55
+msgid "Meine Apps"
+msgstr "My apps"
+
+#: templates/builder/profile.html:63
+msgid "Noch keine App für dich freigegeben."
+msgstr "No app is shared with you yet."
+
+#: templates/builder/profile.html:66
+msgid "Von mir angelegt"
+msgstr "Created by me"
+
+#: templates/builder/profile.html:72
+#, python-format
+msgid "%(n)s Tabelle"
+msgid_plural "%(n)s Tabellen"
+msgstr[0] "%(n)s table"
+msgstr[1] "%(n)s tables"
+
+#: templates/builder/profile.html:72
+#, python-format
+msgid "%(n)s Seite"
+msgid_plural "%(n)s Seiten"
+msgstr[0] "%(n)s page"
+msgstr[1] "%(n)s pages"
+
+#: templates/builder/profile.html:83
+msgid "Meine API-Schlüssel"
+msgstr "My API keys"
+
+#: templates/builder/profile.html:86
+msgid "Zuletzt genutzt"
+msgstr "Last used"
+
+#: templates/builder/profile.html:92 templates/designer/app.html:186
+msgid "lesen und schreiben"
+msgstr "read and write"
+
+#: templates/builder/profile.html:92 templates/designer/app.html:186
+msgid "nur lesen"
+msgstr "read only"
+
+#: templates/builder/profile.html:93
+msgid "noch nie"
+msgstr "never"
+
+#: templates/builder/profile.html:95
+msgid "API-Doku"
+msgstr "API docs"
+
+#: templates/builder/profile.html:96 templates/designer/app.html:188
+msgid ""
+"Schlüssel löschen? Programme, die ihn verwenden, verlieren sofort den "
+"Zugriff."
+msgstr "Delete this key? Programs using it lose access immediately."
+
+#: templates/builder/profile.html:105
+msgid ""
+"Du hast noch keinen Schlüssel erzeugt. Das geht im Designer in der App unter"
+" „Schnittstelle (API)“."
+msgstr ""
+"You have not created a key yet. You can do that in the designer, in the app "
+"under “Interface (API)”."
+
+#: templates/builder/profile.html:110
+msgid "Meine Skripte"
+msgstr "My scripts"
+
+#: templates/builder/profile.html:113
+msgid "Letzter Lauf"
+msgstr "Last run"
+
+#: templates/builder/profile.html:117 templates/designer/app.html:127
+msgid "aus"
+msgstr "off"
+
+#: templates/builder/profile.html:122 templates/designer/query.html:82
+#: templates/designer/script.html:126
+msgid "ok"
+msgstr "ok"
+
+#: templates/builder/profile.html:123 templates/designer/app.html:149
+#: templates/designer/query.html:82 templates/designer/script.html:126
+msgid "Fehler"
+msgstr "Error"
+
+#: templates/builder/profile.html:130
+msgid "Noch keine eigenen Skripte."
+msgstr "No scripts of your own yet."
+
+#: templates/builder/profile.html:133
+msgid "Letzte Fehler"
+msgstr "Recent errors"
+
+#: templates/builder/profile.html:148
+msgid "Meine Abfragen und Bausteine"
+msgstr "My queries and blocks"
+
+#: templates/builder/profile.html:155
+msgid "Abgleich ok"
+msgstr "Sync ok"
+
+#: templates/builder/profile.html:155
+msgid "Abgleich fehlgeschlagen"
+msgstr "Sync failed"
+
+#: templates/builder/record_form.html:7
+msgid "Eintrag bearbeiten"
+msgstr "Edit entry"
+
+#: templates/builder/record_form.html:15 templates/designer/field.html:14
+#: templates/registration/password_change_form.html:13
+msgid "Abbrechen"
+msgstr "Cancel"
+
+#: templates/designer/app.html:13
+msgid "Neuer API-Schlüssel – jetzt kopieren"
+msgstr "New API key – copy it now"
+
+#: templates/designer/app.html:14
+msgid ""
+"Er wird nur dieses eine Mal angezeigt und lässt sich später nicht wieder "
+"auslesen."
+msgstr "It is shown only this once and cannot be read again later."
+
+#: templates/designer/app.html:22
+msgid "Daten: Tabellen"
+msgstr "Data: tables"
+
+#: templates/designer/app.html:23
+msgid ""
+"Lege fest, welche Daten die App verwaltet. Aus jeder Tabelle lässt sich eine"
+" fertige Seite erzeugen."
+msgstr ""
+"Define which data the app manages. A ready-made page can be generated from "
+"every table."
+
+#: templates/designer/app.html:30
+#, python-format
+msgid "%(n)s Feld"
+msgid_plural "%(n)s Felder"
+msgstr[0] "%(n)s field"
+msgstr[1] "%(n)s fields"
+
+#: templates/designer/app.html:39
+msgid "Name der neuen Tabelle, z. B. Geräte"
+msgstr "Name of the new table, e.g. Devices"
+
+#: templates/designer/app.html:39
+msgid "Name der neuen Tabelle"
+msgstr "Name of the new table"
+
+#: templates/designer/app.html:40
+msgid "Tabelle anlegen"
+msgstr "Add table"
+
+#: templates/designer/app.html:47
+msgid "Oberfläche: Seiten"
+msgstr "Interface: pages"
+
+#: templates/designer/app.html:48
+msgid "Seiten baust du im visuellen Designer aus Bausteinen zusammen."
+msgstr "You assemble pages from blocks in the visual designer."
+
+#: templates/designer/app.html:56
+msgid "Seite wirklich löschen?"
+msgstr "Really delete this page?"
+
+#: templates/designer/app.html:68
+msgid "Titel der neuen Seite"
+msgstr "Title of the new page"
+
+#: templates/designer/app.html:69
+msgid "Seite anlegen"
+msgstr "Add page"
+
+#: templates/designer/app.html:76
+msgid "Einstellungen und Freigabe"
+msgstr "Settings and sharing"
+
+#: templates/designer/app.html:86
+msgid ""
+"Eine Version hält den Aufbau der App fest: Einstellungen, Tabellen, Felder "
+"und Seiten. Die erfassten Daten gehören nicht dazu und bleiben beim "
+"Wiederherstellen erhalten."
+msgstr ""
+"A version records the structure of the app: settings, tables, fields and "
+"pages. The entered data is not part of it and is kept when you restore."
+
+#: templates/designer/app.html:89
+msgid "Was hat sich geändert? (optional)"
+msgstr "What changed? (optional)"
+
+#: templates/designer/app.html:89
+msgid "Notiz zur Version"
+msgstr "Note for the version"
+
+#: templates/designer/app.html:90
+msgid "Version speichern"
+msgstr "Save version"
+
+#: templates/designer/app.html:99
+msgid "Ohne Notiz"
+msgstr "No note"
+
+#: templates/designer/app.html:103
+msgid "Herunterladen"
+msgstr "Download"
+
+#: templates/designer/app.html:104
+#, python-format
+msgid ""
+"Auf Version %(number)s zurückgehen? Der jetzige Stand wird vorher als neue "
+"Version gesichert."
+msgstr ""
+"Go back to version %(number)s? The current state is saved as a new version "
+"first."
+
+#: templates/designer/app.html:105
+msgid "Wiederherstellen"
+msgstr "Restore"
+
+#: templates/designer/app.html:113
+msgid "Noch keine Version gespeichert."
+msgstr "No version saved yet."
+
+#: templates/designer/app.html:121
+msgid ""
+"Eigene Logik: Python läuft abgeschottet auf dem Server, JavaScript im "
+"Browser. Skripte füllen Bausteine, rechnen, prüfen oder gleichen Daten ab."
+msgstr ""
+"Your own logic: Python runs isolated on the server, JavaScript in the "
+"browser. Scripts fill blocks, calculate, check or sync data."
+
+#: templates/designer/app.html:128
+msgid "alle Seiten"
+msgstr "all pages"
+
+#: templates/designer/app.html:135
+msgid "Neues Python-Skript"
+msgstr "New Python script"
+
+#: templates/designer/app.html:136
+msgid "Neues JavaScript"
+msgstr "New JavaScript"
+
+#: templates/designer/app.html:141
+msgid "Datenquellen"
+msgstr "Data sources"
+
+#: templates/designer/app.html:142
+msgid ""
+"Daten aus Datenbanken oder Databricks live anzeigen oder regelmäßig in eine "
+"Tabelle spiegeln."
+msgstr ""
+"Show data from databases or Databricks live, or mirror it into a table "
+"regularly."
+
+#: templates/designer/app.html:149
+msgid "nur live"
+msgstr "live only"
+
+#: templates/designer/app.html:156 templates/designer/query.html:3
+#: templates/designer/query.html:5
+msgid "Neue Abfrage"
+msgstr "New query"
+
+#: templates/designer/app.html:158
+msgid ""
+"Noch keine Datenquelle eingerichtet. Das übernimmt der Betrieb (Handbuch, "
+"Abschnitt „Datenquellen“)."
+msgstr ""
+"No data source configured yet. Operations sets this up (manual, section "
+"“Data sources”)."
+
+#: templates/designer/app.html:163
+msgid "Schnittstelle (API)"
+msgstr "Interface (API)"
+
+#: templates/designer/app.html:164
+msgid ""
+"Andere Programme können Einträge lesen und schreiben. Schalte dafür Tabellen"
+" frei und erzeuge einen Schlüssel."
+msgstr ""
+"Other programs can read and write entries. Enable tables for this and create"
+" a key."
+
+#: templates/designer/app.html:173
+msgid "Freigaben speichern"
+msgstr "Save access"
+
+#: templates/designer/app.html:176
+msgid "Lege zuerst eine Tabelle an."
+msgstr "Add a table first."
+
+#: templates/designer/app.html:179
+msgid "Schlüssel"
+msgstr "Keys"
+
+#: templates/designer/app.html:186
+msgid "zuletzt genutzt"
+msgstr "last used"
+
+#: templates/designer/app.html:200
+msgid "Schlüssel erzeugen"
+msgstr "Create key"
+
+#: templates/designer/app.html:203
+msgid "API-Dokumentation öffnen"
+msgstr "Open API documentation"
+
+#: templates/designer/app.html:204
+msgid "So rufst du die API auf"
+msgstr "How to call the API"
+
+#: templates/designer/app.html:205
+msgid "DEIN_SCHLÜSSEL"
+msgstr "YOUR_KEY"
+
+#: templates/designer/app.html:207
+#, python-format
+msgid ""
+"Die Adresse <code>%(api_base)s</code> beschreibt alle freigeschalteten "
+"Tabellen mit ihren Feldern. Mehr dazu steht im Handbuch (docs/HANDBUCH.md, "
+"Abschnitt „API“)."
+msgstr ""
+"The address <code>%(api_base)s</code> describes all enabled tables and their"
+" fields. See the manual for more (docs/HANDBUCH.md, section “API”)."
+
+#: templates/designer/app.html:208
+msgid "Eigene Endpunkte aus Erweiterungen:"
+msgstr "Custom endpoints from extensions:"
+
+#: templates/designer/app.html:212 templates/designer/app.html:215
+msgid "App löschen"
+msgstr "Delete app"
+
+#: templates/designer/app.html:213
+msgid ""
+"Löscht die App mit allen Tabellen, Daten, Seiten und Versionen. Das lässt "
+"sich nicht rückgängig machen. Tipp: Lade vorher eine Version herunter, dann "
+"lässt sich zumindest der Aufbau wieder importieren."
+msgstr ""
+"Deletes the app with all tables, data, pages and versions. This cannot be "
+"undone. Tip: download a version first, then at least the structure can be "
+"imported again."
+
+#: templates/designer/app.html:214 templates/designer/home.html:26
+#, python-format
+msgid ""
+"App „%(name)s“ mit allen Tabellen, Daten, Seiten und Versionen endgültig "
+"löschen?"
+msgstr ""
+"Permanently delete app “%(name)s” with all tables, data, pages and versions?"
+
+#: templates/designer/block_edit.html:6
+msgid "Neuer HTML-Baustein"
+msgstr "New HTML block"
+
+#: templates/designer/block_edit.html:27
+msgid "Platzhalter"
+msgstr "Placeholders"
+
+#: templates/designer/block_edit.html:28
+msgid ""
+"Im HTML wird jeder Platzhalter durch den Wert ersetzt, den jemand im Seiten-"
+"Designer einträgt."
+msgstr ""
+"In the HTML, each placeholder is replaced by the value someone enters in the"
+" page designer."
+
+#: templates/designer/block_edit.html:30
+msgid ""
+"Immer verfügbar: nutzer (Name der angemeldeten Person), app (Name der App), "
+"datum (heutiges Datum)."
+msgstr ""
+"Always available: nutzer (name of the signed-in person), app (name of the "
+"app), datum (today’s date)."
+
+#: templates/designer/block_edit.html:33
+msgid "Vorschau mit Standardwerten"
+msgstr "Preview with default values"
+
+#: templates/designer/block_edit.html:37
+msgid "Die Vorschau erscheint nach dem ersten Speichern."
+msgstr "The preview appears after you save for the first time."
+
+#: templates/designer/block_edit.html:42
+msgid "Einstellungen:"
+msgstr "Settings:"
+
+#: templates/designer/block_edit.html:51
+msgid ""
+"Die Klassen der Oberfläche kannst du mitverwenden, zum Beispiel card, btn, "
+"muted, small, badge, notice."
+msgstr ""
+"You can use the interface classes too, for example card, btn, muted, small, "
+"badge, notice."
+
+#: templates/designer/blocks.html:9
+msgid ""
+"Eigene Bausteine stehen im Seiten-Designer aller Apps zur Verfügung, unter "
+"„Eigene Bausteine“."
+msgstr ""
+"Custom blocks are available in the page designer of every app, under “Custom"
+" blocks”."
+
+#: templates/designer/blocks.html:11
+msgid "Neuen HTML-Baustein anlegen"
+msgstr "Add a new HTML block"
+
+#: templates/designer/blocks.html:17
+msgid "HTML-Bausteine"
+msgstr "HTML blocks"
+
+#: templates/designer/blocks.html:18
+msgid ""
+"Eigenes HTML mit Platzhaltern für Einstellungen, die du selbst festlegst."
+msgstr "Your own HTML with placeholders for settings you define yourself."
+
+#: templates/designer/blocks.html:26
+#, python-format
+msgid ""
+"Baustein „%(name)s“ löschen? Auf Seiten, die ihn verwenden, verschwindet er."
+msgstr "Delete block “%(name)s”? It disappears from pages that use it."
+
+#: templates/designer/blocks.html:35
+msgid "Noch kein HTML-Baustein angelegt."
+msgstr "No HTML block yet."
+
+#: templates/designer/blocks.html:41
+msgid "Vorlagen"
+msgstr "Templates"
+
+#: templates/designer/blocks.html:42
+msgid ""
+"Fertig eingestellte Bausteine zum Wiederverwenden. Du speicherst sie im "
+"Seiten-Designer über „Als Vorlage speichern“."
+msgstr ""
+"Preconfigured blocks for reuse. You save them in the page designer with "
+"“Save as template”."
+
+#: templates/designer/blocks.html:50
+#, python-format
+msgid ""
+"Vorlage „%(name)s“ löschen? Bereits eingefügte Bausteine bleiben erhalten."
+msgstr "Delete template “%(name)s”? Blocks already inserted are kept."
+
+#: templates/designer/blocks.html:59
+msgid "Noch keine Vorlage gespeichert."
+msgstr "No template saved yet."
+
+#: templates/designer/entity.html:9
+msgid "Seite aus dieser Tabelle erzeugen"
+msgstr "Generate a page from this table"
+
+#: templates/designer/entity.html:12
+#, python-format
+msgid "%(n)s Eintrag gespeichert."
+msgid_plural "%(n)s Einträge gespeichert."
+msgstr[0] "%(n)s entry saved."
+msgstr[1] "%(n)s entries saved."
+
+#: templates/designer/entity.html:19
+msgid "In Listen"
+msgstr "In lists"
+
+#: templates/designer/entity.html:26
+msgid "Nicht im Formular, wird von einem Skript gefüllt"
+msgstr "Not in the form, filled by a script"
+
+#: templates/designer/entity.html:28
+msgid "Nach oben"
+msgstr "Move up"
+
+#: templates/designer/entity.html:29
+msgid "Nach unten"
+msgstr "Move down"
+
+#: templates/designer/entity.html:30
+#, python-format
+msgid "Feld „%(label)s“ löschen?"
+msgstr "Delete field “%(label)s”?"
+
+#: templates/designer/entity.html:36
+msgid "Noch keine Felder."
+msgstr "No fields yet."
+
+#: templates/designer/entity.html:43
+msgid "Einstellungen der Tabelle"
+msgstr "Table settings"
+
+#: templates/designer/entity.html:49
+#, python-format
+msgid "Tabelle „%(name)s“ mit allen %(count)s Einträgen löschen?"
+msgstr "Delete table “%(name)s” with all %(count)s entries?"
+
+#: templates/designer/entity.html:50
+msgid "Tabelle löschen"
+msgstr "Delete table"
+
+#: templates/designer/entity.html:57 tours.py:49
+msgid "Feld hinzufügen"
+msgstr "Add field"
+
+#: templates/designer/entity.html:61
+msgid "Hinzufügen"
+msgstr "Add"
+
+#: templates/designer/field.html:7
+msgid "Feld bearbeiten"
+msgstr "Edit field"
+
+#: templates/designer/field.html:8
+msgid ""
+"Der Typ sollte nur geändert werden, solange noch keine Daten erfasst sind."
+msgstr "Only change the type while no data has been entered yet."
+
+#: templates/designer/home.html:8
+msgid ""
+"Apps anlegen und bearbeiten. Nutzer sehen eine App erst, wenn du sie "
+"veröffentlichst."
+msgstr "Create and edit apps. Users only see an app once you publish it."
+
+#: templates/designer/home.html:18
+msgid "Status"
+msgstr "Status"
+
+#: templates/designer/home.html:35
+msgid "Noch keine App. Lege rechts die erste an."
+msgstr "No app yet. Create the first one on the right."
+
+#: templates/designer/home.html:41
+msgid "Neue App"
+msgstr "New app"
+
+#: templates/designer/home.html:42
+msgid "Anlegen"
+msgstr "Create"
+
+#: templates/designer/home.html:45
+msgid "App aus Datei anlegen"
+msgstr "Create app from file"
+
+#: templates/designer/home.html:46
+msgid ""
+"Für Apps, die in einer anderen Umgebung als Version heruntergeladen wurden. "
+"Daten werden nicht übertragen."
+msgstr ""
+"For apps downloaded as a version in another environment. Data is not "
+"transferred."
+
+#: templates/designer/home.html:49
+msgid "App-Datei"
+msgstr "App file"
+
+#: templates/designer/home.html:50
+msgid "Importieren"
+msgstr "Import"
+
+#: templates/designer/page.html:8
+#, python-format
+msgid "Zurück zu %(name)s"
+msgstr "Back to %(name)s"
+
+#: templates/designer/page.html:9
+msgid "Seitentitel"
+msgstr "Page title"
+
+#: templates/designer/page.html:13
+msgid "Vorschau"
+msgstr "Preview"
+
+#: templates/designer/page.html:14
+msgid "+ Baustein"
+msgstr "+ Block"
+
+#: templates/designer/page.html:20
+msgid "Bausteine suchen"
+msgstr "Search blocks"
+
+#: templates/designer/page.html:21
+msgid "Baustein suchen …"
+msgstr "Search blocks …"
+
+#: templates/designer/page.html:23
+msgid "Eigenen Baustein anlegen"
+msgstr "Create a custom block"
+
+#: templates/designer/query.html:6
+msgid "Neue Datenbank-Abfrage"
+msgstr "New database query"
+
+#: templates/designer/query.html:10
+msgid "Noch keine Datenquelle eingerichtet"
+msgstr "No data source configured yet"
+
+#: templates/designer/query.html:11
+msgid ""
+"Datenquellen richtet der Betrieb über Umgebungsvariablen ein, zum Beispiel "
+"DATASOURCE_LAGER=postgresql://… oder DATASOURCE_DWH=databricks://…. Details "
+"im Handbuch, Abschnitt „Datenquellen“."
+msgstr ""
+"Operations configures data sources through environment variables, for "
+"example DATASOURCE_LAGER=postgresql://… or DATASOURCE_DWH=databricks://…. "
+"Details in the manual, section “Data sources”."
+
+#: templates/designer/query.html:28
+msgid "In eine Tabelle spiegeln (optional)"
+msgstr "Mirror into a table (optional)"
+
+#: templates/designer/query.html:29
+msgid ""
+"Gespiegelte Daten stehen wie jede andere Tabelle für Listen, Diagramme, "
+"Skripte und die API bereit."
+msgstr ""
+"Mirrored data is available for lists, charts, scripts and the API like any "
+"other table."
+
+#: templates/designer/query.html:37 templates/designer/script.html:38
+msgid "Speichern und testen"
+msgstr "Save and test"
+
+#: templates/designer/query.html:38
+msgid "Speichern und jetzt spiegeln"
+msgstr "Save and mirror now"
+
+#: templates/designer/query.html:46
+msgid "Vorschau (erste 20 Zeilen)"
+msgstr "Preview (first 20 rows)"
+
+#: templates/designer/query.html:63
+msgid "Eingerichtete Datenquellen"
+msgstr "Configured data sources"
+
+#: templates/designer/query.html:67
+msgid "Keine."
+msgstr "None."
+
+#: templates/designer/query.html:71
+msgid "So nutzt du die Abfrage"
+msgstr "How to use the query"
+
+#: templates/designer/query.html:73
+msgid ""
+"Live anzeigen: Baustein „Datenbank-Abfrage“ im Seiten-Designer, optional mit"
+" automatischer Aktualisierung."
+msgstr ""
+"Show live: block “Database query” in the page designer, optionally with "
+"automatic refresh."
+
+#: templates/designer/query.html:74
+msgid ""
+"Spiegeln: Ergebnis wird in eine Tabelle übernommen, auf Knopfdruck oder "
+"regelmäßig im Hintergrund."
+msgstr ""
+"Mirror: the result is copied into a table, on demand or regularly in the "
+"background."
+
+#: templates/designer/query.html:75
+msgid ""
+"In Skripten (Python und JavaScript): db.saved() mit dem Kurznamen der "
+"Abfrage."
+msgstr ""
+"In scripts (Python and JavaScript): db.saved() with the short name of the "
+"query."
+
+#: templates/designer/query.html:80
+msgid "Letzter Abgleich"
+msgstr "Last sync"
+
+#: templates/designer/query.html:85
+#, python-format
+msgid "Tabelle „%(name)s“ öffnen"
+msgstr "Open table “%(name)s”"
+
+#: templates/designer/query.html:87
+msgid "Noch nicht gespiegelt."
+msgstr "Not mirrored yet."
+
+#: templates/designer/query.html:90
+#, python-format
+msgid "Abfrage „%(name)s“ löschen?"
+msgstr "Delete query “%(name)s”?"
+
+#: templates/designer/query.html:91
+msgid "Abfrage löschen"
+msgstr "Delete query"
+
+#: templates/designer/script.html:3 templates/designer/script.html:5
+#: templates/designer/script.html:7
+msgid "Neues Skript"
+msgstr "New script"
+
+#: templates/designer/script.html:33
+msgid ""
+"Im Seiten-Designer einem Button die Aktion „Skript ausführen“ und dieses "
+"Skript zuweisen."
+msgstr ""
+"In the page designer, give a button the action “Run a script” and choose "
+"this script."
+
+#: templates/designer/script.html:40
+msgid "Im Browser testen"
+msgstr "Test in the browser"
+
+#: templates/designer/script.html:43
+msgid ""
+"Testläufe arbeiten mit echten Daten: Was das Skript anlegt, ändert oder "
+"löscht, geschieht wirklich."
+msgstr ""
+"Test runs use real data: whatever the script creates, changes or deletes "
+"really happens."
+
+#: templates/designer/script.html:51
+msgid "Testlauf"
+msgstr "Test run"
+
+#: templates/designer/script.html:51
+msgid "erfolgreich"
+msgstr "succeeded"
+
+#: templates/designer/script.html:51
+msgid "fehlgeschlagen"
+msgstr "failed"
+
+#: templates/designer/script.html:52
+#, python-format
+msgid "Dauer: %(ms)s ms"
+msgstr "Duration: %(ms)s ms"
+
+#: templates/designer/script.html:55 templates/designer/script.html:63
+msgid "Bausteine gefüllt"
+msgstr "Blocks filled"
+
+#: templates/designer/script.html:56
+msgid "Meldungen"
+msgstr "Messages"
+
+#: templates/designer/script.html:60
+msgid "Testlauf im Browser"
+msgstr "Test run in the browser"
+
+#: templates/designer/script.html:67
+msgid "Kurzreferenz"
+msgstr "Quick reference"
+
+#: templates/designer/script.html:69
+msgid ""
+"Läuft im Browser der Person, die die Seite öffnet, mit ihren Rechten. Mit "
+"await auf Ergebnisse warten."
+msgstr ""
+"Runs in the browser of the person who opens the page, with their rights. Use"
+" await to wait for results."
+
+#: templates/designer/script.html:90
+msgid ""
+"Läuft auf dem Server, abgeschottet, mit Zugriff auf alle Tabellen dieser "
+"App."
+msgstr "Runs on the server, isolated, with access to all tables of this app."
+
+#: templates/designer/script.html:116
+msgid "Mehr im Handbuch, Abschnitt „Skripte“."
+msgstr "More in the manual, section “Scripts”."
+
+#: templates/designer/script.html:121
+msgid "Letzte Läufe"
+msgstr "Recent runs"
+
+#: templates/designer/script.html:133
+msgid "Bei Seitenaufrufen werden nur Fehler protokolliert."
+msgstr "For page views, only failures are logged."
+
+#: templates/designer/script.html:139
+#, python-format
+msgid "Skript „%(name)s“ löschen?"
+msgstr "Delete script “%(name)s”?"
+
+#: templates/designer/script.html:140
+msgid "Skript löschen"
+msgstr "Delete script"
+
+#: templates/registration/login.html:3 templates/registration/login.html:47
+#: templates/registration/login.html:68
+msgid "Anmelden"
+msgstr "Sign in"
+
+#: templates/registration/login.html:39
+msgid "Interne Apps aus Tabellen, Seiten und Bausteinen."
+msgstr "Internal apps from tables, pages and blocks."
+
+#: templates/registration/login.html:40
+msgid "Daten festlegen, Seite zusammenstellen, veröffentlichen."
+msgstr "Define data, assemble a page, publish."
+
+#: templates/registration/login.html:49
+msgid "Mit Firmenkonto anmelden"
+msgstr "Sign in with company account"
+
+#: templates/registration/login.html:50
+msgid "Du wirst zur zentralen Anmeldung (Keycloak) weitergeleitet."
+msgstr "You will be redirected to the central sign-in (Keycloak)."
+
+#: templates/registration/login.html:53
+msgid "oder mit lokalem Konto"
+msgstr "or with a local account"
+
+#: templates/registration/login.html:55
+msgid "Benutzername oder Passwort stimmen nicht."
+msgstr "Username or password is incorrect."
+
+#: templates/registration/login.html:61
+msgid "Benutzername"
+msgstr "Username"
+
+#: templates/registration/login.html:65
+msgid "Passwort"
+msgstr "Password"
+
+#: templates/registration/login.html:71
+msgid ""
+"Kein Zugang? Wende dich an die Person, die den Baukasten bei euch betreut."
+msgstr ""
+"No access? Contact the person who looks after Baukasten in your "
+"organisation."
+
+#: tours.py:11
+msgid "Willkommen im Baukasten"
+msgstr "Welcome to Baukasten"
+
+#: tours.py:12
+msgid ""
+"Hier arbeitest du mit Apps, die bei euch gebaut wurden. Die Führung zeigt "
+"dir in einer Minute, wo was ist."
+msgstr ""
+"Here you work with apps built in your organisation. The tour shows you where"
+" things are in one minute."
+
+#: tours.py:13
+msgid "Deine Apps"
+msgstr "Your apps"
+
+#: tours.py:14
+msgid ""
+"Jede Kachel ist eine App. Ein Klick öffnet sie. Du siehst nur Apps, die für "
+"dich freigegeben sind."
+msgstr ""
+"Each tile is an app. A click opens it. You only see apps shared with you."
+
+#: tours.py:15
+msgid "Zurück zur Übersicht"
+msgstr "Back to the overview"
+
+#: tours.py:16
+msgid "Über das Logo kommst du von überall wieder auf diese Seite."
+msgstr "The logo takes you back to this page from anywhere."
+
+#: tours.py:18
+msgid ""
+"Hier baust und änderst du Apps: Daten festlegen, Seiten zusammenstellen, "
+"freigeben."
+msgstr ""
+"This is where you build and change apps: define data, assemble pages, share."
+
+#: tours.py:20
+msgid "Die Oberfläche gibt es auf Deutsch und Englisch. Hier wechselst du."
+msgstr "The interface is available in German and English. Switch here."
+
+#: tours.py:21
+msgid "Führung erneut starten"
+msgstr "Restart the tour"
+
+#: tours.py:22
+msgid "Auf Seiten mit einer Führung startet das Fragezeichen sie erneut."
+msgstr "On pages that have a tour, the question mark starts it again."
+
+#: tours.py:25
+msgid "So entsteht eine App"
+msgstr "How an app is made"
+
+#: tours.py:26
+msgid ""
+"In drei Schritten: Erstens Daten festlegen (Tabellen und Felder). Zweitens "
+"Seiten zusammenstellen. Drittens veröffentlichen. Programmieren musst du "
+"dafür nicht."
+msgstr ""
+"In three steps: first define the data (tables and fields), second assemble "
+"pages, third publish. No programming required."
+
+#: tours.py:27
+msgid "Neue App anlegen"
+msgstr "Create a new app"
+
+#: tours.py:28
+msgid ""
+"Gib der App einen Namen und ein Symbol. Danach landest du direkt in ihren "
+"Einstellungen."
+msgstr ""
+"Give the app a name and an icon. You are then taken straight to its "
+"settings."
+
+#: tours.py:29
+msgid "Vorhandene Apps"
+msgstr "Existing apps"
+
+#: tours.py:30
+msgid ""
+"Hier findest du alle Apps wieder. „Entwurf“ heißt: nur Designer sehen sie."
+msgstr "All apps are listed here. “Draft” means only designers can see it."
+
+#: tours.py:32
+msgid ""
+"Wenn die mitgelieferten Bausteine nicht reichen, legst du hier eigene an und"
+" verwendest sie in allen Apps."
+msgstr ""
+"If the built-in blocks are not enough, create your own here and use them in "
+"every app."
+
+#: tours.py:35
+msgid "Schritt 1: Daten"
+msgstr "Step 1: Data"
+
+#: tours.py:36
+msgid ""
+"Eine Tabelle beschreibt, was die App verwaltet, zum Beispiel Geräte oder "
+"Anträge. Lege eine an und gib ihr Felder."
+msgstr ""
+"A table describes what the app manages, for example devices or requests. Add"
+" one and give it fields."
+
+#: tours.py:37
+msgid "Schritt 2: Seiten"
+msgstr "Step 2: Pages"
+
+#: tours.py:38
+msgid ""
+"Seiten sind das, was Nutzer sehen. Du stellst sie im Seiten-Designer aus "
+"Bausteinen zusammen. Aus jeder Tabelle lässt sich auch eine fertige Seite "
+"erzeugen."
+msgstr ""
+"Pages are what users see. You assemble them from blocks in the page "
+"designer. A ready-made page can also be generated from every table."
+
+#: tours.py:39
+msgid "Schritt 3: Freigabe"
+msgstr "Step 3: Sharing"
+
+#: tours.py:40
+msgid ""
+"Solange „Veröffentlicht“ nicht angehakt ist, sehen nur Designer die App. Mit"
+" Gruppen beschränkst du sie auf bestimmte Nutzer."
+msgstr ""
+"As long as “Published” is unchecked, only designers see the app. Use groups "
+"to limit it to certain users."
+
+#: tours.py:41
+msgid "Optional: API"
+msgstr "Optional: API"
+
+#: tours.py:42
+msgid ""
+"Andere Programme können die Daten über eine Schnittstelle lesen und "
+"schreiben. Dafür schaltest du Tabellen frei und erzeugst einen Schlüssel."
+msgstr ""
+"Other programs can read and write the data through an interface. Enable "
+"tables for this and create a key."
+
+#: tours.py:43
+msgid "Ergebnis ansehen"
+msgstr "See the result"
+
+#: tours.py:44
+msgid ""
+"So sieht die App für Nutzer aus. Du kannst jederzeit hin- und herwechseln."
+msgstr ""
+"This is how the app looks to users. You can switch back and forth at any "
+"time."
+
+#: tours.py:47
+msgid "Felder der Tabelle"
+msgstr "Fields of the table"
+
+#: tours.py:48
+msgid ""
+"Jedes Feld ist eine Angabe pro Eintrag, etwa Bezeichnung, Datum oder Preis. "
+"Das erste Feld dient als Name des Eintrags."
+msgstr ""
+"Each field is one piece of information per entry, such as label, date or "
+"price. The first field serves as the name of the entry."
+
+#: tours.py:50
+msgid ""
+"Wähle einen Typ: Text, Zahl, Datum, Ja/Nein, Auswahl aus festen Werten oder "
+"ein Verweis auf eine andere Tabelle."
+msgstr ""
+"Choose a type: text, number, date, yes/no, a choice from fixed values or a "
+"reference to another table."
+
+#: tours.py:51
+msgid "Fertige Seite erzeugen"
+msgstr "Generate a ready-made page"
+
+#: tours.py:52
+msgid ""
+"Ein Klick erzeugt eine Seite mit Liste, Suche, Anlegen, Bearbeiten und "
+"Löschen. Du kannst sie danach frei umbauen."
+msgstr ""
+"One click generates a page with a list, search, create, edit and delete. You"
+" can freely rework it afterwards."
+
+#: tours.py:55
+msgid "Der Seiten-Designer"
+msgstr "The page designer"
+
+#: tours.py:56
+msgid ""
+"Hier stellst du eine Seite aus Bausteinen zusammen. Links wählst du aus, in "
+"der Mitte ordnest du an, rechts stellst du ein."
+msgstr ""
+"Here you assemble a page from blocks. Choose on the left, arrange in the "
+"middle, configure on the right."
+
+#: tours.py:57
+msgid "Bausteine"
+msgstr "Blocks"
+
+#: tours.py:58
+msgid ""
+"Ziehe einen Baustein auf die Seite oder klicke ihn an. Sie sind nach Zweck "
+"gruppiert. Ganz unten stehen eigene Bausteine und Vorlagen."
+msgstr ""
+"Drag a block onto the page or click it. They are grouped by purpose. Custom "
+"blocks and templates are at the bottom."
+
+#: tours.py:59
+msgid "Arbeitsfläche"
+msgstr "Canvas"
+
+#: tours.py:60
+msgid ""
+"Du siehst die Seite mit echten Daten. Bausteine verschiebst du per Ziehen. "
+"Ein Klick wählt einen Baustein aus."
+msgstr ""
+"You see the page with real data. Move blocks by dragging. A click selects a "
+"block."
+
+#: tours.py:62
+msgid ""
+"Für den gewählten Baustein: Breite, Beschriftung, welche Tabelle er zeigt. "
+"Hier kannst du ihn auch duplizieren, als Vorlage speichern oder entfernen."
+msgstr ""
+"For the selected block: width, label, which table it shows. You can also "
+"duplicate it, save it as a template or remove it here."
+
+#: tours.py:63
+msgid "Speichern und ansehen"
+msgstr "Save and view"
+
+#: tours.py:64
+msgid ""
+"Änderungen gelten erst nach „Speichern“. „Vorschau“ öffnet die Seite so, wie"
+" Nutzer sie sehen."
+msgstr ""
+"Changes only take effect after “Save”. “Preview” opens the page as users see"
+" it."
+
+#: tours.py:68
+msgid ""
+"Ein Skript ist eigene Logik in Python oder JavaScript. Python läuft auf dem "
+"Server und darf alle Tabellen dieser App lesen und schreiben. JavaScript "
+"läuft im Browser mit den Rechten der Person, die die Seite öffnet."
+msgstr ""
+"A script is your own logic in Python or JavaScript. Python runs on the "
+"server and may read and write all tables of this app. JavaScript runs in the"
+" browser with the rights of the person who opens the page."
+
+#: tours.py:69
+msgid "Wann es läuft"
+msgstr "When it runs"
+
+#: tours.py:70
+msgid ""
+"Beim Öffnen einer Seite, per Button, nach dem Speichern eines Eintrags oder "
+"zeitgesteuert im Hintergrund. Die letzten beiden gibt es nur für Python."
+msgstr ""
+"When a page opens, by button, after an entry is saved or on a schedule in "
+"the background. The last two are Python only."
+
+#: tours.py:71
+msgid "Bausteine füllen"
+msgstr "Filling blocks"
+
+#: tours.py:72
+msgid ""
+"Gib einem Baustein im Seiten-Designer einen Namen. Mit ui.set(\"name\", "
+"value=…) füllt das Skript ihn. Rechts steht eine Kurzreferenz."
+msgstr ""
+"Give a block a name in the page designer. The script fills it with "
+"ui.set(\"name\", value=…). A quick reference is on the right."
+
+#: tours.py:76
+msgid ""
+"Ein eigener Baustein besteht aus HTML und aus Einstellungen, die du selbst "
+"festlegst. Programmieren ist dafür nicht nötig."
+msgstr ""
+"A custom block consists of HTML and of settings you define yourself. No "
+"programming is needed."
+
+#: tours.py:77
+msgid "Einstellungen festlegen"
+msgstr "Define settings"
+
+#: tours.py:78
+msgid ""
+"Jede Zeile wird zu einem Eingabefeld im Seiten-Designer. „Titel = Hallo“ "
+"erzeugt das Feld „Titel“ mit dem Standardwert „Hallo“."
+msgstr ""
+"Each line becomes an input field in the page designer. “Titel = Hallo” "
+"creates the field “Titel” with the default value “Hallo”."
+
+#: tours.py:79
+msgid "HTML mit Platzhaltern"
+msgstr "HTML with placeholders"
+
+#: tours.py:80
+msgid ""
+"Wo im HTML {{ titel }} steht, erscheint später der eingestellte Wert. "
+"Skripte und unsichere Angaben werden beim Speichern entfernt."
+msgstr ""
+"Wherever the HTML contains {{ titel }}, the configured value appears later. "
+"Scripts and unsafe attributes are removed on saving."
+
+#: versions.py:161
+#, python-format
+msgid "Automatisch gesichert vor Rückkehr zu Version %(number)s"
+msgstr "Saved automatically before returning to version %(number)s"
+
+#: views.py:113
+#, python-format
+msgid "Das Skript „%(name)s“ ist fehlgeschlagen."
+msgstr "The script “%(name)s” failed."
+
+#: views.py:116
+msgid "Erledigt."
+msgstr "Done."
+
+#: views.py:174
+msgid "Gespeichert."
+msgstr "Saved."
+
+#: views.py:209
+msgid "Gelöscht."
+msgstr "Deleted."

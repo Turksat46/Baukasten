@@ -1,0 +1,7 @@
+{% load i18n %}{% if page_obj.has_other_pages %}
+  <div class="pager">
+    {% if page_obj.has_previous %}<a href="?p_{{ bid }}={{ page_obj.previous_page_number }}{% if query %}&amp;q_{{ bid }}={{ query|urlencode }}{% endif %}">{% translate "Zurück" %}</a>{% endif %}
+    <span class="muted">{% blocktranslate with number=page_obj.number total=page_obj.paginator.num_pages %}Seite {{ number }} von {{ total }}{% endblocktranslate %}</span>
+    {% if page_obj.has_next %}<a href="?p_{{ bid }}={{ page_obj.next_page_number }}{% if query %}&amp;q_{{ bid }}={{ query|urlencode }}{% endif %}">{% translate "Weiter" %}</a>{% endif %}
+  </div>
+{% endif %}

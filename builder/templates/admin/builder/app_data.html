@@ -1,0 +1,64 @@
+{% extends "admin/base_site.html" %}
+{% load i18n admin_urls %}
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+  <a href="{% url 'admin:index' %}">{% translate "Start" %}</a> ›
+  <a href="{% url 'admin:builder_app_changelist' %}">{% translate "Apps" %}</a> ›
+  <a href="{% url 'admin:builder_app_change' app_obj.pk %}">{{ app_obj.name }}</a> ›
+  {% translate "Daten" %}
+</div>
+{% endblock %}
+{% block extrastyle %}{{ block.super }}
+<style>
+  .data-nav { margin: 0 0 20px; display: flex; flex-wrap: wrap; gap: 6px 14px; }
+  .data-table { margin-bottom: 34px; }
+  .data-table .module { overflow-x: auto; }
+  .data-table table { width: 100%; }
+  .data-table td { white-space: nowrap; max-width: 28em; overflow: hidden; text-overflow: ellipsis; }
+  .data-meta { color: var(--body-quiet-color); font-weight: normal; font-size: 12px; margin-left: 8px; }
+  .data-pager { margin-top: 6px; }
+</style>
+{% endblock %}
+{% block content %}
+<div id="content-main">
+  <p>{% blocktranslate with name=app_obj.name %}Alle Tabellen der App „{{ name }}“ mit ihren Einträgen, die neuesten zuerst.{% endblocktranslate %}
+     <a href="{% url 'designer_app' app_obj.slug %}">{% translate "Im Designer öffnen" %}</a> ·
+     <a href="{% url 'page' app_obj.slug %}">{% translate "App öffnen" %}</a></p>
+  {% if tables|length > 1 %}
+    <p class="data-nav">{% for t in tables %}<a href="#t{{ t.entity.pk }}">{{ t.entity.name }} ({{ t.page.paginator.count }})</a>{% endfor %}</p>
+  {% endif %}
+  {% for t in tables %}
+    <div class="data-table" id="t{{ t.entity.pk }}">
+      <h2>{{ t.entity.name }}
+        <span class="data-meta">{{ t.entity.slug }} · {% blocktranslate count n=t.page.paginator.count %}{{ n }} Eintrag{% plural %}{{ n }} Einträge{% endblocktranslate %}{% if t.synced %} · {% translate "gespiegelt aus einer Datenquelle" %}{% endif %}{% if t.entity.api_enabled %} · API{% endif %}</span>
+      </h2>
+      <div class="module">
+        <table>
+          <thead><tr><th>#</th>{% for f in t.fields %}<th>{{ f.label }}</th>{% endfor %}<th>{% translate "Geändert" %}</th></tr></thead>
+          <tbody>
+            {% for row in t.rows %}
+              <tr>
+                <td>{% if can_change_record %}<a href="{% url 'admin:builder_record_change' row.record.pk %}">{{ row.record.pk }}</a>{% else %}{{ row.record.pk }}{% endif %}</td>
+                {% for cell in row.cells %}<td title="{{ cell }}">{{ cell|default:"–" }}</td>{% endfor %}
+                <td>{{ row.record.updated_at|date:"SHORT_DATETIME_FORMAT" }}</td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="{{ t.fields|length|add:2 }}">{% translate "Noch keine Einträge." %}</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% if t.page.has_other_pages %}
+        <p class="data-pager">
+          {% if t.page.has_previous %}<a href="?s_{{ t.entity.pk }}={{ t.page.previous_page_number }}#t{{ t.entity.pk }}">‹ {% translate "Zurück" %}</a>{% endif %}
+          {% blocktranslate with number=t.page.number total=t.page.paginator.num_pages %}Seite {{ number }} von {{ total }}{% endblocktranslate %}
+          {% if t.page.has_next %}<a href="?s_{{ t.entity.pk }}={{ t.page.next_page_number }}#t{{ t.entity.pk }}">{% translate "Weiter" %} ›</a>{% endif %}
+          · <a href="{% url 'admin:builder_record_changelist' %}?app={{ app_obj.pk }}&tabelle={{ t.entity.pk }}">{% translate "Alle in der Liste" %}</a>
+        </p>
+      {% endif %}
+    </div>
+  {% empty %}
+    <p>{% translate "Diese App hat noch keine Tabelle." %}</p>
+  {% endfor %}
+</div>
+{% endblock %}

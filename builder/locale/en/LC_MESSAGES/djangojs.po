@@ -1,0 +1,175 @@
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Baukasten\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-16 23:19+0100\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: en\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: static/builder/designer.js:91 static/builder/designer.js:445
+#: static/builder/designer.js:446
+msgid "Nicht gespeichert"
+msgstr "Not saved"
+
+#: static/builder/designer.js:153
+msgid "Vorlagen"
+msgstr "Templates"
+
+#: static/builder/designer.js:165
+msgid "Kein Baustein passt zur Suche."
+msgstr "No block matches the search."
+
+#: static/builder/designer.js:195
+msgid "Diese Seite ist noch leer"
+msgstr "This page is still empty"
+
+#: static/builder/designer.js:196
+msgid "Ziehe links einen Baustein hierher oder klicke ihn an."
+msgstr "Drag a block here from the left or click it."
+
+#: static/builder/designer.js:203
+msgid "Vorschau wird geladen …"
+msgstr "Loading preview …"
+
+#: static/builder/designer.js:264 static/builder/designer.js:267
+#: static/builder/designer.js:268 static/builder/designer.js:269
+#: static/builder/designer.js:270 static/builder/designer.js:271
+msgid "– wählen –"
+msgstr "– choose –"
+
+#: static/builder/designer.js:324
+msgid "Diese App hat noch keine Tabelle. Lege zuerst eine an."
+msgstr "This app has no table yet. Add one first."
+
+#: static/builder/designer.js:349
+msgid "Einstellungen"
+msgstr "Settings"
+
+#: static/builder/designer.js:350
+msgid "Wähle einen Baustein auf der Seite aus, um ihn einzustellen."
+msgstr "Select a block on the page to configure it."
+
+#: static/builder/designer.js:363
+msgid "Breite"
+msgstr "Width"
+
+#: static/builder/designer.js:366
+msgid "z. B. ergebnis"
+msgstr "e.g. result"
+
+#: static/builder/designer.js:375
+msgid "Name für Skripte"
+msgstr "Name for scripts"
+
+#: static/builder/designer.js:376
+msgid "Optional. Skripte füllen den Baustein über diesen Namen."
+msgstr "Optional. Scripts fill the block through this name."
+
+#: static/builder/designer.js:384
+msgid "Automatisch aktualisieren"
+msgstr "Refresh automatically"
+
+#: static/builder/designer.js:392
+msgid "Nach vorn"
+msgstr "Move forward"
+
+#: static/builder/designer.js:393
+msgid "Nach hinten"
+msgstr "Move back"
+
+#: static/builder/designer.js:394
+msgid "Duplizieren"
+msgstr "Duplicate"
+
+#: static/builder/designer.js:402
+msgid "Entfernen"
+msgstr "Remove"
+
+#: static/builder/designer.js:410
+msgid "Name der Vorlage"
+msgstr "Template name"
+
+#: static/builder/designer.js:412
+msgid "Als Vorlage speichern"
+msgstr "Save as template"
+
+#: static/builder/designer.js:414 static/builder/designer.js:419
+#: static/builder/designer.js:441
+msgid "Speichern fehlgeschlagen. Bitte erneut versuchen."
+msgstr "Saving failed. Please try again."
+
+#: static/builder/designer.js:417
+msgid "Vorlage gespeichert. Sie steht links unter „Vorlagen“."
+msgstr "Template saved. You find it on the left under “Templates”."
+
+#: static/builder/designer.js:422
+msgid "Wiederverwenden"
+msgstr "Reuse"
+
+#: static/builder/designer.js:432
+msgid "Speichere …"
+msgstr "Saving …"
+
+#: static/builder/designer.js:438
+msgid "Gespeichert"
+msgstr "Saved"
+
+#: static/builder/editor.js:62
+msgid "läuft …"
+msgstr "running …"
+
+#: static/builder/editor.js:72
+msgid "erfolgreich"
+msgstr "succeeded"
+
+#: static/builder/editor.js:72
+msgid "fehlgeschlagen"
+msgstr "failed"
+
+#: static/builder/runtime.js:149
+msgid "Unbekannte Anfrage."
+msgstr "Unknown request."
+
+#: static/builder/runtime.js:167
+#, javascript-format
+msgid "Zeitlimit von %s Sekunden überschritten."
+msgstr "Time limit of %s seconds exceeded."
+
+#: static/builder/runtime.js:169
+#, javascript-format
+msgid "Zeile %s: %s"
+msgstr "Line %s: %s"
+
+#: static/builder/runtime.js:184
+#, javascript-format
+msgid "Skript „%s“: %s"
+msgstr "Script “%s”: %s"
+
+#: static/builder/tour.js:80
+#, javascript-format
+msgid "Schritt %s von %s"
+msgstr "Step %s of %s"
+
+#: static/builder/tour.js:87
+msgid "Führung beenden"
+msgstr "End tour"
+
+#: static/builder/tour.js:94
+msgid "Zurück"
+msgstr "Back"
+
+#: static/builder/tour.js:99
+msgid "Fertig"
+msgstr "Done"
+
+#: static/builder/tour.js:99
+msgid "Weiter"
+msgstr "Next"

@@ -1,0 +1,42 @@
+{% extends "admin/index.html" %}
+{% load i18n baukasten %}
+{% block content %}
+{% if perms.builder.view_app %}
+{% admin_app_overview as overview %}
+<div class="module baukasten-apps">
+  <table>
+    <caption>{% translate "Apps im Baukasten" %}</caption>
+    <thead>
+      <tr><th>{% translate "App" %}</th><th>{% translate "Tabellen" %}</th><th>{% translate "Einträge" %}</th><th>{% translate "Seiten" %}</th><th>{% translate "Skripte" %}</th><th></th></tr>
+    </thead>
+    <tbody>
+      {% for item in overview %}
+        <tr>
+          <th scope="row"><a href="{% url 'admin:builder_app_change' item.pk %}">{{ item.icon }} {{ item.name }}</a>{% if not item.published %} <span class="baukasten-draft">{% translate "Entwurf" %}</span>{% endif %}</th>
+          <td>{{ item.n_tables }}</td>
+          <td><a href="{% url 'admin:builder_record_changelist' %}?app={{ item.pk }}">{{ item.n_records }}</a></td>
+          <td>{{ item.n_pages }}</td>
+          <td><a href="{% url 'admin:builder_script_changelist' %}?app={{ item.pk }}">{{ item.n_scripts }}</a></td>
+          <td>{% if perms.builder.view_record %}<a class="viewlink" href="{% url 'admin:builder_app_data' item.pk %}">{% translate "Daten ansehen" %}</a>{% endif %}</td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="6">{% translate "Noch keine App." %}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+{{ block.super }}
+{% endblock %}
+{% block extrastyle %}{{ block.super }}
+<style>
+  .baukasten-apps { margin-bottom: 30px; }
+  @media (max-width: 767px) { .baukasten-apps { overflow-x: auto; } .baukasten-apps table { min-width: 100%; } }
+  .baukasten-apps table { width: 100%; }
+  .baukasten-apps td, .baukasten-apps th { vertical-align: middle; }
+  .baukasten-apps thead th, .baukasten-apps td { white-space: nowrap; }
+  .baukasten-apps td { text-align: right; width: 1%; }
+  .baukasten-apps td:last-child { text-align: left; }
+  .baukasten-draft { font-size: 11px; color: var(--body-quiet-color); border: 1px solid var(--hairline-color); border-radius: 8px; padding: 0 6px; }
+</style>
+{% endblock %}

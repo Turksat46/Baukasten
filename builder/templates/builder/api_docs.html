@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% block title %}API – {{ app.name }}{% endblock %}
+{% block nav %}{% include "builder/_appnav.html" %}{% endblock %}
+{% block content %}
+<p class="crumbs"><a href="{% url 'api_index' %}">{% translate "API-Dokumentation" %}</a> / {{ app.name }}</p>
+<div class="page-head">
+  <div>
+    <h1>{% blocktranslate with name=app.name %}API von „{{ name }}“{% endblocktranslate %}</h1>
+    <p class="subtitle">{% translate "Andere Programme lesen und schreiben hier die Einträge dieser App. Diese Seite zeigt alle Adressen, Felder und Antworten; unten lässt sich jede Anfrage direkt ausprobieren." %}</p>
+  </div>
+  {% if can_design %}<a class="btn btn-secondary" href="{% url 'designer_app' app.slug %}#api">{% translate "Freigaben und Schlüssel" %}</a>{% endif %}
+</div>
+
+<div class="grid">
+  <div class="col col-4 api-docs-side">
+    <section class="card">
+      <h3>{% translate "In drei Schritten" %}</h3>
+      <ol class="steps">
+        <li>{% translate "Ein Designer schaltet die gewünschten Tabellen frei und erzeugt einen Schlüssel." %}</li>
+        <li>{% translate "Jede Anfrage schickt den Schlüssel im Kopf mit:" %}<pre class="json">Authorization: Bearer bk_…</pre></li>
+        <li>{% translate "Antworten und Daten sind JSON. Felder heißen wie ihr Kurzname." %}</li>
+      </ol>
+      <h4 class="spaced">{% translate "Basisadresse" %}</h4>
+      <pre class="json">{{ base }}</pre>
+      <h4 class="spaced">{% translate "Beispiel" %}</h4>
+      <pre class="json">curl -H "Authorization: Bearer $KEY" \
+  {{ base }}{% if tables %}{{ tables.0.slug }}/{% endif %}</pre>
+      <p class="muted small">{% translate "In Python geht es einfacher mit der Bibliothek baukasten-client (siehe Handbuch)." %}</p>
+      <h4 class="spaced">{% translate "Für Werkzeuge" %}</h4>
+      <p class="small">{% blocktranslate %}OpenAPI-Beschreibung für Postman, Insomnia oder Code-Generatoren: <code>{{ public_spec_url }}</code> (mit Schlüssel abrufbar){% endblocktranslate %}</p>
+      <p class="small"><a href="{{ spec_url }}" download="{{ app.slug }}-openapi.json">{% translate "OpenAPI-Datei herunterladen" %}</a></p>
+    </section>
+  </div>
+
+  <div class="col col-8">
+    <section class="card">
+      <h3>{% translate "Alle Anfragen auf einen Blick" %}</h3>
+      {% if tables %}
+        <table class="endpoint-table">
+          <tbody>
+            {% for op in operations %}
+              {% ifchanged op.tag %}<tr class="endpoint-group"><th colspan="3">{{ op.tag }}</th></tr>{% endifchanged %}
+              <tr>
+                <td><span class="method method-{{ op.method|lower }}">{{ op.method }}</span></td>
+                <td><code>{{ op.path }}</code></td>
+                <td class="muted">{{ op.summary }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <p class="empty">{% translate "Noch keine Tabelle dieser App ist für die API freigeschaltet." %}{% if can_design %} <a href="{% url 'designer_app' app.slug %}">{% translate "Im Designer freischalten" %}</a>{% endif %}</p>
+      {% endif %}
+    </section>
+
+    {% for table in tables %}
+      <section class="card">
+        <h3>{{ table.name }} <code class="key">{{ table.slug }}</code></h3>
+        <table>
+          <thead><tr><th>{% translate "Feld" %}</th><th>{% translate "Kurzname" %}</th><th>{% translate "Typ" %}</th><th>{% translate "Pflicht" %}</th></tr></thead>
+          <tbody>
+            <tr><td class="muted">{% translate "Nummer" %}</td><td><code>id</code></td><td>{% translate "Ganze Zahl" %}</td><td class="muted">{% translate "automatisch" %}</td></tr>
+            {% for field in table.fields.all %}
+              <tr>
+                <td>{{ field.label }}</td>
+                <td><code>{{ field.key }}</code></td>
+                <td>{{ field.get_type_display }}{% if field.type == "choice" %}: <span class="muted">{{ field.choice_list|join:", " }}</span>{% endif %}{% if field.reference %} → {{ field.reference.name }}{% endif %}</td>
+                <td>{% if field.required %}{% translate "Ja" %}{% else %}–{% endif %}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </section>
+    {% endfor %}
+  </div>
+</div>
+
+{% if tables %}
+<section class="card swagger-card">
+  <h3>{% translate "Ausprobieren" %}</h3>
+  <p class="muted">{% translate "Auf „Authorize“ klicken und einen Schlüssel dieser App eintragen. Danach bei einer Anfrage „Try it out“ und „Execute“ wählen. Achtung: Anfragen wirken auf echte Daten." %}</p>
+  <iframe class="swagger-frame" id="swagger-frame" src="{% url 'api_docs_ui' app.slug %}" title="{% translate 'Swagger UI' %}"></iframe>
+</section>
+{% endif %}
+{% endblock %}
+{% block scripts %}
+<script>
+  // Höhe des eingebetteten Swagger UI an den Inhalt anpassen (gleiche Herkunft, daher erlaubt).
+  (function () {
+    var frame = document.getElementById("swagger-frame");
+    if (!frame) return;
+    frame.addEventListener("load", function () {
+      var doc = frame.contentDocument;
+      if (!doc || !window.ResizeObserver) return;
+      new ResizeObserver(function () { frame.style.height = doc.documentElement.scrollHeight + "px"; })
+        .observe(doc.body);
+    });
+  })();
+</script>
+{% endblock %}

@@ -1,0 +1,296 @@
+{% load i18n baukasten %}{% if loading %}
+  <section class="card block-loading" data-pending="{{ retry|default:0 }}" aria-busy="true">
+    <div class="card-head"><h3>{{ loading_title }}</h3></div>
+    <p class="muted small" role="status">{{ loading_text|default:_("Daten werden geladen …") }}</p>
+    <div class="skeleton" aria-hidden="true"><span></span><span></span><span></span></div>
+  </section>
+
+{% elif error %}
+  <div class="block-error">{{ error }}</div>
+
+{% elif type == "heading" %}
+  <div class="heading-block heading-{{ p.level }}">
+    {% if p.level == "1" %}<h1 data-slot="text">{{ p.text }}</h1>{% elif p.level == "3" %}<h3 data-slot="text">{{ p.text }}</h3>{% else %}<h2 data-slot="text">{{ p.text }}</h2>{% endif %}
+    <p class="subtitle" data-slot="subtitle"{% if not p.subtitle %} hidden{% endif %}>{{ p.subtitle }}</p>
+  </div>
+
+{% elif type == "text" %}
+  <p class="text-block" data-slot="text">{{ p.text|linebreaksbr }}</p>
+
+{% elif type == "notice" %}
+  <div class="notice notice-{{ p.tone|default:'info' }}" role="note" data-tone>
+    <strong class="notice-title" data-slot="title"{% if not p.title %} hidden{% endif %}>{{ p.title }}</strong>
+    <span data-slot="text">{{ p.text|linebreaksbr }}</span>
+  </div>
+
+{% elif type == "image" %}
+  <figure class="image-block">
+    <img src="{{ src }}" alt="{{ p.alt }}" loading="lazy">
+    {% if p.caption %}<figcaption>{{ p.caption }}</figcaption>{% endif %}
+  </figure>
+
+{% elif type == "greeting" %}
+  <div class="greeting">
+    <p class="greeting-date">{{ today }}</p>
+    <h1>{% blocktranslate %}Hallo {{ name }}{% endblocktranslate %}</h1>
+    {% if p.text %}<p class="subtitle">{{ p.text }}</p>{% endif %}
+  </div>
+
+{% elif type == "table" %}
+  <section class="card">
+    <div class="card-head">
+      <h3 data-slot="title">{{ p.title|default:entity.name|tr }}</h3>
+      <div class="card-tools">
+        {% if p.searchable %}
+          <form method="get" class="search">
+            <input type="search" name="q_{{ bid }}" value="{{ query }}" placeholder="{% translate 'Suchen …' %}" aria-label="{% translate 'Suchen' %}">
+            <button class="btn btn-secondary">{% translate "Suchen" %}</button>
+          </form>
+        {% endif %}
+        {% if entity.allow_create %}
+          <a class="btn" href="{% url 'record_create' app.slug entity.slug %}?next={{ next|urlencode }}">{% translate "Neu" %}</a>
+        {% endif %}
+      </div>
+    </div>
+    {% if rows %}
+      <div class="table-wrap">
+        <table class="stack">
+          <thead><tr>{% for column in columns %}<th>{{ column.label|tr }}</th>{% endfor %}<th><span class="visually-hidden">{% translate "Aktionen" %}</span></th></tr></thead>
+          <tbody>
+            {% for row in rows %}
+              <tr>
+                {% for label, cell, href in row.cells %}<td data-label="{{ label }}">{% if href %}<a href="{{ href }}">{{ cell }}</a>{% else %}{{ cell }}{% endif %}</td>{% endfor %}
+                <td class="row-actions">
+                  {% if entity.allow_edit %}
+                    <a href="{% url 'record_edit' app.slug entity.slug row.record.pk %}?next={{ next|urlencode }}">{% translate "Bearbeiten" %}</a>
+                  {% endif %}
+                  {% if entity.allow_delete %}
+                    <form method="post" action="{% url 'record_delete' app.slug entity.slug row.record.pk %}" data-confirm="{% translate 'Eintrag wirklich löschen?' %}">
+                      {% csrf_token %}<input type="hidden" name="next" value="{{ next }}">
+                      <button class="link danger">{% translate "Löschen" %}</button>
+                    </form>
+                  {% endif %}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% include "builder/_pager.html" %}
+    {% else %}
+      <p class="empty">{% if query %}{% blocktranslate %}Keine Treffer für „{{ query }}“.{% endblocktranslate %}{% else %}{% translate "Noch keine Einträge. Mit „Neu“ legst du den ersten an." %}{% endif %}</p>
+    {% endif %}
+  </section>
+
+{% elif type == "cards" %}
+  <section class="cards-block">
+    <div class="card-head">
+      <h3 data-slot="title">{{ p.title|default:entity.name|tr }}</h3>
+      {% if entity.allow_create %}
+        <a class="btn" href="{% url 'record_create' app.slug entity.slug %}?next={{ next|urlencode }}">{% translate "Neu" %}</a>
+      {% endif %}
+    </div>
+    {% if cards %}
+      <div class="record-cards">
+        {% for card in cards %}
+          <article class="record-card">
+            <h4 class="record-title">
+              {% if entity.allow_edit %}<a href="{% url 'record_edit' app.slug entity.slug card.record.pk %}?next={{ next|urlencode }}">{{ card.title }}</a>{% else %}{{ card.title }}{% endif %}
+            </h4>
+            <dl>
+              {% for label, value in card.details %}<div><dt>{{ label }}</dt><dd>{{ value|default:"–" }}</dd></div>{% endfor %}
+            </dl>
+          </article>
+        {% endfor %}
+      </div>
+      {% include "builder/_pager.html" %}
+    {% else %}
+      <p class="empty">{% translate "Noch keine Einträge." %}</p>
+    {% endif %}
+  </section>
+
+{% elif type == "form" %}
+  <section class="card">
+    <h3>{{ entity.name|tr }}: {% translate "neuer Eintrag" %}</h3>
+    <form method="post" action="{{ action_url }}" class="form" data-form-prefix="{{ bid }}">
+      {% csrf_token %}
+      <input type="hidden" name="next" value="{{ next }}">
+      <input type="hidden" name="form_prefix" value="{{ bid }}">
+      {{ form.as_div }}
+      <button class="btn">{{ p.submit_label|default:_("Speichern") }}</button>
+    </form>
+  </section>
+
+{% elif type == "export" %}
+  <div class="button-block">
+    <a class="btn btn-secondary" href="{{ href }}" download>{{ p.label|default:_("Als CSV herunterladen") }}</a>
+  </div>
+
+{% elif type == "stat" %}
+  <section class="stat">
+    <div class="stat-label" data-slot="label">{{ p.label }}</div>
+    <div class="stat-value"><span data-slot="value">{{ value }}</span><span class="stat-unit" data-slot="unit"{% if not p.unit %} hidden{% endif %}>{{ p.unit }}</span></div>
+  </section>
+
+{% elif type == "progress" %}
+  <section class="stat">
+    <div class="stat-label" data-slot="label">{{ p.label }}</div>
+    <div class="stat-value">{{ percent_label }}<span class="stat-unit">%</span></div>
+    <div class="progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ percent }}" aria-label="{{ p.label }}">
+      <span class="progress-fill" style="width: {{ percent }}%"></span>
+    </div>
+    <div class="progress-note">{% blocktranslate %}{{ value }} von {{ target }}{% endblocktranslate %}{% if p.unit %} {{ p.unit }}{% endif %}</div>
+  </section>
+
+{% elif type == "chart" %}
+  <section class="card">
+    <h3 data-slot="label">{{ p.label }}</h3>
+    {% for bar in bars %}
+      <div class="bar-row">
+        <span class="bar-label">{{ bar.label }}</span>
+        <span class="bar-track"><span class="bar-fill" style="width: {{ bar.percent }}%"></span></span>
+        <span class="bar-count">{{ bar.count }}</span>
+        <span class="bar-share">{{ bar.share }} %</span>
+      </div>
+    {% empty %}
+      <p class="empty">{% translate "Noch keine Daten." %}</p>
+    {% endfor %}
+  </section>
+
+{% elif type == "donut" %}
+  <section class="card">
+    <h3 data-slot="label">{{ p.label }}</h3>
+    {% if segments %}
+      <div class="donut-wrap">
+        <svg class="donut" viewBox="0 0 42 42" role="img" aria-label="{{ p.label }}">
+          <circle class="donut-ring" cx="21" cy="21" r="15.9155"></circle>
+          {% for segment in segments %}
+            <circle class="donut-segment seg-{{ segment.index }}" cx="21" cy="21" r="15.9155" stroke-dasharray="{{ segment.dash }}" stroke-dashoffset="{{ segment.offset }}"></circle>
+          {% endfor %}
+          <text x="21" y="20.5" class="donut-total">{{ total }}</text>
+          <text x="21" y="25.5" class="donut-caption">{% translate "gesamt" %}</text>
+        </svg>
+        <ul class="legend">
+          {% for segment in segments %}
+            <li><span class="swatch seg-{{ segment.index }}"></span><span class="legend-label">{{ segment.label }}</span><span class="bar-count">{{ segment.count }}</span><span class="bar-share">{{ segment.share }} %</span></li>
+          {% endfor %}
+        </ul>
+      </div>
+    {% else %}
+      <p class="empty">{% translate "Noch keine Daten." %}</p>
+    {% endif %}
+  </section>
+
+{% elif type == "timeline" %}
+  <section class="card">
+    <div class="card-head"><h3 data-slot="label">{{ p.label }}</h3><span class="muted small">{% blocktranslate %}nach {{ basis }}{% endblocktranslate %}</span></div>
+    <div class="columns" role="img" aria-label="{{ p.label }}">
+      {% for column in columns %}
+        <div class="column{% if column.new_year %} new-year{% endif %}" title="{{ column.title }}: {{ column.count }}">
+          <span class="column-area" style="--h: {{ column.percent }}%">
+            <span class="column-count">{% if column.count %}{{ column.count }}{% endif %}</span>
+            <span class="column-bar"></span>
+          </span>
+          <span class="column-label">{{ column.label }}</span>
+        </div>
+      {% endfor %}
+    </div>
+  </section>
+
+{% elif type == "button" %}
+  <div class="button-block{% if p.align == 'right' %} align-right{% endif %}">
+  {% if js_script %}
+    <button type="button" class="btn{% if p.style == 'secondary' %} btn-secondary{% endif %}" data-js-script="{{ js_script }}" data-slot="label">{{ p.label }}</button>
+  {% elif action_url %}
+    <form method="post" action="{{ action_url }}">
+      {% csrf_token %}<input type="hidden" name="next" value="{{ next }}">
+      <button class="btn{% if p.style == 'secondary' %} btn-secondary{% endif %}" data-slot="label">{{ p.label }}</button>
+    </form>
+  {% else %}
+    <a class="btn{% if p.style == 'secondary' %} btn-secondary{% endif %}" href="{{ href }}" data-slot="label">{{ p.label }}</a>
+  {% endif %}
+  </div>
+
+{% elif type == "input" %}
+  <div class="form input-block">
+    <div>
+      <label for="in_{{ bid }}" data-slot="label">{{ p.label }}{% if p.required %} *{% endif %}</label>
+      {% if kind == "textarea" %}
+        <textarea id="in_{{ bid }}" name="{{ param }}" rows="3" maxlength="2000" data-page-input{% if p.required %} required{% endif %}{% if p.placeholder %} placeholder="{{ p.placeholder }}"{% endif %}>{{ value }}</textarea>
+      {% else %}
+        <input id="in_{{ bid }}" type="{{ kind }}" name="{{ param }}" maxlength="500" value="{{ value }}" data-page-input{% if p.required %} required{% endif %}{% if p.placeholder %} placeholder="{{ p.placeholder }}"{% endif %}{% if kind == "email" %} autocomplete="email"{% endif %}>
+      {% endif %}
+    </div>
+  </div>
+
+{% elif type == "pagelinks" %}
+  <section>
+    {% if p.title %}<h3>{{ p.title }}</h3>{% endif %}
+    <div class="page-links">
+      {% for link in links %}<a class="page-link" href="{% url 'page' app.slug link.slug %}">{{ link.title|tr }}</a>{% endfor %}
+    </div>
+  </section>
+
+{% elif type == "divider" %}
+  <hr class="divider">
+
+{% elif type == "spacer" %}
+  <div class="spacer spacer-{{ p.size|default:'m' }}" aria-hidden="true"></div>
+
+{% elif type == "http" %}
+  <section class="card">
+    <h3>{{ p.label }}</h3>
+    {% if http_columns %}
+      <div class="table-wrap">
+        <table>
+          <thead><tr>{% for column in http_columns %}<th>{{ column }}</th>{% endfor %}</tr></thead>
+          <tbody>{% for row in http_rows %}<tr>{% for cell in row %}<td>{{ cell }}</td>{% endfor %}</tr>{% endfor %}</tbody>
+        </table>
+      </div>
+    {% else %}
+      <pre class="json">{{ http_text }}</pre>
+    {% endif %}
+  </section>
+
+{% elif type == "output" %}
+  <section class="card output">
+    <div class="stat-label" data-slot="label">{{ p.label }}</div>
+    <div class="stat-value output-value" data-slot-wrap="value"{% if value is None %} hidden{% endif %}><span data-slot="value">{{ value|default_if_none:"" }}</span><span class="stat-unit" data-slot="unit"{% if not p.unit %} hidden{% endif %}>{{ p.unit }}</span></div>
+    <p class="output-text" data-slot="text"{% if not p.text %} hidden{% endif %}>{{ p.text }}</p>
+    <div class="table-wrap" data-slot="rows"{% if not has_rows %} hidden{% endif %}>
+      {% if out_rows %}
+        <table>
+          {% if out_columns %}<thead><tr>{% for column in out_columns %}<th>{{ column }}</th>{% endfor %}</tr></thead>{% endif %}
+          <tbody>{% for row in out_rows %}<tr>{% for cell in row %}<td>{{ cell }}</td>{% endfor %}</tr>{% endfor %}</tbody>
+        </table>
+      {% endif %}
+    </div>
+    <p class="muted small" data-slot="placeholder"{% if value is not None or p.text or has_rows %} hidden{% endif %}>{% if block_name %}{% blocktranslate with name=block_name %}Wird von einem Skript gefüllt (Name „{{ name }}“).{% endblocktranslate %}{% else %}{% translate "Gib dem Baustein im Seiten-Designer einen Namen, damit ein Skript ihn füllen kann." %}{% endif %}</p>
+  </section>
+
+{% elif type == "query" %}
+  <section class="card">
+    <div class="card-head">
+      <h3 data-slot="title">{{ p.title|default:query.name }}</h3>
+      {% if fetched %}<span class="muted small">{% blocktranslate %}Stand {{ fetched }}{% endblocktranslate %}</span>{% endif %}
+    </div>
+    {% if q_stale %}<p class="notice notice-warning small">{% translate "Die Datenquelle antwortet gerade nicht. Angezeigt wird der letzte Stand." %}</p>{% endif %}
+    {% if q_rows %}
+      <div class="table-wrap">
+        <table>
+          <thead><tr>{% for column in q_columns %}<th>{{ column }}</th>{% endfor %}</tr></thead>
+          <tbody>{% for row in q_rows %}<tr>{% for cell in row %}<td>{{ cell|default_if_none:"" }}</td>{% endfor %}</tr>{% endfor %}</tbody>
+        </table>
+      </div>
+      {% if q_more %}<p class="muted small">{% translate "Es gibt weitere Zeilen, die hier nicht angezeigt werden." %}</p>{% endif %}
+    {% else %}
+      <p class="empty">{% translate "Die Abfrage liefert keine Zeilen." %}</p>
+    {% endif %}
+  </section>
+
+{% elif custom_plain is not None %}
+  <div class="custom-block">{{ custom_plain }}</div>
+
+{% else %}
+  <section class="card">{{ custom_html }}</section>
+{% endif %}

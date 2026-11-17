@@ -1,0 +1,58 @@
+{% load baukasten static i18n %}{% get_current_language as LANG %}<!doctype html>
+<html lang="{{ LANG }}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Baukasten{% endblock %}</title>
+  <link rel="icon" href="{% static 'builder/logo.svg' %}" type="image/svg+xml">
+  <script src="{% asset 'builder/theme.js' %}"></script>
+  <link rel="stylesheet" href="{% asset 'builder/theme.css' %}">
+  <link rel="stylesheet" href="{% asset 'builder/style.css' %}">
+  <script src="{% asset 'builder/transitions.js' %}"></script>
+  <script src="{% asset 'builder/menu.js' %}" defer></script>
+</head>
+<body data-user="{{ user.get_username }}">
+{% block body %}
+  <a class="skip-link" href="#inhalt">{% translate "Zum Inhalt springen" %}</a>
+  <header class="topbar">
+    <a class="brand" href="{% url 'home' %}" data-tour="brand">
+      {% if brand_logo %}<img class="brand-logo" src="{% static brand_logo %}" alt="{% translate 'Firmenlogo' %}">{% endif %}
+      <img src="{% static 'builder/logo.svg' %}" alt="" width="26" height="26">
+      <span>Baukasten</span>
+    </a>
+    <nav class="topnav" aria-label="{% translate 'Seiten der App' %}">{% block nav %}{% endblock %}</nav>
+    <button type="button" class="icon-btn menu-toggle" aria-expanded="false" aria-controls="topbar-menu"
+            aria-label="{% translate 'Menü' %}" title="{% translate 'Menü' %}">
+      <svg class="i-menu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+      <svg class="i-close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+    </button>
+    <div class="topbar-right" id="topbar-menu">
+      {% if can_design %}<a class="topbar-link" href="{% url 'designer_home' %}" data-tour="designer-link">{% translate "Designer" %}</a>{% endif %}
+      {% if user.is_staff %}<a class="topbar-link" href="{% url 'admin:index' %}">{% translate "Admin" %}</a>{% endif %}
+      {% if user.is_authenticated %}<a class="topbar-link" href="{% url 'help' %}" data-tour="help">{% translate "Hilfe" %}</a>{% endif %}
+      {% include "builder/_theme_toggle.html" %}
+      {% include "builder/_language.html" %}
+      <button type="button" class="icon-btn" id="tour-start" hidden aria-label="{% translate 'Führung starten' %}" title="{% translate 'Führung starten' %}">?</button>
+      {% if user.is_authenticated %}
+        <a class="profile-link" href="{% url 'profile' %}" title="{% translate 'Mein Profil' %}" data-tour="profile">
+          <span class="avatar" aria-hidden="true">{{ initials }}</span>
+          <span class="user-name">{{ display_name }}</span>
+        </a>
+        <form method="post" action="{% url 'logout' %}" class="logout-form">{% csrf_token %}<button class="link">{% translate "Abmelden" %}</button></form>
+      {% endif %}
+    </div>
+  </header>
+  {% if messages %}
+    <div class="messages" role="status">
+      {% for message in messages %}<div class="msg msg-{{ message.tags }}">{{ message }}</div>{% endfor %}
+    </div>
+  {% endif %}
+  <main id="inhalt" class="{% block main_class %}container{% endblock %}">{% block content %}{% endblock %}</main>
+{% endblock %}
+  {% block tour %}{% endblock %}
+  <script src="{% url 'javascript-catalog' %}"></script>
+  <script src="{% asset 'builder/confirm.js' %}"></script>
+  <script src="{% asset 'builder/tour.js' %}"></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

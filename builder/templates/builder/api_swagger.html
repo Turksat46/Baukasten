@@ -1,0 +1,43 @@
+{% load static i18n %}{% get_current_language as LANG %}<!doctype html>
+<html lang="{{ LANG }}">
+<head>
+  <meta charset="utf-8">
+  <title>{{ app.name }} – API</title>
+  <script src="{% static 'builder/theme.js' %}"></script>
+  <link rel="stylesheet" href="{% static 'builder/theme.css' %}">
+  <link rel="stylesheet" href="{% static 'builder/swagger/swagger-ui.css' %}">
+  <style>
+    html, body { margin: 0; background: var(--surface); }
+    /* Swagger UI kennt kein dunkles Design: im Dunkelmodus Farben umkehren,
+       Farbtöne (GET blau, POST grün …) bleiben dabei erhalten. */
+    html[data-dark="1"] body { background: #fff; filter: invert(.9) hue-rotate(180deg); }
+    .swagger-ui, .swagger-ui .info .title, .swagger-ui .opblock-tag, .swagger-ui .opblock .opblock-summary-description { font-family: var(--font); }
+    .swagger-ui .topbar, .swagger-ui .info { display: none; }
+    .swagger-ui .wrapper { padding: 0; max-width: none; }
+    .swagger-ui .scheme-container { box-shadow: none; padding: 0 0 1rem; margin: 0; background: transparent; }
+    .swagger-ui .btn.authorize { border-color: var(--accent); color: var(--accent-strong); }
+    .swagger-ui .btn.authorize svg { fill: var(--accent-strong); }
+  </style>
+</head>
+<body>
+  <div id="swagger"></div>
+  <script src="{% static 'builder/swagger/swagger-ui-bundle.js' %}"></script>
+  <script>
+    window.ui = SwaggerUIBundle({
+      url: "{{ spec_url|escapejs }}",
+      dom_id: "#swagger",
+      deepLinking: false,
+      docExpansion: "list",
+      defaultModelsExpandDepth: 0,
+      tryItOutEnabled: false,
+      persistAuthorization: false,
+      // Die Beschreibung lädt mit der Anmeldung der Seite; ausprobierte
+      // API-Aufrufe schicken dagegen nur den Schlüssel, keine Cookies.
+      requestInterceptor: function (request) {
+        if (!request.loadSpec) request.credentials = "omit";
+        return request;
+      },
+    });
+  </script>
+</body>
+</html>

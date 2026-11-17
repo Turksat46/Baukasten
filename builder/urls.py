@@ -1,0 +1,67 @@
+from django.urls import path
+from django.views.i18n import JavaScriptCatalog
+
+from . import api, designer, help, mcp, profile, views
+
+urlpatterns = [
+    path("jsi18n/", JavaScriptCatalog.as_view(packages=["builder"]), name="javascript-catalog"),
+    path("profil/", profile.profile, name="profile"),
+    path("hilfe/", help.help_page, name="help"),
+    path("api-doku/", views.api_index, name="api_index"),
+    path("a/<slug:app>/api-doku/", views.api_docs, name="api_docs"),
+    path("a/<slug:app>/api-doku/openapi.json", views.api_docs_spec, name="api_docs_spec"),
+    path("a/<slug:app>/api-doku/swagger/", views.api_docs_ui, name="api_docs_ui"),
+    path("profil/schluessel/<int:pk>/loeschen/", profile.delete_key, name="profile_key_delete"),
+    # Laufzeit
+    path("", views.home, name="home"),
+    path("a/<slug:app>/", views.page, name="page"),
+    path("a/<slug:app>/p/<slug:page>/", views.page, name="page"),
+    path("a/<slug:app>/t/<slug:entity>/neu/", views.record_create, name="record_create"),
+    path("a/<slug:app>/t/<slug:entity>/<int:pk>/", views.record_edit, name="record_edit"),
+    path("a/<slug:app>/t/<slug:entity>/<int:pk>/loeschen/", views.record_delete, name="record_delete"),
+    path("a/<slug:app>/aktion/<str:name>/", views.run_action, name="run_action"),
+    path("a/<slug:app>/skript/<slug:name>/", views.run_script, name="run_script"),
+    path("a/<slug:app>/skript-bruecke/", views.script_bridge, name="script_bridge"),
+    path("a/<slug:app>/p/<slug:page>/b/<str:block>/", views.page_block, name="page_block"),
+    path("skript-sandbox/", views.script_sandbox, name="script_sandbox"),
+    path("a/<slug:app>/t/<slug:entity>/export.csv", views.entity_export, name="entity_export"),
+    # MCP-Server je App (für KI-Agenten und n8n), Schlüssel wie bei der API
+    path("mcp/<slug:app>/", mcp.endpoint, name="mcp"),
+    # API
+    path("api/v1/<slug:app>/", api.describe, name="api_describe"),
+    path("api/v1/<slug:app>/openapi.json", api.openapi_spec, name="api_openapi"),
+    path("api/v1/<slug:app>/x/<str:name>/", api.custom, name="api_custom"),
+    path("api/v1/<slug:app>/<slug:entity>/", api.collection, name="api_collection"),
+    path("api/v1/<slug:app>/<slug:entity>/<int:pk>/", api.item, name="api_item"),
+    # Designer: eigene Bausteine (vor den App-Adressen, damit „bausteine“ nicht als App gilt)
+    path("designer/", designer.home, name="designer_home"),
+    path("designer/import/", designer.app_import, name="designer_app_import"),
+    path("designer/bausteine/", designer.custom_blocks, name="designer_blocks"),
+    path("designer/bausteine/neu/", designer.custom_block_edit, name="designer_block_new"),
+    path("designer/bausteine/vorlage/", designer.preset_save, name="designer_preset_save"),
+    path("designer/bausteine/<int:pk>/", designer.custom_block_edit, name="designer_block_edit"),
+    path("designer/bausteine/<int:pk>/loeschen/", designer.custom_block_delete, name="designer_block_delete"),
+    # Designer: Apps
+    path("designer/<slug:app>/", designer.app_detail, name="designer_app"),
+    path("designer/<slug:app>/loeschen/", designer.app_delete, name="designer_app_delete"),
+    path("designer/<slug:app>/uebersetzungen/", designer.translations, name="designer_translations"),
+    path("designer/<slug:app>/uebersetzungen/export.csv", designer.translations_export, name="designer_translations_export"),
+    path("designer/<slug:app>/version/<int:pk>/wiederherstellen/", designer.version_restore, name="designer_version_restore"),
+    path("designer/<slug:app>/version/<int:pk>/herunterladen/", designer.version_download, name="designer_version_download"),
+    path("designer/<slug:app>/schluessel/<int:pk>/loeschen/", designer.key_delete, name="designer_key_delete"),
+    path("designer/<slug:app>/tabelle/<int:pk>/", designer.entity_detail, name="designer_entity"),
+    path("designer/<slug:app>/tabelle/<int:pk>/loeschen/", designer.entity_delete, name="designer_entity_delete"),
+    path("designer/<slug:app>/tabelle/<int:pk>/seite/", designer.entity_make_page, name="designer_entity_page"),
+    path("designer/<slug:app>/feld/<int:pk>/", designer.field_edit, name="designer_field"),
+    path("designer/<slug:app>/feld/<int:pk>/loeschen/", designer.field_delete, name="designer_field_delete"),
+    path("designer/<slug:app>/feld/<int:pk>/<str:direction>/", designer.field_move, name="designer_field_move"),
+    path("designer/<slug:app>/skript/neu/", designer.script_edit, name="designer_script_new"),
+    path("designer/<slug:app>/skript/<int:pk>/", designer.script_edit, name="designer_script"),
+    path("designer/<slug:app>/skript/<int:pk>/loeschen/", designer.script_delete, name="designer_script_delete"),
+    path("designer/<slug:app>/abfrage/neu/", designer.query_edit, name="designer_query_new"),
+    path("designer/<slug:app>/abfrage/<int:pk>/", designer.query_edit, name="designer_query"),
+    path("designer/<slug:app>/abfrage/<int:pk>/loeschen/", designer.query_delete, name="designer_query_delete"),
+    path("designer/<slug:app>/seite/<int:pk>/", designer.page_designer, name="designer_page"),
+    path("designer/<slug:app>/seite/<int:pk>/vorschau/", designer.page_preview, name="designer_page_preview"),
+    path("designer/<slug:app>/seite/<int:pk>/loeschen/", designer.page_delete, name="designer_page_delete"),
+]

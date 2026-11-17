@@ -1,0 +1,68 @@
+# Baukasten im lokalen Kubernetes von Docker Desktop.
+# Nicht von Hand ausführen, sondern über deploy.ps1 (baut das Image, legt Geheimnisse an,
+# migriert die Datenbank und rollt aus). Nutzt dieselben Manifeste wie die Produktion
+# (../app.yaml, ../cronjob.yaml) und ändert nur, was lokal anders sein muss.
+# Weil die Manifeste im Elternordner liegen, braucht kustomize den Schalter
+#   --load-restrictor LoadRestrictionsNone   (setzt deploy.ps1)
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: baukasten
+
+resources:
+  - namespace.yaml
+  - postgres.yaml
+  - ../app.yaml
+  - ../cronjob.yaml
+
+# Lokal gebautes Image, kein Registry-Zugriff nötig (Docker Desktop teilt die Images mit Kubernetes).
+images:
+  - name: registry.example.com/baukasten
+    newName: baukasten
+    newTag: lokal
+
+# Zugangsdaten aus geheim.env (legt deploy.ps1 beim ersten Lauf mit Zufallswerten an).
+secretGenerator:
+  - name: baukasten-secret
+    envs:
+      - geheim.env
+generatorOptions:
+  disableNameSuffixHash: true
+
+patches:
+  # Lokal über http://localhost:8080, ohne TLS.
+  - target: {kind: ConfigMap, name: baukasten-config}
+    patch: |-
+      # host.docker.internal: Aufrufe aus anderen Docker-Containern, z. B. n8n (MCP-Server, API)
+      - {op: replace, path: /data/ALLOWED_HOSTS, value: "localhost,127.0.0.1,host.docker.internal"}
+      - {op: replace, path: /data/CSRF_TRUSTED_ORIGINS, value: "http://localhost:8080,http://127.0.0.1:8080"}
+      - {op: add, path: /data/COOKIE_SECURE, value: "false"}
+      - {op: replace, path: /data/GUNICORN_WORKERS, value: "2"}
+  # Image nicht aus einer Registry ziehen; kleinere Anforderungen für den Laptop.
+  - target: {kind: Deployment, name: baukasten}
+    patch: |-
+      - {op: add, path: /spec/template/spec/containers/0/imagePullPolicy, value: IfNotPresent}
+      - {op: replace, path: /spec/template/spec/containers/0/resources/requests/cpu, value: 100m}
+      - {op: replace, path: /spec/template/spec/containers/0/resources/requests/memory, value: 256Mi}
+  - target: {kind: CronJob, name: baukasten-hintergrund}
+    patch: |-
+      - {op: add, path: /spec/jobTemplate/spec/template/spec/containers/0/imagePullPolicy, value: IfNotPresent}
+  # Docker Desktop leitet Dienste vom Typ LoadBalancer auf localhost weiter.
+  - target: {kind: Service, name: baukasten}
+    patch: |-
+      - {op: add, path: /spec/type, value: LoadBalancer}
+      - {op: replace, path: /spec/ports/0/port, value: 8080}
+  # Kein Ingress-Controller und kein Metrics-Server lokal.
+  - target: {kind: Ingress, name: baukasten}
+    patch: |-
+      $patch: delete
+      apiVersion: networking.k8s.io/v1
+      kind: Ingress
+      metadata:
+        name: baukasten
+  - target: {kind: HorizontalPodAutoscaler, name: baukasten}
+    patch: |-
+      $patch: delete
+      apiVersion: autoscaling/v2
+      kind: HorizontalPodAutoscaler
+      metadata:
+        name: baukasten

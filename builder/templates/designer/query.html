@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% load static i18n baukasten %}
+{% block title %}{% if query %}{{ query.name }}{% else %}{% translate "Neue Abfrage" %}{% endif %} – {% translate "Designer" %}{% endblock %}
+{% block content %}
+<p class="crumbs"><a href="{% url 'designer_home' %}">{% translate "Designer" %}</a> / <a href="{% url 'designer_app' app.slug %}">{{ app.name }}</a> / {% if query %}{{ query.name }}{% else %}{% translate "Neue Abfrage" %}{% endif %}</p>
+<h1>{% if query %}{{ query.name }}{% else %}{% translate "Neue Datenbank-Abfrage" %}{% endif %}</h1>
+
+{% if not sources %}
+  <div class="notice notice-warning" role="note">
+    <strong class="notice-title">{% translate "Noch keine Datenquelle eingerichtet" %}</strong>
+    <span>{% translate "Datenquellen richtet der Betrieb über Umgebungsvariablen ein, zum Beispiel DATASOURCE_LAGER=postgresql://… oder DATASOURCE_DWH=databricks://…. Details im Handbuch, Abschnitt „Datenquellen“." %}</span>
+  </div>
+{% endif %}
+
+<div class="grid">
+  <div class="col col-8">
+    <section class="card">
+      <form method="post" class="form">
+        {% csrf_token %}
+        {{ form.non_field_errors }}
+        <div class="form-row">
+          <div>{{ form.name.errors }}{{ form.name.label_tag }}{{ form.name }}</div>
+          <div>{{ form.source.errors }}{{ form.source.label_tag }}{{ form.source }}</div>
+        </div>
+        <div>{{ form.sql.errors }}{{ form.sql.label_tag }}{{ form.sql }}<span class="helptext">{{ form.sql.help_text }}</span></div>
+        <div>{{ form.cache_seconds.errors }}{{ form.cache_seconds.label_tag }}{{ form.cache_seconds }}<span class="helptext">{{ form.cache_seconds.help_text }}</span></div>
+
+        <h4 class="spaced">{% translate "In eine Tabelle spiegeln (optional)" %}</h4>
+        <p class="muted small">{% translate "Gespiegelte Daten stehen wie jede andere Tabelle für Listen, Diagramme, Skripte und die API bereit." %}</p>
+        <div class="form-row">
+          <div>{{ form.sync_entity.errors }}{{ form.sync_entity.label_tag }}{{ form.sync_entity }}</div>
+          <div>{{ form.key_column.errors }}{{ form.key_column.label_tag }}{{ form.key_column }}<span class="helptext">{{ form.key_column.help_text }}</span></div>
+          <div>{{ form.sync_interval.errors }}{{ form.sync_interval.label_tag }}{{ form.sync_interval }}<span class="helptext">{{ form.sync_interval.help_text }}</span></div>
+        </div>
+        <div class="actions">
+          <button class="btn" name="action" value="save">{% translate "Speichern" %}</button>
+          <button class="btn btn-secondary" name="action" value="test">{% translate "Speichern und testen" %}</button>
+          <button class="btn btn-secondary" name="action" value="sync">{% translate "Speichern und jetzt spiegeln" %}</button>
+        </div>
+      </form>
+    </section>
+
+    {% if error %}<div class="notice notice-danger" role="alert"><span>{{ error }}</span></div>{% endif %}
+    {% if preview %}
+      <section class="card">
+        <h3>{% translate "Vorschau (erste 20 Zeilen)" %}</h3>
+        {% if preview.rows %}
+          <div class="table-wrap">
+            <table>
+              <thead><tr>{% for c in preview.columns %}<th>{{ c }}</th>{% endfor %}</tr></thead>
+              <tbody>{% for row in preview.rows %}<tr>{% for c, v in row.items %}<td>{{ v|default_if_none:"" }}</td>{% endfor %}</tr>{% endfor %}</tbody>
+            </table>
+          </div>
+        {% else %}
+          <p class="empty">{% translate "Die Abfrage liefert keine Zeilen." %}</p>
+        {% endif %}
+      </section>
+    {% endif %}
+  </div>
+
+  <div class="col col-4">
+    <section class="card">
+      <h3>{% translate "Eingerichtete Datenquellen" %}</h3>
+      {% if sources %}
+        <table><tbody>{% for s in sources %}<tr><td><code class="key">{{ s.name }}</code></td><td class="muted">{{ s.kind }}</td></tr>{% endfor %}</tbody></table>
+      {% else %}
+        <p class="empty">{% translate "Keine." %}</p>
+      {% endif %}
+    </section>
+    <section class="card">
+      <h3>{% translate "So nutzt du die Abfrage" %}</h3>
+      <ul class="plain">
+        <li>{% translate "Live anzeigen: Baustein „Datenbank-Abfrage“ im Seiten-Designer, optional mit automatischer Aktualisierung." %}</li>
+        <li>{% translate "Spiegeln: Ergebnis wird in eine Tabelle übernommen, auf Knopfdruck oder regelmäßig im Hintergrund." %}</li>
+        <li>{% translate "In Skripten (Python und JavaScript): db.saved() mit dem Kurznamen der Abfrage." %}</li>
+      </ul>
+    </section>
+    {% if query %}
+      <section class="card">
+        <h3>{% translate "Letzter Abgleich" %}</h3>
+        {% if query.last_sync_at %}
+          <p>{% if query.last_sync_ok %}<span class="badge badge-ok">{% translate "ok" %}</span>{% else %}<span class="badge badge-error">{% translate "Fehler" %}</span>{% endif %}
+             <span class="small">{{ query.last_sync_at|date:"SHORT_DATETIME_FORMAT" }}</span></p>
+          <p class="small">{{ query.last_sync_message }}</p>
+          {% if query.sync_entity %}<p class="small"><a href="{% url 'designer_entity' app.slug query.sync_entity.pk %}">{% blocktranslate with name=query.sync_entity.name %}Tabelle „{{ name }}“ öffnen{% endblocktranslate %}</a></p>{% endif %}
+        {% else %}
+          <p class="empty">{% translate "Noch nicht gespiegelt." %}</p>
+        {% endif %}
+        <p class="muted small">{% translate "Kurzname" %}: <code class="key">{{ query.slug }}</code></p>
+        <form method="post" action="{% url 'designer_query_delete' app.slug query.pk %}" data-confirm="{% blocktranslate with name=query.name %}Abfrage „{{ name }}“ löschen?{% endblocktranslate %}">
+          {% csrf_token %}<button class="link danger">{% translate "Abfrage löschen" %}</button>
+        </form>
+      </section>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

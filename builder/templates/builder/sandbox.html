@@ -1,0 +1,106 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>sandbox</title></head><body>
+<script nonce="{{ nonce }}">
+// Abgeschottete Umgebung für JavaScript-Skripte.
+// Das iframe hat einen eigenen, leeren Ursprung (sandbox ohne allow-same-origin): keine Cookies,
+// kein Zugriff auf die Seite. Die Content-Security-Policy verbietet Netzwerkzugriffe.
+// Jedes Skript läuft in einem eigenen Worker, der nach dem Zeitlimit beendet wird.
+(function () {
+  "use strict";
+
+  var BOOT = [
+    "'use strict';",
+    "var __bk_pending = new Map(); var __bk_next = 1;",
+    "function __bk_call(op, args) { return new Promise(function (resolve, reject) {",
+    "  var id = __bk_next++; __bk_pending.set(id, {resolve: resolve, reject: reject});",
+    "  postMessage({type: 'call', id: id, op: op, args: args}); }); }",
+    "onmessage = function (e) { var m = e.data || {}; if (m.type !== 'result') return;",
+    "  var p = __bk_pending.get(m.id); if (!p) return; __bk_pending.delete(m.id);",
+    "  if (m.error) p.reject(new Error(m.error)); else p.resolve(m.result); };",
+    "function __bk_table(slug) { return Object.freeze({",
+    "  all: function (o) { return __bk_call('table.filter', {table: slug, where: {}, limit: (o && o.limit) || 1000}); },",
+    "  filter: function (where, o) { return __bk_call('table.filter', {table: slug, where: where || {}, limit: (o && o.limit) || 1000}); },",
+    "  first: function (where) { return __bk_call('table.filter', {table: slug, where: where || {}, limit: 1}).then(function (r) { return r[0] || null; }); },",
+    "  get: function (id) { return __bk_call('table.get', {table: slug, id: id}); },",
+    "  count: function (where) { return __bk_call('table.count', {table: slug, where: where || {}}); },",
+    "  sum: function (field, where) { return __bk_call('table.aggregate', {table: slug, func: 'sum', field: field, where: where || {}}); },",
+    "  avg: function (field, where) { return __bk_call('table.aggregate', {table: slug, func: 'avg', field: field, where: where || {}}); },",
+    "  create: function (data) { return __bk_call('table.create', {table: slug, data: data || {}}); },",
+    "  update: function (id, data) { return __bk_call('table.update', {table: slug, id: id, data: data || {}}); },",
+    "  delete: function (id) { return __bk_call('table.delete', {table: slug, id: id}); }",
+    "}); }",
+    "function __bk_text(a) { return Array.prototype.map.call(a, function (x) {",
+    "  if (typeof x === 'string') return x; try { return JSON.stringify(x); } catch (e) { return String(x); } }).join(' '); }",
+    "var __bk_console = Object.freeze({",
+    "  log: function () { postMessage({type: 'log', text: __bk_text(arguments)}); },",
+    "  info: function () { postMessage({type: 'log', text: __bk_text(arguments)}); },",
+    "  warn: function () { postMessage({type: 'log', text: __bk_text(arguments)}); },",
+    "  error: function () { postMessage({type: 'log', text: __bk_text(arguments)}); } });",
+    "var __bk_ui = Object.freeze({",
+    "  set: function (name, values) { postMessage({type: 'ui', name: String(name), values: JSON.parse(JSON.stringify(values || {}))}); },",
+    "  hide: function (name) { postMessage({type: 'ui', name: String(name), values: {hidden: true}}); } });",
+    "var __bk_app = Object.freeze({table: __bk_table});",
+    "var __bk_db = Object.freeze({saved: function (slug) { return __bk_call('query.run', {slug: slug}); }});",
+    "function __bk_message(text) { postMessage({type: 'message', text: String(text)}); }",
+    "function __bk_line(err) { var m = /:(\\d+):\\d+\\)?\\s*$/m.exec(String(err && err.stack || ''));",
+    "  return m ? Number(m[1]) - __bk_offset : null; }"
+  ].join("\n");
+
+  var runs = new Map();
+
+  function send(data) { window.parent.postMessage(data, "*"); }
+
+  function finish(runId, data) {
+    var run = runs.get(runId);
+    if (!run) return;
+    clearTimeout(run.timer);
+    run.worker.terminate();
+    URL.revokeObjectURL(run.url);
+    runs.delete(runId);
+    data.runId = runId;
+    send(data);
+  }
+
+  function start(message) {
+    var head = BOOT + "\nvar user = " + JSON.stringify(message.context.user || null) + ";" +
+      "\nvar event = " + JSON.stringify(message.context.event || {}) + ";" +
+      "\nvar params = " + JSON.stringify(message.context.params || {}) + ";" +
+      "\n(async function (app, ui, db, message, console) {\n";
+    var offset = head.split("\n").length;  // +1 für die Zeile mit __bk_offset, -1 weil Zeilen bei 1 beginnen
+    var source = "var __bk_offset = " + offset + ";\n" + head + message.code +
+      "\n})(__bk_app, __bk_ui, __bk_db, __bk_message, __bk_console).then(" +
+      "function () { postMessage({type: 'done'}); }," +
+      "function (err) { postMessage({type: 'error', message: String(err && err.message || err), line: __bk_line(err)}); });";
+    var url = URL.createObjectURL(new Blob([source], {type: "text/javascript"}));
+    var worker;
+    try {
+      worker = new Worker(url);
+    } catch (err) {
+      send({type: "error", runId: message.runId, message: String(err && err.message || err)});
+      return;
+    }
+    var run = {worker: worker, url: url, timer: setTimeout(function () {
+      finish(message.runId, {type: "error", message: "timeout"});
+    }, message.timeout || 10000)};
+    runs.set(message.runId, run);
+    worker.onmessage = function (e) {
+      var data = e.data || {};
+      if (data.type === "done" || data.type === "error") finish(message.runId, data);
+      else { data.runId = message.runId; send(data); }
+    };
+    worker.onerror = function (e) {
+      e.preventDefault();
+      finish(message.runId, {type: "error", message: e.message, line: e.lineno ? e.lineno - offset : null});
+    };
+  }
+
+  window.addEventListener("message", function (e) {
+    if (e.source !== window.parent) return;
+    var m = e.data || {};
+    if (m.type === "run") start(m);
+    else if (m.type === "result") { var run = runs.get(m.runId); if (run) run.worker.postMessage(m); }
+  });
+  send({type: "ready"});
+})();
+</script>
+</body></html>

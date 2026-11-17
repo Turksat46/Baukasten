@@ -1,0 +1,300 @@
+{% extends "base.html" %}
+{% load i18n baukasten %}
+{% block title %}{{ app.name }} – {% translate "Designer" %}{% endblock %}
+{% block content %}
+<p class="crumbs"><a href="{% url 'designer_home' %}">{% translate "Designer" %}</a> / {{ app.name }}</p>
+<div class="head-row">
+  <h1>{{ app.icon }} {{ app.name }} {% if app.published %}<span class="badge badge-ok">{% translate "Veröffentlicht" %}</span>{% else %}<span class="badge">{% translate "Entwurf" %}</span>{% endif %}</h1>
+  <a class="btn btn-secondary" href="{% url 'page' app.slug %}" data-tour="open-app">{% translate "App öffnen" %}</a>
+</div>
+
+{% if new_key %}
+  <div class="notice notice-warning key-reveal" role="alert">
+    <strong class="notice-title">{% translate "Neuer API-Schlüssel – jetzt kopieren" %}</strong>
+    <span>{% translate "Er wird nur dieses eine Mal angezeigt und lässt sich später nicht wieder auslesen." %}</span>
+    <code class="key-value">{{ new_key }}</code>
+  </div>
+{% endif %}
+
+<div class="grid">
+  <div class="col col-6">
+    <section class="card" data-tour="entities">
+      <h3><span class="step-no">1</span> {% translate "Daten: Tabellen" %}</h3>
+      <p class="muted">{% translate "Lege fest, welche Daten die App verwaltet. Aus jeder Tabelle lässt sich eine fertige Seite erzeugen." %}</p>
+      {% if entities %}
+        <table>
+          <tbody>
+            {% for entity in entities %}
+              <tr>
+                <td><a href="{% url 'designer_entity' app.slug entity.pk %}">{{ entity.name }}</a></td>
+                <td class="muted">{% blocktranslate count n=entity.fields.all|length %}{{ n }} Feld{% plural %}{{ n }} Felder{% endblocktranslate %}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% endif %}
+      <form method="post" class="form inline-form">
+        {% csrf_token %}<input type="hidden" name="kind" value="entity">
+        {{ entity_form.name.errors }}
+        <input type="text" name="{{ entity_form.name.html_name }}" placeholder="{% translate 'Name der neuen Tabelle, z. B. Geräte' %}" required maxlength="80" aria-label="{% translate 'Name der neuen Tabelle' %}">
+        <button class="btn">{% translate "Tabelle anlegen" %}</button>
+      </form>
+    </section>
+  </div>
+
+  <div class="col col-6">
+    <section class="card" data-tour="pages">
+      <h3><span class="step-no">2</span> {% translate "Oberfläche: Seiten" %}</h3>
+      <p class="muted">{% translate "Seiten baust du im visuellen Designer aus Bausteinen zusammen." %}</p>
+      {% if pages %}
+        <table>
+          <tbody>
+            {% for page in pages %}
+              <tr>
+                <td><a href="{% url 'designer_page' app.slug page.pk %}">{{ page.title }}</a>{% if page.public %} <span class="badge badge-warn" title="{% translate 'Ohne Anmeldung erreichbar' %}">{% translate "öffentlich" %}</span>{% endif %}</td>
+                <td class="row-actions">
+                  <form method="post" action="{% url 'designer_page_delete' app.slug page.pk %}" data-confirm="{% translate 'Seite wirklich löschen?' %}">
+                    {% csrf_token %}<button class="link danger">{% translate "Löschen" %}</button>
+                  </form>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% endif %}
+      <form method="post" class="form inline-form">
+        {% csrf_token %}<input type="hidden" name="kind" value="page">
+        {{ page_form.title.errors }}
+        <input type="text" name="{{ page_form.title.html_name }}" placeholder="{% translate 'Titel der neuen Seite' %}" required maxlength="80" aria-label="{% translate 'Titel der neuen Seite' %}">
+        <button class="btn">{% translate "Seite anlegen" %}</button>
+      </form>
+    </section>
+  </div>
+
+  <div class="col col-6">
+    <section class="card" data-tour="settings">
+      <h3><span class="step-no">3</span> {% translate "Einstellungen und Freigabe" %}</h3>
+      <form method="post" class="form">
+        {% csrf_token %}<input type="hidden" name="kind" value="app">
+        {{ form.as_div }}
+        <button class="btn">{% translate "Speichern" %}</button>
+      </form>
+    </section>
+
+    {% if translation_progress %}
+    <section class="card" id="uebersetzungen">
+      <h3>{% translate "Übersetzungen" %}</h3>
+      <p class="muted">{% translate "Texte der App (Namen, Felder, Auswahlwerte, Seiten, Bausteine) in weiteren Sprachen. Nutzer sehen sie, wenn sie die Sprache umschalten." %}</p>
+      <ul class="plain">{% for name, done, total in translation_progress %}<li><strong>{{ name }}:</strong> {% blocktranslate %}{{ done }} von {{ total }} Texten übersetzt{% endblocktranslate %}</li>{% endfor %}</ul>
+      <p><a class="btn btn-secondary btn-small" href="{% url 'designer_translations' app.slug %}">{% translate "Übersetzungen bearbeiten" %}</a></p>
+    </section>
+    {% endif %}
+
+    <section class="card" data-tour="versions">
+      <h3>{% translate "Versionen" %}</h3>
+      <p class="muted">{% translate "Eine Version hält den Aufbau der App fest: Einstellungen, Tabellen, Felder und Seiten. Die erfassten Daten gehören nicht dazu und bleiben beim Wiederherstellen erhalten." %}</p>
+      <form method="post" class="form inline-form">
+        {% csrf_token %}<input type="hidden" name="kind" value="version">
+        <input type="text" name="note" maxlength="200" placeholder="{% translate 'Was hat sich geändert? (optional)' %}" aria-label="{% translate 'Notiz zur Version' %}">
+        <button class="btn">{% translate "Version speichern" %}</button>
+      </form>
+      {% if versions %}
+        <table class="versions">
+          <tbody>
+            {% for version in versions %}
+              <tr>
+                <td><strong>v{{ version.number }}</strong></td>
+                <td>
+                  {{ version.note|default:_("Ohne Notiz") }}
+                  <span class="muted small version-meta">{{ version.created_at|date:"SHORT_DATETIME_FORMAT" }}{% if version.created_by %}, {{ version.created_by.get_username }}{% endif %}</span>
+                </td>
+                <td class="row-actions">
+                  <a href="{% url 'designer_version_download' app.slug version.pk %}">{% translate "Herunterladen" %}</a>
+                  <form method="post" action="{% url 'designer_version_restore' app.slug version.pk %}" data-confirm="{% blocktranslate with number=version.number %}Auf Version {{ number }} zurückgehen? Der jetzige Stand wird vorher als neue Version gesichert.{% endblocktranslate %}">
+                    {% csrf_token %}<button class="link">{% translate "Wiederherstellen" %}</button>
+                  </form>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <p class="empty">{% translate "Noch keine Version gespeichert." %}</p>
+      {% endif %}
+    </section>
+
+    <section class="card" id="mitbearbeiter">
+      <h3>{% translate "Mitbearbeiter" %}</h3>
+      {% if app.created_by %}
+        <p>{% translate "Eigentümer/in:" %} <strong>{{ app.created_by.get_full_name|default:app.created_by.get_username }}</strong>{% if app.created_by == user %} ({% translate "du" %}){% endif %}</p>
+        <p class="muted small">{% translate "Bearbeiten dürfen die Eigentümerin, die Mitbearbeiter unten und Admins. Mitbearbeiter brauchen das Designer-Recht. Einladen, entfernen und die App löschen dürfen nur Eigentümerin und Admins." %}</p>
+      {% else %}
+        <div class="notice notice-warning">
+          <strong>{% translate "Diese App hat keine Eigentümerin." %}</strong>
+          <span>{% translate "Deshalb dürfen alle Designer sie bearbeiten. Übernimmst du sie, brauchen andere Designer eine Einladung." %}</span>
+        </div>
+        <form method="post" style="margin-top:.6rem">
+          {% csrf_token %}<input type="hidden" name="kind" value="share"><input type="hidden" name="action" value="claim">
+          <button class="btn btn-secondary btn-small">{% translate "App übernehmen" %}</button>
+        </form>
+      {% endif %}
+
+      {% if app.created_by %}
+        <h4 class="spaced">{% translate "Personen" %}</h4>
+        {% if editors %}
+          <table><tbody>
+            {% for person in editors %}
+              <tr>
+                <td>{{ person.get_full_name|default:person.get_username }} <code class="key">{{ person.get_username }}</code></td>
+                <td class="row-actions">{% if can_manage %}
+                  <form method="post">{% csrf_token %}<input type="hidden" name="kind" value="share"><input type="hidden" name="action" value="remove_user"><input type="hidden" name="user" value="{{ person.pk }}"><button class="link danger">{% translate "Entfernen" %}</button></form>
+                {% endif %}</td>
+              </tr>
+            {% endfor %}
+          </tbody></table>
+        {% else %}
+          <p class="muted small">{% translate "Noch keine." %}</p>
+        {% endif %}
+        {% if can_manage %}
+          <form method="post" class="inline-form">
+            {% csrf_token %}<input type="hidden" name="kind" value="share"><input type="hidden" name="action" value="add_user">
+            <input type="text" name="username" placeholder="{% translate 'Benutzername' %}" aria-label="{% translate 'Benutzername' %}" required>
+            <button class="btn btn-secondary btn-small">{% translate "Einladen" %}</button>
+          </form>
+        {% endif %}
+
+        <h4 class="spaced">{% translate "Gruppen" %}</h4>
+        {% if editor_groups %}
+          <table><tbody>
+            {% for group in editor_groups %}
+              <tr>
+                <td>{{ group.name }}</td>
+                <td class="row-actions">{% if can_manage %}
+                  <form method="post">{% csrf_token %}<input type="hidden" name="kind" value="share"><input type="hidden" name="action" value="remove_group"><input type="hidden" name="group" value="{{ group.pk }}"><button class="link danger">{% translate "Entfernen" %}</button></form>
+                {% endif %}</td>
+              </tr>
+            {% endfor %}
+          </tbody></table>
+        {% else %}
+          <p class="muted small">{% translate "Noch keine." %}</p>
+        {% endif %}
+        {% if can_manage and other_groups %}
+          <form method="post" class="inline-form">
+            {% csrf_token %}<input type="hidden" name="kind" value="share"><input type="hidden" name="action" value="add_group">
+            <select name="group" aria-label="{% translate 'Gruppe' %}">{% for group in other_groups %}<option value="{{ group.pk }}">{{ group.name }}</option>{% endfor %}</select>
+            <button class="btn btn-secondary btn-small">{% translate "Gruppe hinzufügen" %}</button>
+          </form>
+        {% endif %}
+      {% endif %}
+    </section>
+
+    {% if can_manage %}
+    <section class="card">
+      <h3>{% translate "App löschen" %}</h3>
+      <p class="muted">{% translate "Löscht die App mit allen Tabellen, Daten, Seiten und Versionen. Das lässt sich nicht rückgängig machen. Tipp: Lade vorher eine Version herunter, dann lässt sich zumindest der Aufbau wieder importieren." %}</p>
+      <form method="post" action="{% url 'designer_app_delete' app.slug %}" data-confirm="{% blocktranslate with name=app.name %}App „{{ name }}“ mit allen Tabellen, Daten, Seiten und Versionen endgültig löschen?{% endblocktranslate %}">
+        {% csrf_token %}<button class="btn btn-danger">{% translate "App löschen" %}</button>
+      </form>
+    </section>
+    {% endif %}
+  </div>
+
+  <div class="col col-6">
+    <section class="card" data-tour="scripts">
+      <h3>{% translate "Skripte" %}</h3>
+      <p class="muted">{% translate "Eigene Logik: Python läuft abgeschottet auf dem Server, JavaScript im Browser. Skripte füllen Bausteine, rechnen, prüfen oder gleichen Daten ab." %}</p>
+      {% if scripts %}
+        <table>
+          <tbody>
+            {% for sc in scripts %}
+              <tr>
+                <td><a href="{% url 'designer_script' app.slug sc.pk %}">{{ sc.name }}</a> <span class="badge">{{ sc.get_language_display }}</span>{% if not sc.enabled %} <span class="badge">{% translate "aus" %}</span>{% endif %}</td>
+                <td class="muted small">{{ sc.get_trigger_display }}{% if sc.trigger == "page" %}: {{ sc.page.title|default:_("alle Seiten") }}{% elif sc.trigger == "schedule" %}: {% blocktranslate count n=sc.interval_minutes %}jede Minute{% plural %}alle {{ n }} Minuten{% endblocktranslate %}{% endif %}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% endif %}
+      <div class="actions spaced-top">
+        <a class="btn btn-secondary btn-small" href="{% url 'designer_script_new' app.slug %}?sprache=python">{% translate "Neues Python-Skript" %}</a>
+        <a class="btn btn-secondary btn-small" href="{% url 'designer_script_new' app.slug %}?sprache=javascript">{% translate "Neues JavaScript" %}</a>
+      </div>
+    </section>
+
+    <section class="card" data-tour="queries">
+      <h3>{% translate "Datenquellen" %}</h3>
+      <p class="muted">{% translate "Daten aus Datenbanken oder Databricks live anzeigen oder regelmäßig in eine Tabelle spiegeln." %}</p>
+      {% if queries %}
+        <table>
+          <tbody>
+            {% for q in queries %}
+              <tr>
+                <td><a href="{% url 'designer_query' app.slug q.pk %}">{{ q.name }}</a> <code class="key">{{ q.source }}</code></td>
+                <td class="muted small">{% if q.sync_entity %}→ {{ q.sync_entity.name }}{% if q.sync_interval %}, {% blocktranslate count n=q.sync_interval %}jede Minute{% plural %}alle {{ n }} Minuten{% endblocktranslate %}{% endif %}{% if q.last_sync_at and not q.last_sync_ok %} <span class="badge badge-error">{% translate "Fehler" %}</span>{% endif %}{% else %}{% translate "nur live" %}{% endif %}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% endif %}
+      {% if sources %}
+        <div class="actions spaced-top"><a class="btn btn-secondary btn-small" href="{% url 'designer_query_new' app.slug %}">{% translate "Neue Abfrage" %}</a></div>
+      {% else %}
+        <p class="muted small">{% translate "Noch keine Datenquelle eingerichtet. Das übernimmt der Betrieb (Handbuch, Abschnitt „Datenquellen“)." %}</p>
+      {% endif %}
+    </section>
+
+    <section class="card" data-tour="api" id="api">
+      <h3>{% translate "Schnittstelle (API)" %}</h3>
+      <p class="muted">{% translate "Andere Programme können Einträge lesen und schreiben. Schalte dafür Tabellen frei und erzeuge einen Schlüssel." %}</p>
+
+      <h4>{% translate "Freigeschaltete Tabellen" %}</h4>
+      {% if entities %}
+        <form method="post" class="form">
+          {% csrf_token %}<input type="hidden" name="kind" value="api">
+          {% for entity in entities %}
+            <label class="check-line"><input type="checkbox" name="api_entity" value="{{ entity.pk }}"{% if entity.api_enabled %} checked{% endif %}> {{ entity.name }} <code class="key">{{ entity.slug }}</code></label>
+          {% endfor %}
+          <button class="btn btn-secondary btn-small">{% translate "Freigaben speichern" %}</button>
+        </form>
+      {% else %}
+        <p class="empty">{% translate "Lege zuerst eine Tabelle an." %}</p>
+      {% endif %}
+
+      <h4 class="spaced">{% translate "Schlüssel" %}</h4>
+      {% if api_keys %}
+        <table>
+          <tbody>
+            {% for key in api_keys %}
+              <tr>
+                <td>{{ key.name }} <code class="key">{{ key.prefix }}…</code></td>
+                <td class="muted small">{% if key.can_write %}{% translate "lesen und schreiben" %}{% else %}{% translate "nur lesen" %}{% endif %}{% if key.last_used %}, {% translate "zuletzt genutzt" %} {{ key.last_used|date:"SHORT_DATE_FORMAT" }}{% endif %}</td>
+                <td class="row-actions">
+                  <form method="post" action="{% url 'designer_key_delete' app.slug key.pk %}" data-confirm="{% translate 'Schlüssel löschen? Programme, die ihn verwenden, verlieren sofort den Zugriff.' %}">
+                    {% csrf_token %}<button class="link danger">{% translate "Löschen" %}</button>
+                  </form>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% endif %}
+      <form method="post" class="form key-form">
+        {% csrf_token %}<input type="hidden" name="kind" value="key">
+        {{ key_form.as_div }}
+        <button class="btn btn-secondary btn-small">{% translate "Schlüssel erzeugen" %}</button>
+      </form>
+
+      <p><a class="btn btn-secondary btn-small" href="{% url 'api_docs' app.slug %}">{% translate "API-Dokumentation öffnen" %}</a></p>
+      <h4 class="spaced">{% translate "So rufst du die API auf" %}</h4>
+      <pre class="json">curl -H "Authorization: Bearer {% translate 'DEIN_SCHLÜSSEL' %}" \
+  {% if api_example %}{{ api_example }}{% else %}{{ api_base }}{% endif %}</pre>
+      <p class="muted small">{% blocktranslate %}Die Adresse <code>{{ api_base }}</code> beschreibt alle freigeschalteten Tabellen mit ihren Feldern. Mehr dazu steht im Handbuch (docs/HANDBUCH.md, Abschnitt „API“).{% endblocktranslate %}</p>
+      <h4 class="spaced">{% translate "MCP-Server für KI-Agenten und n8n" %}</h4>
+      <pre class="json">{{ request.scheme }}://{{ request.get_host }}{% url 'mcp' app.slug %}</pre>
+      <p class="muted small">{% blocktranslate %}Transport „HTTP Streamable“, Kopfzeile <code>Authorization: Bearer DEIN_SCHLÜSSEL</code>. Die Tools entstehen aus den freigeschalteten Tabellen; ein Schlüssel ohne Schreibrecht bekommt nur die lesenden.{% endblocktranslate %}</p>
+      {% if api_endpoints %}<p class="muted small">{% translate "Eigene Endpunkte aus Erweiterungen:" %} {% for name in api_endpoints %}<code class="key">x/{{ name }}/</code> {% endfor %}</p>{% endif %}
+    </section>
+  </div>
+</div>
+{% endblock %}
+{% block tour %}{% tour "designer-app" %}{% endblock %}

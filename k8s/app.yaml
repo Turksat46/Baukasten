@@ -1,0 +1,155 @@
+# Baukasten auf Kubernetes.
+# Vor dem Einspielen anpassen: Image, Hostname, ggf. Namespace und Ingress-Klasse.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: baukasten-config
+data:
+  ALLOWED_HOSTS: "baukasten.example.com"
+  CSRF_TRUSTED_ORIGINS: "https://baukasten.example.com"
+  # Hosts, die Web-Request-Bausteine und Erweiterungen aufrufen dürfen (kommagetrennt)
+  HTTP_ALLOWED_HOSTS: ""
+  LOG_LEVEL: "INFO"
+  # Skripte: Zeitlimit in Sekunden, Speicher je Lauf in MB
+  SCRIPT_TIMEOUT: "10"
+  SCRIPT_MEMORY_MB: "512"
+  # Anmeldung über Keycloak (leer lassen: nur lokale Konten). Das Client-Secret gehört ins Secret.
+  OIDC_ISSUER: ""        # z. B. https://keycloak.example.com/realms/firma
+  OIDC_CLIENT_ID: ""
+  # ---- Last und Skalierung (Handbuch, Abschnitt „Skalierung“) ----
+  # Gleichzeitige Anfragen je Pod = Workers × Threads
+  GUNICORN_WORKERS: "3"
+  GUNICORN_THREADS: "4"
+  GUNICORN_TIMEOUT: "60"
+  # Datenbankverbindungen: Pods × Workers × Threads muss unter max_connections von PostgreSQL bleiben
+  DB_CONN_MAX_AGE: "60"
+  # Zwischenspeicher: ohne REDIS_URL (im Secret) nimmt der Baukasten eine Tabelle in PostgreSQL
+  # Externe Datenquellen: Zeitlimit für Seiten, für das Spiegeln im Hintergrund,
+  # gleichzeitige Abfragen je Quelle im ganzen Cluster (je Quelle: QUERY_PARALLEL_<NAME>)
+  QUERY_TIMEOUT: "25"
+  SYNC_TIMEOUT: "300"
+  QUERY_PARALLEL: "4"
+  QUERY_WAIT: "2"
+  LAZY_QUERIES: "true"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: baukasten
+  labels:
+    app: baukasten
+spec:
+  replicas: 2
+  # Beim Update erst neue Pods starten, dann alte beenden: kein Ausfall.
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  selector:
+    matchLabels:
+      app: baukasten
+  template:
+    metadata:
+      labels:
+        app: baukasten
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+      containers:
+        - name: web
+          image: registry.example.com/baukasten:1.0.0
+          ports:
+            - containerPort: 8000
+          envFrom:
+            - configMapRef:
+                name: baukasten-config
+            - secretRef:
+                name: baukasten-secret
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8000
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          # Skripte laufen als eigene Prozesse (SCRIPT_MEMORY_MB je Lauf) – Speichergrenze großzügig wählen.
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              memory: 1536Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: baukasten
+spec:
+  selector:
+    app: baukasten
+  ports:
+    - port: 80
+      targetPort: 8000
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: baukasten
+spec:
+  tls:
+    - hosts:
+        - baukasten.example.com
+      secretName: baukasten-tls
+  rules:
+    - host: baukasten.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: baukasten
+                port:
+                  number: 80
+---
+# Bei Wartung der Knoten bleibt immer mindestens ein Pod erreichbar.
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: baukasten
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: baukasten
+---
+# Mehr Pods bei CPU-Last. Achtung: maxReplicas × Workers × Threads Datenbankverbindungen.
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: baukasten
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: baukasten
+  minReplicas: 2
+  maxReplicas: 6
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70

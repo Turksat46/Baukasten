@@ -1,0 +1,239 @@
+"""MCP-Server (Model Context Protocol) je App: /mcp/<app>/
+
+Damit können KI-Agenten und Automatisierungen wie n8n („MCP Client Tool“), Claude
+oder Cursor die Tabellen einer App lesen und – mit passendem Schlüssel – ändern.
+
+- Transport: „Streamable HTTP“ ohne Streaming. Jede Anfrage ist ein POST mit einer
+  JSON-RPC-Nachricht, die Antwort kommt als JSON. Kein Sitzungszustand.
+- Anmeldung: derselbe Schlüssel wie für die API („Authorization: Bearer bk_…“).
+- Tools entstehen automatisch aus den Tabellen, die im Designer für die API
+  freigeschaltet sind, und aus eigenen Endpunkten (hooks.api). Ändert jemand ein
+  Feld, sind die Tools beim nächsten Abruf aktuell.
+- Ein Schlüssel ohne Schreibrecht bekommt nur die lesenden Tools. Anlegen,
+  Ändern und Löschen gibt es nur, wo die Tabelle es erlaubt.
+"""
+import json
+import logging
+import re
+
+from django.http import HttpResponse, JsonResponse
+from django.utils.http import url_has_allowed_host_and_scheme
+from django.views.decorators.csrf import csrf_exempt
+
+from . import hooks
+from .api import authenticate, find_records, unauthorized
+from .models import Field, Record
+from .openapi import TYPE_SCHEMAS
+from .scripting.ops import OpsError, save_record, serialize
+
+log = logging.getLogger(__name__)
+
+PROTOCOL_VERSIONS = ("2025-06-18", "2025-03-26", "2024-11-05")
+SERVER_VERSION = "1.0"
+
+# JSON-RPC-Fehlercodes
+PARSE_ERROR, INVALID_REQUEST, METHOD_NOT_FOUND, INVALID_PARAMS = -32700, -32600, -32601, -32602
+
+
+class ToolError(Exception):
+    """Fehler bei der Ausführung eines Tools: geht als isError an das Modell zurück."""
+
+
+def _tool_name(*parts):
+    return re.sub(r"[^A-Za-z0-9_-]", "_", "_".join(parts))[:64]
+
+
+def _field_schema(field, for_filter=False):
+    schema = dict(TYPE_SCHEMAS.get(field.type, {"type": "string"}))
+    schema.pop("example", None)
+    description = field.label
+    if field.type == Field.CHOICE:
+        schema["enum"] = field.choice_list()
+    if field.type == Field.REFERENCE and field.reference:
+        description += f" (Nummer eines Eintrags aus „{field.reference.name}“)"
+    if field.type == Field.DATE:
+        description += " (Format JJJJ-MM-TT)"
+    if for_filter:
+        description = f"Nur Einträge, bei denen „{field.label}“ genau diesen Wert hat"
+    elif field.required:
+        description += " – Pflichtfeld"
+    schema["description"] = description
+    return schema
+
+
+def _object(properties, required=()):
+    schema = {"type": "object", "properties": properties, "additionalProperties": False}
+    if required:
+        schema["required"] = list(required)
+    return schema
+
+
+ID = {"type": "integer", "description": "Nummer (id) des Eintrags"}
+
+
+def build_tools(app, key):
+    """Alle Tools für diese App und diesen Schlüssel: {name: (Beschreibung für tools/list, Ausführung)}."""
+    tools = {}
+
+    def add(name, title, description, schema, run, read_only=True, destructive=False):
+        tools[name] = ({
+            "name": name, "title": title, "description": description, "inputSchema": schema,
+            "annotations": {"title": title, "readOnlyHint": read_only, "destructiveHint": destructive,
+                            "idempotentHint": read_only, "openWorldHint": False},
+        }, run)
+
+    for entity in app.entities.filter(api_enabled=True).prefetch_related("fields", "fields__reference"):
+        fields = list(entity.fields.all())
+        names = ", ".join(f"{f.key} ({f.label})" for f in fields)
+
+        def run_list(args, request, entity=entity, fields=fields):
+            return find_records(entity, fields, args)
+
+        def run_get(args, request, entity=entity, fields=fields):
+            record = Record.objects.filter(pk=args.get("id"), entity=entity).first()
+            if record is None:
+                raise ToolError("Diesen Eintrag gibt es nicht.")
+            return serialize(record, fields)
+
+        add(_tool_name("list", entity.slug), f"{entity.name} suchen",
+            f"Sucht Einträge in der Tabelle „{entity.name}“ der App „{app.name}“. Felder: {names}. "
+            "Ohne Parameter kommen die ersten 50 Einträge. Antwort: count, page, pages, results.",
+            _object({
+                "q": {"type": "string", "description": "Volltextsuche in allen Feldern"},
+                "page": {"type": "integer", "minimum": 1, "description": "Seite der Ergebnisliste (ab 1)"},
+                "page_size": {"type": "integer", "minimum": 1, "maximum": 200, "description": "Einträge pro Seite, höchstens 200"},
+                **{f.key: _field_schema(f, for_filter=True) for f in fields},
+            }), run_list)
+        add(_tool_name("get", entity.slug), f"{entity.name} lesen",
+            f"Liest einen Eintrag aus „{entity.name}“ anhand seiner Nummer (id).",
+            _object({"id": ID}, ["id"]), run_get)
+
+        if not key.can_write:
+            continue
+        if entity.allow_create:
+            def run_create(args, request, entity=entity, fields=fields):
+                return serialize(save_record(entity, args), fields)
+
+            add(_tool_name("create", entity.slug), f"{entity.name} anlegen",
+                f"Legt einen Eintrag in „{entity.name}“ an. Es gelten dieselben Prüfungen wie im Formular.",
+                _object({f.key: _field_schema(f) for f in fields}, [f.key for f in fields if f.required]),
+                run_create, read_only=False)
+        if entity.allow_edit:
+            def run_update(args, request, entity=entity, fields=fields):
+                args = dict(args)
+                record = Record.objects.filter(pk=args.pop("id", None), entity=entity).first()
+                if record is None:
+                    raise ToolError("Diesen Eintrag gibt es nicht.")
+                return serialize(save_record(entity, args, record=record, partial=True), fields)
+
+            add(_tool_name("update", entity.slug), f"{entity.name} ändern",
+                f"Ändert einzelne Felder eines Eintrags in „{entity.name}“. Nicht genannte Felder bleiben, wie sie sind.",
+                _object({"id": ID, **{f.key: _field_schema(f) for f in fields}}, ["id"]),
+                run_update, read_only=False)
+        if entity.allow_delete:
+            def run_delete(args, request, entity=entity):
+                deleted, _detail = Record.objects.filter(pk=args.get("id"), entity=entity).delete()
+                if not deleted:
+                    raise ToolError("Diesen Eintrag gibt es nicht.")
+                return {"deleted": True, "id": args.get("id")}
+
+            add(_tool_name("delete", entity.slug), f"{entity.name} löschen",
+                f"Löscht einen Eintrag aus „{entity.name}“ endgültig.",
+                _object({"id": ID}, ["id"]), run_delete, read_only=False, destructive=True)
+
+    for name, endpoint in hooks.API_ENDPOINTS.items():
+        if endpoint["write"] and not key.can_write:
+            continue
+
+        def run_custom(args, request, endpoint=endpoint):
+            return endpoint["fn"](request, app, args)
+
+        doc = (endpoint["fn"].__doc__ or "").strip().splitlines()
+        add(_tool_name("x", name), name,
+            (doc[0] if doc else f"Eigener Endpunkt „{name}“.") + " Parameter frei als Objekt.",
+            {"type": "object", "additionalProperties": True}, run_custom,
+            read_only=not endpoint["write"])
+    return tools
+
+
+def _result(msg_id, result):
+    return {"jsonrpc": "2.0", "id": msg_id, "result": result}
+
+
+def _error(msg_id, code, message):
+    return {"jsonrpc": "2.0", "id": msg_id, "error": {"code": code, "message": message}}
+
+
+def handle(request, key, message):
+    """Eine JSON-RPC-Nachricht. Gibt die Antwort zurück, bei Benachrichtigungen None."""
+    if not isinstance(message, dict) or message.get("jsonrpc") != "2.0" or not isinstance(message.get("method"), str):
+        return _error(message.get("id") if isinstance(message, dict) else None, INVALID_REQUEST, "Ungültige Anfrage.")
+    method, msg_id, params = message["method"], message.get("id"), message.get("params") or {}
+    if "id" not in message:  # Benachrichtigung, z. B. notifications/initialized
+        return None
+    app = key.app
+    if method == "initialize":
+        wanted = params.get("protocolVersion")
+        return _result(msg_id, {
+            "protocolVersion": wanted if wanted in PROTOCOL_VERSIONS else PROTOCOL_VERSIONS[0],
+            "capabilities": {"tools": {"listChanged": False}},
+            "serverInfo": {"name": f"baukasten-{app.slug}", "title": f"Baukasten: {app.name}", "version": SERVER_VERSION},
+            "instructions": (f"Zugriff auf die App „{app.name}“ im Baukasten. "
+                             + ("Dieser Schlüssel darf lesen und schreiben." if key.can_write else "Dieser Schlüssel darf nur lesen.")
+                             + " Verweise und Einträge werden über ihre Nummer (id) angesprochen."),
+        })
+    if method == "ping":
+        return _result(msg_id, {})
+    if method == "tools/list":
+        return _result(msg_id, {"tools": [spec for spec, _run in build_tools(app, key).values()]})
+    if method == "tools/call":
+        name, args = params.get("name"), params.get("arguments") or {}
+        tool = build_tools(app, key).get(name)
+        if tool is None:
+            return _error(msg_id, INVALID_PARAMS, f"Das Tool „{name}“ gibt es nicht.")
+        if not isinstance(args, dict):
+            return _error(msg_id, INVALID_PARAMS, "„arguments“ muss ein Objekt sein.")
+        run = tool[1]
+        try:
+            data = run(args, request)
+        except ToolError as exc:
+            return _result(msg_id, {"content": [{"type": "text", "text": str(exc)}], "isError": True})
+        except OpsError as exc:
+            text = str(exc) + (" " + json.dumps(exc.fields, ensure_ascii=False) if exc.fields else "")
+            return _result(msg_id, {"content": [{"type": "text", "text": text}], "isError": True})
+        except Exception:
+            log.exception("Fehler im MCP-Tool %s", name)
+            return _result(msg_id, {"content": [{"type": "text", "text": "Das Tool ist auf einen Fehler gelaufen."}],
+                                    "isError": True})
+        result = {"content": [{"type": "text", "text": json.dumps(data, ensure_ascii=False, default=str)}],
+                  "isError": False}
+        if isinstance(data, dict):
+            result["structuredContent"] = data
+        return _result(msg_id, result)
+    return _error(msg_id, METHOD_NOT_FOUND, f"Unbekannte Methode „{method}“.")
+
+
+@csrf_exempt
+def endpoint(request, app):
+    # Schutz gegen DNS-Rebinding: Aufrufe aus dem Browser nur von derselben Adresse.
+    origin = request.headers.get("Origin")
+    if origin and not url_has_allowed_host_and_scheme(origin, allowed_hosts={request.get_host()}):
+        return JsonResponse(_error(None, INVALID_REQUEST, "Ursprung nicht erlaubt."), status=403)
+    if request.method != "POST":
+        response = HttpResponse(status=405)  # kein Server-Sent-Events-Strom, nur POST
+        response["Allow"] = "POST"
+        return response
+    key = authenticate(request, app)
+    if key is None:
+        return unauthorized()
+    try:
+        body = json.loads(request.body)
+    except ValueError:
+        return JsonResponse(_error(None, PARSE_ERROR, "Der Inhalt ist kein gültiges JSON."), status=400)
+    if isinstance(body, list):  # Stapel älterer Protokollversionen
+        answers = [a for a in (handle(request, key, m) for m in body) if a is not None]
+        return JsonResponse(answers, safe=False) if answers else HttpResponse(status=202)
+    answer = handle(request, key, body)
+    if answer is None:
+        return HttpResponse(status=202)
+    return JsonResponse(answer, json_dumps_params={"ensure_ascii": False})

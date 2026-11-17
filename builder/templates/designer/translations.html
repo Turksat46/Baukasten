@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% block title %}{% translate "Übersetzungen" %} – {{ app.name }} – {% translate "Designer" %}{% endblock %}
+{% block content %}
+<p class="crumbs"><a href="{% url 'designer_app' app.slug %}">{{ app.name }}</a> / {% translate "Übersetzungen" %}</p>
+<div class="head-row">
+  <h1>{% translate "Übersetzungen" %}</h1>
+  <div class="card-tools">
+    <a class="btn btn-secondary btn-small" href="{% url 'designer_translations_export' app.slug %}">{% translate "Als CSV herunterladen" %}</a>
+  </div>
+</div>
+<p class="muted">{% blocktranslate %}Die App ist in der Quellsprache „{{ source }}“ gebaut. Trage zu jedem Text die Übersetzung ein; wer die Oberfläche auf diese Sprache umschaltet, sieht sie. Leere Felder zeigen den Originaltext. Gespeicherte Daten, die API und Skripte behalten die Werte der Quellsprache.{% endblocktranslate %}</p>
+
+<section class="card">
+  <p>{% for name, done, total in progress %}<strong>{{ name }}:</strong> {% blocktranslate %}{{ done }} von {{ total }} Texten übersetzt{% endblocktranslate %}{% if not forloop.last %} · {% endif %}{% endfor %}</p>
+  <p>
+    {% if only_missing %}<a href="{% url 'designer_translations' app.slug %}">{% translate "Alle Texte zeigen" %}</a>
+    {% else %}<a href="?fehlend=1">{% translate "Nur fehlende Übersetzungen zeigen" %}</a>{% endif %}
+  </p>
+  {% if rows %}
+    <form method="post">
+      {% csrf_token %}
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>{% translate "Text" %}</th>
+            {% for code, name in languages %}<th>{{ name }}</th>{% endfor %}
+          </tr></thead>
+          <tbody>
+            {% for row in rows %}
+              <tr>
+                <td>
+                  <input type="hidden" name="src_{{ row.index }}" value="{{ row.text }}">
+                  <div>{{ row.text|linebreaksbr }}</div>
+                  <div class="muted small">{{ row.where }}</div>
+                </td>
+                {% for code, value in row.values %}
+                  <td>
+                    {% if row.long %}
+                      <textarea name="tr_{{ code }}_{{ row.index }}" rows="3" aria-label="{{ code }}: {{ row.text|truncatechars:60 }}">{{ value }}</textarea>
+                    {% else %}
+                      <input type="text" name="tr_{{ code }}_{{ row.index }}" value="{{ value }}" aria-label="{{ code }}: {{ row.text|truncatechars:60 }}">
+                    {% endif %}
+                  </td>
+                {% endfor %}
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <div class="actions spaced-top"><button class="btn">{% translate "Übersetzungen speichern" %}</button></div>
+    </form>
+  {% elif only_missing %}
+    <p class="empty">{% translate "Alles übersetzt." %}</p>
+  {% else %}
+    <p class="empty">{% translate "Die App hat noch keine Texte." %}</p>
+  {% endif %}
+</section>
+
+<section class="card">
+  <h3>{% translate "CSV einlesen" %}</h3>
+  <p class="muted small">{% translate "Für Übersetzer ohne Designer-Zugang: CSV herunterladen, in Excel die Spalte der Sprache ausfüllen, hier wieder einlesen. Übernommen werden nur ausgefüllte Zellen zu Texten, die es in der App gibt; vorhandene Übersetzungen werden dabei überschrieben, leere Zellen löschen nichts." %}</p>
+  <form method="post" enctype="multipart/form-data" class="inline-form">
+    {% csrf_token %}<input type="hidden" name="kind" value="import">
+    <input type="file" name="file" accept=".csv,text/csv" required aria-label="{% translate 'CSV-Datei' %}">
+    <button class="btn btn-secondary btn-small">{% translate "Einlesen" %}</button>
+  </form>
+</section>
+{% endblock %}

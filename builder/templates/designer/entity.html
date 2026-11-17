@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% load i18n baukasten %}
+{% block title %}{{ entity.name }} – {% translate "Designer" %}{% endblock %}
+{% block content %}
+<p class="crumbs"><a href="{% url 'designer_home' %}">{% translate "Designer" %}</a> / <a href="{% url 'designer_app' app.slug %}">{{ app.name }}</a> / {{ entity.name }}</p>
+<div class="head-row">
+  <h1>{% translate "Tabelle" %}: {{ entity.name }}</h1>
+  <form method="post" action="{% url 'designer_entity_page' app.slug entity.pk %}">
+    {% csrf_token %}<button class="btn" data-tour="make-page">{% translate "Seite aus dieser Tabelle erzeugen" %}</button>
+  </form>
+</div>
+<p class="muted">{% blocktranslate count n=record_count %}{{ n }} Eintrag gespeichert.{% plural %}{{ n }} Einträge gespeichert.{% endblocktranslate %}</p>
+
+<div class="grid">
+  <div class="col col-8">
+    <section class="card" data-tour="fields">
+      <h3>{% translate "Felder" %}</h3>
+      <table>
+        <thead><tr><th>{% translate "Bezeichnung" %}</th><th>{% translate "Typ" %}</th><th>{% translate "Pflicht" %}</th><th>{% translate "In Listen" %}</th><th></th></tr></thead>
+        <tbody>
+          {% for field in fields %}
+            <tr>
+              <td><a href="{% url 'designer_field' app.slug field.pk %}">{{ field.label }}</a> <code class="key">{{ field.key }}</code></td>
+              <td>{{ field.get_type_display }}{% if field.reference %} → {{ field.reference.name }}{% endif %}</td>
+              <td>{% if field.required %}{% translate "Ja" %}{% else %}–{% endif %}</td>
+              <td>{% if field.show_in_list %}{% translate "Ja" %}{% else %}–{% endif %}{% if not field.show_in_form %} <span class="badge" title="{% translate 'Nicht im Formular, wird von einem Skript gefüllt' %}">{% translate "Skript" %}</span>{% endif %}</td>
+              <td class="row-actions">
+                <form method="post" action="{% url 'designer_field_move' app.slug field.pk 'auf' %}">{% csrf_token %}<button class="link" aria-label="{% translate 'Nach oben' %}">↑</button></form>
+                <form method="post" action="{% url 'designer_field_move' app.slug field.pk 'ab' %}">{% csrf_token %}<button class="link" aria-label="{% translate 'Nach unten' %}">↓</button></form>
+                <form method="post" action="{% url 'designer_field_delete' app.slug field.pk %}" data-confirm="{% blocktranslate with label=field.label %}Feld „{{ label }}“ löschen?{% endblocktranslate %}">
+                  {% csrf_token %}<button class="link danger">{% translate "Löschen" %}</button>
+                </form>
+              </td>
+            </tr>
+          {% empty %}
+            <tr><td colspan="5" class="empty">{% translate "Noch keine Felder." %}</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </section>
+
+    <section class="card">
+      <h3>{% translate "Einstellungen der Tabelle" %}</h3>
+      <form method="post" class="form">
+        {% csrf_token %}<input type="hidden" name="kind" value="entity">
+        {{ form.as_div }}
+        <div class="actions"><button class="btn">{% translate "Speichern" %}</button></div>
+      </form>
+      <form method="post" action="{% url 'designer_entity_delete' app.slug entity.pk %}" data-confirm="{% blocktranslate with name=entity.name count=record_count %}Tabelle „{{ name }}“ mit allen {{ count }} Einträgen löschen?{% endblocktranslate %}">
+        {% csrf_token %}<button class="link danger">{% translate "Tabelle löschen" %}</button>
+      </form>
+    </section>
+  </div>
+
+  <div class="col col-4">
+    <section class="card" data-tour="add-field">
+      <h3>{% translate "Feld hinzufügen" %}</h3>
+      <form method="post" class="form">
+        {% csrf_token %}<input type="hidden" name="kind" value="field">
+        {{ field_form.as_div }}
+        <button class="btn">{% translate "Hinzufügen" %}</button>
+      </form>
+    </section>
+  </div>
+</div>
+{% endblock %}
+{% block tour %}{% tour "designer-tabelle" %}{% endblock %}

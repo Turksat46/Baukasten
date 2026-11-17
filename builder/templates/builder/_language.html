@@ -1,0 +1,7 @@
+{% load i18n %}{% get_current_language as LANG %}
+<form method="post" action="{% url 'set_language' %}" class="lang-switch" data-tour="language" aria-label="{% translate 'Sprache' %}">
+  {% csrf_token %}
+  <input type="hidden" name="next" value="{{ request.get_full_path }}">
+  <button name="language" value="de" lang="de"{% if LANG == "de" %} class="current" aria-current="true"{% endif %} title="Deutsch">DE</button>
+  <button name="language" value="en" lang="en"{% if LANG == "en" %} class="current" aria-current="true"{% endif %} title="English">EN</button>
+</form>

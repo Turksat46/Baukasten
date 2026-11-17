@@ -1,0 +1,8 @@
+{% load baukasten %}<span class="app-name">{{ app.icon }} {{ app.name|tr }}</span>
+{% for nav_page in nav_pages %}
+  {% if page and nav_page.pk == page.pk %}
+    <a href="{% url 'page' app.slug nav_page.slug %}" class="active" aria-current="page">{{ nav_page.title|tr }}<span class="tab-indicator" aria-hidden="true"></span></a>
+  {% else %}
+    <a href="{% url 'page' app.slug nav_page.slug %}">{{ nav_page.title|tr }}</a>
+  {% endif %}
+{% endfor %}

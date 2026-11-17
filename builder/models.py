@@ -1,0 +1,492 @@
+"""Datenmodell des Baukastens.
+
+Eine App besteht aus Tabellen (Entity) mit Feldern (Field) und aus Seiten (Page).
+Datensätze (Record) liegen als JSON in einer gemeinsamen Tabelle. Dadurch braucht
+eine im Designer geänderte Tabelle keine Datenbank-Migration.
+"""
+import hashlib
+import secrets
+
+from django.conf import settings
+from django.conf import settings as settings_module
+from django.contrib.auth.models import Group
+from django.core.serializers.json import DjangoJSONEncoder
+from django.db import models
+from django.utils.text import slugify
+from django.utils.translation import gettext_lazy as _
+
+
+class UnicodeJSONEncoder(DjangoJSONEncoder):
+    """Speichert Umlaute lesbar, damit die Textsuche sie auf jeder Datenbank findet."""
+
+    def __init__(self, *args, **kwargs):
+        kwargs["ensure_ascii"] = False
+        super().__init__(*args, **kwargs)
+
+
+def unique_slug(queryset, base, field="slug", sep="-"):
+    base = base or "x"
+    slug, i = base, 2
+    while queryset.filter(**{field: slug}).exists():
+        slug = f"{base}{sep}{i}"
+        i += 1
+    return slug
+
+
+RESERVED_APP_SLUGS = {"bausteine", "import"}  # Adressen des Designers, die keine App belegen darf
+
+
+def can_design(user):
+    return user.is_authenticated and (user.is_staff or user.has_perm("builder.design_apps"))
+
+
+class App(models.Model):
+    name = models.CharField(_("Name"), max_length=80)
+    slug = models.SlugField(unique=True, blank=True)
+    description = models.CharField(_("Beschreibung"), max_length=200, blank=True)
+    icon = models.CharField(_("Symbol"), max_length=8, blank=True, default="📦")
+    published = models.BooleanField(
+        _("Veröffentlicht"), default=False, help_text=_("Erst dann sehen Nutzer die App.")
+    )
+    groups = models.ManyToManyField(
+        Group,
+        blank=True,
+        verbose_name=_("Gruppen"),
+        help_text=_("Leer lassen: alle angemeldeten Nutzer dürfen die App verwenden."),
+    )
+    # Eigentümerin: wer die App angelegt hat. Ohne Eigentümerin (alte Apps, gelöschtes Konto)
+    # dürfen alle Designer die App bearbeiten.
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL,
+        verbose_name=_("Eigentümer/in"),
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    editors = models.ManyToManyField(
+        settings.AUTH_USER_MODEL, blank=True, related_name="edited_apps", verbose_name=_("Mitbearbeiter"),
+        help_text=_("Designer, die diese App zusätzlich zur Eigentümerin bearbeiten dürfen."),
+    )
+    editor_groups = models.ManyToManyField(
+        Group, blank=True, related_name="edited_apps", verbose_name=_("Mitbearbeiter-Gruppen"),
+        help_text=_("Designer in diesen Gruppen dürfen die App bearbeiten."),
+    )
+    # Übersetzungen der Inhalte: {"en": {"Quelltext": "Übersetzung"}}, siehe builder/app_i18n.py
+    translations = models.JSONField(default=dict, blank=True, encoder=UnicodeJSONEncoder)
+
+    class Meta:
+        verbose_name = _("App")
+        verbose_name_plural = _("Apps")
+        ordering = ["name"]
+        permissions = [("design_apps", _("Darf Apps im Designer bearbeiten"))]
+
+    def __str__(self):
+        return self.name
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            base = slugify(self.name) or "app"
+            if base in RESERVED_APP_SLUGS:
+                base += "-app"
+            self.slug = unique_slug(App.objects, base)
+        super().save(*args, **kwargs)
+
+    @classmethod
+    def editable_by(cls, user):
+        """Apps, die diese Person im Designer bearbeiten darf."""
+        if not can_design(user):
+            return cls.objects.none()
+        if user.is_superuser:
+            return cls.objects.all()
+        return cls.objects.filter(
+            models.Q(created_by__isnull=True) | models.Q(created_by=user) | models.Q(editors=user)
+            | models.Q(editor_groups__in=user.groups.all())
+        ).distinct()
+
+    def user_can_edit(self, user):
+        """Im Designer bearbeiten: Eigentümerin, Mitbearbeiter (einzeln oder per Gruppe), Admins.
+        Immer nur mit Designer-Recht."""
+        if not can_design(user):
+            return False
+        if user.is_superuser or self.created_by_id is None or self.created_by_id == user.pk:
+            return True
+        return (self.editors.filter(pk=user.pk).exists()
+                or self.editor_groups.filter(pk__in=user.groups.values("pk")).exists())
+
+    def user_can_manage(self, user):
+        """Mitbearbeiter verwalten und die App löschen: Eigentümerin und Admins.
+        Apps ohne Eigentümerin bleiben wie bisher für alle Designer offen."""
+        return can_design(user) and (user.is_superuser or self.created_by_id in (None, user.pk))
+
+    def user_can_use(self, user):
+        if self.user_can_edit(user):
+            return True
+        if not self.published:
+            return False
+        group_ids = list(self.groups.values_list("id", flat=True))
+        return not group_ids or user.groups.filter(id__in=group_ids).exists()
+
+    @property
+    def home_page(self):
+        return self.pages.order_by("order", "id").first()
+
+    def public_reach(self):
+        """Was Gäste ohne Anmeldung auslösen dürfen: Skripte der Buttons und Tabellen der
+        Formulare auf öffentlichen Seiten. Gibt (Skript-Kurznamen, Tabellen-Kurznamen) zurück."""
+        scripts, entities = set(), set()
+        if not self.published:
+            return scripts, entities
+        for page in self.pages.filter(public=True):
+            for block in page.layout or []:
+                props = block.get("props") or {}
+                if block.get("type") == "button" and props.get("target") == "script" and props.get("script"):
+                    scripts.add(props["script"])
+                elif block.get("type") == "form" and props.get("entity"):
+                    entities.add(props["entity"])
+        return scripts, entities
+
+
+class Entity(models.Model):
+    app = models.ForeignKey(App, related_name="entities", on_delete=models.CASCADE)
+    name = models.CharField(_("Name"), max_length=80)
+    slug = models.SlugField(blank=True)
+    allow_create = models.BooleanField(_("Anlegen erlaubt"), default=True)
+    allow_edit = models.BooleanField(_("Bearbeiten erlaubt"), default=True)
+    allow_delete = models.BooleanField(_("Löschen erlaubt"), default=True)
+    api_enabled = models.BooleanField(_("Über die API erreichbar"), default=False)
+
+    class Meta:
+        verbose_name = _("Tabelle")
+        verbose_name_plural = _("Tabellen")
+        ordering = ["name"]
+        constraints = [models.UniqueConstraint(fields=["app", "slug"], name="entity_slug_per_app")]
+
+    def __str__(self):
+        return self.name
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = unique_slug(self.app.entities, slugify(self.name) or "tabelle")
+        super().save(*args, **kwargs)
+
+
+class Field(models.Model):
+    TEXT, LONGTEXT, NUMBER, DECIMAL, DATE = "text", "longtext", "number", "decimal", "date"
+    BOOL, CHOICE, EMAIL, URL, REFERENCE = "bool", "choice", "email", "url", "reference"
+    TYPES = [
+        (TEXT, _("Text")),
+        (LONGTEXT, _("Langer Text")),
+        (NUMBER, _("Ganze Zahl")),
+        (DECIMAL, _("Kommazahl")),
+        (DATE, _("Datum")),
+        (BOOL, _("Ja/Nein")),
+        (CHOICE, _("Auswahl")),
+        (EMAIL, _("E-Mail")),
+        (URL, _("Link")),
+        (REFERENCE, _("Verweis auf Tabelle")),
+    ]
+
+    entity = models.ForeignKey(Entity, related_name="fields", on_delete=models.CASCADE)
+    label = models.CharField(_("Bezeichnung"), max_length=80)
+    key = models.SlugField(blank=True, editable=False)
+    type = models.CharField(_("Typ"), max_length=12, choices=TYPES, default=TEXT)
+    required = models.BooleanField(_("Pflichtfeld"), default=False)
+    choices = models.TextField(
+        _("Auswahlwerte"), blank=True, help_text=_("Nur für Typ „Auswahl“: ein Wert pro Zeile.")
+    )
+    reference = models.ForeignKey(
+        Entity,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="referenced_by",
+        verbose_name=_("Verweist auf"),
+        help_text=_("Nur für Typ „Verweis auf Tabelle“."),
+    )
+    show_in_list = models.BooleanField(_("In Listen anzeigen"), default=True)
+    show_in_form = models.BooleanField(
+        _("Im Formular anzeigen"), default=True,
+        help_text=_("Aus für Felder, die ein Skript füllt (z. B. ein erzeugter Link). Der Wert bleibt beim Bearbeiten erhalten."),
+    )
+    order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        verbose_name = _("Feld")
+        verbose_name_plural = _("Felder")
+        ordering = ["order", "id"]
+        constraints = [models.UniqueConstraint(fields=["entity", "key"], name="field_key_per_entity")]
+
+    def __str__(self):
+        return self.label
+
+    def save(self, *args, **kwargs):
+        if not self.key:
+            base = slugify(self.label).replace("-", "_") or "feld"
+            self.key = unique_slug(self.entity.fields, base, field="key", sep="_")
+        if not self.pk and not self.order:
+            last = self.entity.fields.order_by("-order").first()
+            self.order = (last.order + 1) if last else 1
+        super().save(*args, **kwargs)
+
+    def choice_list(self):
+        return [c.strip() for c in self.choices.splitlines() if c.strip()]
+
+
+class Record(models.Model):
+    entity = models.ForeignKey(Entity, related_name="records", on_delete=models.CASCADE)
+    data = models.JSONField(default=dict, encoder=UnicodeJSONEncoder)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = _("Eintrag")
+        verbose_name_plural = _("Einträge")
+        ordering = ["-id"]
+
+    def __str__(self):
+        first = self.entity.fields.first()
+        value = self.data.get(first.key) if first else None
+        return str(value) if value not in (None, "") else f"#{self.pk}"
+
+
+class Page(models.Model):
+    app = models.ForeignKey(App, related_name="pages", on_delete=models.CASCADE)
+    title = models.CharField(_("Titel"), max_length=80)
+    slug = models.SlugField(blank=True)
+    show_in_nav = models.BooleanField(_("Im Menü anzeigen"), default=True)
+    public = models.BooleanField(
+        _("Ohne Anmeldung erreichbar"), default=False,
+        help_text=_("Jeder mit dem Link kann die Seite öffnen, ihre Formulare absenden und ihre Buttons auslösen."),
+    )
+    order = models.PositiveIntegerField(default=0)
+    layout = models.JSONField(default=list, encoder=UnicodeJSONEncoder)
+
+    class Meta:
+        verbose_name = _("Seite")
+        verbose_name_plural = _("Seiten")
+        ordering = ["order", "id"]
+        constraints = [models.UniqueConstraint(fields=["app", "slug"], name="page_slug_per_app")]
+
+    def __str__(self):
+        return self.title
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = unique_slug(self.app.pages, slugify(self.title) or "seite")
+        if not self.pk and not self.order:
+            last = self.app.pages.order_by("-order").first()
+            self.order = (last.order + 1) if last else 1
+        super().save(*args, **kwargs)
+
+
+class CustomBlock(models.Model):
+    """Eigener Baustein, im Designer ohne Programmierung angelegt.
+
+    „html“: eigenes Markup mit Platzhaltern für selbst definierte Einstellungen.
+    „preset“: ein fertig eingestellter Standard-Baustein als wiederverwendbare Vorlage.
+    """
+
+    HTML, PRESET = "html", "preset"
+    KINDS = [(HTML, _("HTML-Baustein")), (PRESET, _("Vorlage"))]
+
+    name = models.CharField(_("Name"), max_length=80)
+    slug = models.SlugField(unique=True, blank=True)
+    description = models.CharField(_("Kurzbeschreibung"), max_length=120, blank=True)
+    kind = models.CharField(max_length=10, choices=KINDS, default=HTML)
+    html = models.TextField(_("HTML"), blank=True)
+    settings = models.TextField(_("Einstellungen"), blank=True)
+    preset = models.JSONField(default=dict, blank=True, encoder=UnicodeJSONEncoder)
+    created_by = models.ForeignKey(
+        settings_module.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = _("Eigener Baustein")
+        verbose_name_plural = _("Eigene Bausteine")
+        ordering = ["name"]
+
+    def __str__(self):
+        return self.name
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = unique_slug(CustomBlock.objects, slugify(self.name) or "baustein")
+        super().save(*args, **kwargs)
+
+    def setting_specs(self):
+        """Liest die Einstellungen: eine pro Zeile, „Bezeichnung = Standardwert“."""
+        specs, seen = [], set()
+        for line in self.settings.splitlines():
+            label, _sep, default = line.partition("=")
+            label, default = label.strip(), default.strip()
+            key = slugify(label).replace("-", "_")
+            if not key or key in seen:
+                continue
+            seen.add(key)
+            specs.append({"key": key, "label": label, "default": default,
+                          "type": "textarea" if len(default) > 60 else "text"})
+        return specs
+
+
+class ApiKey(models.Model):
+    """Zugangsschlüssel für die API einer App. Gespeichert wird nur der Hash."""
+
+    app = models.ForeignKey(App, related_name="api_keys", on_delete=models.CASCADE)
+    name = models.CharField(_("Name"), max_length=80, help_text=_("Wofür der Schlüssel gedacht ist, z. B. „Auswertung Excel“."))
+    prefix = models.CharField(max_length=12, editable=False)
+    key_hash = models.CharField(max_length=64, unique=True, editable=False)
+    can_write = models.BooleanField(_("Darf schreiben"), default=False,
+                                    help_text=_("Ohne Haken kann der Schlüssel nur lesen."))
+    created_by = models.ForeignKey(
+        settings_module.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    last_used = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        verbose_name = _("API-Schlüssel")
+        verbose_name_plural = _("API-Schlüssel")
+        ordering = ["name"]
+
+    def __str__(self):
+        return f"{self.name} ({self.prefix}…)"
+
+    @staticmethod
+    def hash(key):
+        return hashlib.sha256(key.encode()).hexdigest()
+
+    @classmethod
+    def issue(cls, app, name, can_write=False, user=None):
+        """Erzeugt einen Schlüssel. Der Klartext wird nur hier zurückgegeben."""
+        key = "bk_" + secrets.token_urlsafe(32)
+        obj = cls.objects.create(app=app, name=name, can_write=can_write, created_by=user,
+                                 prefix=key[:9], key_hash=cls.hash(key))
+        return obj, key
+
+
+class AppVersion(models.Model):
+    """Gespeicherter Stand einer App: Einstellungen, Tabellen, Felder und Seiten, ohne die Daten."""
+
+    app = models.ForeignKey(App, related_name="versions", on_delete=models.CASCADE)
+    number = models.PositiveIntegerField()
+    note = models.CharField(_("Notiz"), max_length=200, blank=True,
+                            help_text=_("Was sich geändert hat, z. B. „Auswertung ergänzt“."))
+    automatic = models.BooleanField(default=False)
+    snapshot = models.JSONField(encoder=UnicodeJSONEncoder)
+    created_by = models.ForeignKey(
+        settings_module.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = _("Version")
+        verbose_name_plural = _("Versionen")
+        ordering = ["-number"]
+        constraints = [models.UniqueConstraint(fields=["app", "number"], name="version_number_per_app")]
+
+    def __str__(self):
+        return f"{self.app.name} v{self.number}"
+
+
+class Script(models.Model):
+    """Skript in Python (läuft auf dem Server) oder JavaScript (läuft im Browser)."""
+
+    PYTHON, JAVASCRIPT = "python", "javascript"
+    LANGUAGES = [(PYTHON, "Python"), (JAVASCRIPT, "JavaScript")]
+    PAGE, BUTTON, SAVE, SCHEDULE = "page", "button", "save", "schedule"
+    TRIGGERS = [
+        (PAGE, _("Beim Öffnen einer Seite")),
+        (BUTTON, _("Per Button")),
+        (SAVE, _("Nach dem Speichern eines Eintrags")),
+        (SCHEDULE, _("Zeitgesteuert im Hintergrund")),
+    ]
+    PYTHON_ONLY = {SAVE, SCHEDULE}
+
+    app = models.ForeignKey(App, related_name="scripts", on_delete=models.CASCADE)
+    name = models.CharField(_("Name"), max_length=80)
+    slug = models.SlugField(blank=True)
+    language = models.CharField(_("Sprache"), max_length=12, choices=LANGUAGES, default=PYTHON)
+    trigger = models.CharField(_("Auslöser"), max_length=10, choices=TRIGGERS, default=PAGE)
+    page = models.ForeignKey(Page, null=True, blank=True, on_delete=models.SET_NULL, verbose_name=_("Seite"),
+                             help_text=_("Leer lassen: auf allen Seiten der App."))
+    entity = models.ForeignKey(Entity, null=True, blank=True, on_delete=models.CASCADE, verbose_name=_("Tabelle"),
+                               help_text=_("Leer lassen: nach dem Speichern in jeder Tabelle der App."))
+    interval_minutes = models.PositiveIntegerField(_("Alle … Minuten"), default=60)
+    enabled = models.BooleanField(_("Aktiv"), default=True)
+    code = models.TextField(_("Code"), blank=True)
+    created_by = models.ForeignKey(
+        settings_module.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL
+    )
+    updated_at = models.DateTimeField(auto_now=True)
+    last_run_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        verbose_name = _("Skript")
+        verbose_name_plural = _("Skripte")
+        ordering = ["name"]
+        constraints = [models.UniqueConstraint(fields=["app", "slug"], name="script_slug_per_app")]
+
+    def __str__(self):
+        return self.name
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = unique_slug(self.app.scripts, slugify(self.name) or "skript")
+        super().save(*args, **kwargs)
+
+
+class ScriptRun(models.Model):
+    script = models.ForeignKey(Script, related_name="runs", on_delete=models.CASCADE)
+    started_at = models.DateTimeField(auto_now_add=True)
+    trigger = models.CharField(max_length=10)
+    duration_ms = models.PositiveIntegerField(default=0)
+    ok = models.BooleanField(default=True)
+    log = models.TextField(blank=True)
+    error = models.TextField(blank=True)
+
+    class Meta:
+        verbose_name = _("Skriptlauf")
+        verbose_name_plural = _("Skriptläufe")
+        ordering = ["-id"]
+
+
+class DataQuery(models.Model):
+    """Lesende Abfrage an eine externe Datenbank (z. B. Databricks); live anzeigen oder in eine Tabelle spiegeln."""
+
+    app = models.ForeignKey(App, related_name="queries", on_delete=models.CASCADE)
+    name = models.CharField(_("Name"), max_length=80)
+    slug = models.SlugField(blank=True)
+    source = models.CharField(_("Datenquelle"), max_length=40)
+    sql = models.TextField(_("SQL-Abfrage"), help_text=_("Nur lesende Abfragen (SELECT oder WITH). Parameter als :name."))
+    cache_seconds = models.PositiveIntegerField(
+        _("Ergebnis zwischenspeichern (Sekunden)"), default=60,
+        help_text=_("Wie lange ein Ergebnis wiederverwendet wird, bevor die Datenbank erneut gefragt wird."))
+    sync_entity = models.ForeignKey(Entity, null=True, blank=True, on_delete=models.SET_NULL,
+                                    related_name="synced_by", verbose_name=_("In Tabelle spiegeln"))
+    key_column = models.CharField(
+        _("Schlüsselspalte"), max_length=80, blank=True,
+        help_text=_("Spalte, die einen Datensatz eindeutig kennzeichnet. Leer: Tabelle wird bei jedem Abgleich neu befüllt."))
+    created_by = models.ForeignKey(
+        settings_module.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL
+    )
+    sync_interval = models.PositiveIntegerField(
+        _("Automatisch abgleichen alle … Minuten"), default=0, help_text=_("0 = nur auf Knopfdruck."))
+    last_sync_at = models.DateTimeField(null=True, blank=True)
+    last_sync_ok = models.BooleanField(default=True)
+    last_sync_message = models.CharField(max_length=500, blank=True)
+
+    class Meta:
+        verbose_name = _("Abfrage")
+        verbose_name_plural = _("Abfragen")
+        ordering = ["name"]
+        constraints = [models.UniqueConstraint(fields=["app", "slug"], name="query_slug_per_app")]
+
+    def __str__(self):
+        return self.name
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = unique_slug(self.app.queries, slugify(self.name) or "abfrage")
+        super().save(*args, **kwargs)

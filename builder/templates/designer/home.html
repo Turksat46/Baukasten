@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% load i18n baukasten %}
+{% block title %}{% translate "Designer" %} – Baukasten{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>{% translate "Designer" %}</h1>
+    <p class="subtitle">{% translate "Apps anlegen und bearbeiten. Nutzer sehen eine App erst, wenn du sie veröffentlichst." %}</p>
+  </div>
+  <a class="btn btn-secondary" href="{% url 'designer_blocks' %}" data-tour="custom-blocks">{% translate "Eigene Bausteine" %}{% if custom_count %} ({{ custom_count }}){% endif %}</a>
+</div>
+<div class="grid">
+  <div class="col col-8">
+    <section class="card" data-tour="app-list">
+      <h3>{% translate "Apps" %}</h3>
+      {% if apps %}
+        <table>
+          <thead><tr><th>{% translate "App" %}</th><th>{% translate "Status" %}</th><th>{% translate "Eigentümer/in" %}</th><th></th></tr></thead>
+          <tbody>
+            {% for app in apps %}
+              <tr>
+                <td><a href="{% url 'designer_app' app.slug %}">{{ app.icon }} {{ app.name }}</a></td>
+                <td>{% if app.published %}<span class="badge badge-ok">{% translate "Veröffentlicht" %}</span>{% else %}<span class="badge">{% translate "Entwurf" %}</span>{% endif %}</td>
+                <td class="muted small">{% if app.created_by %}{% if app.created_by == user %}{% translate "du" %}{% else %}{{ app.created_by.get_full_name|default:app.created_by.get_username }}{% endif %}{% else %}{% translate "alle Designer" %}{% endif %}</td>
+                <td class="row-actions">
+                  <a href="{% url 'page' app.slug %}">{% translate "Öffnen" %}</a>
+                  {% if app.can_manage %}
+                  <form method="post" action="{% url 'designer_app_delete' app.slug %}" data-confirm="{% blocktranslate with name=app.name %}App „{{ name }}“ mit allen Tabellen, Daten, Seiten und Versionen endgültig löschen?{% endblocktranslate %}">
+                    {% csrf_token %}<button class="link danger">{% translate "Löschen" %}</button>
+                  </form>
+                  {% endif %}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <p class="empty">{% translate "Noch keine App. Lege rechts die erste an." %}</p>
+      {% endif %}
+    </section>
+  </div>
+  <div class="col col-4">
+    <section class="card" data-tour="new-app-form">
+      <h3>{% translate "Neue App" %}</h3>
+      <form method="post" class="form">{% csrf_token %}{{ form.as_div }}<button class="btn">{% translate "Anlegen" %}</button></form>
+    </section>
+    <section class="card">
+      <h3>{% translate "App aus Datei anlegen" %}</h3>
+      <p class="muted small">{% translate "Für Apps, die in einer anderen Umgebung als Version heruntergeladen wurden. Daten werden nicht übertragen." %}</p>
+      <form method="post" action="{% url 'designer_app_import' %}" enctype="multipart/form-data" class="form">
+        {% csrf_token %}
+        <div><input type="file" name="file" accept="application/json,.json" required aria-label="{% translate 'App-Datei' %}"></div>
+        <button class="btn btn-secondary">{% translate "Importieren" %}</button>
+      </form>
+    </section>
+  </div>
+</div>
+{% endblock %}
+{% block tour %}{% tour "designer" %}{% endblock %}

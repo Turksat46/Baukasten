@@ -1,0 +1,183 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% block title %}{% translate "Mein Profil" %} – Baukasten{% endblock %}
+{% block content %}
+<div class="profile-head">
+  <span class="avatar avatar-lg" aria-hidden="true">{{ initials }}</span>
+  <div>
+    <h1>{{ display_name }}</h1>
+    <p class="subtitle">
+      {{ user.get_username }}{% if user.email %} · {{ user.email }}{% endif %}
+      · {% if local_account %}{% translate "lokales Konto" %}{% else %}{% translate "Firmenkonto (Keycloak)" %}{% endif %}
+    </p>
+  </div>
+</div>
+
+<div class="grid">
+  <div class="col col-4">
+    <section class="card">
+      <h3>{% translate "Rechte" %}</h3>
+      <dl class="facts">
+        <div><dt>{% translate "Apps benutzen" %}</dt><dd>{% blocktranslate count n=usable_apps|length %}{{ n }} App{% plural %}{{ n }} Apps{% endblocktranslate %}</dd></div>
+        <div><dt>{% translate "Designer" %}</dt><dd>{% if designer %}<span class="badge badge-ok">{% translate "ja" %}</span>{% else %}{% translate "nein" %}{% endif %}</dd></div>
+        <div><dt>{% translate "Verwaltung (/admin/)" %}</dt><dd>{% if user.is_superuser %}{% translate "vollständig" %}{% elif user.is_staff %}{% translate "eingeschränkt" %}{% else %}{% translate "nein" %}{% endif %}</dd></div>
+      </dl>
+      <h4 class="spaced">{% translate "Gruppen" %}</h4>
+      {% if groups %}
+        <p class="tag-list">{% for group in groups %}<span class="badge">{{ group.name }}{% if group.name in default_groups %} · {% translate "Standard" %}{% endif %}</span> {% endfor %}</p>
+      {% else %}
+        <p class="empty">{% translate "Keine Gruppe." %}</p>
+      {% endif %}
+      <p class="muted small">{% translate "Gruppen legen fest, welche Apps du siehst. Mit Firmenkonto kommen sie bei jeder Anmeldung aus Keycloak." %}</p>
+    </section>
+
+    <section class="card">
+      <h3>{% translate "Einstellungen" %}</h3>
+      <div class="setting-row"><span>{% translate "Sprache" %}</span>{% include "builder/_language.html" %}</div>
+      <div class="setting-row"><span>{% translate "Erscheinungsbild" %}</span>
+        <div class="segmented" role="group" aria-label="{% translate 'Erscheinungsbild' %}">
+          <button type="button" data-theme-choice="light">{% translate "Hell" %}</button>
+          <button type="button" data-theme-choice="dark">{% translate "Dunkel" %}</button>
+          <button type="button" data-theme-choice="auto">{% translate "System" %}</button>
+        </div>
+      </div>
+      <div class="setting-row">
+        <span>{% translate "Führungen" %}</span>
+        <button type="button" class="btn btn-secondary btn-small" id="tours-reset">{% translate "Wieder anzeigen" %}</button>
+      </div>
+      <p class="muted small" id="tours-reset-note" role="status" hidden>{% translate "Erledigt. Die Führungen starten beim nächsten Besuch der jeweiligen Seite." %}</p>
+      {% if local_account %}<p class="small"><a href="{% url 'password_change' %}">{% translate "Passwort ändern" %}</a></p>{% endif %}
+    </section>
+  </div>
+
+  <div class="col col-8">
+    <section class="card">
+      <h3>{% translate "Meine Apps" %}</h3>
+      {% if usable_apps %}
+        <div class="mini-tiles">
+          {% for app in usable_apps %}
+            <a class="mini-tile" href="{% url 'page' app.slug %}"><span aria-hidden="true">{{ app.icon }}</span> {{ app.name }}{% if not app.published %} <span class="badge">{% translate "Entwurf" %}</span>{% endif %}</a>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p class="empty">{% translate "Noch keine App für dich freigegeben." %}</p>
+      {% endif %}
+      {% if own_apps %}
+        <h4 class="spaced">{% translate "Von mir angelegt" %}</h4>
+        <table>
+          <tbody>
+            {% for app in own_apps %}
+              <tr>
+                <td>{{ app.icon }} {{ app.name }}</td>
+                <td class="muted small">{% blocktranslate count n=app.n_tables %}{{ n }} Tabelle{% plural %}{{ n }} Tabellen{% endblocktranslate %}, {% blocktranslate count n=app.n_pages %}{{ n }} Seite{% plural %}{{ n }} Seiten{% endblocktranslate %}</td>
+                <td class="row-actions">{% if designer %}<a href="{% url 'designer_app' app.slug %}">{% translate "Im Designer öffnen" %}</a>{% endif %}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% endif %}
+    </section>
+
+    {% if keys or designer %}
+    <section class="card">
+      <h3>{% translate "Meine API-Schlüssel" %}</h3>
+      {% if keys %}
+        <table>
+          <thead><tr><th>{% translate "Name" %}</th><th>{% translate "App" %}</th><th>{% translate "Rechte" %}</th><th>{% translate "Zuletzt genutzt" %}</th><th></th></tr></thead>
+          <tbody>
+            {% for key in keys %}
+              <tr>
+                <td>{{ key.name }} <code class="key">{{ key.prefix }}…</code></td>
+                <td>{{ key.app.name }}</td>
+                <td>{% if key.can_write %}{% translate "lesen und schreiben" %}{% else %}{% translate "nur lesen" %}{% endif %}</td>
+                <td class="muted">{% if key.last_used %}{{ key.last_used|date:"SHORT_DATETIME_FORMAT" }}{% else %}{% translate "noch nie" %}{% endif %}</td>
+                <td class="row-actions">
+                  <a href="{% url 'api_docs' key.app.slug %}">{% translate "API-Doku" %}</a>
+                  <form method="post" action="{% url 'profile_key_delete' key.pk %}" data-confirm="{% translate 'Schlüssel löschen? Programme, die ihn verwenden, verlieren sofort den Zugriff.' %}">
+                    {% csrf_token %}<button class="link danger">{% translate "Löschen" %}</button>
+                  </form>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <p class="empty">{% translate "Du hast noch keinen Schlüssel erzeugt. Das geht im Designer in der App unter „Schnittstelle (API)“." %}</p>
+      {% endif %}
+    </section>
+
+    <section class="card">
+      <h3>{% translate "Meine Skripte" %}</h3>
+      {% if scripts %}
+        <table>
+          <thead><tr><th>{% translate "Name" %}</th><th>{% translate "App" %}</th><th>{% translate "Art" %}</th><th>{% translate "Letzter Lauf" %}</th></tr></thead>
+          <tbody>
+            {% for script in scripts %}
+              <tr>
+                <td><a href="{% url 'designer_script' script.app.slug script.pk %}">{{ script.name }}</a>{% if not script.enabled %} <span class="badge">{% translate "aus" %}</span>{% endif %}</td>
+                <td>{{ script.app.name }}</td>
+                <td class="muted">{{ script.get_language_display }}, {{ script.get_trigger_display }}</td>
+                <td>
+                  {% if script.last_ok is None %}<span class="muted">–</span>
+                  {% elif script.last_ok %}<span class="badge badge-ok">{% translate "ok" %}</span> <span class="muted small">{{ script.last_run_at|date:"SHORT_DATETIME_FORMAT" }}</span>
+                  {% else %}<span class="badge badge-error">{% translate "Fehler" %}</span> <span class="muted small">{{ script.last_run_at|date:"SHORT_DATETIME_FORMAT" }}</span>{% endif %}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <p class="empty">{% translate "Noch keine eigenen Skripte." %}</p>
+      {% endif %}
+      {% if failures %}
+        <h4 class="spaced">{% translate "Letzte Fehler" %}</h4>
+        <ul class="failure-list">
+          {% for run in failures %}
+            <li>
+              <a href="{% url 'designer_script' run.script.app.slug run.script.pk %}">{{ run.script.name }}</a>
+              <span class="muted small">{{ run.started_at|date:"SHORT_DATETIME_FORMAT" }}</span>
+              <span class="failure-text">{{ run.error|truncatechars:160 }}</span>
+            </li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+    </section>
+
+    {% if queries or blocks %}
+    <section class="card">
+      <h3>{% translate "Meine Abfragen und Bausteine" %}</h3>
+      <table>
+        <tbody>
+          {% for query in queries %}
+            <tr>
+              <td><a href="{% url 'designer_query' query.app.slug query.pk %}">{{ query.name }}</a></td>
+              <td class="muted">{% translate "Abfrage" %} · {{ query.app.name }} · {{ query.source }}</td>
+              <td>{% if query.sync_entity %}{% if query.last_sync_ok %}<span class="badge badge-ok">{% translate "Abgleich ok" %}</span>{% else %}<span class="badge badge-error">{% translate "Abgleich fehlgeschlagen" %}</span>{% endif %}{% endif %}</td>
+            </tr>
+          {% endfor %}
+          {% for item in blocks %}
+            <tr>
+              <td>{% if item.kind == "html" %}<a href="{% url 'designer_block_edit' item.pk %}">{{ item.name }}</a>{% else %}{{ item.name }}{% endif %}</td>
+              <td class="muted">{{ item.get_kind_display }}</td>
+              <td></td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </section>
+    {% endif %}
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+  document.getElementById("tours-reset").addEventListener("click", function () {
+    try {
+      Object.keys(window.localStorage).filter(function (k) { return k.indexOf("baukasten-tour-") === 0; })
+        .forEach(function (k) { window.localStorage.removeItem(k); });
+    } catch (e) { /* ohne Speicher gibt es nichts zurückzusetzen */ }
+    document.getElementById("tours-reset-note").hidden = false;
+  });
+</script>
+{% endblock %}

@@ -1,0 +1,16 @@
+Firmenlogo einbinden
+====================
+
+Lege das offizielle Logo deines Unternehmens als
+
+    logo.svg   (empfohlen)   oder   logo.png
+
+in diesen Ordner. Es erscheint dann automatisch oben links in der Kopfzeile
+und auf der Anmeldeseite. Ohne Datei wird nur das Baukasten-Zeichen gezeigt.
+
+Hinweise
+- Verwende die Originaldatei aus dem Marken- oder Design-Portal deines
+  Unternehmens und beachte dessen Vorgaben (Schutzzone, Mindestgröße, Farben).
+- Auf der Anmeldeseite steht das Logo auf dunklem Grund. Falls es dafür eine
+  helle Variante gibt, lege sie zusätzlich als logo-hell.svg ab.
+- Höhe in der Kopfzeile: 28 Pixel. Anpassbar über .brand-logo in style.css.

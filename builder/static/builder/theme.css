@@ -1,0 +1,131 @@
+/* Erscheinungsbild an einer Stelle.
+   Für ein Firmen-Design genügt es, diese Werte anzupassen oder in base.html
+   ein weiteres Stylesheet nach dieser Datei einzubinden. */
+
+/* IBM Plex Sans, SIL Open Font License 1.1 (siehe fonts/LICENSE.txt). Liegt lokal bei,
+   damit die Oberfläche auch ohne Internetzugang gleich aussieht. */
+@font-face {
+  font-family: "IBM Plex Sans Variable";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 700;
+  src: url("fonts/ibm-plex-sans-latin-ext-wght-normal.woff2") format("woff2-variations");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: "IBM Plex Sans Variable";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 700;
+  src: url("fonts/ibm-plex-sans-latin-wght-normal.woff2") format("woff2-variations");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+:root {
+  color-scheme: light;
+  /* Flächen und Text */
+  --bg: #eef0f2;
+  --surface: #ffffff;
+  --surface-2: #f6f7f8;
+  --ink: #141b24;
+  --muted: #566170;
+  --line: #d6dbe2;
+
+  /* Akzent: Petrol für Aktionen, Bernstein nur als zweite Datenfarbe */
+  --accent: #006c7a;
+  --accent-strong: #00525d;
+  --accent-ink: #ffffff;
+  --accent-soft: #e2f1f2;
+
+  /* Zustände */
+  --danger: #b3261e;
+  --danger-soft: #fdecea;
+  --ok: #17603a;
+  --ok-soft: #e4f3ea;
+  --warn: #7a5200;
+  --warn-soft: #fdf1d8;
+
+  /* Datenfarben für Kreisdiagramme, in dieser Reihenfolge */
+  --c1: #006c7a;
+  --c2: #d98a1f;
+  --c3: #4b5ca8;
+  --c4: #5f8a3a;
+  --c5: #a94d78;
+  --c6: #8a96a3;
+
+  /* Fläche der Anmeldeseite (Text darauf ist weiß) */
+  --brand-panel: #00525d;
+  --shadow: rgba(15, 23, 32, .25);
+
+  --radius: 8px;
+  --radius-lg: 14px;
+  --font: "IBM Plex Sans Variable", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+}
+
+/* Dunkles Erscheinungsbild. Gewählt über das Symbol oben rechts oder im Profil
+   (gespeichert im Browser unter "theme", dieselbe Einstellung wie in /admin/).
+   "auto" oder keine Wahl folgt dem Betriebssystem. */
+html[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #0f1419;
+  --surface: #182029;
+  --surface-2: #202a35;
+  --ink: #e4e9ef;
+  --muted: #9ba7b5;
+  --line: #2f3a47;
+
+  --accent: #3eb2c1;
+  --accent-strong: #72cdd8;
+  --accent-ink: #04252a;
+  --accent-soft: #143c43;
+
+  --danger: #f28b82;
+  --danger-soft: #3b1d1c;
+  --ok: #74d39c;
+  --ok-soft: #16301f;
+  --warn: #ecbb63;
+  --warn-soft: #352910;
+
+  --c1: #3eb2c1;
+  --c2: #e9a23b;
+  --c3: #8c9ae2;
+  --c4: #8fc466;
+  --c5: #de7fac;
+  --c6: #8a96a3;
+
+  --brand-panel: #0b3d44;
+  --shadow: rgba(0, 0, 0, .55);
+}
+@media (prefers-color-scheme: dark) {
+  html:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: #0f1419;
+    --surface: #182029;
+    --surface-2: #202a35;
+    --ink: #e4e9ef;
+    --muted: #9ba7b5;
+    --line: #2f3a47;
+
+    --accent: #3eb2c1;
+    --accent-strong: #72cdd8;
+    --accent-ink: #04252a;
+    --accent-soft: #143c43;
+
+    --danger: #f28b82;
+    --danger-soft: #3b1d1c;
+    --ok: #74d39c;
+    --ok-soft: #16301f;
+    --warn: #ecbb63;
+    --warn-soft: #352910;
+
+    --c1: #3eb2c1;
+    --c2: #e9a23b;
+    --c3: #8c9ae2;
+    --c4: #8fc466;
+    --c5: #de7fac;
+    --c6: #8a96a3;
+
+    --brand-panel: #0b3d44;
+    --shadow: rgba(0, 0, 0, .55);
+  }
+}

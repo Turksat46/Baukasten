@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% load i18n baukasten %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>{% blocktranslate %}Hallo {{ first_name }}{% endblocktranslate %}</h1>
+    <p class="subtitle">{% if apps %}{% translate "Deine Apps. Wähle eine aus, um loszulegen." %}{% else %}{% translate "Hier erscheinen die Apps, die für dich freigegeben sind." %}{% endif %}</p>
+  </div>
+  {% if can_design %}<a class="btn" href="{% url 'designer_home' %}" data-tour="new-app">{% translate "Neue App bauen" %}</a>{% endif %}
+</div>
+
+{% if apps %}
+  <div class="tiles" data-tour="apps">
+    {% for app in apps %}
+      <a class="tile" href="{% url 'page' app.slug %}">
+        <span class="tile-icon" aria-hidden="true">{{ app.icon }}</span>
+        <span class="tile-body">
+          <span class="tile-name">{{ app.name|tr:app }}{% if not app.published %} <span class="badge">{% translate "Entwurf" %}</span>{% endif %}</span>
+          <span class="tile-text">{{ app.description|tr:app|default:_("Ohne Beschreibung") }}</span>
+        </span>
+      </a>
+    {% endfor %}
+  </div>
+{% else %}
+  <div class="empty-state" data-tour="apps">
+    <h2>{% translate "Noch keine App vorhanden" %}</h2>
+    {% if can_design %}
+      <p>{% translate "Im Designer legst du in wenigen Minuten die erste an: Tabelle anlegen, Seite erzeugen, veröffentlichen." %}</p>
+      <a class="btn" href="{% url 'designer_home' %}">{% translate "Erste App bauen" %}</a>
+    {% else %}
+      <p>{% translate "Sobald eine App für dich freigegeben ist, findest du sie hier." %}</p>
+    {% endif %}
+  </div>
+{% endif %}
+{% endblock %}
+{% block tour %}{% tour "start" %}{% endblock %}

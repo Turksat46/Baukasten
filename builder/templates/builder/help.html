@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% block title %}{% translate "Hilfe" %} – Baukasten{% endblock %}
+{% block main_class %}help-page{% endblock %}
+{% block content %}
+{% if handbook %}
+<nav class="help-toc" aria-label="{% translate 'Inhalt' %}">
+  <details open>
+  <summary class="help-toc-title">{% translate "Inhalt" %}</summary>
+  <ul>
+  {% for h in toc %}
+    <li><a href="#{{ h.id }}">{{ h.name }}</a>
+    {% if h.children %}<ul>{% for c in h.children %}<li><a href="#{{ c.id }}">{{ c.name }}</a></li>{% endfor %}</ul>{% endif %}
+    </li>
+  {% endfor %}
+  </ul>
+  </details>
+</nav>
+{% endif %}
+<div class="help-main">
+  <div class="page-head">
+    <div>
+      <h1>{% translate "Handbuch" %}</h1>
+      <p class="subtitle">{% translate "Alles zum Benutzen, Bauen, Entwickeln und Betreiben. Das Inhaltsverzeichnis führt zu jedem Abschnitt; mit Strg+F durchsuchst du die ganze Seite." %}</p>
+    </div>
+  </div>
+  {% if handbook %}
+  <article class="card help-body" lang="{{ handbook_language }}">{{ handbook }}</article>
+  {% else %}
+  <p class="muted">{% translate "Das Handbuch wurde nicht gefunden (docs/HANDBUCH.md)." %}</p>
+  {% endif %}
+</div>
+<script>
+  // Auf dem Handy ist das Inhaltsverzeichnis eingeklappt und klappt nach einem Klick wieder zu.
+  (function () {
+    var box = document.querySelector(".help-toc details");
+    var narrow = window.matchMedia("(max-width: 900px)");
+    if (!box) return;
+    if (narrow.matches) box.open = false;
+    box.querySelector("summary").addEventListener("click", function (e) { if (!narrow.matches) e.preventDefault(); });
+    box.addEventListener("click", function (e) { if (narrow.matches && e.target.closest("a")) box.open = false; });
+  })();
+  // Markiert im Inhaltsverzeichnis den Abschnitt, der gerade zu sehen ist.
+  (function () {
+    var links = {};
+    document.querySelectorAll(".help-toc a").forEach(function (a) { links[decodeURIComponent(a.hash.slice(1))] = a; });
+    var current = null;
+    var observer = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (!e.isIntersecting || !links[e.target.id]) return;
+        if (current) current.classList.remove("current");
+        current = links[e.target.id];
+        current.classList.add("current");
+      });
+    }, { rootMargin: "-70px 0px -70% 0px" });
+    document.querySelectorAll(".help-body h2[id], .help-body h3[id]").forEach(function (h) { observer.observe(h); });
+  })();
+</script>
+{% endblock %}

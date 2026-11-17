@@ -1,0 +1,26 @@
+# Legt die Datenbanktabellen an bzw. aktualisiert sie.
+# Bei jeder neuen Version einmal ausführen, bevor das Deployment aktualisiert wird:
+#   kubectl delete job baukasten-migrate --ignore-not-found
+#   kubectl apply -f k8s/migrate-job.yaml
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: baukasten-migrate
+spec:
+  backoffLimit: 2
+  template:
+    spec:
+      restartPolicy: Never
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+      containers:
+        - name: migrate
+          image: registry.example.com/baukasten:1.0.0
+          # Danach die Cache-Tabelle anlegen (nur nötig ohne REDIS_URL; schadet sonst nicht).
+          command: ["sh", "-c", "python manage.py migrate --noinput && python manage.py createcachetable"]
+          envFrom:
+            - configMapRef:
+                name: baukasten-config
+            - secretRef:
+                name: baukasten-secret

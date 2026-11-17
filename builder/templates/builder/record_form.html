@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% load i18n baukasten %}
+{% block title %}{{ entity.name|tr }} – {{ app.name|tr }}{% endblock %}
+{% block nav %}{% include "builder/_appnav.html" %}{% endblock %}
+{% block content %}
+<section class="card narrow">
+  <h1>{{ entity.name|tr }}: {% if record %}{% translate "Eintrag bearbeiten" %}{% else %}{% translate "neuer Eintrag" %}{% endif %}</h1>
+  <form method="post" class="form">
+    {% csrf_token %}
+    <input type="hidden" name="next" value="{{ next }}">
+    {% if form_prefix %}<input type="hidden" name="form_prefix" value="{{ form_prefix }}">{% endif %}
+    {{ form.as_div }}
+    <div class="actions">
+      <button class="btn">{% translate "Speichern" %}</button>
+      <a class="btn btn-secondary" href="{{ next }}">{% translate "Abbrechen" %}</a>
+    </div>
+  </form>
+</section>
+{% endblock %}

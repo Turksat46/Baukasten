@@ -1,0 +1,73 @@
+# Nur für die lokale Installation: PostgreSQL im Cluster, Daten auf einem Volume.
+# In der Produktion eine betriebene Datenbank verwenden.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: baukasten-db
+spec:
+  accessModes: ["ReadWriteOnce"]
+  resources:
+    requests:
+      storage: 2Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: baukasten-db
+  labels:
+    app: baukasten-db
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: baukasten-db
+  template:
+    metadata:
+      labels:
+        app: baukasten-db
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:16
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_DB
+              value: baukasten
+            - name: POSTGRES_USER
+              value: baukasten
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: baukasten-secret
+                  key: POSTGRES_PASSWORD
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", "baukasten", "-d", "baukasten"]
+            periodSeconds: 5
+          volumeMounts:
+            - name: daten
+              mountPath: /var/lib/postgresql/data
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+      volumes:
+        - name: daten
+          persistentVolumeClaim:
+            claimName: baukasten-db
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: baukasten-db
+spec:
+  selector:
+    app: baukasten-db
+  ports:
+    - port: 5432
+      targetPort: 5432

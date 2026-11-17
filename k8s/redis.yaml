@@ -1,0 +1,62 @@
+# OPTIONAL: Redis als gemeinsamer Zwischenspeicher.
+# Ohne Redis legt der Baukasten den Cache in PostgreSQL ab – das reicht für den Anfang.
+# Redis lohnt sich ab mehreren Pods und vielen Live-Abfragen. Gibt es bei euch einen
+# betriebenen Redis-Dienst, diesen nehmen und diese Datei weglassen.
+#
+# Danach im Secret setzen:  REDIS_URL: "redis://baukasten-redis:6379/0"
+# Der Cache ist nur Zwischenspeicher: Fällt Redis aus, gehen keine Daten verloren,
+# Abfragen laufen dann ohne Zwischenspeicher direkt an die Datenquellen.
+#
+# Dieser Redis hat kein Passwort und ist nur im Cluster erreichbar. Wenn euer Cluster
+# NetworkPolicies nutzt: Zugriff auf Port 6379 nur für Pods mit app=baukasten erlauben.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: baukasten-redis
+  labels:
+    app: baukasten-redis
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: baukasten-redis
+  template:
+    metadata:
+      labels:
+        app: baukasten-redis
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 999
+      containers:
+        - name: redis
+          # Falls ein internes Image vorgeschrieben ist, hier austauschen.
+          image: redis:7-alpine
+          args: ["--maxmemory", "200mb", "--maxmemory-policy", "allkeys-lru", "--save", "", "--appendonly", "no"]
+          ports:
+            - containerPort: 6379
+          readinessProbe:
+            exec:
+              command: ["redis-cli", "ping"]
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              memory: 256Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: baukasten-redis
+spec:
+  selector:
+    app: baukasten-redis
+  ports:
+    - port: 6379
+      targetPort: 6379

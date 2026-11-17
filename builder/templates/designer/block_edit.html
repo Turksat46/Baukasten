@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% load i18n baukasten %}
+{% block title %}{% translate "Eigener Baustein" %} – {% translate "Designer" %}{% endblock %}
+{% block content %}
+<p class="crumbs"><a href="{% url 'designer_home' %}">{% translate "Designer" %}</a> / <a href="{% url 'designer_blocks' %}">{% translate "Eigene Bausteine" %}</a> / {% if custom %}{{ custom.name }}{% else %}{% translate "Neu" %}{% endif %}</p>
+<h1>{% if custom %}{{ custom.name }}{% else %}{% translate "Neuer HTML-Baustein" %}{% endif %}</h1>
+
+<div class="grid">
+  <div class="col col-6">
+    <section class="card">
+      <form method="post" class="form">
+        {% csrf_token %}
+        {{ form.non_field_errors }}
+        <div>{{ form.name.errors }}{{ form.name.label_tag }}{{ form.name }}</div>
+        <div>{{ form.description.errors }}{{ form.description.label_tag }}{{ form.description }}</div>
+        <div data-tour="block-settings">{{ form.settings.errors }}{{ form.settings.label_tag }}{{ form.settings }}<span class="helptext">{{ form.settings.help_text }}</span></div>
+        <div data-tour="block-html">{{ form.html.errors }}{{ form.html.label_tag }}{{ form.html }}<span class="helptext">{{ form.html.help_text }}</span></div>
+        <div class="actions">
+          <button class="btn">{% translate "Speichern" %}</button>
+          <a class="btn btn-secondary" href="{% url 'designer_blocks' %}">{% translate "Zurück" %}</a>
+        </div>
+      </form>
+    </section>
+  </div>
+  <div class="col col-6">
+    <section class="card">
+      <h3>{% translate "Platzhalter" %}</h3>
+      <p class="muted">{% translate "Im HTML wird jeder Platzhalter durch den Wert ersetzt, den jemand im Seiten-Designer einträgt." %}</p>
+      <p>{% for name in placeholders %}<code class="key">{% templatetag openvariable %} {{ name }} {% templatetag closevariable %}</code> {% endfor %}</p>
+      <p class="muted small">{% translate "Immer verfügbar: nutzer (Name der angemeldeten Person), app (Name der App), datum (heutiges Datum)." %}</p>
+    </section>
+    <section class="card">
+      <h3>{% translate "Vorschau mit Standardwerten" %}</h3>
+      {% if custom %}
+        <div class="custom-preview"><div class="custom-block">{{ preview }}</div></div>
+      {% else %}
+        <p class="empty">{% translate "Die Vorschau erscheint nach dem ersten Speichern." %}</p>
+      {% endif %}
+    </section>
+    <section class="card">
+      <h3>{% translate "Beispiel" %}</h3>
+      <p class="muted small">{% translate "Einstellungen:" %}</p>
+      <pre class="json">Titel = Wartung
+Text = Am Freitag ist das System ab 16 Uhr nicht erreichbar.</pre>
+      <p class="muted small">HTML:</p>
+      <pre class="json">&lt;div class="card"&gt;
+  &lt;h3&gt;{% templatetag openvariable %} titel {% templatetag closevariable %}&lt;/h3&gt;
+  &lt;p&gt;{% templatetag openvariable %} text {% templatetag closevariable %}&lt;/p&gt;
+  &lt;p class="muted small"&gt;{% templatetag openvariable %} nutzer {% templatetag closevariable %}, {% templatetag openvariable %} datum {% templatetag closevariable %}&lt;/p&gt;
+&lt;/div&gt;</pre>
+      <p class="muted small">{% translate "Die Klassen der Oberfläche kannst du mitverwenden, zum Beispiel card, btn, muted, small, badge, notice." %}</p>
+    </section>
+  </div>
+</div>
+{% endblock %}
+{% block tour %}{% tour "eigene-bausteine" %}{% endblock %}

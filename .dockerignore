@@ -1,0 +1,8 @@
+.git
+__pycache__
+*.pyc
+db.sqlite3
+staticfiles
+k8s
+.venv
+demo-datenquelle.sqlite3
