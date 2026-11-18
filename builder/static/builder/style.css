@@ -45,22 +45,46 @@ p { margin: 0 0 .8rem; }
    Zeile 1: Logo und Menü-Knopf. Zeile 2: die Seiten der App als wischbare Leiste.
    Das Menü klappt darunter auf (Designer, Hilfe, Hell/Dunkel, Sprache, Profil, Abmelden). */
 @media (max-width: 860px) {
-  :root { --topbar-h: 52px; }
+  :root { --topbar-h: 52px; --menu-open: .45s; --menu-close: .25s; --menu-ease: cubic-bezier(.2, .8, .2, 1); }
   .topbar { flex-wrap: wrap; height: auto; min-height: 52px; padding: 0 1rem; gap: 0 .75rem; }
   .brand { order: 1; height: 52px; }
   .menu-toggle { order: 2; display: grid; place-items: center; margin-left: auto; width: 40px; height: 40px; padding: 0; }
-  .menu-toggle svg { width: 20px; height: 20px; }
-  .menu-toggle .i-close, .topbar.menu-open .menu-toggle .i-menu { display: none; }
-  .topbar.menu-open .menu-toggle .i-close { display: block; }
+  /* Beide Symbole liegen übereinander; beim Öffnen dreht sich das Menü-Symbol zum X */
+  .menu-toggle svg { grid-area: 1 / 1; width: 20px; height: 20px;
+                     transition: transform var(--menu-close) var(--menu-ease), opacity var(--menu-close) var(--menu-ease); }
+  .menu-toggle .i-close { opacity: 0; transform: rotate(-90deg) scale(.6); }
+  .topbar.menu-open .menu-toggle .i-menu { opacity: 0; transform: rotate(90deg) scale(.6); }
+  .topbar.menu-open .menu-toggle .i-close { opacity: 1; transform: none; }
   .topnav { order: 3; flex: 1 0 100%; height: 44px; margin: 0 -1rem; padding: 0 .5rem; border-top: 1px solid var(--line);
             scrollbar-width: none; -webkit-overflow-scrolling: touch; }
   .topnav::-webkit-scrollbar { display: none; }
   .topnav:empty { display: none; }
   .topnav a { padding: 0 .6rem; }
   .app-name { padding-right: .7rem; margin-right: .2rem; }
+  /* Zu: ganz ausgeblendet (display: none). Zum Animieren blendet menu.js es kurz vorher ein
+     (Klasse menu-active, zugeklappt) und nach dem Schließen wieder aus. Öffnen gleitet langsam auf,
+     die Einträge folgen in der sichtbaren Reihenfolge; Schließen geht schneller. */
   .topbar-right { order: 4; flex: 1 0 100%; display: none; flex-wrap: wrap; align-items: center; gap: .6rem;
-                  margin: 0 -1rem; padding: .4rem 1rem 1rem; border-top: 1px solid var(--line); }
-  .topbar.menu-open .topbar-right { display: flex; }
+                  margin: 0 -1rem; padding: 0 1rem; border-top: 1px solid transparent;
+                  max-height: 0; overflow: hidden; opacity: 0; transform: translateY(-.5rem);
+                  transition: max-height var(--menu-close) var(--menu-ease), padding var(--menu-close) var(--menu-ease),
+                              opacity var(--menu-close) ease, transform var(--menu-close) var(--menu-ease),
+                              border-color var(--menu-close) ease; }
+  .topbar.menu-active .topbar-right { display: flex; }
+  .topbar.menu-open .topbar-right { max-height: calc(100vh - var(--topbar-h)); overflow-y: auto; padding: .4rem 1rem 1rem;
+                                    opacity: 1; transform: none; border-top-color: var(--line);
+                                    transition-duration: var(--menu-open); }
+  .topbar-right > * { opacity: 0; transform: translateY(-.5rem);
+                      transition: opacity .15s ease, transform .15s var(--menu-ease); }
+  .topbar.menu-open .topbar-right > * { opacity: 1; transform: none; transition-duration: .35s; }
+  .topbar.menu-open .topbar-right > .profile-link { transition-delay: .08s; }
+  .topbar.menu-open .topbar-right > .topbar-link:nth-child(1) { transition-delay: .14s; }
+  .topbar.menu-open .topbar-right > .topbar-link:nth-child(2) { transition-delay: .19s; }
+  .topbar.menu-open .topbar-right > .topbar-link:nth-child(3) { transition-delay: .24s; }
+  .topbar.menu-open .topbar-right > .theme-toggle,
+  .topbar.menu-open .topbar-right > .lang-switch,
+  .topbar.menu-open .topbar-right > .icon-btn { transition-delay: .29s; }
+  .topbar.menu-open .topbar-right > .logout-form { transition-delay: .34s; }
   .topbar-right > .topbar-link, .topbar-right > .profile-link, .topbar-right > .logout-form { flex: 1 0 100%; }
   .topbar-right > .topbar-link, .topbar-right > .logout-form .link { display: block; padding: .7rem 0; border-bottom: 1px solid var(--line); text-align: left; width: 100%; font-size: 1rem; }
   .topbar-right > .profile-link { order: -1; padding: .6rem 0; border-bottom: 1px solid var(--line); }
@@ -740,3 +764,8 @@ html:not([data-theme="light"]):not([data-theme="dark"]) .theme-toggle .i-auto { 
 .offline-page { max-width: 32rem; margin: 18vh auto 0; text-align: center; }
 /* Als installierte App: etwas Abstand zur Statusleiste des Handys */
 @media (display-mode: standalone) { .topbar { padding-top: max(.6rem, env(safe-area-inset-top)); } }
+
+/* Wer weniger Bewegung möchte (Systemeinstellung), bekommt das Menü ohne Animation */
+@media (prefers-reduced-motion: reduce) {
+  .menu-toggle svg, .topbar-right, .topbar-right > * { transition: none !important; }
+}
