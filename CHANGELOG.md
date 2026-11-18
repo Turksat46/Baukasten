@@ -21,6 +21,8 @@ Neue Einträge oben unter „Unveröffentlicht“ sammeln und beim Release zur V
   Bausteine werden genannt, Dateien aus neueren Baukasten-Versionen klar abgelehnt.
 - Fachliche Einstellungen unter `/admin/` ohne Neustart (Gäste-Grenze, KI-Grenze,
   Aufbewahrung, Zeitlimits); leer = Wert aus der Umgebung.
+- Als App installieren (Progressive Web App): Manifest, App-Symbole, Service Worker nur für
+  statische Dateien und eine Offline-Seite; Knopf „Als App installieren“ unten auf jeder Seite.
 - Seite „Über den Baukasten“ (`/ueber/`) mit Version und Release Notes, gepflegt unter `/admin/`;
   Hinweis „Was ist neu?“ unten auf jeder Seite.
 

@@ -134,6 +134,7 @@ baukasten/
 │   ├── audit.py            Änderungsprotokoll (Signale, Kontext je Eingang, Aufbewahrung)
 │   ├── platform.py         fachliche Einstellungen: Datenbank vor Umgebung, 30 s Cache
 │   ├── about.py            Seite „Über den Baukasten“, Release Notes
+│   ├── pwa.py              als App installieren: Manifest, Service Worker (/sw.js), Offline-Seite
 │   ├── app_i18n.py         Übersetzung von App-Inhalten
 │   ├── auth.py, accounts.py  Keycloak-Backend, Standardgruppen
 │   ├── profile.py, help.py Profilseite, Handbuch in der Oberfläche

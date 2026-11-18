@@ -1,0 +1,21 @@
+{% load static i18n baukasten %}{% get_current_language as LANG %}<!doctype html>
+<html lang="{{ LANG }}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#006c7a">
+  <title>{% translate "Keine Verbindung" %} – Baukasten</title>
+  <link rel="icon" href="{% static 'builder/logo.svg' %}" type="image/svg+xml">
+  <script src="{% asset 'builder/theme.js' %}"></script>
+  <link rel="stylesheet" href="{% asset 'builder/theme.css' %}">
+  <link rel="stylesheet" href="{% asset 'builder/style.css' %}">
+</head>
+<body>
+  <main class="container offline-page">
+    <img src="{% static 'builder/logo.svg' %}" alt="" width="56" height="56">
+    <h1>{% translate "Keine Verbindung" %}</h1>
+    <p class="muted">{% translate "Der Baukasten ist gerade nicht erreichbar. Prüfe die Verbindung zum Netz und versuche es noch einmal." %}</p>
+    <p><button class="btn" type="button" onclick="location.reload()">{% translate "Erneut versuchen" %}</button></p>
+  </main>
+</body>
+</html>

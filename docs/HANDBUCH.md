@@ -204,6 +204,24 @@ Dasselbe geht im Profil unter „Einstellungen“. Die Wahl merkt sich der Brows
 sie gilt auf allen Seiten, auch in der Verwaltung unter `/admin/` und in der
 API-Dokumentation.
 
+### Als App installieren
+
+Der Baukasten lässt sich wie eine App auf Handy, Tablet oder PC installieren: mit
+eigenem Symbol auf dem Startbildschirm, ohne Adressleiste, im eigenen Fenster.
+Unten auf jeder Seite steht dafür **„Als App installieren“**.
+
+- **Android (Chrome), Windows und macOS (Chrome, Edge):** Der Knopf öffnet den
+  Installationsdialog des Browsers.
+- **iPhone und iPad:** In Safari auf das Teilen-Symbol und dann auf „Zum
+  Home-Bildschirm“ tippen; der Knopf erklärt das.
+- **Firefox:** über das Browsermenü, sofern Firefox es anbietet.
+
+Eine echte Installation geht nur über **HTTPS**, also mit der Adresse des
+Betriebs (z. B. `https://baukasten.firma.de`). Über eine `http`-Adresse im
+eigenen Netz legt der Browser nur eine Verknüpfung an. Die installierte App
+zeigt immer den aktuellen Stand; ohne Verbindung erscheint ein Hinweis
+„Keine Verbindung“. Daten der Apps werden auf dem Gerät nicht gespeichert.
+
 ### Seitenwechsel
 
 Beim Wechsel zwischen Seiten blendet der Baukasten sanft über: Die Kopfzeile

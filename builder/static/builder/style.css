@@ -730,3 +730,13 @@ html:not([data-theme="light"]):not([data-theme="dark"]) .theme-toggle .i-auto { 
 .facts { display: grid; grid-template-columns: auto 1fr; gap: .3rem .9rem; margin: 0; font-size: .9rem; }
 .facts dt { color: var(--muted); }
 .facts dd { margin: 0; font-variant-numeric: tabular-nums; }
+
+/* ---------- Als App installieren ---------- */
+.site-footer .install-app { margin-left: .8rem; font-size: inherit; color: var(--muted); }
+.site-footer .install-app:hover { color: var(--accent); }
+.install-help { max-width: 26rem; border: 1px solid var(--line); border-radius: var(--radius-lg); background: var(--surface); color: var(--ink); padding: 1.1rem 1.25rem; }
+.install-help::backdrop { background: rgba(0, 0, 0, .45); }
+.install-help h3 { margin-top: 0; }
+.offline-page { max-width: 32rem; margin: 18vh auto 0; text-align: center; }
+/* Als installierte App: etwas Abstand zur Statusleiste des Handys */
+@media (display-mode: standalone) { .topbar { padding-top: max(.6rem, env(safe-area-inset-top)); } }

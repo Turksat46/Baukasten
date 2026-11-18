@@ -205,6 +205,24 @@ in your profile under "Settings". The browser remembers the choice; it applies
 to all pages, including the administration under `/admin/` and the API
 documentation.
 
+### Installing as an app
+
+Baukasten can be installed like an app on a phone, tablet or PC: with its own icon
+on the home screen, without an address bar, in its own window. Every page has
+**"Als App installieren"** at the bottom.
+
+- **Android (Chrome), Windows and macOS (Chrome, Edge):** the button opens the
+  browser's install dialog.
+- **iPhone and iPad:** in Safari tap the share icon and then "Add to Home
+  Screen"; the button explains this.
+- **Firefox:** via the browser menu, if Firefox offers it.
+
+A real installation only works over **HTTPS**, i.e. with the address provided by
+operations (e.g. `https://baukasten.example.com`). Over an `http` address on the
+local network the browser only creates a shortcut. The installed app always shows
+the current state; without a connection a "Keine Verbindung" notice appears. App
+data is not stored on the device.
+
 ### Page transitions
 
 When switching pages, Baukasten fades smoothly: the header stays in place, the

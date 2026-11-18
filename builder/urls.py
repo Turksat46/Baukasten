@@ -1,13 +1,16 @@
 from django.urls import path
 from django.views.i18n import JavaScriptCatalog
 
-from . import about, api, designer, help, mcp, mcp_designer, profile, views
+from . import about, api, designer, help, mcp, mcp_designer, profile, pwa, views
 
 urlpatterns = [
     path("jsi18n/", JavaScriptCatalog.as_view(packages=["builder"]), name="javascript-catalog"),
     path("profil/", profile.profile, name="profile"),
     path("hilfe/", help.help_page, name="help"),
     path("ueber/", about.about, name="about"),
+    path("manifest.webmanifest", pwa.manifest, name="pwa_manifest"),
+    path("sw.js", pwa.service_worker, name="pwa_service_worker"),
+    path("offline/", pwa.offline, name="pwa_offline"),
     path("api-doku/", views.api_index, name="api_index"),
     path("a/<slug:app>/api-doku/", views.api_docs, name="api_docs"),
     path("a/<slug:app>/api-doku/openapi.json", views.api_docs_spec, name="api_docs_spec"),

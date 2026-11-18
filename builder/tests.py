@@ -3194,3 +3194,47 @@ class AboutTests(TestCase):
         self.assertTrue(ReleaseNote.objects.filter(version="1.0.0", published=True).exists())
         self.assertTrue(ReleaseNote.objects.filter(version="1.1.0", published=False).exists())
         self.assertEqual(self.client.get(reverse("about")).status_code, 302)
+
+
+class PwaTests(TestCase):
+    """Als App installieren: Manifest, Service Worker, Offline-Seite (builder/pwa.py)."""
+
+    def test_manifest_without_login(self):
+        response = self.client.get("/manifest.webmanifest")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Content-Type"], "application/manifest+json")
+        data = response.json()
+        self.assertEqual((data["name"], data["start_url"], data["display"]), ("Baukasten", "/", "standalone"))
+        purposes = {(i["sizes"], i["purpose"]) for i in data["icons"]}
+        self.assertIn(("512x512", "maskable"), purposes)
+        self.assertIn(("192x192", "any"), purposes)
+        for icon in data["icons"]:
+            self.assertTrue(icon["src"].endswith(".png"))
+
+    def test_service_worker_scope_and_privacy(self):
+        from django.conf import settings
+        response = self.client.get("/sw.js")
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("javascript", response["Content-Type"])
+        self.assertEqual(response["Service-Worker-Allowed"], "/")
+        self.assertIn("no-cache", response["Cache-Control"])
+        body = response.content.decode()
+        self.assertIn(f'baukasten-{settings.BAUKASTEN_VERSION}', body)
+        self.assertIn('"/offline/"', body)
+        self.assertIn('request.mode === "navigate"', body)  # Seiten gehen immer ans Netz
+
+    def test_offline_page_is_public_and_personal_data_free(self):
+        response = self.client.get("/offline/")
+        self.assertContains(response, "Keine Verbindung")
+        self.assertNotContains(response, "data-user")
+
+    def test_pages_link_manifest_and_offer_install(self):
+        self.assertContains(self.client.get(reverse("login")), 'rel="manifest"')
+        user = User.objects.create_user("nutzer", password="x")
+        self.client.force_login(user)
+        page = self.client.get(reverse("home"))
+        self.assertContains(page, "apple-touch-icon")
+        self.assertContains(page, "data-install")
+        self.assertContains(page, "builder/pwa.js")
+        for name in ("icon-192.png", "icon-512.png", "maskable-512.png", "apple-touch-icon.png"):
+            self.assertTrue((Path(__file__).parent / "static" / "builder" / "app" / name).exists(), name)
