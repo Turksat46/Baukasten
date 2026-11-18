@@ -14,8 +14,13 @@
 #   6. Verwalter-Konto und Beispiel-Apps anlegen, falls sie fehlen
 # Ein Protokoll des letzten Laufs steht in k8s\lokal\letzter-lauf.log.
 #
+# Vom Handy oder einem anderen Gerät im selben Netz testen:
+#     powershell -ExecutionPolicy Bypass -File k8s\lokal\deploy.ps1 -OhneBeispiele -ImNetzwerk
+# erlaubt zusätzlich die aktuelle Adresse dieses PCs im lokalen Netz (z. B. http://192.168.2.10:8080).
+# Ohne -ImNetzwerk gilt beim nächsten Lauf wieder: nur dieser PC (localhost).
+#
 # Wieder entfernen:  kubectl delete namespace baukasten
-param([switch]$OhneBeispiele)
+param([switch]$OhneBeispiele, [switch]$ImNetzwerk)
 
 $ErrorActionPreference = "Continue"
 $hier = $PSScriptRoot
@@ -82,6 +87,30 @@ try {
     # Früherer CronJob; seine Arbeit macht jetzt der Hintergrunddienst baukasten-worker.
     K -n baukasten delete cronjob baukasten-hintergrund --ignore-not-found
 
+    $netzAdresse = $null
+    if ($ImNetzwerk) {
+        Schritt "Zugriff aus dem lokalen Netz erlauben"
+        # Die Schnittstelle der Standardroute ist die, über die der PC im WLAN/LAN hängt
+        # (nicht die virtuellen Adapter von WSL und Docker).
+        $route = Get-NetRoute -DestinationPrefix "0.0.0.0/0" -ErrorAction SilentlyContinue |
+            Sort-Object { $_.RouteMetric + $_.InterfaceMetric } | Select-Object -First 1
+        if ($route) {
+            $netzAdresse = (Get-NetIPAddress -InterfaceIndex $route.InterfaceIndex -AddressFamily IPv4 -ErrorAction SilentlyContinue |
+                Where-Object { $_.IPAddress -notlike "169.254.*" } | Select-Object -First 1).IPAddress
+        }
+        if (-not $netzAdresse) { throw "Keine Adresse im lokalen Netz gefunden (ist der PC mit WLAN oder LAN verbunden?)." }
+        $hosts = "localhost,127.0.0.1,host.docker.internal,$netzAdresse"
+        $origins = "http://localhost:8080,http://127.0.0.1:8080,http://${netzAdresse}:8080"
+        # Über eine Datei: PowerShell 5.1 verschluckt Anführungszeichen in JSON-Argumenten.
+        $patch = Join-Path $env:TEMP "baukasten-netz.json"
+        $json = '{"data":{"ALLOWED_HOSTS":"' + $hosts + '","CSRF_TRUSTED_ORIGINS":"' + $origins + '"}}'
+        [IO.File]::WriteAllText($patch, $json)
+        K -n baukasten patch configmap baukasten-config --type merge --patch-file $patch
+        Pruefe "Freigabe im lokalen Netz"
+        Remove-Item $patch -ErrorAction SilentlyContinue
+        Write-Host "Erlaubt: $netzAdresse (gilt bis zum nächsten Lauf ohne -ImNetzwerk)"
+    }
+
     Schritt "Auf die Datenbank warten"
     # Neu starten, damit der Pod die aktuellen Zugangsdaten bekommt.
     K -n baukasten rollout restart deploy/baukasten-db
@@ -118,6 +147,10 @@ try {
     K -n baukasten get 'pods,svc'
     Write-Host ""
     Write-Host "Baukasten laeuft unter http://localhost:8080" -ForegroundColor Green
+    if ($netzAdresse) {
+        Write-Host "Im lokalen Netz (Handy im selben WLAN): http://${netzAdresse}:8080" -ForegroundColor Green
+        Write-Host "Nur im eigenen Netz verwenden. Ohne -ImNetzwerk ist der Zugriff beim nächsten Lauf wieder zu."
+    }
     Write-Host "Anmelden mit 'admin', das Passwort steht in k8s\lokal\geheim.env (ADMIN_PASSWORD)."
     $ok = $true
     Start-Process "http://localhost:8080"

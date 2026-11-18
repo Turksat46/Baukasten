@@ -1369,6 +1369,14 @@ at the end. Create the consent example app afterwards with:
 kubectl -n baukasten exec deploy/baukasten -- python manage.py beispiel_einwilligung
 ```
 
+**Testing from a phone or another device on the same network:** with the switch
+`-ImNetzwerk` the script additionally allows the PC's current address on the local
+network and shows it at the end, e.g. `http://192.168.2.10:8080`. Open that address
+in the phone's browser (same WiFi). The router assigns the address; if it changes,
+run the script with `-ImNetzwerk` again. Without the switch, only the PC itself is
+allowed again on the next run. Use it only on your own network, and classify your
+home WiFi in Windows as a "private network".
+
 For an update, run the same script again. It uses the same manifests as
 production; what is different locally (no TLS, service on localhost:8080, no
 registry, `host.docker.internal` allowed for containers such as n8n) is in

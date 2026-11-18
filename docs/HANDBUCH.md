@@ -1375,6 +1375,14 @@ bricht das Skript dann am Ende ab. Die Einwilligungs-App legst du danach so an:
 kubectl -n baukasten exec deploy/baukasten -- python manage.py beispiel_einwilligung
 ```
 
+**Vom Handy oder einem anderen Gerät im selben Netz testen:** Mit dem Schalter
+`-ImNetzwerk` erlaubt das Skript zusätzlich die aktuelle Adresse des PCs im lokalen
+Netz und zeigt sie am Ende an, etwa `http://192.168.2.10:8080`. Diese Adresse im
+Browser des Handys öffnen (gleiches WLAN). Die Adresse vergibt der Router; ändert
+sie sich, das Skript mit `-ImNetzwerk` noch einmal ausführen. Ohne den Schalter
+ist beim nächsten Lauf wieder nur der PC selbst erlaubt. Nur im eigenen Netz
+verwenden, und das Heim-WLAN in Windows als „Privates Netzwerk“ einstufen.
+
 Für ein Update dasselbe Skript noch einmal ausführen. Es nutzt dieselben
 Manifeste wie die Produktion; was lokal anders ist (kein TLS, Dienst auf
 localhost:8080, keine Registry, `host.docker.internal` für Container wie n8n
