@@ -24,8 +24,11 @@ def execute(script, trigger, user=None, event=None, record=None, params=None, st
     started = time.monotonic()
     event = {"trigger": trigger, **(event or {})}
     session = load_session(request, script.app) if request is not None else None
-    result = python.run(script.code, script.app, user=user, event=event, record=record, params=params,
-                        session=session)
+    from .. import audit
+
+    with audit.context(via="script", actor=f"Skript {script.name}"):
+        result = python.run(script.code, script.app, user=user, event=event, record=record, params=params,
+                            session=session)
     if request is not None and result.ok and result.session is not None and result.session != session:
         save_session(request, script.app, result.session)
     result.duration_ms = int((time.monotonic() - started) * 1000)
@@ -109,7 +112,10 @@ def on_save(record, created, user):
         if changed:
             # Direkt speichern: kein erneutes Auslösen der Skripte, Werte so wie vom Skript gesetzt.
             record.data = {**record.data, **changed}
-            record.save(update_fields=["data", "updated_at"])
+            from .. import audit
+
+            with audit.context(via="script", actor=f"Skript {script.name}"):  # die Änderung stammt vom Skript
+                record.save(update_fields=["data", "updated_at"])
 
 
 def run_due(now=None):

@@ -131,6 +131,9 @@ baukasten/
 │   ├── ai_designer.py      Prüfen, Schützen und Anwenden von KI-Definitionen
 │   ├── datasources.py      externe Datenbanken, Cache, Parallelitätsgrenzen
 │   ├── versions.py         Snapshots, Export und Import von Apps
+│   ├── audit.py            Änderungsprotokoll (Signale, Kontext je Eingang, Aufbewahrung)
+│   ├── platform.py         fachliche Einstellungen: Datenbank vor Umgebung, 30 s Cache
+│   ├── about.py            Seite „Über den Baukasten“, Release Notes
 │   ├── app_i18n.py         Übersetzung von App-Inhalten
 │   ├── auth.py, accounts.py  Keycloak-Backend, Standardgruppen
 │   ├── profile.py, help.py Profilseite, Handbuch in der Oberfläche
@@ -745,8 +748,15 @@ flowchart LR
     class KI ext
 ```
 
-Automatische Versionen (`automatic=True`) entstehen vor dem Wiederherstellen und bei
-jeder Änderung über den KI-Zugang. Tabellen werden beim Wiederherstellen nie gelöscht;
+Automatische Versionen (`automatic=True`) entstehen vor dem Wiederherstellen, vor dem
+Einspielen einer Datei und bei jeder Änderung über den KI-Zugang.
+
+**Format-Versionen:** Jeder Stand trägt `format` (`baukasten-app/2`) und `baukasten_version`.
+`versions.upgrade()` hebt ältere Stände Schritt für Schritt an (`UPGRADES`: 1 → 2 → …), bevor
+sie eingespielt werden; das gilt für Dateien und für alte, gespeicherte Versionen. Stände aus
+einem neueren Format werden abgelehnt. Bei einer inkompatiblen Änderung: `FORMAT_VERSION`
+erhöhen, eine Funktion in `UPGRADES` ergänzen, eine alte Beispieldatei in die Tests
+(`FormatUpgradeTests`). Tabellen werden beim Wiederherstellen nie gelöscht;
 ihre Einträge bleiben erhalten.
 
 ### Übersetzungen (`app_i18n.py`)
@@ -840,6 +850,7 @@ Datenbankverbindungen ≈ `Pods × GUNICORN_WORKERS × GUNICORN_THREADS` plus Wo
 | `AUTOMATION_PARALLEL`, `AUTOMATION_MEMORY_MB` | `4`, `2048` | Worker |
 | `AUTOMATION_MAX_TIMEOUT_MINUTES`, `AUTOMATION_MAX_CALLS` | `240`, `0` | Worker |
 | `SCRIPT_SECRET_<NAME>` | – | Geheimnis für Automatisierungen (nur Worker) |
+| `AUDIT_RETENTION_DAYS` | `365` | Änderungsprotokoll aufbewahren (Tage, 0 = nie) |
 | `METRICS_TOKEN` | – | Schlüssel für `/metrics`; leer = abgeschaltet |
 | `AI_WRITES` | `30` | Änderungen je KI-Zugang in 10 Minuten |
 | `PUBLIC_RATE` | `120` | Anfragen von Gästen je Adresse und Minute |

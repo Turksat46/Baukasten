@@ -12,10 +12,12 @@ from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils.http import url_has_allowed_host_and_scheme
+from django.conf import settings
+from django.utils import timezone
 from django.utils.translation import gettext as _, gettext_lazy
 from django.views.decorators.http import require_POST
 
-from . import app_i18n, hooks
+from . import app_i18n, audit, hooks, platform
 from .blocks import (BUILTIN_PLACEHOLDERS, all_types, clean_layout, designer_config, make_block,
                      render_custom, render_layout)
 from . import datasources
@@ -54,6 +56,7 @@ def _share(request, app):
             raise PermissionDenied
         app.created_by = request.user
         app.save(update_fields=["created_by"])
+        audit.log("share", "app", app=app, target_id=app.pk, label=app.name, note="App übernommen (Eigentümer/in)")
         messages.success(request, _("Du bist jetzt Eigentümer/in der App. Andere Designer brauchen ab sofort eine Einladung."))
         return
     if not app.user_can_manage(request.user):
@@ -73,17 +76,27 @@ def _share(request, app):
                            % {"name": user.get_username()})
         else:
             app.editors.add(user)
+            audit.log("share", "app", app=app, target_id=app.pk, label=app.name,
+                      note=f"Mitbearbeiter/in hinzugefügt: {user.get_username()}")
             messages.success(request, _("%(name)s darf die App jetzt bearbeiten.") % {"name": user.get_username()})
     elif action == "remove_user":
-        app.editors.remove(*app.editors.filter(pk=request.POST.get("user")))
+        for person in app.editors.filter(pk=request.POST.get("user")):
+            app.editors.remove(person)
+            audit.log("share", "app", app=app, target_id=app.pk, label=app.name,
+                      note=f"Mitbearbeiter/in entfernt: {person.get_username()}")
         messages.success(request, _("Mitbearbeiter entfernt."))
     elif action == "add_group":
         group = Group.objects.filter(pk=request.POST.get("group")).first()
         if group:
             app.editor_groups.add(group)
+            audit.log("share", "app", app=app, target_id=app.pk, label=app.name,
+                      note=f"Mitbearbeiter-Gruppe hinzugefügt: {group.name}")
             messages.success(request, _("Designer in der Gruppe „%(name)s“ dürfen die App jetzt bearbeiten.") % {"name": group.name})
     elif action == "remove_group":
-        app.editor_groups.remove(*app.editor_groups.filter(pk=request.POST.get("group")))
+        for group in app.editor_groups.filter(pk=request.POST.get("group")):
+            app.editor_groups.remove(group)
+            audit.log("share", "app", app=app, target_id=app.pk, label=app.name,
+                      note=f"Mitbearbeiter-Gruppe entfernt: {group.name}")
         messages.success(request, _("Gruppe entfernt."))
 
 
@@ -178,10 +191,15 @@ def app_import(request):
     except versions.AutomationNotAllowed as exc:
         messages.error(request, str(exc))
         return redirect("designer_home")
+    except versions.InvalidSnapshot as exc:
+        messages.error(request, _("Die Datei ist keine gültige App-Datei.") + " " + str(exc))
+        return redirect("designer_home")
     except (ValueError, UnicodeDecodeError):
         messages.error(request, _("Die Datei ist keine gültige App-Datei."))
         return redirect("designer_home")
     messages.success(request, _("App „%(name)s“ importiert. Sie ist noch ein Entwurf.") % {"name": app.name})
+    for note in getattr(app, "import_notes", []):
+        messages.warning(request, note)
     return redirect("designer_app", app.slug)
 
 
@@ -198,8 +216,14 @@ def app_detail(request, app):
         kind = request.POST.get("kind")
         if kind == "app":
             form = SettingsForm(request.POST, instance=app, prefix="app")
+            groups_before = sorted(app.groups.values_list("name", flat=True))
             if form.is_valid():
                 form.save()
+                groups_after = sorted(app.groups.values_list("name", flat=True))
+                if groups_after != groups_before:  # Nutzergruppen (M2M) erfassen die Signale nicht
+                    audit.log("share", "app", app=app, target_id=app.pk, label=app.name,
+                              changes={"groups": [", ".join(groups_before) or "alle", ", ".join(groups_after) or "alle"]},
+                              note="Nutzergruppen geändert")
                 messages.success(request, _("Einstellungen gespeichert."))
                 return redirect("designer_app", app.slug)
         elif kind == "entity":
@@ -248,6 +272,7 @@ def app_detail(request, app):
                  "webhook_base": request.build_absolute_uri(reverse("api_describe", args=[app.slug])) + "ausloesen/"}
     return render(request, "designer/automation.html" if app.is_automation else "designer/app.html", {
         **extra,
+        "audit_recent": recent_audit(app),
         "app": app, "form": form, "entity_form": entity_form, "page_form": page_form,
         "entities": entities, "pages": app.pages.all(),
         "key_form": key_form, "api_keys": app.api_keys.all(), "new_key": new_key,
@@ -270,11 +295,46 @@ def app_detail(request, app):
 @require_POST
 def version_restore(request, app, pk):
     version = get_object_or_404(AppVersion, pk=pk, app__slug=app)
-    kept = versions.restore(version, request.user)
+    try:
+        _data, notes = versions.upgrade(version.snapshot)
+        kept = versions.restore(version, request.user)
+    except versions.InvalidSnapshot as exc:
+        messages.error(request, _("Diese Version lässt sich nicht wiederherstellen: %(error)s") % {"error": exc})
+        return redirect("designer_app", app)
+    for note in notes:
+        messages.warning(request, note)
     messages.success(request, _("Version %(number)s wiederhergestellt. Der vorherige Stand wurde als neue Version gesichert.") % {"number": version.number})
     if kept:
         messages.success(request, _("Diese Tabellen gab es in der Version noch nicht; sie bleiben mit ihren Daten erhalten: %(names)s") % {"names": ", ".join(kept)})
     return redirect("designer_app", app)
+
+
+@designer_required
+@require_POST
+def version_upload(request, app):
+    """Eine heruntergeladene Version (Datei) in diese App einspielen, auch aus älteren Baukasten-Versionen."""
+    app = get_object_or_404(App, slug=app)
+    upload = request.FILES.get("file")
+    if not upload or upload.size > 5 * 1024 * 1024:
+        messages.error(request, _("Bitte eine heruntergeladene Version auswählen (höchstens 5 MB)."))
+        return redirect(reverse("designer_app", args=[app.slug]) + "#versionen")
+    try:
+        data = json.loads(upload.read().decode("utf-8"))
+        backup, kept, notes = versions.restore_from_file(app, data, request.user, upload.name[:100])
+    except versions.InvalidSnapshot as exc:
+        messages.error(request, _("Die Datei lässt sich nicht einspielen: %(error)s") % {"error": exc})
+        return redirect(reverse("designer_app", args=[app.slug]) + "#versionen")
+    except (ValueError, UnicodeDecodeError):
+        messages.error(request, _("Die Datei ist keine gültige App-Datei."))
+        return redirect(reverse("designer_app", args=[app.slug]) + "#versionen")
+    messages.success(request, _("Datei eingespielt. Der vorherige Stand ist als Version %(number)s gesichert.")
+                     % {"number": backup.number})
+    for note in notes:
+        messages.warning(request, note)
+    if kept:
+        messages.success(request, _("Diese Tabellen gab es in der Datei nicht; sie bleiben mit ihren Daten erhalten: %(names)s")
+                         % {"names": ", ".join(kept)})
+    return redirect(reverse("designer_app", args=[app.slug]) + "#versionen")
 
 
 @designer_required
@@ -645,7 +705,7 @@ def script_edit(request, app, pk=None):
         from django.middleware.csrf import get_token
 
         runtime = {"sandbox": reverse("script_sandbox"), "bridge": reverse("script_bridge", args=[app.slug]),
-                   "csrf": get_token(request), "timeout": int(settings.BAUKASTEN_SCRIPT_TIMEOUT * 1000),
+                   "csrf": get_token(request), "timeout": int(platform.value("script_timeout") * 1000),
                    "user": python_scripts.user_info(request.user), "page": "", "show_errors": True,
                    "scripts": [], "buttons": {}}
     return render(request, "designer/script.html", {
@@ -777,8 +837,10 @@ def start_script(script, user):
     """Knopf „Jetzt starten“: Dauerläufer einschalten, sonst einen Lauf anfordern. Gibt die Meldung zurück."""
     if script.trigger == Script.CONTINUOUS:
         Script.objects.filter(pk=script.pk).update(enabled=True, next_run_at=None, failures=0, stop_requested=False)
+        audit.log("start", "script", app=script.app, target_id=script.pk, label=script.name, note="eingeschaltet")
         return True, _("„%(name)s“ ist eingeschaltet und startet in wenigen Sekunden.") % {"name": script.name}
     if worker.request_run(script, Script.MANUAL, user=user.get_username()):
+        audit.log("start", "script", app=script.app, target_id=script.pk, label=script.name)
         return True, _("„%(name)s“ startet in wenigen Sekunden.") % {"name": script.name}
     return False, _("Für „%(name)s“ wartet schon ein Start.") % {"name": script.name}
 
@@ -812,6 +874,8 @@ def script_stop(request, app, pk):
     if script.trigger == Script.CONTINUOUS:
         updates["enabled"] = False
     Script.objects.filter(pk=script.pk).update(**updates)
+    audit.log("stop", "script", app=app, target_id=script.pk, label=script.name,
+              note="ausgeschaltet" if script.trigger == Script.CONTINUOUS else "")
     messages.success(request, _("„%(name)s“ wird gestoppt.") % {"name": script.name} if script.running_since
                      else _("„%(name)s“ ist angehalten.") % {"name": script.name})
     return _back(request, app)
@@ -871,3 +935,81 @@ def automation_script_edit(request, app, script):
         "runs": script.runs.all()[:15] if script else [],
         "max_timeout": form.limit,
     })
+
+
+# ---------- Änderungsprotokoll ----------
+
+def _audit_entries(app, params):
+    from django.db.models import Q
+
+    from .models import AuditEntry
+
+    entries = AuditEntry.objects.filter(app=app).select_related("user")
+    area = params.get("bereich", "")
+    if area == "daten":
+        entries = entries.filter(target_type="record")
+    elif area == "aufbau":
+        entries = entries.exclude(target_type="record")
+    if params.get("eintrag"):
+        entries = entries.filter(target_type="record", target_id=str(params["eintrag"]))
+    query = params.get("q", "").strip()
+    if query:
+        entries = entries.filter(Q(target_label__icontains=query) | Q(username__icontains=query)
+                                 | Q(actor__icontains=query) | Q(note__icontains=query))
+    return entries
+
+
+def _audit_labels(entry):
+    entry.via_label = audit.VIA_LABELS.get(entry.via, entry.via)
+    entry.action_label = audit.ACTION_LABELS.get(entry.action, entry.action)
+    entry.summary = audit.describe(entry)
+    entry.who = entry.username or entry.actor or audit.VIA_LABELS.get(entry.via, "")
+    return entry
+
+
+@designer_required
+def audit_log(request, app):
+    """Wer hat wann was geändert – je App, mit Filter und CSV-Export."""
+    from django.core.paginator import Paginator
+
+    app = get_object_or_404(App, slug=app)
+    entries = _audit_entries(app, request.GET)
+    if request.GET.get("format") == "csv":
+        return _audit_csv(app, entries)
+    page = Paginator(entries, 50).get_page(request.GET.get("seite"))
+    for entry in page.object_list:
+        _audit_labels(entry)
+    params = request.GET.copy()
+    params.pop("seite", None)
+    return render(request, "designer/audit.html", {
+        "app": app, "page_obj": page, "area": request.GET.get("bereich", ""), "query": request.GET.get("q", ""),
+        "record_id": request.GET.get("eintrag", ""), "params": params.urlencode(),
+        "retention": platform.value("audit_retention_days"),
+    })
+
+
+def _audit_csv(app, entries):
+    from django.http import StreamingHttpResponse
+
+    from .views import _csv_cell, _Echo
+
+    writer = csv.writer(_Echo(), delimiter=";")
+
+    def rows():
+        yield "\ufeff" + writer.writerow(["Zeit", "Person", "Womit", "Weg", "Aktion", "Art", "Objekt", "Änderung",
+                                            "Hinweis"])
+        for entry in entries.iterator(chunk_size=500):
+            _audit_labels(entry)
+            yield writer.writerow([_csv_cell(v) for v in (
+                timezone.localtime(entry.created_at).strftime("%Y-%m-%d %H:%M:%S"), entry.username, entry.actor,
+                entry.via_label, entry.action_label, entry.target_type, entry.target_label, entry.summary, entry.note)])
+
+    response = StreamingHttpResponse(rows(), content_type="text/csv; charset=utf-8")
+    response["Content-Disposition"] = f'attachment; filename="{app.slug}-protokoll.csv"'
+    return response
+
+
+def recent_audit(app, limit=5):
+    from .models import AuditEntry
+
+    return [_audit_labels(e) for e in AuditEntry.objects.filter(app=app).select_related("user")[:limit]]

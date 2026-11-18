@@ -534,9 +534,46 @@ and translations. The entered data is not part of it.
   Designer's start page, "Create app from file" creates a new app from it, for
   example to move an app from the test to the production environment. The new
   app is a draft at first.
+- **Load a file into an existing app:** In the "Versionen" card, under
+  "Heruntergeladene Version einspielen", choose a file. The app takes the state
+  of the file; the current state is saved as a version first, entries are kept.
+  An automation can only be loaded into an automation and vice versa.
+- **Older files:** Files and stored versions from older Baukasten versions are
+  raised to the current format automatically when loaded; a notice says so.
+  Blocks that no longer exist are left out and named as well. Files from a
+  *newer* Baukasten are rejected: update Baukasten first.
 
 Versions are not created automatically with every change. Save one before you
 start larger redesigns.
+
+### Audit log
+
+Every app has an **audit log**: who changed what, when, and through which channel. It is
+recorded automatically, whether through the interface, the Designer, the API, the MCP
+server, an AI access, a script, an automation or `/admin/`.
+
+| What | What the log contains |
+|---|---|
+| Entries created, changed, deleted | every changed field with old and new value |
+| Structure: settings, tables, fields, pages, scripts, queries, API keys | which setting changed how; for code and page layout only that they changed |
+| Sharing: co-editors, user groups, app claimed | who was added or removed |
+| Automations started or stopped | by whom, via button, webhook or MCP |
+| Version restored, app imported, AI change, sync with a data source | **one** summarising entry, not one per field or row |
+| Table or app deleted | one entry (for tables with the number of entries); the app's name stays in the log |
+
+The **person** is the account; **with** names an API key, AI access or script, and guests
+appear as "Gast". If an "after saving" script changes an entry, both the person *and* the
+script are recorded.
+
+**Viewing:** In the app's Designer, card "Änderungsprotokoll" → "Ganzes Protokoll". There you
+can filter by entries or structure, search, and download everything as CSV. In an entry's
+form, "Verlauf" shows its latest changes. Both are visible only to people who may edit the
+app. Administrators find the log of all apps, including deleted ones, under `/admin/` →
+Änderungsprotokoll. It cannot be changed or deleted there.
+
+**Retention:** The log contains changed values, i.e. personal data too. Entries are deleted
+after `AUDIT_RETENTION_DAYS` days (default 365, `0` = never). Agree on the period with your
+data protection officer.
 
 ### Deleting an app
 
@@ -1291,6 +1328,7 @@ Everything environment-specific comes from environment variables.
 | `AUTOMATION_MAX_CALLS` | commands (`app.table`, `db`, `secret`) per run, default 0 = unlimited |
 | `SCRIPT_SECRET_<NAME>` | secret for automations, `secret("NAME")` in the script; set only in the background service |
 | `REDIS_PASSWORD` | password for the Redis from `k8s/redis.yaml` |
+| `AUDIT_RETENTION_DAYS` | delete audit log entries after this many days, default 365, 0 = never |
 | `METRICS_TOKEN` | key for `/metrics` (metrics for Prometheus, see docs/BETRIEB.md); empty = switched off |
 | `AI_WRITES` | changes per AI access in 10 minutes (`/mcp/designer/`), default 30, 0 = no limit |
 | `PUBLIC_RATE` | guest requests on public pages per address and minute, default 120, 0 = no limit |
@@ -1570,6 +1608,21 @@ The administration is organised by app:
 - **An entry** shows its fields readably at the top and below the content as
   JSON for editing.
 
+**Settings** (superusers only): under `/admin/` → Einstellungen a few business
+values can be changed without a restart: guest requests per minute, changes per
+AI access, audit log retention, time limit and calls of scripts in normal apps,
+longest time limit for automations. An empty field means the value from the
+environment applies (shown next to the field). Changes take effect in all pods
+within 30 seconds and appear in the audit log. Credentials and technical values
+(database, hosts, Keycloak) are deliberately not here; they stay in environment
+variables.
+
+**Release notes:** under `/admin/` → Release Notes you describe what a version
+brings (Markdown). Once "published", it appears for everyone on the page **Über
+den Baukasten** (`/ueber/`), reachable via "Baukasten 1.x · Was ist neu?" at the
+bottom of every page. If there is news someone has not seen yet, the link lights
+up. Drafts are visible to superusers only.
+
 Apps, tables, fields and pages are better built in the Designer: input is
 checked there and pages stay consistent. The administration is meant for the
 overview, for corrections, and for users and groups.
@@ -1638,8 +1691,9 @@ the Dockerfile).
   never appear in the interface and are removed from error messages. Read-only
   users in the database are mandatory.
 - **Public pages** are limited to `PUBLIC_RATE` requests per address and minute.
-- **Not included:** a rate limit for the API (set it up at the ingress) and an
-  audit log of who changed what when.
+- **Audit log:** who changed what when, per app, see [Audit log](#audit-log). Changes made
+  directly in the database are not recorded.
+- **Not included:** a rate limit for the API (set it up at the ingress).
 
 ### Backup
 

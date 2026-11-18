@@ -1,5 +1,5 @@
 {% load i18n %}
-<section class="card" data-tour="versions">
+<section class="card" data-tour="versions" id="versionen">
       <h3>{% translate "Versionen" %}</h3>
       <p class="muted">{% translate "Eine Version hält den Aufbau der App fest: Einstellungen, Tabellen, Felder und Seiten. Die erfassten Daten gehören nicht dazu und bleiben beim Wiederherstellen erhalten." %}</p>
       <form method="post" class="form inline-form">
@@ -30,4 +30,14 @@
       {% else %}
         <p class="empty">{% translate "Noch keine Version gespeichert." %}</p>
       {% endif %}
+      <details class="version-upload">
+        <summary>{% translate "Heruntergeladene Version einspielen" %}</summary>
+        <p class="muted small">{% translate "Bringt diese App auf den Stand einer heruntergeladenen Datei, auch aus einer älteren Baukasten-Version. Der jetzige Stand wird vorher als Version gesichert; Einträge bleiben erhalten." %}</p>
+        <form method="post" action="{% url 'designer_version_upload' app.slug %}" enctype="multipart/form-data" class="inline-form"
+              data-confirm="{% translate 'Diese App auf den Stand der Datei bringen? Der jetzige Stand wird vorher als Version gesichert.' %}">
+          {% csrf_token %}
+          <input type="file" name="file" accept="application/json,.json" required aria-label="{% translate 'Versionsdatei' %}">
+          <button class="btn btn-secondary btn-small">{% translate "Einspielen" %}</button>
+        </form>
+      </details>
     </section>

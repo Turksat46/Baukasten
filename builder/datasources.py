@@ -477,9 +477,23 @@ def sync(query):
     key_field = column_key(query.key_column) if query.key_column else ""
     if key_field and key_field not in keys.values():
         raise QueryError(_("Die Schlüsselspalte „%(name)s“ kommt in der Abfrage nicht vor.") % {"name": query.key_column})
+    from . import audit
+
+    with audit.quiet():
+        counts = _sync_rows(entity, rows, key_field)
+    audit.log("sync", "entity", app=query.app, target_id=entity.pk, label=entity.name, scope=entity.slug,
+              note=f"Abfrage „{query.name}“: {counts[0]} neu, {counts[1]} geändert, {counts[2]} entfernt")
+    return len(rows)
+
+
+def _sync_rows(entity, rows, key_field):
+    """Gibt (neu, geändert, entfernt) zurück."""
+    from .models import Record
+
     if not key_field:
-        entity.records.all().delete()
+        removed, _detail = entity.records.all().delete()
         Record.objects.bulk_create([Record(entity=entity, data=row) for row in rows], batch_size=1000)
+        return len(rows), 0, removed
     else:
         current = {}
         for record in entity.records.all():
@@ -501,7 +515,7 @@ def sync(query):
         Record.objects.bulk_update(changed, ["data", "updated_at"], batch_size=1000)
         stale = [r.pk for marker, r in current.items() if marker not in seen]
         Record.objects.filter(pk__in=stale).delete()
-    return len(rows)
+        return len(new), len(changed), len(stale)
 
 
 def sync_and_record(query):

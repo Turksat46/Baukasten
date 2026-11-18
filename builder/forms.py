@@ -203,7 +203,7 @@ class AutomationScriptForm(forms.ModelForm):
                    "daily_time": forms.TimeInput(attrs={"type": "time"}, format="%H:%M")}
 
     def __init__(self, *args, **kwargs):
-        from django.conf import settings
+        from . import platform
 
         super().__init__(*args, **kwargs)
         labels = dict(Script.TRIGGERS)
@@ -211,8 +211,8 @@ class AutomationScriptForm(forms.ModelForm):
         self.fields["trigger"].label = _("Wann läuft das Skript?")
         self.fields["timeout_minutes"].min_value = 1
         self.fields["timeout_minutes"].widget.attrs.update(
-            min=1, max=settings.BAUKASTEN_AUTOMATION_MAX_TIMEOUT_MINUTES)
-        self.limit = settings.BAUKASTEN_AUTOMATION_MAX_TIMEOUT_MINUTES
+            min=1, max=platform.value("automation_max_timeout_minutes"))
+        self.limit = platform.value("automation_max_timeout_minutes")
 
     def clean(self):
         cleaned = super().clean()

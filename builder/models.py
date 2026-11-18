@@ -11,7 +11,9 @@ from django.conf import settings
 from django.conf import settings as settings_module
 from django.contrib.auth.models import Group
 from django.core.serializers.json import DjangoJSONEncoder
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
+from django.utils import timezone
 from django.utils.text import slugify
 from django.utils.translation import gettext_lazy as _
 
@@ -596,3 +598,105 @@ class DataQuery(models.Model):
         if not self.slug:
             self.slug = unique_slug(self.app.queries, slugify(self.name) or "abfrage")
         super().save(*args, **kwargs)
+
+
+class AuditEntry(models.Model):
+    """Änderungsprotokoll: wer hat wann was geändert, auf welchem Weg (builder/audit.py).
+
+    Bleibt erhalten, wenn App oder Konto gelöscht werden (Namen werden mitgespeichert).
+    Wird nie bearbeitet; gelöscht wird nur nach Ablauf von AUDIT_RETENTION_DAYS.
+    """
+
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+    app = models.ForeignKey(App, null=True, blank=True, on_delete=models.SET_NULL, related_name="+")
+    app_slug = models.CharField(max_length=50, blank=True)
+    app_name = models.CharField(max_length=80, blank=True)
+    user = models.ForeignKey(settings_module.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL,
+                             related_name="+")
+    username = models.CharField(max_length=150, blank=True)
+    actor = models.CharField(max_length=120, blank=True,
+                             help_text=_("Womit: API-Schlüssel, KI-Zugang, Skript …"))
+    via = models.CharField(max_length=12)
+    action = models.CharField(max_length=12)
+    target_type = models.CharField(max_length=12)
+    target_id = models.CharField(max_length=40, blank=True)
+    target_label = models.CharField(max_length=200, blank=True)
+    scope = models.CharField(max_length=50, blank=True, help_text=_("Kurzname der Tabelle bei Einträgen und Feldern"))
+    changes = models.JSONField(default=dict, blank=True, encoder=UnicodeJSONEncoder)
+    note = models.CharField(max_length=300, blank=True)
+
+    class Meta:
+        verbose_name = _("Protokolleintrag")
+        verbose_name_plural = _("Änderungsprotokoll")
+        ordering = ["-id"]
+        indexes = [models.Index(fields=["app", "-id"], name="audit_app_newest"),
+                   models.Index(fields=["target_type", "target_id"], name="audit_target")]
+
+    def __str__(self):
+        return f"{self.created_at:%Y-%m-%d %H:%M} {self.username or self.actor} {self.action} {self.target_label}"
+
+
+class PlatformSettings(models.Model):
+    """Fachliche Einstellungen, unter /admin/ änderbar ohne Neustart (builder/platform.py).
+
+    Es gibt genau einen Datensatz. Ein leeres Feld heißt: Es gilt der Wert aus der Umgebung
+    (settings.py). Zugangsdaten und Technisches (Datenbank, Hosts, Keycloak) gehören nicht hierher.
+    """
+
+    public_rate = models.PositiveIntegerField(
+        _("Anfragen von Gästen je Adresse und Minute"), null=True, blank=True,
+        help_text=_("Öffentliche Seiten. 0 = keine Grenze."))
+    ai_writes = models.PositiveIntegerField(
+        _("Änderungen je KI-Zugang in 10 Minuten"), null=True, blank=True, help_text=_("0 = keine Grenze."))
+    audit_retention_days = models.PositiveIntegerField(
+        _("Änderungsprotokoll aufbewahren (Tage)"), null=True, blank=True,
+        help_text=_("Danach werden Einträge gelöscht. 0 = nie. Mit dem Datenschutz abstimmen."))
+    script_timeout = models.PositiveIntegerField(
+        _("Zeitlimit für Skripte normaler Apps (Sekunden)"), null=True, blank=True,
+        validators=[MinValueValidator(1), MaxValueValidator(50)],
+        help_text=_("1 bis 50. Seiten warten so lange auf ihre Skripte."))
+    script_max_calls = models.PositiveIntegerField(
+        _("Zugriffe je Skriptlauf (normale Apps)"), null=True, blank=True,
+        validators=[MinValueValidator(10)])
+    automation_max_timeout_minutes = models.PositiveIntegerField(
+        _("Längstes Zeitlimit für Automatisierungen (Minuten)"), null=True, blank=True,
+        validators=[MinValueValidator(1), MaxValueValidator(1440)])
+    updated_at = models.DateTimeField(_("Zuletzt geändert"), auto_now=True)
+    updated_by = models.ForeignKey(settings_module.AUTH_USER_MODEL, null=True, blank=True,
+                                   on_delete=models.SET_NULL, related_name="+", editable=False,
+                                   verbose_name=_("Geändert von"))
+
+    class Meta:
+        verbose_name = _("Einstellungen")
+        verbose_name_plural = _("Einstellungen")
+
+    def __str__(self):
+        return str(_("Einstellungen des Baukastens"))
+
+    def save(self, *args, **kwargs):
+        self.pk = 1  # genau ein Datensatz
+        super().save(*args, **kwargs)
+
+
+class ReleaseNote(models.Model):
+    """Was ist neu: Release Notes für alle Nutzer, auf der Seite „Über den Baukasten“ (/ueber/).
+
+    Gepflegt unter /admin/. Sichtbar erst, wenn „veröffentlicht“ angehakt ist.
+    """
+
+    version = models.CharField(_("Version"), max_length=20, help_text=_("z. B. 1.1.0"))
+    title = models.CharField(_("Titel"), max_length=120, help_text=_("In einem Satz: was bringt diese Version?"))
+    body = models.TextField(_("Text"), blank=True,
+                            help_text=_("Markdown: Absätze, **fett**, Listen mit „- “, Überschriften mit „### “."))
+    released_on = models.DateField(_("Datum"), default=timezone.localdate)
+    published = models.BooleanField(_("Veröffentlicht"), default=False,
+                                    help_text=_("Erst dann sehen alle Nutzer diesen Eintrag."))
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = _("Release Note")
+        verbose_name_plural = _("Release Notes")
+        ordering = ["-released_on", "-id"]
+
+    def __str__(self):
+        return f"{self.version}: {self.title}"

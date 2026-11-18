@@ -114,7 +114,9 @@ def _signal(proc, kill=False):
 def timeout_seconds(script):
     if script.trigger == Script.CONTINUOUS:
         return None
-    limit = settings.BAUKASTEN_AUTOMATION_MAX_TIMEOUT_MINUTES
+    from .. import platform
+
+    limit = platform.value("automation_max_timeout_minutes")
     return max(1, min(script.timeout_minutes or 30, limit)) * 60
 
 

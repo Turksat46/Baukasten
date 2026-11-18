@@ -95,7 +95,10 @@ def api_view(view):
         # Eigene Endpunkte prüfen das Schreibrecht selbst (hooks.api(write=True)).
         if request.method not in ("GET", "HEAD", "OPTIONS") and not key.can_write and view.__name__ != "custom":
             return error(403, _("Dieser Schlüssel darf nur lesen."))
-        return view(request, key.app, key, payload, *args, **kwargs)
+        from . import audit
+
+        with audit.context(actor=f"API-Schlüssel {key.name}"):
+            return view(request, key.app, key, payload, *args, **kwargs)
 
     return wrapper
 
@@ -223,6 +226,9 @@ def start_automation(app, slug, trigger, payload, key_name):
         return 409, {"error": _("Das Skript läuft ständig und lässt sich nicht einzeln starten.")}
     if not request_run(script, trigger, daten=payload, key=key_name):
         return 409, {"error": _("Für dieses Skript wartet schon ein Start.")}
+    from . import audit
+
+    audit.log("start", "script", app=app, target_id=script.pk, label=script.name)
     return 202, {"status": "angenommen", "script": script.slug, "running": bool(script.running_since)}
 
 

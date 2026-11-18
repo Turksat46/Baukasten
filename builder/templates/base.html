@@ -48,6 +48,12 @@
     </div>
   {% endif %}
   <main id="inhalt" class="{% block main_class %}container{% endblock %}">{% block content %}{% endblock %}</main>
+  {% if user.is_authenticated %}
+    <footer class="site-footer">
+      <a href="{% url 'about' %}" data-news="{{ latest_release }}">{% blocktranslate with version=baukasten_version %}Baukasten {{ version }}{% endblocktranslate %} · {% translate "Was ist neu?" %}<span class="news-dot" aria-hidden="true"></span></a>
+    </footer>
+    <script src="{% asset 'builder/news.js' %}" defer></script>
+  {% endif %}
 {% endblock %}
   {% if coach %}{% include "builder/_coach.html" %}<script src="{% asset 'builder/coach.js' %}" defer></script>{% endif %}
   {% block tour %}{% endblock %}

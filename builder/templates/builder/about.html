@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% load i18n baukasten %}
+{% block title %}{% translate "Über den Baukasten" %}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>{% translate "Über den Baukasten" %}</h1>
+    <p class="subtitle">{% translate "Interne Apps aus Tabellen, Seiten und Bausteinen. Hier steht, welche Version läuft und was neu ist." %}</p>
+  </div>
+  <div class="version-badge" aria-label="{% translate 'Version' %}">
+    <span class="muted small">{% translate "Version" %}</span>
+    <strong>{{ version }}</strong>
+  </div>
+</div>
+
+<div class="grid">
+  <div class="col col-8">
+    <section class="card" id="neuigkeiten" data-latest="{{ latest }}">
+      <h3>{% translate "Was ist neu" %}</h3>
+      {% for note in notes %}
+        <article class="release{% if forloop.first %} release-latest{% endif %}{% if not note.published %} release-draft{% endif %}">
+          <header>
+            <span class="badge{% if forloop.first and note.published %} badge-ok{% endif %}">{{ note.version }}</span>
+            <strong>{{ note.title }}</strong>
+            <span class="muted small">{{ note.released_on|date:"DATE_FORMAT" }}</span>
+            {% if not note.published %}<span class="badge badge-warn">{% translate "Entwurf – nur für Verwalter sichtbar" %}</span>{% endif %}
+          </header>
+          <div class="release-body">{{ note.html|safe }}</div>
+        </article>
+      {% empty %}
+        <p class="empty">{% translate "Noch keine Release Notes veröffentlicht." %}</p>
+      {% endfor %}
+      {% if user.is_superuser %}
+        <p class="muted small">{% translate "Release Notes schreibst und veröffentlichst du unter /admin/ → Release Notes." %}
+          <a href="{% url 'admin:builder_releasenote_add' %}">{% translate "Neue Release Note" %}</a></p>
+      {% endif %}
+    </section>
+  </div>
+  <div class="col col-4">
+    <section class="card">
+      <h3>{% translate "Technik" %}</h3>
+      <dl class="facts">
+        {% for label, value in facts %}<dt>{{ label }}</dt><dd>{{ value }}</dd>{% endfor %}
+      </dl>
+    </section>
+    <section class="card">
+      <h3>{% translate "Weiterlesen" %}</h3>
+      <ul class="plain">
+        <li><a href="{% url 'help' %}">{% translate "Handbuch" %}</a></li>
+        {% if can_design %}<li><a href="{% url 'api_index' %}">{% translate "API-Dokumentation" %}</a></li>{% endif %}
+      </ul>
+    </section>
+  </div>
+</div>
+{% endblock %}

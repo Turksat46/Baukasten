@@ -187,6 +187,12 @@ class Command(BaseCommand):
                             help="Vorhandene Beispiel-App samt ihren Daten löschen und neu anlegen.")
 
     def handle(self, *args, **options):
+        from builder import audit
+
+        with audit.quiet():  # Beispieldaten anlegen gehört nicht ins Änderungsprotokoll
+            return self._handle(*args, **options)
+
+    def _handle(self, *args, **options):
         existing = App.objects.filter(slug=SLUG)
         if existing.exists():
             if not options["neu"]:

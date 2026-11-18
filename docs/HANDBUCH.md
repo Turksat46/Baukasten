@@ -525,9 +525,48 @@ Seiten und Übersetzungen. Die erfassten Daten gehören nicht dazu.
   Datei. Auf der Startseite des Designers legt „App aus Datei anlegen“ daraus
   eine neue App an, zum Beispiel um eine App von der Test- in die
   Produktivumgebung zu bringen. Die neue App ist zunächst ein Entwurf.
+- **Datei in eine bestehende App einspielen:** In der Karte „Versionen“ unter
+  „Heruntergeladene Version einspielen“ eine Datei wählen. Die App bekommt den
+  Stand der Datei; der jetzige Stand wird vorher als Version gesichert, Einträge
+  bleiben erhalten. Eine Automatisierung lässt sich nur in eine Automatisierung
+  einspielen und umgekehrt.
+- **Ältere Dateien:** Dateien und gespeicherte Versionen aus älteren
+  Baukasten-Versionen werden beim Einspielen automatisch auf das aktuelle Format
+  gehoben; ein Hinweis sagt das. Bausteine, die es inzwischen nicht mehr gibt,
+  werden weggelassen und ebenfalls genannt. Dateien aus einem *neueren*
+  Baukasten lehnt er ab: dann zuerst den Baukasten aktualisieren.
 
 Versionen entstehen nicht automatisch bei jeder Änderung. Speichere eine, bevor
 du größere Umbauten beginnst.
+
+### Änderungsprotokoll
+
+Jede App hat ein **Änderungsprotokoll**: wer hat wann was geändert, und auf welchem Weg.
+Erfasst wird automatisch, egal ob über die Oberfläche, den Designer, die API, den
+MCP-Server, einen KI-Zugang, ein Skript, eine Automatisierung oder `/admin/`.
+
+| Was | Was im Protokoll steht |
+|---|---|
+| Einträge angelegt, geändert, gelöscht | jedes geänderte Feld mit altem und neuem Wert |
+| Aufbau: Einstellungen, Tabellen, Felder, Seiten, Skripte, Abfragen, API-Schlüssel | welche Einstellung sich wie geändert hat; bei Code und Seiten-Layout nur, dass sie sich geändert haben |
+| Freigaben: Mitbearbeiter, Nutzergruppen, App übernommen | wer hinzukam oder entfernt wurde |
+| Automatisierungen gestartet oder gestoppt | von wem, per Knopf, Webhook oder MCP |
+| Version wiederhergestellt, App importiert, KI-Änderung, Abgleich mit einer Datenquelle | **ein** zusammenfassender Eintrag, nicht einer je Feld oder Zeile |
+| Tabelle oder App gelöscht | ein Eintrag (bei Tabellen mit der Zahl der Einträge); der Name der App bleibt im Protokoll erhalten |
+
+Als **Person** steht dort das Konto, als **Womit** ein API-Schlüssel, KI-Zugang oder Skript,
+bei Gästen „Gast“. Ändert ein Skript „nach dem Speichern“ einen Eintrag, steht die Person
+*und* das Skript im Protokoll.
+
+**Ansehen:** Im Designer der App, Karte „Änderungsprotokoll“ → „Ganzes Protokoll“. Dort lässt
+sich nach Einträgen oder Aufbau filtern, suchen und alles als CSV herunterladen. Im
+Formular eines Eintrags zeigt „Verlauf“ dessen letzte Änderungen. Beides sehen nur Personen,
+die die App bearbeiten dürfen. Verwalter finden das Protokoll aller Apps, auch gelöschter,
+unter `/admin/` → Änderungsprotokoll. Ändern oder löschen lässt es sich dort nicht.
+
+**Aufbewahrung:** Das Protokoll enthält geänderte Werte, also auch personenbezogene Daten.
+Einträge werden nach `AUDIT_RETENTION_DAYS` Tagen gelöscht (Standard 365, `0` = nie).
+Die Frist mit dem Datenschutz abstimmen.
 
 ### App löschen
 
@@ -1295,6 +1334,7 @@ Alles Umgebungsabhängige kommt aus Umgebungsvariablen.
 | `AUTOMATION_MAX_CALLS` | Befehle (`app.table`, `db`, `secret`) je Lauf, Standard 0 = unbegrenzt |
 | `SCRIPT_SECRET_<NAME>` | Geheimnis für Automatisierungen, im Skript `secret("NAME")`; nur im Hintergrunddienst setzen |
 | `REDIS_PASSWORD` | Passwort für Redis aus `k8s/redis.yaml` |
+| `AUDIT_RETENTION_DAYS` | Änderungsprotokoll nach so vielen Tagen löschen, Standard 365, 0 = nie |
 | `METRICS_TOKEN` | Schlüssel für `/metrics` (Kennzahlen für Prometheus, siehe docs/BETRIEB.md); leer = abgeschaltet |
 | `AI_WRITES` | Änderungen je KI-Zugang in 10 Minuten (`/mcp/designer/`), Standard 30, 0 = keine Grenze |
 | `PUBLIC_RATE` | Anfragen von Gästen auf öffentlichen Seiten je Adresse und Minute, Standard 120, 0 = keine Grenze |
@@ -1600,6 +1640,22 @@ Apps, Tabellen, Felder und Seiten baust du besser im Designer: Dort werden
 Eingaben geprüft und Seiten bleiben stimmig. Die Verwaltung ist für den
 Überblick, für Korrekturen und für Benutzer und Gruppen gedacht.
 
+**Einstellungen** (nur Superuser): Unter `/admin/` → Einstellungen lassen sich
+einige fachliche Werte ohne Neustart ändern: Anfragen von Gästen je Minute,
+Änderungen je KI-Zugang, Aufbewahrung des Änderungsprotokolls, Zeitlimit und
+Zugriffe von Skripten normaler Apps, längstes Zeitlimit für Automatisierungen.
+Ein leeres Feld heißt: Es gilt der Wert aus der Umgebung (er steht beim Feld).
+Änderungen wirken nach höchstens 30 Sekunden in allen Pods und stehen im
+Änderungsprotokoll. Zugangsdaten und Technisches (Datenbank, Hosts, Keycloak)
+gibt es hier bewusst nicht; sie bleiben in den Umgebungsvariablen (siehe
+[Konfiguration](#konfiguration)).
+
+**Release Notes:** Unter `/admin/` → Release Notes schreibst du, was eine
+Version Neues bringt (Text in Markdown). Mit „veröffentlicht“ erscheint sie für
+alle auf der Seite **Über den Baukasten** (`/ueber/`), erreichbar über
+„Baukasten 1.x · Was ist neu?“ unten auf jeder Seite. Gibt es etwas Neues, das
+jemand noch nicht gesehen hat, leuchtet der Link. Entwürfe sehen nur Superuser.
+
 ### Firmenlogo und Design
 
 - **Logo:** Die offizielle Logo-Datei als `logo.svg` oder `logo.png` nach
@@ -1669,8 +1725,11 @@ Nach Änderungen an statischen Dateien muss das Image neu gebaut werden
   Nur-Lese-Benutzer in der Datenbank sind Pflicht.
 - **Öffentliche Seiten** sind auf `PUBLIC_RATE` Anfragen je Adresse und Minute
   begrenzt.
+- **Änderungsprotokoll:** wer wann was geändert hat, je App, siehe
+  [Änderungsprotokoll](#änderungsprotokoll). Nicht erfasst werden Änderungen direkt in der
+  Datenbank.
 - **Nicht enthalten:** eine Begrenzung der Anfragen pro Zeit für die API (am
-  Ingress einrichten) und ein Protokoll, wer wann was geändert hat.
+  Ingress einrichten).
 
 ### Sicherung
 

@@ -1,12 +1,13 @@
 from django.urls import path
 from django.views.i18n import JavaScriptCatalog
 
-from . import api, designer, help, mcp, mcp_designer, profile, views
+from . import about, api, designer, help, mcp, mcp_designer, profile, views
 
 urlpatterns = [
     path("jsi18n/", JavaScriptCatalog.as_view(packages=["builder"]), name="javascript-catalog"),
     path("profil/", profile.profile, name="profile"),
     path("hilfe/", help.help_page, name="help"),
+    path("ueber/", about.about, name="about"),
     path("api-doku/", views.api_index, name="api_index"),
     path("a/<slug:app>/api-doku/", views.api_docs, name="api_docs"),
     path("a/<slug:app>/api-doku/openapi.json", views.api_docs_spec, name="api_docs_spec"),
@@ -51,8 +52,10 @@ urlpatterns = [
     path("designer/<slug:app>/", designer.app_detail, name="designer_app"),
     path("designer/<slug:app>/loeschen/", designer.app_delete, name="designer_app_delete"),
     path("designer/<slug:app>/uebersetzungen/", designer.translations, name="designer_translations"),
+    path("designer/<slug:app>/protokoll/", designer.audit_log, name="designer_audit"),
     path("designer/<slug:app>/uebersetzungen/export.csv", designer.translations_export, name="designer_translations_export"),
     path("designer/<slug:app>/version/<int:pk>/wiederherstellen/", designer.version_restore, name="designer_version_restore"),
+    path("designer/<slug:app>/version/aus-datei/", designer.version_upload, name="designer_version_upload"),
     path("designer/<slug:app>/version/<int:pk>/herunterladen/", designer.version_download, name="designer_version_download"),
     path("designer/<slug:app>/schluessel/<int:pk>/loeschen/", designer.key_delete, name="designer_key_delete"),
     path("designer/<slug:app>/tabelle/<int:pk>/", designer.entity_detail, name="designer_entity"),

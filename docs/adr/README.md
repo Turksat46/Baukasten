@@ -15,3 +15,4 @@ nächste Nummer anlegen; überholte nicht löschen, sondern mit „Status: erset
 | 0007 | [KI über MCP statt eingebautem Assistenten](0007-ki-ueber-mcp-statt-eingebaut.md) | angenommen |
 | 0008 | [Oberfläche ohne Frontend-Framework und ohne Build-Schritt](0008-oberflaeche-ohne-framework.md) | angenommen |
 | 0009 | [Versionen halten den Aufbau fest, nicht die Daten](0009-versionen-ohne-daten.md) | angenommen |
+| 0010 | [Änderungsprotokoll über Signale mit Kontext je Eingang](0010-aenderungsprotokoll-ueber-signale.md) | angenommen |

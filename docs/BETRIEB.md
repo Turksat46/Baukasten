@@ -48,7 +48,9 @@ Neues dazu. Kritisch sind allein Betrieb und Sicherungen.
 
 1. Tests auf `main` sind grün (GitHub Actions).
 2. `CHANGELOG.md` ergänzen, Version in `config/settings.py` (`BAUKASTEN_VERSION`) erhöhen,
-   Tag setzen: `git tag v1.1.0 && git push --tags`.
+   Tag setzen: `git tag v1.1.0 && git push --tags`. Für die Nutzer unter `/admin/` →
+   Release Notes einen Eintrag in einfacher Sprache schreiben (oder den vorbereiteten Entwurf
+   anpassen) und nach dem Ausrollen „veröffentlicht“ anhaken; er erscheint dann unter `/ueber/`.
 3. Image bauen und hochladen: `docker build -t registry.example.com/baukasten:1.1.0 .`
    und `docker push …`.
 4. **Erst migrieren, dann ausrollen:**
@@ -288,6 +290,9 @@ kubectl -n baukasten exec -it deploy/baukasten -- python manage.py createsuperus
 
 ### 6.10 Ein Skript oder eine KI hat Daten kaputt gemacht
 
+- Was genau passiert ist, wer und womit: Designer der App → „Änderungsprotokoll“, mit dem
+  alten Wert jedes geänderten Feldes. Gelöschte Einträge stehen dort mit ihren Werten und
+  lassen sich daraus von Hand wiederherstellen.
 - Aufbau der App (Tabellen, Seiten, Skripte): im Designer unter „Versionen“ zurück. Jede
   Änderung über einen KI-Zugang hat vorher automatisch eine Version angelegt.
 - Einträge: nur aus der Sicherung (4.2, Abschnitt „Nur eine App ist kaputt“).
@@ -301,8 +306,10 @@ kubectl -n baukasten exec -it deploy/baukasten -- python manage.py createsuperus
 2. Bei Automatisierungen: Skripte ausschalten, Geheimnisse im Secret
    `baukasten-skript-geheimnisse` an der Quelle (ERP, SFTP …) erneuern.
 3. `SECRET_KEY` erneuern meldet alle Personen ab.
-4. Protokolle sichern: `kubectl logs` aller Pods, „Letzte Läufe“ der betroffenen Skripte,
-   Versionen der betroffenen Apps.
+4. Spuren sichern: `/admin/` → Änderungsprotokoll (filtern nach Weg „API“, „KI-Zugang“ bzw.
+   nach dem Schlüssel), als CSV aus dem Designer herunterladen; dazu `kubectl logs` aller Pods,
+   „Letzte Läufe“ der betroffenen Skripte, Versionen der betroffenen Apps. Bei Bedarf
+   `AUDIT_RETENTION_DAYS` vorübergehend hochsetzen, damit nichts automatisch gelöscht wird.
 
 ### 6.12 Lokal: Docker Desktop startet ständig neu
 

@@ -12,13 +12,23 @@ from django.utils.translation import gettext as _
 from .blocks import clean_layout
 from .models import App, AppVersion, DataQuery, Entity, Field, Page, Script
 
-FORMAT = "baukasten-app/1"
+FORMAT_PREFIX = "baukasten-app/"
+FORMAT_VERSION = 2
+FORMAT = f"{FORMAT_PREFIX}{FORMAT_VERSION}"
+# Geschichte des Formats (bei jeder inkompatiblen Änderung: FORMAT_VERSION erhöhen und unten in
+# UPGRADES eine Funktion ergänzen, die den Vorgänger umwandelt; alte Beispieldatei in die Tests):
+#   1  erste Fassung
+#   2  app.kind (App oder Automatisierung) ist Pflicht; Skripte mit Zeitplan-Angaben;
+#      „baukasten_version“ nennt die Baukasten-Version, aus der die Datei stammt
 FIELD_TYPES = {key for key, label in Field.TYPES}
 
 
 def snapshot(app):
+    from django.conf import settings
+
     return {
         "format": FORMAT,
+        "baukasten_version": settings.BAUKASTEN_VERSION,
         "app": {"name": app.name, "description": app.description, "icon": app.icon,
                 "translations": app.translations or {}, "kind": app.kind},
         "entities": [
@@ -68,6 +78,72 @@ class InvalidSnapshot(ValueError):
     pass
 
 
+# ---------- Alte Formate anheben ----------
+
+def _upgrade_1_to_2(data):
+    data["app"].setdefault("kind", "app")
+    for item in data.get("scripts") or []:
+        item.setdefault("daily_time", None)
+        item.setdefault("weekdays_only", False)
+        item.setdefault("timeout_minutes", 30)
+    data.setdefault("baukasten_version", "vor 1.1")
+    return data
+
+
+UPGRADES = {1: _upgrade_1_to_2}  # Format n -> n + 1
+
+
+def format_version(data):
+    text = str(data.get("format", "")) if isinstance(data, dict) else ""
+    if not text.startswith(FORMAT_PREFIX):
+        return None
+    try:
+        return int(text[len(FORMAT_PREFIX):])
+    except ValueError:
+        return None
+
+
+def upgrade(data):
+    """Hebt einen Stand älteren Formats auf das aktuelle. Gibt (stand, hinweise) zurück.
+
+    Ältere Dateien und alte, gespeicherte Versionen bleiben so einspielbar. Eine Datei aus einem
+    neueren Baukasten wird abgelehnt, weil sie Angaben enthalten kann, die dieser nicht kennt."""
+    import copy
+
+    number = format_version(data)
+    if number is None or not isinstance(data.get("app"), dict):
+        raise InvalidSnapshot(_("Unbekanntes Format: Das ist keine exportierte App des Baukastens."))
+    if number > FORMAT_VERSION:
+        raise InvalidSnapshot(_("Die Datei stammt aus einer neueren Version des Baukastens (Format %(new)s, "
+                                "dieser Baukasten kennt bis %(current)s). Bitte zuerst den Baukasten "
+                                "aktualisieren.") % {"new": number, "current": FORMAT_VERSION})
+    notes = []
+    data = copy.deepcopy(data)
+    if number < FORMAT_VERSION:
+        notes.append(_("Die Datei hatte ein älteres Format (%(old)s) und wurde automatisch auf das aktuelle "
+                       "(%(new)s) umgestellt.") % {"old": number, "new": FORMAT_VERSION})
+    while number < FORMAT_VERSION:
+        data = UPGRADES[number](data)
+        number += 1
+    data["format"] = FORMAT
+    notes.extend(_missing_blocks(data))
+    return data, notes
+
+
+def _missing_blocks(data):
+    """Bausteine, die es in diesem Baukasten nicht (mehr) gibt: werden beim Einspielen weggelassen."""
+    from .blocks import all_types
+
+    known, notes = all_types(), []
+    for page in data.get("pages") or []:
+        missing = sorted({str(b.get("type")) for b in page.get("layout") or []
+                          if isinstance(b, dict) and b.get("type") not in known})
+        if missing:
+            notes.append(_("Seite „%(page)s“: Diese Bausteine gibt es nicht mehr und werden weggelassen: "
+                           "%(types)s.") % {"page": page.get("title") or page.get("slug"), "types": ", ".join(missing)})
+    return notes
+
+
 class AutomationNotAllowed(InvalidSnapshot):
     """Datei enthält eine Automatisierung, die Person gehört nicht zu den Automatisierern."""
 
@@ -76,12 +152,19 @@ def _text(value, limit):
     return str(value or "")[:limit]
 
 
-@transaction.atomic
 def apply(app, data):
+    """Bringt die App auf den Stand „data“ (ohne Einzelprotokoll; der Aufrufer fasst zusammen)."""
+    from . import audit
+
+    with audit.quiet():
+        return _apply_snapshot(app, data)
+
+
+@transaction.atomic
+def _apply_snapshot(app, data):
     """Bringt die App auf den Stand „data“. Gibt die Namen der Tabellen zurück, die
     es im Stand nicht gibt und die wegen ihrer Daten trotzdem erhalten bleiben."""
-    if not isinstance(data, dict) or data.get("format") != FORMAT:
-        raise InvalidSnapshot("Unbekanntes Format.")
+    data, _notes = upgrade(data)
     try:
         meta, entities, pages = data["app"], data["entities"], data["pages"]
         app.name = _text(meta.get("name"), 80) or app.name
@@ -111,7 +194,8 @@ def apply(app, data):
             for position, item in enumerate(fields, start=1):
                 key = _text(item["key"], 50)
                 if item.get("type") not in FIELD_TYPES:
-                    raise InvalidSnapshot("Unbekannter Feldtyp.")
+                    raise InvalidSnapshot(_("Unbekannter Feldtyp „%(type)s“ im Feld „%(field)s“.")
+                                          % {"type": item.get("type"), "field": item.get("label") or key})
                 field = existing.get(key) or Field(entity=entity, key=key)
                 field.label = _text(item.get("label"), 80) or key
                 field.type = item["type"]
@@ -178,7 +262,12 @@ def restore(version, user=None):
     create_version(version.app, user,
                    _("Automatisch gesichert vor Rückkehr zu Version %(number)s") % {"number": version.number},
                    automatic=True)
-    return apply(version.app, version.snapshot)
+    from . import audit
+
+    kept = apply(version.app, version.snapshot)
+    audit.log("restore", "version", app=version.app, target_id=version.number, label=f"Version {version.number}",
+              note=version.note)
+    return kept
 
 
 @transaction.atomic
@@ -186,12 +275,39 @@ def import_app(data, user=None):
     """Legt aus einer exportierten Datei eine neue App an (als Entwurf)."""
     from .models import can_automate
 
-    if not isinstance(data, dict) or data.get("format") != FORMAT or not isinstance(data.get("app"), dict):
-        raise InvalidSnapshot("Unbekanntes Format.")
+    data, notes = upgrade(data)
     kind = App.AUTOMATION if data["app"].get("kind") == App.AUTOMATION else App.APP
     if kind == App.AUTOMATION and not (user and can_automate(user)):
         raise AutomationNotAllowed(_("Die Datei enthält eine Automatisierung. Importieren dürfen das nur Mitglieder der Gruppe „Automatisierer“."))
-    app = App.objects.create(name=_text(data["app"].get("name"), 80) or "Importierte App", kind=kind,
-                             created_by=user if user and user.is_authenticated else None)
+    from . import audit
+
+    with audit.quiet():  # eine Zusammenfassung „importiert“ statt Einzeleinträgen
+        app = App.objects.create(name=_text(data["app"].get("name"), 80) or "Importierte App", kind=kind,
+                                 created_by=user if user and user.is_authenticated else None)
     apply(app, data)
+    from . import audit
+
+    audit.log("import", "app", app=app, target_id=app.pk, label=app.name,
+              note=f"{app.entities.count()} Tabellen, {app.pages.count()} Seiten")
+    app.import_notes = notes
     return app
+
+
+def restore_from_file(app, data, user=None, filename=""):
+    """Eine heruntergeladene Datei in eine bestehende App einspielen. Vorher wird der jetzige
+    Stand als Version gesichert. Gibt (gesicherte Version, erhaltene Tabellen, Hinweise) zurück."""
+    from . import audit
+
+    data, notes = upgrade(data)
+    kind = data["app"].get("kind", App.APP)
+    if kind != app.kind:
+        raise InvalidSnapshot(_("Die Datei enthält eine Automatisierung, diese App ist aber keine.")
+                              if kind == App.AUTOMATION else
+                              _("Die Datei enthält eine normale App, diese App ist aber eine Automatisierung."))
+    backup = create_version(app, user, _("Automatisch gesichert vor dem Einspielen der Datei %(name)s")
+                            % {"name": filename or "?"}, automatic=True)
+    kept = apply(app, data)
+    audit.log("restore", "version", app=app, target_id=backup.number, label=_("aus Datei %(name)s") % {"name": filename},
+              note=_("Datei aus Baukasten %(version)s; vorher gesichert als Version %(number)s")
+              % {"version": data.get("baukasten_version", "?"), "number": backup.number})
+    return backup, kept, notes

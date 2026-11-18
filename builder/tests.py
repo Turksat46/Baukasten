@@ -2896,3 +2896,301 @@ class MetricsTests(TestCase):
         alive()
         self.assertIn("baukasten_worker_up 1", get())
         self.assertEqual(text.count("# TYPE baukasten_apps gauge"), 1)
+
+
+class AuditTests(Base):
+    """Änderungsprotokoll (builder/audit.py): wer hat wann was geändert, auf welchem Weg."""
+
+    def entries(self, **filters):
+        from .models import AuditEntry
+        return list(AuditEntry.objects.filter(**filters).order_by("id"))
+
+    def test_records_via_form_with_person_and_changes(self):
+        from .models import AuditEntry
+        AuditEntry.objects.all().delete()
+        self.client.force_login(self.user)
+        url = reverse("record_create", args=["inventar", self.entity.slug])
+        self.client.post(url, {"bezeichnung": "Lötstation", "kategorie": "Werkstatt"})
+        record = Record.objects.get(data__bezeichnung="Lötstation")
+        created = self.entries(target_type="record", action="create")[-1]
+        self.assertEqual((created.action, created.username, created.via), ("create", "nutzer", "ui"))
+        self.assertEqual(created.changes["bezeichnung"], [None, "Lötstation"])
+        self.assertEqual(created.scope, self.entity.slug)
+        self.client.post(reverse("record_edit", args=["inventar", self.entity.slug, record.pk]),
+                         {"bezeichnung": "Lötstation XL", "kategorie": "Werkstatt", "standort": "Lager"})
+        updated =self.entries(target_type="record", action="update", via="ui")[-1]
+        self.assertEqual(updated.changes, {"bezeichnung": ["Lötstation", "Lötstation XL"]})
+        # Speichern ohne Änderung erzeugt keinen Eintrag
+        count = len(self.entries(target_type="record", action="update"))
+        self.client.post(reverse("record_edit", args=["inventar", self.entity.slug, record.pk]),
+                         {"bezeichnung": "Lötstation XL", "kategorie": "Werkstatt", "standort": "Lager"})
+        self.assertEqual(len(self.entries(target_type="record", action="update")), count)
+        self.client.post(reverse("record_delete", args=["inventar", self.entity.slug, record.pk]))
+        deleted = self.entries(target_type="record", action="delete")[-1]
+        self.assertEqual(deleted.changes["bezeichnung"], ["Lötstation XL", None])
+
+    def test_api_and_scripts_name_the_actor(self):
+        from .models import ApiKey
+        self.entity.api_enabled = True
+        self.entity.save()
+        _obj, key = ApiKey.issue(self.app, "Excel-Abgleich", can_write=True)
+        self.client.post(reverse("api_collection", args=["inventar", self.entity.slug]),
+                         json.dumps({"bezeichnung": "Beamer", "kategorie": "IT"}), content_type="application/json",
+                         HTTP_AUTHORIZATION=f"Bearer {key}")
+        entry = self.entries(target_type="record", action="create")[-1]
+        self.assertEqual((entry.via, entry.actor, entry.username), ("api", "API-Schlüssel Excel-Abgleich", ""))
+        # Das Skript „Standort ergänzen“ der Demo ändert den Eintrag nach dem Speichern:
+        # das steht als Skript im Protokoll, ausgelöst von der Person
+        self.client.force_login(self.user)
+        self.client.post(reverse("record_create", args=["inventar", self.entity.slug]),
+                         {"bezeichnung": "Kabel", "kategorie": "IT"})
+        by_script = self.entries(target_type="record", action="update")[-1]
+        self.assertEqual((by_script.via, by_script.actor, by_script.username),
+                         ("script", "Skript Standort ergänzen", "nutzer"))
+        self.assertEqual(by_script.changes, {"standort": [None, "Lager"]})
+
+    def test_structure_changes_and_sharing(self):
+        self.client.force_login(self.designer)
+        field = self.entity.fields.get(key="standort")
+        self.client.post(reverse("designer_field", args=["inventar", field.pk]), {
+            "label": "Lagerort", "type": "text", "show_in_list": "on", "show_in_form": "on"})
+        entry = self.entries(target_type="field")[-1]
+        self.assertEqual((entry.action, entry.via, entry.username), ("update", "designer", "designer"))
+        self.assertEqual(entry.changes["label"], ["Standort", "Lagerort"])
+        page = self.app.pages.first()
+        page.layout = page.layout + [make_block("text", text="Neu")]
+        page.save()
+        self.assertIn("Bausteine", self.entries(target_type="page")[-1].changes["layout"][1])
+        self.app.published = False
+        self.app.save()
+        self.assertEqual(self.entries(target_type="app")[-1].changes["published"], [True, False])
+        self.client.post(reverse("designer_app", args=["inventar"]),
+                         {"kind": "share", "action": "claim"})
+        self.assertIn("übernommen", self.entries(action="share")[-1].note)
+
+    def test_mass_operations_are_summarized(self):
+        from . import versions
+        from .models import AuditEntry
+        version = versions.create_version(self.app, self.designer, "vorher")
+        before = AuditEntry.objects.count()
+        versions.restore(version, self.designer)
+        new = self.entries(id__gt=0)[before:]
+        self.assertEqual([(e.action, e.target_type) for e in new], [("restore", "version")])
+        # Tabelle löschen: ein Eintrag mit Anzahl, nicht einer je Eintrag
+        records = self.entity.records.count()
+        before = AuditEntry.objects.count()
+        self.entity.delete()
+        new = self.entries()[before:]
+        self.assertEqual([(e.action, e.target_type) for e in new], [("delete", "entity")])
+        self.assertIn(str(records), new[0].note)
+        # App löschen: ein Eintrag, Name bleibt erhalten
+        before = AuditEntry.objects.count()
+        self.app.delete()
+        new = self.entries()[before:]
+        self.assertEqual([(e.action, e.target_type, e.app_name) for e in new], [("delete", "app", "Inventar")])
+        self.assertTrue(AuditEntry.objects.filter(app_name="Inventar", app__isnull=True).exists())
+
+    def test_ai_access_is_named(self):
+        from .models import AuditEntry, DesignerToken
+        from .mcp_designer import EXAMPLE
+        _obj, key = DesignerToken.issue(self.designer, "Claude")
+        body = {"jsonrpc": "2.0", "id": 1, "method": "tools/call",
+                "params": {"name": "create_app", "arguments": {"definition": EXAMPLE}}}
+        before = AuditEntry.objects.count()
+        self.client.post(reverse("mcp_designer"), json.dumps(body), content_type="application/json",
+                         HTTP_AUTHORIZATION=f"Bearer {key}")
+        new = self.entries()[before:]
+        self.assertEqual([(e.action, e.target_type, e.via, e.actor, e.username) for e in new],
+                         [("create", "app", "ki", "KI-Zugang Claude", "designer")])
+
+    def test_protocol_page_csv_and_record_history(self):
+        self.client.force_login(self.user)
+        self.client.post(reverse("record_create", args=["inventar", self.entity.slug]),
+                         {"bezeichnung": "Monitor", "kategorie": "IT"})
+        record = Record.objects.get(data__bezeichnung="Monitor")
+        self.client.force_login(self.designer)
+        page = self.client.get(reverse("designer_audit", args=["inventar"]))
+        self.assertContains(page, "Monitor")
+        self.assertContains(page, "nutzer")
+        only = self.client.get(reverse("designer_audit", args=["inventar"]) + f"?eintrag={record.pk}")
+        self.assertEqual({e.target_id for e in only.context["page_obj"]}, {str(record.pk)})
+        csv_text = b"".join(self.client.get(reverse("designer_audit", args=["inventar"]) + "?format=csv")
+                            .streaming_content).decode("utf-8")
+        self.assertIn("Zeit;Person", csv_text)
+        self.assertIn("Monitor", csv_text)
+        form = self.client.get(reverse("record_edit", args=["inventar", self.entity.slug, record.pk]))
+        self.assertContains(form, "Verlauf")
+        self.assertContains(self.client.get(reverse("designer_app", args=["inventar"])), 'id="protokoll"')
+        # Nutzer ohne Designer-Recht sehen weder Protokoll noch Verlauf
+        self.client.force_login(self.user)
+        self.assertNotContains(self.client.get(reverse("record_edit", args=["inventar", self.entity.slug, record.pk])),
+                               "Verlauf")
+        self.assertEqual(self.client.get(reverse("designer_audit", args=["inventar"])).status_code, 403)
+
+    def test_retention_and_read_only_admin(self):
+        from datetime import timedelta
+        from django.utils import timezone
+        from . import audit
+        from .admin import AuditEntryAdmin
+        from .models import AuditEntry
+        old = audit.log("update", "app", app=self.app, label="alt")
+        AuditEntry.objects.filter(pk=old.pk).update(created_at=timezone.now() - timedelta(days=400))
+        fresh = audit.log("update", "app", app=self.app, label="neu")
+        with override_settings(BAUKASTEN_AUDIT_RETENTION_DAYS=0):
+            self.assertEqual(audit.cleanup(), 0)
+        with override_settings(BAUKASTEN_AUDIT_RETENTION_DAYS=365):
+            self.assertEqual(audit.cleanup(), 1)
+        self.assertFalse(AuditEntry.objects.filter(pk=old.pk).exists())
+        self.assertTrue(AuditEntry.objects.filter(pk=fresh.pk).exists())
+        admin_view = AuditEntryAdmin(AuditEntry, None)
+        self.assertFalse(admin_view.has_change_permission(None))
+        self.assertFalse(admin_view.has_delete_permission(None))
+
+    def test_demo_setup_is_not_logged(self):
+        from .models import AuditEntry
+        self.assertFalse(AuditEntry.objects.filter(app=self.app).exists())  # Base.setUp ruft demo auf
+
+
+class FormatUpgradeTests(Base):
+    """Alte Versionsdateien einspielen (versions.upgrade) und Datei in bestehende App einspielen."""
+
+    OLD_FILE = {  # so sah eine heruntergeladene Version im Format 1 aus (vor Automatisierungen)
+        "format": "baukasten-app/1",
+        "app": {"name": "Alt", "description": "", "icon": "📦"},
+        "entities": [{"slug": "dinge", "name": "Dinge", "allow_create": True, "allow_edit": True,
+                      "allow_delete": True, "api_enabled": False,
+                      "fields": [{"key": "name", "label": "Name", "type": "text", "required": True, "choices": "",
+                                  "reference": None, "show_in_list": True, "show_in_form": True, "order": 1}]}],
+        "pages": [{"slug": "start", "title": "Start", "show_in_nav": True, "order": 1,
+                   "layout": [{"id": "b1", "type": "table", "width": 12, "props": {"entity": "dinge"}},
+                              {"id": "b2", "type": "gibtsnichtmehr", "width": 12, "props": {}}]}],
+        "scripts": [{"slug": "s", "name": "S", "language": "python", "trigger": "page", "page": None,
+                     "entity": None, "interval_minutes": 60, "enabled": True, "code": "print(1)"}],
+    }
+
+    def test_old_format_is_upgraded_with_notes(self):
+        from . import versions
+        data, notes = versions.upgrade(self.OLD_FILE)
+        self.assertEqual(data["format"], versions.FORMAT)
+        self.assertEqual(data["app"]["kind"], "app")
+        self.assertEqual(data["scripts"][0]["timeout_minutes"], 30)
+        self.assertIn("älteres Format", notes[0])
+        self.assertIn("gibtsnichtmehr", notes[1])
+        self.assertEqual(self.OLD_FILE["format"], "baukasten-app/1")  # Eingabe bleibt unverändert
+        app = versions.import_app(self.OLD_FILE, self.designer)
+        self.assertEqual(app.entities.get().fields.get().key, "name")
+        self.assertEqual([b["type"] for b in app.pages.get().layout], ["table"])
+        self.assertEqual(len(app.import_notes), 2)
+        # Neue Dateien tragen Format und Baukasten-Version
+        snapshot = versions.snapshot(app)
+        self.assertEqual(snapshot["format"], "baukasten-app/2")
+        self.assertIn("baukasten_version", snapshot)
+
+    def test_newer_or_foreign_files_are_rejected_clearly(self):
+        from . import versions
+        with self.assertRaisesMessage(versions.InvalidSnapshot, "neueren Version des Baukastens"):
+            versions.upgrade({**self.OLD_FILE, "format": "baukasten-app/99"})
+        with self.assertRaisesMessage(versions.InvalidSnapshot, "keine exportierte App"):
+            versions.upgrade({"format": "etwas-anderes/1", "app": {}})
+
+    def test_old_stored_version_still_restores(self):
+        from .models import AppVersion
+        old = AppVersion.objects.create(app=self.app, number=99, snapshot=self.OLD_FILE)
+        self.client.force_login(self.designer)
+        response = self.client.post(reverse("designer_version_restore", args=["inventar", old.pk]), follow=True)
+        self.assertContains(response, "älteres Format")
+        self.assertTrue(self.app.entities.filter(slug="dinge").exists())
+
+    def test_upload_into_existing_app(self):
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        from .models import AuditEntry
+        self.client.force_login(self.designer)
+        upload = SimpleUploadedFile("alt.json", json.dumps(self.OLD_FILE).encode(), content_type="application/json")
+        before = self.app.versions.count()
+        response = self.client.post(reverse("designer_version_upload", args=["inventar"]), {"file": upload}, follow=True)
+        self.assertContains(response, "Datei eingespielt")
+        self.assertContains(response, "älteres Format")
+        self.assertEqual(self.app.versions.count(), before + 1)  # vorher gesichert
+        self.assertTrue(self.app.entities.filter(slug="dinge").exists())
+        self.assertTrue(self.app.entities.filter(slug=self.entity.slug).exists())  # Tabelle mit Daten bleibt
+        entry = AuditEntry.objects.filter(app=self.app, action="restore").latest("id")
+        self.assertIn("alt.json", entry.target_label)
+        # Automatisierung passt nicht in eine normale App
+        auto = {**self.OLD_FILE, "format": "baukasten-app/2", "app": {**self.OLD_FILE["app"], "kind": "automation"},
+                "pages": [], "scripts": []}
+        upload = SimpleUploadedFile("auto.json", json.dumps(auto).encode(), content_type="application/json")
+        response = self.client.post(reverse("designer_version_upload", args=["inventar"]), {"file": upload}, follow=True)
+        self.assertContains(response, "enthält eine Automatisierung")
+        broken = SimpleUploadedFile("x.json", b"kein json", content_type="application/json")
+        response = self.client.post(reverse("designer_version_upload", args=["inventar"]), {"file": broken}, follow=True)
+        self.assertContains(response, "keine gültige App-Datei")
+
+
+class PlatformSettingsTests(TestCase):
+    """Fachliche Einstellungen unter /admin/ (builder/platform.py)."""
+
+    def setUp(self):
+        from django.core.cache import cache
+        cache.clear()
+        self.addCleanup(cache.clear)
+        self.admin = User.objects.create_superuser("chef", password="x")
+
+    @override_settings(BAUKASTEN_PUBLIC_RATE=120)
+    def test_database_value_wins_and_takes_effect_without_restart(self):
+        from . import platform
+        from .models import AuditEntry, PlatformSettings
+        self.assertEqual(platform.value("public_rate"), 120)
+        PlatformSettings.objects.create(public_rate=5)
+        self.assertEqual(platform.value("public_rate"), 5)  # Cache wurde beim Speichern geleert
+        settings_row = PlatformSettings.objects.get()
+        settings_row.public_rate = None
+        settings_row.save()
+        self.assertEqual(platform.value("public_rate"), 120)  # leer = Umgebung
+        self.assertTrue(AuditEntry.objects.filter(target_type="settings").exists())
+
+    def test_admin_shows_single_record_with_defaults(self):
+        self.client.force_login(self.admin)
+        response = self.client.get(reverse("admin:builder_platformsettings_changelist"))
+        self.assertRedirects(response, reverse("admin:builder_platformsettings_change", args=[1]))
+        page = self.client.get(reverse("admin:builder_platformsettings_change", args=[1]))
+        self.assertContains(page, "Standard aus der Umgebung")
+        response = self.client.post(reverse("admin:builder_platformsettings_change", args=[1]),
+                                    {"script_timeout": "99"})
+        self.assertContains(response, "50")  # Obergrenze greift
+        staff = User.objects.create_user("staff", password="x", is_staff=True)
+        self.client.force_login(staff)
+        self.assertEqual(self.client.get(reverse("admin:builder_platformsettings_change", args=[1])).status_code, 403)
+
+
+class AboutTests(TestCase):
+    """Über den Baukasten: Version und Release Notes."""
+
+    def setUp(self):
+        from django.core.cache import cache
+        cache.clear()
+        self.addCleanup(cache.clear)
+        self.user = User.objects.create_user("nutzer", password="x")
+
+    def test_version_and_published_notes(self):
+        from django.conf import settings
+        from .models import ReleaseNote
+        ReleaseNote.objects.create(version="9.9.9", title="Geheim", body="noch nicht", published=False)
+        ReleaseNote.objects.create(version="9.9.8", title="Sicher", body="<script>alert(1)</script>**fett**",
+                                   published=True)
+        self.client.force_login(self.user)
+        page = self.client.get(reverse("about"))
+        self.assertContains(page, settings.BAUKASTEN_VERSION)
+        self.assertContains(page, "Sicher")
+        self.assertContains(page, "<strong>fett</strong>")
+        self.assertNotContains(page, "<script>alert")
+        self.assertNotContains(page, "Geheim")
+        self.assertContains(page, 'data-news="9.9.8"')  # Fuß: neueste veröffentlichte Version
+        boss = User.objects.create_superuser("chef", password="x")
+        self.client.force_login(boss)
+        self.assertContains(self.client.get(reverse("about")), "Entwurf")
+
+    def test_seeded_notes_and_login_required(self):
+        from .models import ReleaseNote
+        self.assertTrue(ReleaseNote.objects.filter(version="1.0.0", published=True).exists())
+        self.assertTrue(ReleaseNote.objects.filter(version="1.1.0", published=False).exists())
+        self.assertEqual(self.client.get(reverse("about")).status_code, 302)

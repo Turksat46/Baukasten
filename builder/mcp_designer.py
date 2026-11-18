@@ -251,8 +251,11 @@ def login(request):
 
 
 def answer(request, token, message):
+    from . import audit
+
     info = {"name": "baukasten-designer", "title": "Baukasten: Designer", "instructions": INSTRUCTIONS}
-    return dispatch(request, message, info, lambda: build_tools(token, request))
+    with audit.context(user=token.user, actor=f"KI-Zugang {token.name}", via="ki"):
+        return dispatch(request, message, info, lambda: build_tools(token, request))
 
 
 @csrf_exempt

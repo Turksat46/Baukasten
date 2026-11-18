@@ -10,6 +10,20 @@ Neue Einträge oben unter „Unveröffentlicht“ sammeln und beim Release zur V
 
 ## Unveröffentlicht
 
+### Neu
+- Änderungsprotokoll: wer hat wann was geändert und auf welchem Weg (Oberfläche, Designer, API,
+  MCP, KI-Zugang, Skript, Automatisierung, Abgleich, Verwaltung). Je App im Designer mit Filter,
+  Suche und CSV-Export, „Verlauf“ im Formular eines Eintrags, alle Apps unter `/admin/`.
+  Massenvorgänge als ein zusammenfassender Eintrag. Aufbewahrung über `AUDIT_RETENTION_DAYS`
+  (Standard 365 Tage).
+- Heruntergeladene Versionen in eine bestehende App einspielen; ältere Dateien und gespeicherte
+  Versionen werden automatisch auf das aktuelle Format gehoben (Format 2), weggefallene
+  Bausteine werden genannt, Dateien aus neueren Baukasten-Versionen klar abgelehnt.
+- Fachliche Einstellungen unter `/admin/` ohne Neustart (Gäste-Grenze, KI-Grenze,
+  Aufbewahrung, Zeitlimits); leer = Wert aus der Umgebung.
+- Seite „Über den Baukasten“ (`/ueber/`) mit Version und Release Notes, gepflegt unter `/admin/`;
+  Hinweis „Was ist neu?“ unten auf jeder Seite.
+
 ## 1.0.0 – 2026-11-17
 
 Erste Version für den produktiven Einsatz.

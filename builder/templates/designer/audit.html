@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% block title %}{% translate "Änderungsprotokoll" %} – {{ app.name }}{% endblock %}
+{% block content %}
+<p class="crumbs"><a href="{% url 'designer_home' %}">{% translate "Designer" %}</a> / <a href="{% url 'designer_app' app.slug %}">{{ app.name }}</a> / {% translate "Änderungsprotokoll" %}</p>
+<div class="head-row">
+  <h1>{% translate "Änderungsprotokoll" %}{% if record_id %} <span class="badge">{% blocktranslate %}Eintrag #{{ record_id }}{% endblocktranslate %}</span>{% endif %}</h1>
+  <a class="btn btn-secondary btn-small" href="?{{ params }}{% if params %}&amp;{% endif %}format=csv">{% translate "Als CSV herunterladen" %}</a>
+</div>
+<p class="muted">{% blocktranslate count days=retention %}Wer hat wann was geändert, und auf welchem Weg. Einträge werden nach {{ days }} Tag gelöscht.{% plural %}Wer hat wann was geändert, und auf welchem Weg. Einträge werden nach {{ days }} Tagen gelöscht.{% endblocktranslate %}{% if not retention %} {% translate "Einträge werden nicht automatisch gelöscht." %}{% endif %}</p>
+
+<section class="card">
+  <form method="get" class="audit-filter">
+    <div class="segmented" role="group" aria-label="{% translate 'Bereich' %}">
+      <a href="?q={{ query|urlencode }}"{% if not area %} class="current" aria-current="true"{% endif %}>{% translate "Alles" %}</a>
+      <a href="?bereich=daten&amp;q={{ query|urlencode }}"{% if area == "daten" %} class="current" aria-current="true"{% endif %}>{% translate "Einträge" %}</a>
+      <a href="?bereich=aufbau&amp;q={{ query|urlencode }}"{% if area == "aufbau" %} class="current" aria-current="true"{% endif %}>{% translate "Aufbau der App" %}</a>
+    </div>
+    {% if area %}<input type="hidden" name="bereich" value="{{ area }}">{% endif %}
+    {% if record_id %}<input type="hidden" name="eintrag" value="{{ record_id }}">{% endif %}
+    <input type="search" name="q" value="{{ query }}" placeholder="{% translate 'Person, Objekt, Hinweis …' %}" aria-label="{% translate 'Suchen' %}">
+    <button class="btn btn-secondary btn-small">{% translate "Suchen" %}</button>
+    {% if record_id or query %}<a href="?{% if area %}bereich={{ area }}{% endif %}">{% translate "Filter zurücksetzen" %}</a>{% endif %}
+  </form>
+
+  {% if page_obj.object_list %}
+    <div class="table-wrap">
+    <table class="compact-table audit-table">
+      <thead><tr><th>{% translate "Zeit" %}</th><th>{% translate "Wer" %}</th><th>{% translate "Was" %}</th><th>{% translate "Änderung" %}</th></tr></thead>
+      <tbody>
+        {% for e in page_obj %}
+          <tr>
+            <td class="small nowrap">{{ e.created_at|date:"SHORT_DATETIME_FORMAT" }}</td>
+            <td class="small">{{ e.who }}{% if e.username and e.actor %}<span class="muted block">{{ e.actor }}</span>{% endif %}<span class="badge via via-{{ e.via }}">{{ e.via_label }}</span></td>
+            <td class="small"><span class="badge action-{{ e.action }}">{{ e.action_label }}</span>
+              {% if e.target_type == "record" %}<a href="?eintrag={{ e.target_id }}">{{ e.target_label }}</a>{% else %}{{ e.target_label }}{% endif %}</td>
+            <td class="small audit-change">{% if e.summary %}{{ e.summary }}{% endif %}{% if e.note %}<span class="muted block">{{ e.note }}</span>{% endif %}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    </div>
+    {% if page_obj.has_other_pages %}
+      <div class="pager">
+        {% if page_obj.has_previous %}<a href="?{{ params }}{% if params %}&amp;{% endif %}seite={{ page_obj.previous_page_number }}">{% translate "Zurück" %}</a>{% endif %}
+        <span class="muted">{% blocktranslate with number=page_obj.number total=page_obj.paginator.num_pages %}Seite {{ number }} von {{ total }}{% endblocktranslate %}</span>
+        {% if page_obj.has_next %}<a href="?{{ params }}{% if params %}&amp;{% endif %}seite={{ page_obj.next_page_number }}">{% translate "Weiter" %}</a>{% endif %}
+      </div>
+    {% endif %}
+  {% else %}
+    <p class="empty">{% translate "Keine Einträge." %}</p>
+  {% endif %}
+</section>
+{% endblock %}

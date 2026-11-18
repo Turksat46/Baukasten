@@ -16,4 +16,15 @@
     </div>
   </form>
 </section>
+{% if history %}
+<section class="card narrow record-history">
+  <h3>{% translate "Verlauf" %}</h3>
+  <ul class="plain small">
+    {% for e in history %}
+      <li><span class="muted">{{ e.created_at|date:"SHORT_DATETIME_FORMAT" }}</span> · {{ e.who }} ({{ e.via_label }}) · {{ e.action_label }}{% if e.summary %}: {{ e.summary }}{% endif %}</li>
+    {% endfor %}
+  </ul>
+  <p><a href="{% url 'designer_audit' app.slug %}?eintrag={{ record.pk }}">{% translate "Ganzer Verlauf im Änderungsprotokoll" %}</a></p>
+</section>
+{% endif %}
 {% endblock %}

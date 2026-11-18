@@ -1,0 +1,13 @@
+{% load i18n %}<section class="card" id="protokoll">
+  <h3>{% translate "Änderungsprotokoll" %}</h3>
+  {% if audit_recent %}
+    <ul class="plain small audit-recent">
+      {% for e in audit_recent %}
+        <li><span class="muted">{{ e.created_at|date:"SHORT_DATETIME_FORMAT" }}</span> · {{ e.who }} · {{ e.action_label }} {{ e.target_label }}</li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p class="muted small">{% translate "Noch keine Änderungen protokolliert." %}</p>
+  {% endif %}
+  <p><a class="btn btn-secondary btn-small" href="{% url 'designer_audit' app.slug %}">{% translate "Ganzes Protokoll" %}</a></p>
+</section>

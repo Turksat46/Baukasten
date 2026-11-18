@@ -17,10 +17,24 @@ class BuilderConfig(AppConfig):
         from django.contrib.auth.signals import user_logged_in
         from django.db.models.signals import post_save
 
-        from . import accounts
+        from . import accounts, audit
 
         post_save.connect(accounts.on_user_saved, sender=get_user_model(), dispatch_uid="baukasten-standardgruppen")
         user_logged_in.connect(accounts.on_login, dispatch_uid="baukasten-standardgruppen-login")
+        audit.connect()  # Änderungsprotokoll
+
+        from . import platform
+        from .models import PlatformSettings
+
+        post_save.connect(platform.forget, sender=PlatformSettings, dispatch_uid="baukasten-einstellungen")
+
+        from django.db.models.signals import post_delete
+
+        from . import about
+        from .models import ReleaseNote
+
+        post_save.connect(about.forget, sender=ReleaseNote, dispatch_uid="baukasten-release-notes")
+        post_delete.connect(about.forget, sender=ReleaseNote, dispatch_uid="baukasten-release-notes-del")
 
         try:
             import extensions

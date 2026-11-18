@@ -23,7 +23,7 @@ from django.db import transaction
 from django.urls import reverse
 from django.utils.text import slugify
 
-from . import versions
+from . import audit, versions
 from .blocks import WIDTHS, all_types
 from .models import App, Field, Script, can_automate
 
@@ -330,7 +330,9 @@ def protect(snapshot, app):
 
 def check_rate(token):
     """Höchstens BAUKASTEN_AI_WRITES Änderungen je Schlüssel in 10 Minuten."""
-    limit = settings.BAUKASTEN_AI_WRITES
+    from . import platform
+
+    limit = platform.value("ai_writes")
     if not limit:
         return True
     key = f"baukasten-ki:{token.pk}"
@@ -348,12 +350,15 @@ def create(user, definition, label):
     if kind == App.AUTOMATION and not can_automate(user):
         raise Invalid(["kind: Automatisierungen darf nur die Gruppe „Automatisierer“ anlegen."])
     snapshot, warnings = normalize(definition, kind=kind)
-    app = App.objects.create(name=snapshot["app"]["name"], kind=kind, created_by=user)
+    with audit.quiet():  # eine Zusammenfassung unten statt Einzeleinträgen
+        app = App.objects.create(name=snapshot["app"]["name"], kind=kind, created_by=user)
     try:
         versions.apply(app, snapshot)
     except versions.InvalidSnapshot as exc:
         raise Invalid([f"definition: {exc}"], warnings) from exc
     versions.create_version(app, user, f"Angelegt über den KI-Zugang „{label}“"[:200], automatic=True)
+    audit.log("create", "app", app=app, target_id=app.pk, label=app.name,
+              note=f"{app.entities.count()} Tabellen, {app.pages.count()} Seiten, {app.scripts.count()} Skripte")
     return app, warnings
 
 
@@ -367,6 +372,8 @@ def update(user, app, definition, label):
         kept = versions.apply(app, snapshot)
     except versions.InvalidSnapshot as exc:
         raise Invalid([f"definition: {exc}"], warnings) from exc
+    audit.log("update", "app", app=app, target_id=app.pk, label=app.name,
+              note=f"Ganze App neu gesetzt; vorher gesichert als Version {before.number}")
     return before, kept, warnings
 
 

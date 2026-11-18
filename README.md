@@ -36,6 +36,9 @@ Kubernetes.
   KI-Zugang aus der Profilseite und genau deinen Rechten. Verständliche
   Prüfmeldungen, Version vor jeder Änderung; veröffentlichen und Skripte
   einschalten bleibt Sache eines Menschen.
+- **Änderungsprotokoll:** wer wann was geändert hat, je App und je Eintrag, über alle Wege
+  (Oberfläche, API, KI, Skripte, Automatisierungen); mit Suche, CSV-Export und
+  Aufbewahrungsfrist.
 - **Mitbearbeiter:** Wer eine App anlegt, ist Eigentümer/in und lädt weitere
   Designer oder Gruppen ein. Andere Designer sehen fremde Apps im Designer nicht.
 - **Versionen:** Stand einer App speichern, wiederherstellen, als Datei

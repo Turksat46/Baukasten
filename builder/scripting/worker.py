@@ -78,7 +78,15 @@ def background_once(out=None):
     from ..models import DataQuery
     from .triggers import run_due
 
+    from django.core.cache import cache
+
+    from .. import audit
+
     now = timezone.now()
+    if cache.add("baukasten-audit-cleanup", 1, 3600):  # höchstens einmal pro Stunde
+        removed = audit.cleanup(now)
+        if removed:
+            log.info("Änderungsprotokoll: %s alte Einträge gelöscht", removed)
     scripts = run_due(now)
     syncs = failed = 0
     for query in DataQuery.objects.filter(sync_interval__gt=0).select_related("app", "sync_entity"):
@@ -127,7 +135,10 @@ def execute(script, trigger, event, control):
     live = LiveLog(run)
     outcome = None
     try:
-        outcome = automation.run(script, event, control, live.add)
+        from .. import audit
+
+        with audit.context(via="automation", actor=f"Automatisierung {script.name}", user=None, quiet=False):
+            outcome = automation.run(script, event, control, live.add)
     except Exception as exc:  # noqa: BLE001 - der Dienst darf nicht mit abstürzen
         log.exception("Automatisierung %s/%s", script.app.slug, script.slug)
         outcome = automation.Outcome(ScriptRun.ERROR, f"{type(exc).__name__}: {exc}")

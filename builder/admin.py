@@ -19,8 +19,8 @@ from django.utils.html import format_html, format_html_join
 from django.utils.translation import gettext_lazy as _
 
 from .blocks import display_value, reference_labels
-from .models import (ApiKey, App, AppVersion, CustomBlock, DataQuery, DesignerToken, Entity, Field, Page, Record,
-                     Script, ScriptRun, UnicodeJSONEncoder)
+from .models import (ApiKey, App, AppVersion, AuditEntry, CustomBlock, DataQuery, DesignerToken, Entity, Field,
+                     Page, PlatformSettings, Record, ReleaseNote, Script, ScriptRun, UnicodeJSONEncoder)
 
 admin.site.site_header = "Baukasten – Verwaltung"
 admin.site.site_title = "Baukasten"
@@ -345,6 +345,78 @@ class ApiKeyAdmin(admin.ModelAdmin):
 
     def has_add_permission(self, request):
         return False  # Schlüssel entstehen im Designer, damit der Klartext einmal angezeigt wird
+
+
+@admin.register(ReleaseNote)
+class ReleaseNoteAdmin(admin.ModelAdmin):
+    """Release Notes für /ueber/. Erst mit „veröffentlicht“ für alle sichtbar."""
+
+    list_display = ["version", "title", "released_on", "published"]
+    list_editable = ["published"]
+    search_fields = ["version", "title", "body"]
+
+    def view_on_site(self, obj):
+        return "/ueber/#neuigkeiten"
+
+
+@admin.register(PlatformSettings)
+class PlatformSettingsAdmin(admin.ModelAdmin):
+    """Fachliche Einstellungen ohne Neustart. Leere Felder: Wert aus der Umgebung (settings.py)."""
+
+    readonly_fields = ["updated_at", "updated_by"]
+
+    def has_add_permission(self, request):
+        return request.user.is_superuser and not PlatformSettings.objects.exists()
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return request.user.is_superuser
+
+    def has_view_permission(self, request, obj=None):
+        return request.user.is_superuser
+
+    def changelist_view(self, request, extra_context=None):
+        # Es gibt genau einen Datensatz: direkt zum Bearbeiten
+        from django.shortcuts import redirect
+        from django.urls import reverse
+
+        obj, _created = PlatformSettings.objects.get_or_create(pk=1)
+        return redirect(reverse("admin:builder_platformsettings_change", args=[obj.pk]))
+
+    def get_form(self, request, obj=None, **kwargs):
+        from . import platform
+
+        form = super().get_form(request, obj, **kwargs)
+        for name in platform.FALLBACK:
+            field = form.base_fields.get(name)
+            if field is not None:
+                field.help_text = f"{field.help_text} Leer lassen = Standard aus der Umgebung: {platform.default(name)}".strip()
+        return form
+
+    def save_model(self, request, obj, form, change):
+        obj.updated_by = request.user
+        super().save_model(request, obj, form, change)
+
+
+@admin.register(AuditEntry)
+class AuditEntryAdmin(admin.ModelAdmin):
+    """Änderungsprotokoll, auch für gelöschte Apps. Nur lesen: Einträge werden nie geändert."""
+
+    list_display = ["created_at", "app_name", "username", "actor", "via", "action", "target_type", "target_label"]
+    list_filter = ["via", "action", "target_type", "app_name"]
+    search_fields = ["target_label", "username", "actor", "note", "app_slug"]
+    date_hierarchy = "created_at"
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False  # gelöscht wird nur nach Ablauf von AUDIT_RETENTION_DAYS
 
 
 @admin.register(DesignerToken)

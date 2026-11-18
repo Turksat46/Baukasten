@@ -20,7 +20,7 @@ from django.utils.translation import gettext as _
 from django.views.decorators.clickjacking import xframe_options_sameorigin
 from django.views.decorators.http import require_POST
 
-from . import datasources, hooks, openapi
+from . import datasources, hooks, openapi, platform
 from . import app_i18n
 from .blocks import all_types, display_value, reference_labels, render_block, render_layout
 from .forms import RecordForm
@@ -63,8 +63,10 @@ def runtime_access(request, slug):
 
 
 def guest_allowed(request):
-    """Anfragebegrenzung für Gäste je Adresse und Minute (BAUKASTEN_PUBLIC_RATE)."""
-    limit = settings.BAUKASTEN_PUBLIC_RATE
+    """Anfragebegrenzung für Gäste je Adresse und Minute (PUBLIC_RATE, änderbar unter /admin/)."""
+    from . import platform
+
+    limit = platform.value("public_rate")
     if not limit:
         return True
     key = f"oeffentlich:{request.META.get('REMOTE_ADDR', '')}:{int(time.time() // 60)}"
@@ -112,7 +114,7 @@ def runtime_config(request, app, page, blocks):
         "sandbox": reverse("script_sandbox"), "bridge": reverse("script_bridge", args=[app.slug]),
         "block_url": reverse("page_block", args=[app.slug, page.slug, "BLOCK"]) if page else "",
         "csrf": get_token(request), "scripts": js_page, "buttons": js_buttons,
-        "timeout": int(settings.BAUKASTEN_SCRIPT_TIMEOUT * 1000), "page": page.slug if page else "",
+        "timeout": int(platform.value("script_timeout") * 1000), "page": page.slug if page else "",
         "user": python_scripts.user_info(request.user), "show_errors": app.user_can_edit(request.user),
     }
 
@@ -243,8 +245,15 @@ def _record_form(request, app, entity, record=None, guest=False):
         form.save(request.user)
         messages.success(request, _("Gespeichert."))
         return redirect(safe_next(request, home_url))
+    history = []
+    if record and request.user.is_authenticated and app.user_can_edit(request.user):
+        from .designer import _audit_labels
+        from .models import AuditEntry
+
+        history = [_audit_labels(e) for e in AuditEntry.objects.filter(
+            app=app, target_type="record", target_id=str(record.pk)).select_related("user")[:10]]
     return render(request, "builder/record_form.html", {
-        "app": app, "entity": entity, "form": form, "record": record,
+        "app": app, "entity": entity, "form": form, "record": record, "history": history,
         "nav_pages": nav_pages(app, guest),
         "next": safe_next(request, home_url), "form_prefix": prefix or "",
     })

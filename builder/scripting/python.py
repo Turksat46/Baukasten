@@ -166,14 +166,16 @@ def user_info(user):
 
 def run(code, app, user=None, event=None, record=None, params=None, timeout=None, session=None):
     """Führt Python-Code aus und gibt ein Result zurück. Wirft keine Ausnahmen für Fehler im Skript."""
-    timeout = timeout or settings.BAUKASTEN_SCRIPT_TIMEOUT
+    from .. import platform
+
+    timeout = timeout or platform.value("script_timeout")
     started = time.monotonic()
     handler = Handler(app, user)
     context = {
         "code": code, "app": {"name": app.name, "slug": app.slug, "translations": app_i18n.mapping(app)},
         "user": user_info(user),
         "event": event or {}, "record": record, "params": params or {}, "session": session or {},
-        "max_calls": settings.BAUKASTEN_SCRIPT_MAX_CALLS,
+        "max_calls": platform.value("script_max_calls"),
     }
     errors = tempfile.TemporaryFile()
     kwargs = {}

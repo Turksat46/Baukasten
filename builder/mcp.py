@@ -218,7 +218,10 @@ def handle(request, key, message):
             "instructions": (f"Zugriff auf die App „{app.name}“ im Baukasten. "
                              + ("Dieser Schlüssel darf lesen und schreiben." if key.can_write else "Dieser Schlüssel darf nur lesen.")
                              + " Verweise und Einträge werden über ihre Nummer (id) angesprochen.")}
-    return dispatch(request, message, info, lambda: build_tools(app, key))
+    from . import audit
+
+    with audit.context(actor=f"API-Schlüssel {key.name}"):
+        return dispatch(request, message, info, lambda: build_tools(app, key))
 
 
 def dispatch(request, message, info, build):

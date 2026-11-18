@@ -697,3 +697,36 @@ html:not([data-theme="light"]):not([data-theme="dark"]) .theme-toggle .i-auto { 
 .new-app-form .icon-field input { text-align: center; }
 .ai-hint { margin: .8rem 0 0; padding-top: .6rem; border-top: 1px solid var(--line); }
 .setup-examples summary { cursor: pointer; margin: .6rem 0 .3rem; }
+
+/* ---------- Änderungsprotokoll ---------- */
+.audit-filter { display: flex; gap: .6rem; align-items: center; flex-wrap: wrap; margin-bottom: .8rem; }
+.audit-filter input[type=search] { flex: 1 1 14rem; min-width: 0; }
+.audit-table td { vertical-align: top; }
+.audit-table .badge { margin: .15rem .3rem 0 0; }
+.audit-change { overflow-wrap: anywhere; max-width: 32rem; }
+.nowrap { white-space: nowrap; }
+.badge.action-create { background: var(--ok-soft); color: var(--ok); border-color: transparent; }
+.badge.action-delete { background: var(--danger-soft); color: var(--danger); border-color: transparent; }
+.badge.via-ki, .badge.via-automation, .badge.via-script { background: var(--warn-soft); color: var(--warn); border-color: transparent; }
+.audit-recent li { margin-bottom: .3rem; }
+.record-history { margin-top: 1rem; }
+
+/* ---------- Über den Baukasten, Fuß ---------- */
+.site-footer { text-align: center; padding: 1.5rem 1rem 2rem; font-size: .82rem; }
+.site-footer a { color: var(--muted); }
+.site-footer a:hover { color: var(--accent); }
+.news-dot { display: none; width: .5rem; height: .5rem; border-radius: 50%; background: var(--accent); margin-left: .35rem; vertical-align: .1em; }
+.has-news .news-dot { display: inline-block; }
+.has-news { color: var(--accent) !important; font-weight: 600; }
+.version-badge { display: flex; flex-direction: column; align-items: flex-end; }
+.version-badge strong { font-size: 1.6rem; color: var(--accent); line-height: 1.1; }
+.release { padding: .9rem 0; border-top: 1px solid var(--line); }
+.release:first-of-type { border-top: 0; padding-top: 0; }
+.release header { display: flex; flex-wrap: wrap; gap: .5rem; align-items: baseline; margin-bottom: .4rem; }
+.release-body h3 { font-size: .95rem; margin: .7rem 0 .3rem; }
+.release-body ul { margin: .2rem 0 .5rem; padding-left: 1.2rem; }
+.release-body p { margin: .3rem 0; }
+.release-draft { opacity: .75; }
+.facts { display: grid; grid-template-columns: auto 1fr; gap: .3rem .9rem; margin: 0; font-size: .9rem; }
+.facts dt { color: var(--muted); }
+.facts dd { margin: 0; font-variant-numeric: tabular-nums; }

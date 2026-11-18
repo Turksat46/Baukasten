@@ -51,4 +51,14 @@ def shell(request):
         "oidc_enabled": settings.OIDC_ENABLED,
         "oidc_only": settings.OIDC_ONLY,
         "brand_logo": brand_logo(),
+        "baukasten_version": settings.BAUKASTEN_VERSION,
+        "latest_release": _latest_release(user),
     }
+
+
+def _latest_release(user):
+    if user is None or not user.is_authenticated:
+        return ""
+    from .about import latest_release
+
+    return latest_release()
