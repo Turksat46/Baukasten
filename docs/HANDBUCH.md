@@ -62,6 +62,7 @@ Am Ende stehen [Häufige Fragen](#häufige-fragen),
 |---|---|---|
 | Inventar | Tabellen, Formulare, Kennzahlen, Diagramme, Datenquelle, Python- und JavaScript-Skripte | `python manage.py demo` |
 | Aufnahme-Einwilligung | Ablauf über mehrere Personen: Veranstaltung anlegen, Link verschicken, zustimmen oder ablehnen, Auswertung | `python manage.py beispiel_einwilligung` |
+| Personaleinsatz | Schichten per Drag-and-drop planen, Linien mit Priorität, Rückfragen bei Überplanung, Wochenübersicht, Kanban-Board | `python manage.py beispiel_einsatzplanung` |
 
 **Aufnahme-Einwilligung** im Einzelnen:
 
@@ -408,10 +409,18 @@ prüfen.
 | | Hinweis | farbiger Kasten: Information, Erfolg, Warnung, Wichtig |
 | | Bild | Bild von einer https-Adresse oder aus `/static/` |
 | | Begrüßung | „Hallo <Name>“ mit Datum |
+| | Aufklappbereich | Überschrift, die beim Klick einen Text aufklappt, z. B. für Fragen und Antworten |
 | Daten | Liste | Tabelle mit Suche, Blättern, Anlegen, Bearbeiten, Löschen |
 | | Karten | dieselben Einträge als Karten |
 | | Formular | neuen Eintrag direkt auf der Seite erfassen |
 | | CSV-Export | alle Einträge einer Tabelle herunterladen |
+| | Filterleiste | bis zu vier Felder zum Filtern; gilt für alle Bausteine derselben Tabelle auf der Seite, siehe [Filtern](#filtern) |
+| | Schieberegler | ein Regler je Eintrag, der ein Zahlenfeld direkt ändert (z. B. Fortschritt in %), mit Bereich und Schrittweite |
+| Planung | Einsatzplanung | Einträge (z. B. Mitarbeitende) per Drag-and-drop Zielen (z. B. Schichten) zuordnen, je Tag; mit Kapazität, Gruppen mit Priorität und Rückfragen, siehe [Planen mit Drag-and-drop](#planen-mit-drag-and-drop) |
+| | Wochenübersicht | Belegung und Kapazität je Ziel und Tag einer Woche, farbig nach offen, voll, überplant; Klick öffnet die Tagesplanung |
+| | Kanban-Board | Einträge per Drag-and-drop zwischen den Werten eines Auswahlfelds (z. B. Status) verschieben, optional mit Höchstzahl je Spalte |
+| | Kalender | Monatsansicht nach einem Datumsfeld, optional mit Enddatum (mehrtägig) und Farbe nach Auswahlfeld; „+“ legt einen Eintrag für den Tag an |
+| | Checkliste | Ja/Nein-Feld per Häkchen setzen, mit Fortschritt; Erledigte optional ausblenden |
 | Auswertung | Kennzahl | Anzahl, Summe oder Durchschnitt, optional mit Einheit |
 | | Fortschritt | Wert im Verhältnis zu einem Zielwert |
 | | Balkendiagramm | Einträge je Wert eines Feldes, als Rangliste |
@@ -425,8 +434,68 @@ prüfen.
 | | Datenbank-Abfrage | Live-Daten aus einer Datenquelle, siehe [unten](#daten-aus-datenbanken-und-databricks) |
 | | Tableau-Ansicht | bettet ein Dashboard von eurem Tableau-Server oder Tableau Cloud ein, optional mit Filtern aus der Adresse (siehe [Tableau](#tableau)) |
 | Skripte | Ausgabe | zeigt Werte, Text oder Tabellen, die ein Skript setzt |
-| | Eingabefeld | Text, E-Mail, Zahl oder langer Text, den ein Skript-Button mitschickt (`params["…"]`) |
+| | Eingabefeld | Text, E-Mail, Zahl, langer Text, Schieberegler, Datum, Auswahl oder Ja/Nein, den ein Skript-Button mitschickt (`params["…"]`; Ja/Nein als `"1"` oder leer) |
 | Eigene Bausteine | siehe unten | |
+
+### Filtern
+
+Die **Filterleiste** zeigt für bis zu vier Felder einer Tabelle je ein
+Eingabefeld: Auswahl- und Verweisfelder als Liste, Ja/Nein als Ja/Nein, Datum als
+Zeitraum von–bis, Text als „enthält“. Eine Änderung filtert sofort. Der Filter
+steht in der Adresse, z. B. `?aufgaben.status=Offen&aufgaben.faellig.von=2026-11-01`,
+lässt sich also als Link weitergeben. Er gilt für **alle** Bausteine derselben
+Tabelle auf der Seite: Liste, Karten, Kennzahl, Fortschritt, Diagramme, Verlauf,
+Liniendiagramm, Kanban-Board, Kalender, Checkliste und Schieberegler. Andere
+Parameter der Adresse bleiben beim Filtern erhalten.
+
+Ein **„Neu“-Link kann Felder vorbelegen**: `…/t/<tabelle>/neu/?faellig=2026-12-24`
+füllt das Feld „faellig“ im Formular vor (so arbeitet das „+“ im Kalender).
+
+### Planen mit Drag-and-drop
+
+Die Bausteine der Gruppe **Planung** arbeiten mit Tabellen, die du selbst
+anlegst. Im Beispiel „Personaleinsatz“ (`python manage.py beispiel_einsatzplanung`):
+
+| Rolle | Beispiel | braucht |
+|---|---|---|
+| Quelle: wer wird eingeplant | Mitarbeitende | ein Namensfeld; optional Zusatzinfo und ein Ja/Nein-Feld „Aktiv“ |
+| Ziel: wohin | Schichten (Früh, Spät, Nacht je Linie) | ein Zahlenfeld für die Kapazität; optional einen Verweis auf eine Gruppe |
+| Gruppe mit Priorität | Linien | ein Zahlenfeld „Priorität“ (1 = am wichtigsten) |
+| Zuordnung | Einsätze | Verweis auf die Quelle, Verweis auf das Ziel, optional ein Datum |
+
+Mit Datum plant die **Einsatzplanung** je Tag (Blättern oben rechts, Adresse
+`?datum=2026-11-19`); die Ziele sind dann Vorlagen, die jeden Tag gelten. Ohne
+Datum gilt die Zuordnung dauerhaft, etwa „wer gehört zu welchem Team“.
+
+- **Einplanen:** Eintrag aus der linken Liste auf ein Ziel ziehen. Ohne Maus
+  (Handy, Tastatur): Eintrag antippen oder mit Enter wählen, dann „Hier einplanen“.
+- **Verschieben:** einen eingeplanten Namen auf ein anderes Ziel ziehen.
+- **Entfernen:** × am Namen oder den Namen zurück in die linke Liste ziehen.
+- **Rückfragen** im Dialog, einstellbar am Baustein:
+  - Das Ziel ist schon voll. „Wenn ein Ziel schon voll ist“: *Nachfragen*
+    (Standard), *Verhindern* oder *Erlauben*.
+  - Die Person ist am selben Tag schon an anderer Stelle eingeplant.
+  - Eine Gruppe mit höherer Priorität hat noch offene Plätze.
+
+  Zweimal in dasselbe Ziel einplanen geht nie.
+
+Gruppen erscheinen nach Priorität sortiert (Priorität 1 oben). Die Felder für
+Kapazität, Gruppe und Priorität wählst du im Seiten-Designer; für die Priorität
+bietet er die Felder der Tabelle an, auf die das Gruppenfeld verweist.
+
+Die **Wochenübersicht** nutzt dieselben Einstellungen und zeigt je Ziel und Tag
+„eingeplant / Kapazität“: rot unbesetzt oder überplant, gelb teilweise, grün voll.
+Unten stehen die Summen je Tag, oben Auslastung, offene und überplante Plätze.
+Mit „Klick auf eine Zelle öffnet diese Seite“ führt ein Klick zur Tagesplanung.
+
+Das **Kanban-Board** zeigt Einträge in Spalten nach den Werten eines
+Auswahlfelds. Verschieben ändert den Wert. Mit „Höchstens Karten je Spalte“ fragt
+der Baukasten nach, wenn eine Spalte voll ist.
+
+Gespeichert wird mit den Rechten der Person: Ist in der Zuordnungs-Tabelle
+Anlegen, Bearbeiten oder Löschen abgeschaltet, geht auch das Einplanen,
+Verschieben oder Entfernen nicht. Alles steht im [Änderungsprotokoll](#änderungsprotokoll).
+In der Vorschau des Designers sind die Bausteine nur zum Ansehen.
 
 ### Eigene Bausteine
 
@@ -882,6 +951,8 @@ builder/
   models.py          App, Entity (Tabelle), Field, Record (Eintrag), Page,
                      CustomBlock, ApiKey, AppVersion
   blocks.py          Bausteine: Schema, Datenabfrage, Prüfung des Layouts
+  planning.py        Planungs-Bausteine (Einsatzplanung, Wochenübersicht, Kanban) und ihre Aktionen
+  widgets.py         Filterleiste, Kalender, Checkliste, Schieberegler, Aufklappbereich
   forms.py           Formulare; RecordForm entsteht aus den Feldern einer Tabelle
   views.py           Laufzeit: Startseite, Seiten, Einträge, CSV-Export, öffentliche Seiten
   designer.py        Designer: Apps, Tabellen, Felder, Seiten, Bausteine, Versionen,
@@ -902,7 +973,11 @@ builder/
   tours.py           Texte der Führungen
   locale/en/         englische Übersetzung
   static/builder/    theme.css, theme.js, style.css, designer.js, tour.js, transitions.js,
-                     inputs.js, home.js, Schrift, Logo
+                     inputs.js, home.js, Schrift, Logo;
+                     modal.js (Dialog BaukastenDialog.confirm/alert für alle Seiten),
+                     dnd.js (Drag-and-drop BaukastenDnD, mit Maus, Touch und Tastatur),
+                     planning.js (Einsatzplanung und Kanban im Browser, BaukastenBlocks.act),
+                     widgets.js (Checkliste und Schieberegler)
   templates/         Vorlagen
   tests.py           automatische Tests
 extensions/          eigene Python-Erweiterungen
@@ -1297,6 +1372,21 @@ Ein neuer Standard-Baustein besteht aus drei Teilen:
    `prep_…`-Funktion, die die Daten für die Anzeige liefert.
 2. einem Zweig in `builder/templates/builder/block.html`.
 3. optional einem Symbol in `ICONS` in `static/builder/designer.js`.
+
+Bausteine mit mehreren Tabellen geben Feld-Einstellungen ein `"of"` mit:
+`{"type": "field", "of": "target"}` zeigt die Felder der Tabelle aus der
+Einstellung `target`; nennt `of` ein Verweisfeld, die Felder der Tabelle, auf die
+es verweist. Designer und KI-Prüfung werten das aus.
+
+Interaktive Bausteine (Einsatzplanung, Kanban, Checkliste, Schieberegler) melden
+ihre Aktion bei `register(..., action=funktion)` an und schicken Aktionen als JSON an
+`/a/<app>/p/<seite>/b/<baustein>/aktion/` (`views.block_action`). Was erlaubt
+ist, liest der Server aus den gespeicherten Einstellungen des Bausteins, nie aus
+der Anfrage; geschrieben wird über `TableOps` mit den Rechten der Person. Eine
+Antwort 409 mit `confirm: true` ist eine Rückfrage: Der Browser zeigt sie mit
+`BaukastenDialog.confirm` und schickt die Aktion mit `force: true` erneut.
+Ziehen und Ablegen liefert `BaukastenDnD.register(selector, {accepts, drop})`
+aus `dnd.js`.
 
 Der Test `test_every_block_type_renders` prüft automatisch, dass sich jeder
 registrierte Baustein fehlerfrei anzeigen lässt.

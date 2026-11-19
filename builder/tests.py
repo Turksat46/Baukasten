@@ -3238,3 +3238,295 @@ class PwaTests(TestCase):
         self.assertContains(page, "builder/pwa.js")
         for name in ("icon-192.png", "icon-512.png", "maskable-512.png", "apple-touch-icon.png"):
             self.assertTrue((Path(__file__).parent / "static" / "builder" / "app" / name).exists(), name)
+
+
+class PlanningTests(TestCase):
+    """Planungs-Bausteine: Einsatzplanung, Wochenübersicht, Kanban (builder/planning.py)."""
+
+    def setUp(self):
+        from django.utils import timezone
+
+        call_command("beispiel_einsatzplanung", "--ohne-daten", verbosity=0)
+        self.app = App.objects.get(slug="personaleinsatz")
+        self.user = User.objects.create_user("planer", password="x")
+        self.client.force_login(self.user)
+        t = {e.slug: e for e in self.app.entities.all()}
+        self.t = t
+        self.l1 = Record.objects.create(entity=t["linien"], data={"name": "Linie A", "prioritaet": 1})
+        self.l2 = Record.objects.create(entity=t["linien"], data={"name": "Linie B", "prioritaet": 2})
+        # Die weniger wichtige Linie zuerst anlegen: sortiert wird trotzdem nach Priorität.
+        self.s2 = Record.objects.create(entity=t["schichten"], data={"bezeichnung": "Früh B", "linie": self.l2.pk, "bedarf": 2})
+        self.s1 = Record.objects.create(entity=t["schichten"], data={"bezeichnung": "Früh A", "linie": self.l1.pk, "bedarf": 1})
+        self.anna = Record.objects.create(entity=t["mitarbeitende"], data={"name": "Anna", "aktiv": True})
+        self.ben = Record.objects.create(entity=t["mitarbeitende"], data={"name": "Ben", "aktiv": True})
+        self.alt = Record.objects.create(entity=t["mitarbeitende"], data={"name": "Ruheständler", "aktiv": False})
+        self.today = timezone.localdate()
+        self.day = self.today.isoformat()
+        self.page = self.app.pages.get(slug="planung")
+        self.url = reverse("block_action", args=[self.app.slug, "planung", self.page.layout[0]["id"]])
+
+    def act(self, **payload):
+        return self.client.post(self.url, json.dumps(payload), content_type="application/json")
+
+    def links(self):
+        return list(self.t["einsaetze"].records.values_list("data", flat=True))
+
+    def test_board_sorted_by_priority_and_only_active_sources(self):
+        html = self.client.get(reverse("page", args=[self.app.slug, "planung"])).content.decode()
+        self.assertLess(html.index("Linie A"), html.index("Linie B"))
+        self.assertIn("Priorität 1", html)
+        self.assertNotIn("Ruheständler", html)
+        self.assertIn('data-plan="assign"', html)
+        self.assertIn("planning.js", html)
+
+    def test_assign_move_and_unassign(self):
+        response = self.act(op="assign", source=self.anna.pk, target=self.s1.pk, day=self.day)
+        self.assertEqual(response.json(), {"ok": True})
+        link = self.t["einsaetze"].records.get()
+        self.assertEqual((link.data["mitarbeiter"], link.data["schicht"], link.data["datum"]),
+                         (self.anna.pk, self.s1.pk, self.day))
+        self.assertEqual(link.created_by, self.user)
+        # Schon in derselben Schicht: immer abgelehnt, auch mit force
+        response = self.act(op="assign", source=self.anna.pk, target=self.s1.pk, day=self.day, force=True)
+        self.assertEqual(response.status_code, 409)
+        self.assertFalse(response.json()["confirm"])
+        self.assertEqual(self.act(op="move", link=link.pk, target=self.s2.pk, force=True).status_code, 200)
+        link.refresh_from_db()
+        self.assertEqual(link.data["schicht"], self.s2.pk)
+        self.assertEqual(self.act(op="unassign", link=link.pk).json(), {"ok": True})
+        self.assertEqual(self.links(), [])
+
+    def test_overbooking_asks_and_force_saves(self):
+        self.act(op="assign", source=self.anna.pk, target=self.s1.pk, day=self.day)
+        response = self.act(op="assign", source=self.ben.pk, target=self.s1.pk, day=self.day)
+        self.assertEqual(response.status_code, 409)
+        data = response.json()
+        self.assertTrue(data["confirm"])
+        self.assertEqual(data["error"], "Überplanung")
+        self.assertIn("1 von 1", data["problems"][0])
+        self.assertEqual(len(self.links()), 1)
+        forced = self.act(op="assign", source=self.ben.pk, target=self.s1.pk, day=self.day, force=True)
+        self.assertEqual(forced.status_code, 200)
+        self.assertEqual(len(self.links()), 2)
+        html = self.client.get(reverse("page", args=[self.app.slug, "planung"])).content.decode()
+        self.assertIn("state-over", html)
+
+    def test_overbooking_blocked_when_configured(self):
+        self.page.layout[0]["props"]["overbook"] = "block"
+        self.page.save()
+        self.act(op="assign", source=self.anna.pk, target=self.s1.pk, day=self.day)
+        response = self.act(op="assign", source=self.ben.pk, target=self.s1.pk, day=self.day, force=True)
+        self.assertEqual(response.status_code, 409)
+        self.assertFalse(response.json()["confirm"])
+        self.assertEqual(len(self.links()), 1)
+
+    def test_priority_and_double_booking_warnings(self):
+        # Linie B (Priorität 2) füllen, solange Linie A (Priorität 1) noch frei ist
+        response = self.act(op="assign", source=self.anna.pk, target=self.s2.pk, day=self.day)
+        self.assertEqual(response.status_code, 409)
+        self.assertIn("Linie A hat Priorität 1 und noch 1 offenen Platz.", response.json()["problems"])
+        self.act(op="assign", source=self.anna.pk, target=self.s1.pk, day=self.day)
+        # Anna ist jetzt in Linie A; ein zweiter Einsatz am selben Tag fragt nach
+        problems = self.act(op="assign", source=self.anna.pk, target=self.s2.pk, day=self.day).json()["problems"]
+        self.assertTrue(any("schon in „Früh A“ (Linie A)" in p for p in problems), problems)
+        # An einem anderen Tag gibt es keine Rückfrage
+        from datetime import timedelta
+        other = (self.today + timedelta(days=1)).isoformat()
+        self.assertEqual(self.act(op="assign", source=self.anna.pk, target=self.s1.pk, day=other).status_code, 200)
+
+    def test_actions_respect_table_switches_and_login(self):
+        self.t["einsaetze"].allow_create = False
+        self.t["einsaetze"].save()
+        response = self.act(op="assign", source=self.anna.pk, target=self.s1.pk, day=self.day)
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("nicht erlaubt", response.json()["error"])
+        self.client.logout()
+        self.assertEqual(self.act(op="assign", source=self.anna.pk, target=self.s1.pk, day=self.day).status_code, 302)
+
+    def test_targets_from_other_tables_are_rejected(self):
+        response = self.act(op="assign", source=self.anna.pk, target=self.l1.pk, day=self.day)
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(self.links(), [])
+
+    def test_week_overview_counts_capacity(self):
+        self.act(op="assign", source=self.anna.pk, target=self.s1.pk, day=self.day)
+        self.act(op="assign", source=self.ben.pk, target=self.s1.pk, day=self.day, force=True)
+        html = self.client.get(reverse("page", args=[self.app.slug, "woche"])).content.decode()
+        self.assertIn('2<span class="muted">/1</span>', html)
+        self.assertIn("Anna, Ben", html)
+        self.assertIn(f"/a/personaleinsatz/p/planung/?datum={self.day}", html)
+        self.assertIn("überplant", html)
+
+    def test_kanban_move_with_limit(self):
+        t = self.t["tauschwuensche"]
+        card = Record.objects.create(entity=t, data={"wunsch": "A", "status": "Neu"})
+        Record.objects.create(entity=t, data={"wunsch": "B", "status": "Genehmigt"})
+        page = self.app.pages.get(slug="tausch")
+        page.layout[0]["props"]["limit"] = 1
+        page.save()
+        url = reverse("block_action", args=[self.app.slug, "tausch", page.layout[0]["id"]])
+
+        def move(**extra):
+            return self.client.post(url, json.dumps({"op": "move", "record": card.pk, **extra}),
+                                    content_type="application/json")
+
+        self.assertEqual(move(value="Gibt es nicht").status_code, 400)
+        response = move(value="Genehmigt")
+        self.assertEqual(response.status_code, 409)
+        self.assertTrue(response.json()["confirm"])
+        self.assertEqual(move(value="Genehmigt", force=True).status_code, 200)
+        card.refresh_from_db()
+        self.assertEqual(card.data["status"], "Genehmigt")
+
+    def test_ai_designer_checks_fields_of_linked_tables(self):
+        from .ai_designer import Invalid, normalize
+        from .management.commands.beispiel_einsatzplanung import DEFINITION
+
+        normalize(DEFINITION)  # gültig
+        broken = json.loads(json.dumps(DEFINITION))
+        broken["pages"][0]["layout"][0]["props"]["priority_field"] = "gibts_nicht"
+        broken["pages"][0]["layout"][0]["props"]["capacity_field"] = "auch_nicht"
+        with self.assertRaises(Invalid) as ctx:
+            normalize(broken)
+        text = " ".join(ctx.exception.errors)
+        self.assertIn("Die Tabelle „linien“ hat kein Feld „gibts_nicht“", text)
+        self.assertIn("Die Tabelle „schichten“ hat kein Feld „auch_nicht“", text)
+
+    def test_preview_in_designer_is_read_only(self):
+        from django.test import RequestFactory
+
+        from .blocks import render_block
+
+        request = RequestFactory().get("/designer/x/seite/1/vorschau/")
+        request.user = self.user
+        html = render_block(request, self.app, self.page.layout[0])
+        self.assertIn("Schichtplanung", html)
+        self.assertNotIn("data-action-url", html)
+
+    def test_example_data_command(self):
+        call_command("beispiel_einsatzplanung", "--app", self.app.slug, verbosity=0)
+        # Es gab schon Linien: keine doppelten Beispieldaten
+        self.assertEqual(self.t["linien"].records.count(), 2)
+
+
+class WidgetTests(TestCase):
+    """Allgemeine Bausteine: Filterleiste, Kalender, Checkliste, Schieberegler, Aufklappbereich,
+    Eingabefeld-Arten (builder/widgets.py)."""
+
+    def setUp(self):
+        from django.utils import timezone
+
+        self.user = User.objects.create_user("macher", password="x")
+        self.client.force_login(self.user)
+        self.app = App.objects.create(name="Aufgaben", slug="aufgaben-test", published=True)
+        self.entity = Entity.objects.create(app=self.app, name="Aufgaben", slug="aufgaben")
+        Field.objects.create(entity=self.entity, label="Aufgabe", key="aufgabe", required=True)
+        Field.objects.create(entity=self.entity, label="Status", key="status", type=Field.CHOICE, choices="Offen\nZu")
+        Field.objects.create(entity=self.entity, label="Erledigt", key="erledigt", type=Field.BOOL)
+        Field.objects.create(entity=self.entity, label="Fortschritt", key="fortschritt", type=Field.NUMBER)
+        Field.objects.create(entity=self.entity, label="Fällig", key="faellig", type=Field.DATE)
+        Field.objects.create(entity=self.entity, label="Bis", key="bis", type=Field.DATE)
+        self.today = timezone.localdate()
+        day = self.today.replace(day=10).isoformat()
+        self.a = Record.objects.create(entity=self.entity, data={
+            "aufgabe": "Alpha", "status": "Offen", "erledigt": False, "fortschritt": 20, "faellig": day,
+            "bis": self.today.replace(day=12).isoformat()})
+        self.b = Record.objects.create(entity=self.entity, data={
+            "aufgabe": "Beta", "status": "Zu", "erledigt": True, "fortschritt": 90, "faellig": day})
+        self.page = Page.objects.create(app=self.app, title="Start", slug="start", layout=clean_layout([
+            make_block("filter", entity="aufgaben", field="status", field2="erledigt", field3="faellig"),
+            make_block("table", entity="aufgaben"),
+            make_block("stat", entity="aufgaben", label="Anzahl"),
+            make_block("checklist", entity="aufgaben", field="erledigt"),
+            make_block("sliders", entity="aufgaben", field="fortschritt", min=0, max=100, step=10),
+            make_block("calendar", entity="aufgaben", date_field="faellig", end_field="bis", color_field="status"),
+            make_block("details", title="Fragen", text="Antwort"),
+        ]))
+        self.ids = {b["type"]: b["id"] for b in self.page.layout}
+
+    def url(self, block):
+        return reverse("block_action", args=[self.app.slug, "start", self.ids[block]])
+
+    def post(self, block, **payload):
+        return self.client.post(self.url(block), json.dumps(payload), content_type="application/json")
+
+    def get(self, query=""):
+        return self.client.get(reverse("page", args=[self.app.slug, "start"]) + query).content.decode()
+
+    def test_page_renders_all_widgets(self):
+        html = self.get()
+        for marker in ('class="card filter-block"', 'data-widget="checklist"', 'data-widget="sliders"',
+                       'class="calendar"', "<summary", "widgets.js"):
+            self.assertIn(marker, html)
+        self.assertIn("1 von 2 erledigt", html)
+
+    def test_filter_applies_to_all_blocks_of_the_table(self):
+        html = self.get("?aufgaben.status=Zu")
+        self.assertIn("1 von 2 Einträgen", html)
+        self.assertIn("Beta", html)
+        self.assertNotIn("Alpha", html)
+        self.assertNotIn("Alpha", self.get("?aufgaben.erledigt=1"))
+        self.assertNotIn("Beta", self.get("?aufgaben.erledigt=0"))
+        later = (self.today.replace(day=10)).isoformat()
+        self.assertIn("Alpha", self.get(f"?aufgaben.faellig.von={later}"))
+        self.assertNotIn("Alpha", self.get("?aufgaben.faellig.bis=2000-01-01"))
+
+    def test_filter_on_text_and_reset_keeps_other_params(self):
+        Page.objects.filter(pk=self.page.pk).update(layout=clean_layout([
+            make_block("filter", entity="aufgaben", field="aufgabe"), make_block("table", entity="aufgaben")]))
+        html = self.get("?aufgaben.aufgabe=alp&monat=2026-01")
+        self.assertIn("Alpha", html)
+        self.assertNotIn("Beta", html)
+        self.assertIn('name="monat" value="2026-01"', html)
+        self.assertIn('href="?monat=2026-01"', html)
+
+    def test_checklist_toggle(self):
+        self.assertEqual(self.post("checklist", op="toggle", record=self.a.pk, value=True).status_code, 200)
+        self.a.refresh_from_db()
+        self.assertIs(self.a.data["erledigt"], True)
+        self.post("checklist", op="toggle", record=self.a.pk, value=False)
+        self.a.refresh_from_db()
+        self.assertIs(self.a.data["erledigt"], False)
+        self.assertEqual(self.post("checklist", op="toggle", record=999999, value=True).status_code, 400)
+
+    def test_sliders_validate_range_and_step(self):
+        response = self.post("sliders", op="set", record=self.a.pk, value="57")
+        self.assertEqual(response.json(), {"ok": True, "value": 60})
+        self.a.refresh_from_db()
+        self.assertEqual(self.a.data["fortschritt"], 60)
+        self.assertEqual(self.post("sliders", op="set", record=self.a.pk, value="150").status_code, 400)
+        self.assertEqual(self.post("sliders", op="set", record=self.a.pk, value="viel").status_code, 400)
+
+    def test_actions_respect_table_switches(self):
+        self.entity.allow_edit = False
+        self.entity.save()
+        self.assertEqual(self.post("sliders", op="set", record=self.a.pk, value="30").status_code, 400)
+        self.assertEqual(self.post("checklist", op="toggle", record=self.a.pk, value=True).status_code, 400)
+        self.assertNotIn('data-widget="checklist"', self.get())  # nur zum Ansehen
+        self.assertEqual(self.post("details").status_code, 400)  # Baustein ohne Aktionen
+
+    def test_calendar_month_multi_day_and_create_link(self):
+        html = self.get(f"?monat={self.today:%Y-%m}")
+        self.assertEqual(html.count('title="Alpha">Alpha<'), 3)  # im Kalender am 10., 11. und 12.
+        self.assertIn("tone-2", html)  # Beta hat Status „Zu“, zweiter Auswahlwert
+        self.assertIn(f"/a/{self.app.slug}/t/aufgaben/neu/?faellig=", html)
+        self.assertNotIn('title="Alpha">Alpha<', self.get("?monat=2000-01"))
+
+    def test_new_record_prefilled_from_address(self):
+        url = reverse("record_create", args=[self.app.slug, "aufgaben"])
+        html = self.client.get(url + "?faellig=2026-12-24&aufgabe=Geschenke&unbekannt=x").content.decode()
+        self.assertIn('value="2026-12-24"', html)
+        self.assertIn('value="Geschenke"', html)
+
+    def test_input_kinds(self):
+        Page.objects.filter(pk=self.page.pk).update(layout=clean_layout([
+            make_block("input", param="menge", kind="range", min=1, max=10, step=1),
+            make_block("input", param="farbe", kind="select", options="Rot\nGrün"),
+            make_block("input", param="ok", kind="checkbox"),
+            make_block("input", param="tag", kind="date"),
+        ]))
+        html = self.get("?menge=99&farbe=Grün&ok=1")
+        self.assertIn('type="range" name="menge" min="1" max="10" step="1" value="10"', html)
+        self.assertIn("<option selected>Grün</option>", html)
+        self.assertIn('type="checkbox" name="ok" value="1" data-page-input checked', html)
+        self.assertIn('type="date" name="tag"', html)

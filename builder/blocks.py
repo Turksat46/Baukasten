@@ -50,18 +50,19 @@ class BlockType:
     prepare: object = None
     category: str = "Eigene"
     hint: str = ""
+    action: object = None  # fn(app, block, payload, user) für interaktive Bausteine (views.block_action)
 
 
 REGISTRY = {}
 CATEGORIES = [
-    ("Inhalt", _("Inhalt")), ("Daten", _("Daten")), ("Auswertung", _("Auswertung")),
+    ("Inhalt", _("Inhalt")), ("Daten", _("Daten")), ("Planung", _("Planung")), ("Auswertung", _("Auswertung")),
     ("Navigation", _("Navigation")), ("Layout", _("Layout")), ("Anbindung", _("Anbindung")),
     ("Skripte", _("Skripte")), ("Eigene", _("Eigene Bausteine")),
 ]
 
 
-def register(key, label, icon, fields=(), prepare=None, category="Inhalt", hint=""):
-    REGISTRY[key] = BlockType(key, label, icon, list(fields), prepare, category, hint)
+def register(key, label, icon, fields=(), prepare=None, category="Inhalt", hint="", action=None):
+    REGISTRY[key] = BlockType(key, label, icon, list(fields), prepare, category, hint, action)
 
 
 def all_types():
@@ -147,6 +148,52 @@ def display_value(f, value, refs=None):
     return str(value)
 
 
+# ---------- Filter aus der Adresse (Baustein „Filterleiste“) ----------
+
+def filter_param(entity, f, suffix=""):
+    """Name des Adress-Parameters, z. B. geraete.kategorie oder ausleihen.von.bis."""
+    return f"{entity.slug}.{f.key}{suffix}"
+
+
+def filtered(request, entity, records=None):
+    """Einträge einer Tabelle, gefiltert nach den Parametern der Seite (?tabelle.feld=wert).
+
+    Gilt für alle Bausteine derselben Tabelle auf der Seite. Text sucht enthalten, Ja/Nein
+    nimmt 1/0, Datum nimmt Grenzen über .von und .bis, alles andere vergleicht genau."""
+    records = entity.records.all() if records is None else records
+    params = getattr(request, "GET", None)
+    if not params:
+        return records
+    for f in entity.fields.all():
+        if f.type == Field.DATE:
+            low, high = params.get(filter_param(entity, f, ".von")), params.get(filter_param(entity, f, ".bis"))
+            if low or high:
+                records = records.annotate(**{f"_f_{f.key}": Cast(KeyTextTransform(f.key, "data"), TextField())})
+                if low:
+                    records = records.filter(**{f"_f_{f.key}__gte": low[:10]})
+                if high:
+                    records = records.filter(**{f"_f_{f.key}__lte": high[:10]})
+            continue
+        value = params.get(filter_param(entity, f))
+        if value in (None, ""):
+            continue
+        if f.type == Field.BOOL:
+            records = (records.filter(**{f"data__{f.key}": True}) if value in ("1", "true", "ja")
+                       else records.exclude(**{f"data__{f.key}": True}))
+        elif f.type in (Field.TEXT, Field.LONGTEXT, Field.EMAIL, Field.URL):
+            records = (records.annotate(**{f"_f_{f.key}": KeyTextTransform(f.key, "data")})
+                       .filter(**{f"_f_{f.key}__icontains": value[:200]}))
+        elif f.type in (Field.NUMBER, Field.REFERENCE, Field.DECIMAL):
+            try:
+                number = int(value) if f.type != Field.DECIMAL else float(value)
+            except ValueError:
+                continue
+            records = records.filter(**{f"data__{f.key}": number})
+        else:
+            records = records.filter(**{f"data__{f.key}": value[:200]})
+    return records
+
+
 # ---------- prepare-Funktionen ----------
 
 def prep_table(request, app, block):
@@ -156,7 +203,7 @@ def prep_table(request, app, block):
         return {"error": gettext("Für diese Liste ist keine Tabelle ausgewählt.")}
     fields = list(entity.fields.all())
     columns = [f for f in fields if f.show_in_list] or fields[:5]
-    records = entity.records.all()
+    records = filtered(request, entity)
     query = request.GET.get(f"q_{bid}", "").strip()
     if query and props.get("searchable", True):
         records = records.annotate(_text=Cast("data", TextField())).filter(_text__icontains=query)
@@ -188,17 +235,18 @@ def prep_form(request, app, block):
     }
 
 
-def _number(entity, props):
+def _number(entity, props, records=None):
     """Anzahl, Summe oder Durchschnitt einer Tabelle. Gibt (Zahl, Fehlertext) zurück."""
+    records = entity.records.all() if records is None else records
     aggregate = props.get("aggregate") or "count"
     if aggregate == "count":
-        return entity.records.count(), None
+        return records.count(), None
     f = entity.fields.filter(key=props.get("field"), type__in=[Field.NUMBER, Field.DECIMAL]).first()
     if not f:
         return None, gettext("Summe und Durchschnitt brauchen ein Zahlenfeld.")
     expr = Cast(KeyTextTransform(f.key, "data"), FloatField())
     func = Sum if aggregate == "sum" else Avg
-    return entity.records.aggregate(v=func(expr))["v"] or 0, None
+    return records.aggregate(v=func(expr))["v"] or 0, None
 
 
 def _format_number(value):
@@ -207,10 +255,11 @@ def _format_number(value):
     return number_format(value, decimal_pos=2, use_l10n=True, force_grouping=True)
 
 
-def _groups(entity, f, limit=12):
+def _groups(entity, f, limit=12, records=None):
     """Zählt Einträge je Wert eines Feldes: Liste von (Beschriftung, Anzahl), häufigste zuerst."""
+    records = entity.records.all() if records is None else records
     rows = (
-        entity.records.annotate(v=KeyTextTransform(f.key, "data"))
+        records.annotate(v=KeyTextTransform(f.key, "data"))
         .values("v").annotate(c=Count("id")).order_by("-c")[:limit]
     )
     result = []
@@ -239,7 +288,7 @@ def prep_stat(request, app, block):
     entity = _entity(app, props.get("entity"))
     if not entity:
         return {"error": gettext("Für diese Kennzahl ist keine Tabelle ausgewählt.")}
-    value, error = _number(entity, props)
+    value, error = _number(entity, props, filtered(request, entity))
     return {"error": error} if error else {"value": _format_number(value)}
 
 
@@ -248,7 +297,7 @@ def prep_progress(request, app, block):
     entity = _entity(app, props.get("entity"))
     if not entity:
         return {"error": gettext("Für diesen Fortschritt ist keine Tabelle ausgewählt.")}
-    value, error = _number(entity, props)
+    value, error = _number(entity, props, filtered(request, entity))
     if error:
         return {"error": error}
     target = max(int(props.get("target") or 0), 0)
@@ -264,9 +313,10 @@ def prep_chart(request, app, block):
     entity, f = _entity_and_field(app, block["props"])
     if not f:
         return {"error": gettext("Für dieses Diagramm fehlen Tabelle und Feld.")}
-    groups = _groups(entity, f)
+    records = filtered(request, entity)
+    groups = _groups(entity, f, records=records)
     top = max((count for _, count in groups), default=0)
-    total = entity.records.count()
+    total = records.count()
     return {"bars": [
         {"label": label, "count": count,
          "percent": round(100 * count / top) if top else 0,
@@ -279,8 +329,9 @@ def prep_donut(request, app, block):
     entity, f = _entity_and_field(app, block["props"])
     if not f:
         return {"error": gettext("Für dieses Kreisdiagramm fehlen Tabelle und Feld.")}
-    total = entity.records.count()
-    groups = _groups(entity, f, limit=5)
+    records = filtered(request, entity)
+    total = records.count()
+    groups = _groups(entity, f, limit=5, records=records)
     rest = total - sum(count for _, count in groups)
     if rest > 0:
         groups.append((gettext("Sonstige"), rest))
@@ -302,11 +353,11 @@ def prep_timeline(request, app, block):
         return {"error": gettext("Für diesen Verlauf ist keine Tabelle ausgewählt.")}
     f = entity.fields.filter(key=props.get("field"), type=Field.DATE).first()
     if f:
-        rows = (entity.records.annotate(m=Substr(KeyTextTransform(f.key, "data"), 1, 7))
+        rows = (filtered(request, entity).annotate(m=Substr(KeyTextTransform(f.key, "data"), 1, 7))
                 .values("m").annotate(c=Count("id")))
         counts = {row["m"]: row["c"] for row in rows if row["m"]}
     else:
-        rows = entity.records.annotate(m=TruncMonth("created_at")).values("m").annotate(c=Count("id"))
+        rows = filtered(request, entity).annotate(m=TruncMonth("created_at")).values("m").annotate(c=Count("id"))
         counts = {row["m"].strftime("%Y-%m"): row["c"] for row in rows if row["m"]}
     today = timezone.localdate()
     months = []
@@ -376,7 +427,7 @@ def prep_line(request, app, block):
     starts, bucket_of = _line_buckets(period, count, timezone.localdate())
     date_field = entity.fields.filter(key=props.get("date_field"), type=Field.DATE).first()
 
-    records = entity.records.all()
+    records = filtered(request, entity)
     if date_field:
         records = (records.annotate(_d=Cast(KeyTextTransform(date_field.key, "data"), TextField()))
                    .filter(_d__gte=starts[0].isoformat()).values_list("_d", "data"))
@@ -478,7 +529,7 @@ def prep_cards(request, app, block):
         return {"error": gettext("Die Tabelle hat noch keine Felder.")}
     title_field, detail_fields = fields[0], [f for f in fields[1:] if f.show_in_list][:4]
     size = min(max(int(props.get("page_size") or 6), 1), 60)
-    page_obj = Paginator(entity.records.all(), size).get_page(request.GET.get(f"p_{bid}"))
+    page_obj = Paginator(filtered(request, entity), size).get_page(request.GET.get(f"p_{bid}"))
     refs = reference_labels(fields, page_obj.object_list)
     cards = [
         {"record": r,
@@ -577,7 +628,8 @@ def prep_output(request, app, block):
     return {"value": None}
 
 
-INPUT_KINDS = {"text": "text", "email": "email", "number": "number", "textarea": "textarea"}
+INPUT_KINDS = {"text": "text", "email": "email", "number": "number", "textarea": "textarea",
+               "range": "range", "date": "date", "select": "select", "checkbox": "checkbox"}
 RESERVED_PARAMS = {"next", "csrfmiddlewaretoken", "form_prefix"}
 
 
@@ -586,8 +638,33 @@ def prep_input(request, app, block):
     param = str(block["props"].get("param") or "").strip()
     if not NAME_RE.match(param) or param in RESERVED_PARAMS:
         return {"error": gettext("Das Eingabefeld braucht einen Namen aus Kleinbuchstaben, Ziffern und _ (z. B. vorname).")}
-    return {"param": param, "kind": INPUT_KINDS.get(block["props"].get("kind"), "text"),
-            "value": request.GET.get(param, "")}
+    props = block["props"]
+    kind = INPUT_KINDS.get(props.get("kind"), "text")
+    value = request.GET.get(param, "")
+    ctx = {"param": param, "kind": kind, "value": value}
+    if kind == "range":
+        low, high = _int_prop(props, "min", 0), _int_prop(props, "max", 100)
+        high = high if high > low else low + 1
+        step = max(_int_prop(props, "step", 1), 1)
+        try:
+            current = min(max(float(value), low), high) if value != "" else low + (high - low) // 2
+        except ValueError:
+            current = low
+        ctx.update({"min": low, "max": high, "step": step, "value": _plain_number(current)})
+    elif kind == "select":
+        ctx["options"] = [o.strip() for o in str(props.get("options") or "").splitlines() if o.strip()][:100]
+    return ctx
+
+
+def _int_prop(props, key, default):
+    try:
+        return int(props.get(key))
+    except (TypeError, ValueError):
+        return default
+
+
+def _plain_number(value):
+    return int(value) if float(value).is_integer() else round(value, 4)
 
 
 def prep_query(request, app, block):
@@ -809,11 +886,21 @@ register("input", _("Eingabefeld"), "⌨️", [
     {"key": "label", "label": _("Beschriftung"), "type": "text", "default": _("Name")},
     {"key": "param", "label": _("Name des Werts (im Skript: params[\"…\"])"), "type": "text", "default": "name"},
     {"key": "kind", "label": _("Art"), "type": "select", "default": "text",
-     "options": [["text", _("Text")], ["email", _("E-Mail")], ["number", _("Zahl")], ["textarea", _("Langer Text")]]},
+     "options": [["text", _("Text")], ["email", _("E-Mail")], ["number", _("Zahl")], ["textarea", _("Langer Text")],
+                 ["range", _("Schieberegler")], ["date", _("Datum")], ["select", _("Auswahl")],
+                 ["checkbox", _("Ja/Nein")]]},
     {"key": "required", "label": _("Pflichtfeld"), "type": "checkbox", "default": False},
     {"key": "placeholder", "label": _("Platzhalter (optional)"), "type": "text", "default": ""},
+    {"key": "min", "label": _("Schieberegler: kleinster Wert"), "type": "number", "default": 0},
+    {"key": "max", "label": _("Schieberegler: größter Wert"), "type": "number", "default": 100},
+    {"key": "step", "label": _("Schieberegler: Schrittweite"), "type": "number", "default": 1},
+    {"key": "options", "label": _("Auswahl: ein Wert je Zeile"), "type": "textarea", "default": ""},
 ], prep_input, "Skripte", _("Wert, den ein Skript-Button auf der Seite mitschickt"))
 
+
+# Planung (Einsatzplanung, Wochenübersicht, Kanban) steht in einer eigenen Datei.
+from . import planning  # noqa: E402,F401  registriert die Planungs-Bausteine
+from . import widgets  # noqa: E402,F401  Filter, Kalender, Checkliste, Schieberegler, Aufklappbereich
 
 # ---------- Anzeige, Prüfung, Designer-Konfiguration ----------
 
@@ -863,7 +950,7 @@ def render_layout(request, app, page, layout=None, overrides=None, lazy=False):
         html = render_placeholder(request, app, block) if deferred else render_block(request, app, block, types, overrides)
         if html is None:
             continue
-        rendered.append({"id": block["id"], "width": block.get("width", 12), "name": block.get("name", ""),
+        rendered.append({"id": block["id"], "type": block.get("type"), "width": block.get("width", 12), "name": block.get("name", ""),
                          "refresh": block.get("refresh", 0), "lazy": deferred, "html": html})
     return rendered
 
@@ -934,8 +1021,9 @@ def designer_config(app, page):
         "categories": [{"key": key, "label": label} for key, label in CATEGORIES],
         "entities": [
             {"slug": e.slug, "name": e.name,
-             "fields": [{"key": f.key, "label": f.label, "type": f.type} for f in e.fields.all()]}
-            for e in app.entities.prefetch_related("fields")
+             "fields": [{"key": f.key, "label": f.label, "type": f.type,
+                         "reference": f.reference.slug if f.reference_id else None} for f in e.fields.all()]}
+            for e in app.entities.prefetch_related("fields__reference")
         ],
         "pages": [{"slug": p.slug, "title": p.title} for p in app.pages.all()],
         "actions": [{"name": n, "label": a["label"]} for n, a in hooks.ACTIONS.items()],

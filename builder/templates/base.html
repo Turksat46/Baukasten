@@ -72,6 +72,7 @@
   {% if coach %}{% include "builder/_coach.html" %}<script src="{% asset 'builder/coach.js' %}" defer></script>{% endif %}
   {% block tour %}{% endblock %}
   <script src="{% url 'javascript-catalog' %}"></script>
+  <script src="{% asset 'builder/modal.js' %}"></script>
   <script src="{% asset 'builder/confirm.js' %}"></script>
   <script src="{% asset 'builder/tour.js' %}"></script>
   <script src="{% asset 'builder/pwa.js' %}" defer></script>

@@ -38,6 +38,8 @@ def guide():
             item = {"key": spec["key"], "type": spec["type"], "label": _text(spec.get("label"))}
             if "default" in spec:
                 item["default"] = spec["default"] if isinstance(spec["default"], (bool, int)) else _text(spec["default"])
+            if spec.get("of"):
+                item["of"] = spec["of"]
             if spec.get("options"):
                 item["options"] = [str(option[0]) for option in spec["options"]]
             props.append(item)
@@ -63,7 +65,9 @@ def guide():
         "blocks": blocks,
         "widths": list(WIDTHS),
         "references_in_blocks": "Einstellungen vom Typ entity nennen den slug einer Tabelle, vom Typ field den "
-                                "key eines Feldes dieser Tabelle, vom Typ page den slug einer Seite.",
+                                "key eines Feldes dieser Tabelle, vom Typ page den slug einer Seite. Hat eine "
+                                "field-Einstellung \"of\", gehört das Feld zu der Tabelle in dieser Einstellung "
+                                "(z. B. of: target); nennt \"of\" selbst ein Verweisfeld, zu dessen Zieltabelle.",
         "script_triggers": {"app": list(Script.APP_TRIGGERS), "automation": list(Script.AUTOMATION_TRIGGERS)},
         "script_commands": ("Python: app.table('slug').filter(feld=wert) / .create(feld=wert) / .update(id, …) / "
                             ".count(); ui.set('name', value=…); message('…'); print(); in Automatisierungen echtes "

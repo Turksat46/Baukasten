@@ -1,0 +1,82 @@
+{% load i18n %}<section class="card plan plan-assign"{% if action_url %} data-plan="assign" data-csrf="{{ csrf_token }}" data-action-url="{{ action_url }}" data-reload-url="{{ reload_url }}"{% endif %}{% if day %} data-day="{{ day }}"{% endif %}>
+  <div class="card-head">
+    <div>
+      <h3 data-slot="title">{{ p.title|default:_("Einsatzplanung") }}</h3>
+      {% if day %}<p class="muted small plan-day-label">{{ day_label }}</p>{% endif %}
+    </div>
+    {% if day %}
+      <form method="get" class="plan-nav" aria-label="{% translate 'Tag wählen' %}">
+        <a class="btn btn-secondary btn-small" href="?{{ day_param }}={{ prev_day }}" aria-label="{% translate 'Vorheriger Tag' %}" title="{% translate 'Vorheriger Tag' %}">‹</a>
+        <input type="date" name="{{ day_param }}" value="{{ day }}" aria-label="{% translate 'Datum' %}" data-autosubmit>
+        <a class="btn btn-secondary btn-small" href="?{{ day_param }}={{ next_day }}" aria-label="{% translate 'Nächster Tag' %}" title="{% translate 'Nächster Tag' %}">›</a>
+        {% if not is_today %}<a class="btn btn-secondary btn-small" href="?{{ day_param }}={{ today }}">{% translate "Heute" %}</a>{% endif %}
+      </form>
+    {% endif %}
+  </div>
+
+  <ul class="stat-chips plan-summary">
+    <li>{% blocktranslate with count=total.count capacity=total.capacity %}<strong>{{ count }}</strong> von {{ capacity }} Plätzen besetzt{% endblocktranslate %}</li>
+    <li{% if total.open %} class="chip-open"{% endif %}>{% blocktranslate with open=total.open %}<strong>{{ open }}</strong> offen{% endblocktranslate %}</li>
+    {% if total.over %}<li class="chip-error">{% blocktranslate with over=total.over %}<strong>{{ over }}</strong> überplant{% endblocktranslate %}</li>{% endif %}
+    <li>{% blocktranslate with count=unassigned %}<strong>{{ count }}</strong> noch frei{% endblocktranslate %}</li>
+  </ul>
+
+  <div class="plan-board">
+    <aside class="plan-pool" {% if action_url %}data-drop="pool"{% endif %} aria-label="{% translate 'Verfügbare Einträge' %}">
+      <div class="plan-pool-head">
+        <strong>{% translate "Verfügbar" %}</strong>
+        <input type="search" class="plan-filter" placeholder="{% translate 'Filtern …' %}" aria-label="{% translate 'Liste filtern' %}" data-plan-filter>
+      </div>
+      <ul class="plan-chips" role="list">
+        {% for person in people %}
+          <li class="plan-chip{% if person.count %} is-planned{% endif %}" data-filter-text="{{ person.label|lower }} {{ person.info|lower }}"
+              {% if action_url %}draggable="true" data-drag="source" data-id="{{ person.id }}" tabindex="0" role="button" aria-pressed="false"{% endif %}
+              title="{% if person.where %}{% translate 'Eingeplant in' %}: {{ person.where|join:', ' }}{% else %}{% translate 'Noch nicht eingeplant' %}{% endif %}">
+            <span class="plan-chip-name">{{ person.label }}</span>
+            {% if person.info %}<span class="plan-chip-info">{{ person.info }}</span>{% endif %}
+            {% if person.count %}<span class="plan-chip-count" aria-label="{% translate 'Anzahl Einsätze' %}">{{ person.count }}</span>{% endif %}
+          </li>
+        {% empty %}
+          <li class="muted small">{% translate "Keine Einträge in der Quell-Tabelle." %}</li>
+        {% endfor %}
+      </ul>
+      {% if action_url %}<p class="plan-hint muted small">{% translate "Ziehen und in einem Ziel ablegen. Ohne Maus: Eintrag antippen, dann „Hier einplanen“." %}</p>{% endif %}
+    </aside>
+
+    <div class="plan-groups">
+      {% for group in groups %}
+        <section class="plan-group state-{{ group.state }}">
+          <header class="plan-group-head">
+            <h4>{{ group.label }}</h4>
+            {% if group.priority_label %}<span class="plan-prio prio-{{ group.rank|default:1 }}" title="{% translate 'Priorität' %}">{% blocktranslate with prio=group.priority_label %}Priorität {{ prio }}{% endblocktranslate %}</span>{% endif %}
+            <span class="plan-group-fill muted small">{{ group.count }} / {{ group.capacity }}{% if group.open %} · {% blocktranslate with open=group.open %}{{ open }} offen{% endblocktranslate %}{% endif %}{% if group.over %} · <span class="plan-over-note">{% blocktranslate with over=group.over %}{{ over }} überplant{% endblocktranslate %}</span>{% endif %}</span>
+          </header>
+          <div class="plan-slots">
+            {% for slot in group.slots %}
+              <article class="plan-slot state-{{ slot.state }}" {% if action_url %}data-drop="slot" data-target="{{ slot.id }}"{% endif %} aria-label="{{ slot.label }}: {{ slot.count }} / {{ slot.capacity }}">
+                <div class="plan-slot-head">
+                  <strong>{{ slot.label }}</strong>
+                  <span class="plan-slot-count">{{ slot.count }}{% if slot.capacity %} / {{ slot.capacity }}{% endif %}</span>
+                </div>
+                {% if slot.capacity %}<span class="plan-meter" aria-hidden="true"><span style="width: {{ slot.percent }}%"></span></span>{% endif %}
+                <ul class="plan-chips plan-assigned" role="list">
+                  {% for a in slot.assigned %}
+                    <li class="plan-chip is-assigned" {% if action_url %}draggable="true" data-drag="link" data-link="{{ a.link }}" tabindex="0" role="button" aria-pressed="false"{% endif %}>
+                      <span class="plan-chip-name">{{ a.label }}</span>
+                      {% if action_url %}<button type="button" class="plan-remove" data-unassign="{{ a.link }}" aria-label="{% blocktranslate with name=a.label %}{{ name }} entfernen{% endblocktranslate %}" title="{% translate 'Entfernen' %}">×</button>{% endif %}
+                    </li>
+                  {% endfor %}
+                </ul>
+                {% if slot.state == "empty" or not slot.assigned %}<p class="plan-empty muted small">{% if action_url %}{% translate "Hierher ziehen" %}{% else %}{% translate "Noch niemand" %}{% endif %}</p>{% endif %}
+                {% if action_url %}<button type="button" class="btn btn-small plan-place" data-place hidden>{% translate "Hier einplanen" %}</button>{% endif %}
+              </article>
+            {% endfor %}
+          </div>
+        </section>
+      {% empty %}
+        <p class="empty">{% translate "Noch keine Ziele. Lege zuerst Einträge in der Ziel-Tabelle an." %}</p>
+      {% endfor %}
+    </div>
+  </div>
+  <p class="visually-hidden" role="status" aria-live="polite" data-plan-status></p>
+</section>
