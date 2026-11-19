@@ -3537,3 +3537,45 @@ class WidgetTests(TestCase):
         self.assertIn("<option selected>Grün</option>", html)
         self.assertIn('type="checkbox" name="ok" value="1" data-page-input checked', html)
         self.assertIn('type="date" name="tag"', html)
+
+
+class InterfaceTranslationTests(TestCase):
+    """Englische Oberfläche: jeder Text hat eine Übersetzung (manage.py uebersetzungen)."""
+
+    def test_every_text_is_translated(self):
+        from .management.commands.uebersetzungen import missing
+
+        gaps = {domain: [f"{where[0]}: {msgid}" for _c, msgid, _p, where, _k in items]
+                for domain, items in missing("en").items() if items}
+        self.assertEqual(gaps, {}, "Fehlende Übersetzungen: python manage.py uebersetzungen ergaenzen, "
+                                   "übersetzen, dann kompilieren.")
+
+    def test_compiled_files_match_po(self):
+        import gettext
+        import tempfile
+        from pathlib import Path
+
+        from .management.commands.uebersetzungen import BUILDER, compile_mo
+
+        folder = BUILDER / "locale" / "en" / "LC_MESSAGES"
+        for domain in ("django", "djangojs"):
+            with tempfile.TemporaryDirectory() as tmp:
+                fresh = Path(tmp) / "x.mo"
+                compile_mo(folder / f"{domain}.po", fresh)
+                with open(folder / f"{domain}.mo", "rb") as a, open(fresh, "rb") as b:
+                    shipped, built = gettext.GNUTranslations(a)._catalog, gettext.GNUTranslations(b)._catalog
+            self.assertEqual(shipped, built, f"{domain}.mo ist nicht aktuell: python manage.py uebersetzungen kompilieren")
+
+    def test_planning_page_in_english(self):
+        from django.utils import timezone
+
+        call_command("beispiel_einsatzplanung", "--ohne-daten", verbosity=0)
+        app = App.objects.get(slug="personaleinsatz")
+        user = User.objects.create_user("english", password="x")
+        self.client.force_login(user)
+        self.client.cookies["django_language"] = "en"
+        html = self.client.get(reverse("page", args=[app.slug, "planung"]), HTTP_ACCEPT_LANGUAGE="en").content.decode()
+        self.assertIn("Available", html)
+        self.assertNotIn("Verfügbar", html)
+        today = timezone.localdate()
+        self.assertIn(f"{today:%B} {today.day}, {today.year}", html)  # z. B. „Thursday, November 19, 2026“

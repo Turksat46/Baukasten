@@ -173,3 +173,107 @@ msgstr "Done"
 #: static/builder/tour.js:99
 msgid "Weiter"
 msgstr "Next"
+
+#: static/builder/confirm.js
+msgid "Ja, fortfahren"
+msgstr "Yes, continue"
+
+#: static/builder/dnd.js
+msgid "Ausgewählt. Jetzt ein Ziel wählen oder Escape zum Abbrechen."
+msgstr "Selected. Now choose a target, or press Escape to cancel."
+
+#: static/builder/modal.js
+msgid "Abbrechen"
+msgstr "Cancel"
+
+#: static/builder/modal.js
+msgid "Bitte bestätigen"
+msgstr "Please confirm"
+
+#: static/builder/modal.js
+msgid "Hinweis"
+msgstr "Notice"
+
+#: static/builder/modal.js
+msgid "OK"
+msgstr "OK"
+
+#: static/builder/modal.js
+msgid "Verstanden"
+msgstr "Got it"
+
+#: static/builder/planning.js
+msgid "%s trotzdem einplanen?"
+msgstr "Schedule %s anyway?"
+
+#: static/builder/planning.js
+msgid "Abgebrochen."
+msgstr "Cancelled."
+
+#: static/builder/planning.js
+msgid "Bitte prüfe die Verbindung und versuche es noch einmal."
+msgstr "Please check your connection and try again."
+
+#: static/builder/planning.js
+msgid "Das hat nicht geklappt."
+msgstr "That didn’t work."
+
+#: static/builder/planning.js
+msgid "Gespeichert."
+msgstr "Saved."
+
+#: static/builder/planning.js
+msgid "Keine Verbindung"
+msgstr "No connection"
+
+#: static/builder/planning.js
+msgid "Trotzdem ausführen"
+msgstr "Do it anyway"
+
+#: static/builder/planning.js
+msgid "Trotzdem einplanen"
+msgstr "Schedule anyway"
+
+#: static/builder/planning.js
+msgid "Trotzdem verschieben"
+msgstr "Move anyway"
+
+#: static/builder/planning.js
+msgid "Verschoben."
+msgstr "Moved."
+
+#: static/builder/planning.js
+msgid "eingeplant."
+msgstr "scheduled."
+
+#: static/builder/planning.js
+msgid "entfernt."
+msgstr "removed."
+
+#: static/builder/pwa.js
+msgid "Klicke in der Adressleiste rechts auf das Symbol „App installieren“ oder im Browsermenü auf „Installieren“. Firefox und Safari am Mac bieten das nicht an."
+msgstr "Click the “Install app” icon on the right of the address bar or “Install” in the browser menu. Firefox and Safari on the Mac don’t offer this."
+
+#: static/builder/pwa.js
+msgid "Tippe im Browser oben rechts auf das Menü (⋮) und dann auf „Zum Startbildschirm hinzufügen“ bzw. „App installieren“."
+msgstr "Tap the menu (⋮) at the top right of the browser, then “Add to Home screen” or “Install app”."
+
+#: static/builder/pwa.js
+msgid "Tippe in Safari unten auf das Teilen-Symbol (Quadrat mit Pfeil) und dann auf „Zum Home-Bildschirm“."
+msgstr "In Safari, tap the share icon at the bottom (square with an arrow), then “Add to Home Screen”."
+
+#: static/builder/pwa.js
+msgid "Über eine http-Adresse legt der Browser nur eine Verknüpfung an; als echte App installieren lässt sich der Baukasten über https."
+msgstr "Over an http address the browser only creates a shortcut; Baukasten can be installed as a real app over https."
+
+#: static/builder/widgets.js
+msgid "erledigt."
+msgstr "done."
+
+#: static/builder/widgets.js
+msgid "gespeichert."
+msgstr "saved."
+
+#: static/builder/widgets.js
+msgid "wieder offen."
+msgstr "open again."

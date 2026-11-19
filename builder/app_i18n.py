@@ -18,7 +18,7 @@ import csv
 import io
 
 from django.conf import settings
-from django.utils.translation import get_language
+from django.utils.translation import get_language, gettext
 
 _current = contextvars.ContextVar("baukasten_app_translations", default={})
 
@@ -87,17 +87,17 @@ def collect(app):
         if text and len(text) <= MAX_TEXT:
             found.setdefault(text, where)
 
-    add(app.name, "App: Name")
-    add(app.description, "App: Beschreibung")
+    add(app.name, gettext("App: Name"))
+    add(app.description, gettext("App: Beschreibung"))
     for entity in app.entities.prefetch_related("fields"):
-        add(entity.name, f"Tabelle „{entity.name}“")
+        add(entity.name, gettext("Tabelle „%(name)s“") % {"name": entity.name})
         for field in entity.fields.all():
-            add(field.label, f"Feld in „{entity.name}“")
+            add(field.label, gettext("Feld in „%(name)s“") % {"name": entity.name})
             for choice in field.choice_list() if field.type == field.CHOICE else []:
-                add(choice, f"Auswahlwert von „{field.label}“")
+                add(choice, gettext("Auswahlwert von „%(name)s“") % {"name": field.label})
     types = all_types()
     for page in app.pages.all():
-        add(page.title, f"Seite „{page.title}“: Titel")
+        add(page.title, gettext("Seite „%(name)s“: Titel") % {"name": page.title})
         for block in page.layout or []:
             block_type = types.get(block.get("type"))
             if block_type is None:
@@ -105,7 +105,7 @@ def collect(app):
             keys = text_keys(block_type)
             for key, value in (block.get("props") or {}).items():
                 if key in keys:
-                    add(value, f"Seite „{page.title}“: {block_type.label}")
+                    add(value, gettext("Seite „%(name)s“: %(block)s") % {"name": page.title, "block": block_type.label})
     return list(found.items())
 
 

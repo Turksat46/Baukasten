@@ -25,16 +25,18 @@ from decimal import Decimal
 from django.conf import settings
 from django.db.models.signals import post_delete, post_save, pre_delete, pre_save
 from django.utils import timezone
+from django.utils.translation import gettext_lazy as _
 
 # Wege, auf denen etwas geändert wurde
 VIA_LABELS = {
-    "ui": "Oberfläche", "designer": "Designer", "api": "API", "mcp": "MCP", "ki": "KI-Zugang",
-    "script": "Skript", "automation": "Automatisierung", "sync": "Abgleich", "admin": "Verwaltung",
-    "system": "System",
+    "ui": _("Oberfläche"), "designer": _("Designer"), "api": _("API"), "mcp": _("MCP"), "ki": _("KI-Zugang"),
+    "script": _("Skript"), "automation": _("Automatisierung"), "sync": _("Abgleich"), "admin": _("Verwaltung"),
+    "system": _("System"),
 }
 ACTION_LABELS = {
-    "create": "angelegt", "update": "geändert", "delete": "gelöscht", "restore": "wiederhergestellt",
-    "import": "importiert", "sync": "abgeglichen", "share": "Freigabe", "start": "gestartet", "stop": "gestoppt",
+    "create": _("angelegt"), "update": _("geändert"), "delete": _("gelöscht"), "restore": _("wiederhergestellt"),
+    "import": _("importiert"), "sync": _("abgeglichen"), "share": _("Freigabe"), "start": _("gestartet"),
+    "stop": _("gestoppt"),
 }
 
 

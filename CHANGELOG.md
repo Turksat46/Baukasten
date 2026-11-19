@@ -11,6 +11,10 @@ Neue Einträge oben unter „Unveröffentlicht“ sammeln und beim Release zur V
 ## Unveröffentlicht
 
 ### Neu
+- Englische Oberfläche vollständig: rund 530 fehlende Texte übersetzt (auch aus Änderungsprotokoll,
+  Einstellungen, App-Installation, Automatisierungen, Übersetzungsseite), Datumsformate je Sprache.
+- `python manage.py uebersetzungen pruefen|ergaenzen|kompilieren` pflegt Übersetzungen ohne GNU
+  gettext; ein Test meldet fehlende Übersetzungen.
 - Bausteingruppe **Planung**: „Einsatzplanung“ (Einträge per Drag-and-drop Zielen je Tag
   zuordnen, mit Kapazität, Gruppen mit Priorität und Rückfragen bei Überplanung,
   Doppelbelegung oder offenen Plätzen in wichtigeren Gruppen), „Wochenübersicht“ (Belegung

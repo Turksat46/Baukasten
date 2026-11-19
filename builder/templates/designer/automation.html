@@ -81,7 +81,7 @@
 
     <section class="card" id="api">
       <h3>{% translate "Von außen starten: Webhook und MCP" %}</h3>
-      <p class="muted">{% translate "Andere Programme (z. B. n8n) starten ein Skript mit einem Schlüssel, der schreiben darf. Der mitgeschickte JSON-Inhalt steht im Skript in event[\"daten\"]." %}</p>
+      <p class="muted">{% translate 'Andere Programme (z. B. n8n) starten ein Skript mit einem Schlüssel, der schreiben darf. Der mitgeschickte JSON-Inhalt steht im Skript in event["daten"].' %}</p>
       {% if automations %}
         <pre class="json">curl -X POST -H "Authorization: Bearer {% translate 'DEIN_SCHLÜSSEL' %}" \
   -H "Content-Type: application/json" -d '{"auftrag": 42}' \
@@ -117,7 +117,7 @@
       <ul class="plain small">
         <li>{% translate "Die Skripte laufen im Hintergrunddienst, nicht im Browser und nicht beim Öffnen einer Seite." %}</li>
         <li>{% translate "Alle Bibliotheken der gemeinsamen Umgebung sind da (requirements-automation.txt). Neue Bibliotheken trägt der Betrieb dort ein." %}</li>
-        <li>{% translate "Zugangsdaten nie in den Code: secret(\"NAME\") liest ein Geheimnis, das der Betrieb einrichtet." %}</li>
+        <li>{% translate 'Zugangsdaten nie in den Code: secret("NAME") liest ein Geheimnis, das der Betrieb einrichtet.' %}</li>
         <li>{% translate "Speichern übernimmt neuen Code ab dem nächsten Lauf. Dauerläufer übernehmen ihn nach Aus- und Einschalten." %}</li>
       </ul>
     </section>

@@ -261,7 +261,7 @@ def prep_assign(request, app, block):
     }
     if day:
         ctx.update({
-            "day": day.isoformat(), "day_label": date_format(day, "l, j. F Y"),
+            "day": day.isoformat(), "day_label": date_format(day, gettext("l, j. F Y")),
             "prev_day": (day - timedelta(days=1)).isoformat(), "next_day": (day + timedelta(days=1)).isoformat(),
             "is_today": day == today, "today": today.isoformat(), "day_param": DAY_PARAM,
         })
@@ -309,7 +309,7 @@ def prep_week(request, app, block):
             row["cells"].append({
                 "count": count, "capacity": cap, "state": _state(count, cap), "names": names,
                 "href": f"{page_url}?{DAY_PARAM}={d.isoformat()}" if page_url else "",
-                "title": f"{t['label']} · {date_format(d, 'l, j. F')}: {count}/{cap}",
+                "title": f"{t['label']} · {date_format(d, gettext('l, j. F'))}: {count}/{cap}",
             })
             row["count"] += count
             day_totals[i]["capacity"] += cap
@@ -329,12 +329,12 @@ def prep_week(request, app, block):
         d["percent"] = round(100 * d["count"] / d["capacity"]) if d["capacity"] else 0
     week = monday.isocalendar()[1]
     return {
-        "days": [{"iso": d.isoformat(), "short": date_format(d, "D"), "date": date_format(d, "d.m."),
+        "days": [{"iso": d.isoformat(), "short": date_format(d, "D"), "date": date_format(d, gettext("d.m.")),
                   "today": d == today, "weekend": d.weekday() >= 5} for d in days],
         "groups": groups, "day_totals": day_totals, "total": total, "show_names": show_names,
         "percent": round(100 * total["count"] / total["capacity"]) if total["capacity"] else 0,
         "week_label": gettext("KW %(week)s · %(start)s – %(end)s") % {
-            "week": week, "start": date_format(days[0], "d.m."), "end": date_format(days[-1], "d.m.Y")},
+            "week": week, "start": date_format(days[0], gettext("d.m.")), "end": date_format(days[-1], gettext("d.m.Y"))},
         "prev_week": (monday - timedelta(days=7)).isoformat(), "next_week": (monday + timedelta(days=7)).isoformat(),
         "this_week": today.isoformat(), "is_this_week": monday <= today < monday + timedelta(days=7),
         "week_param": WEEK_PARAM, "show_priority": bool(plan.priority), "columns": len(days) + 2,
@@ -462,7 +462,7 @@ def _check(plan, target, source, day, moving, force):
     targets = {t["id"]: t for t in plan.targets()}
     info = targets.get(target.pk) or {"label": str(target), "capacity": 0, "group": {"label": "", "priority": None}}
     where = _where(info)
-    when = date_format(day, "D, j. F") if day else ""
+    when = date_format(day, gettext("D, j. F")) if day else ""
 
     if any(t == target.pk and s == source.pk for _pk, t, s, _d in links):
         raise Refused(gettext("Schon eingeplant"), [

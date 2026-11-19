@@ -116,8 +116,7 @@ msgid "Methode nicht erlaubt."
 msgstr "Method not allowed."
 
 #: api.py:110 api.py:141
-msgid ""
-"Diese Tabelle gibt es nicht oder sie ist nicht für die API freigeschaltet."
+msgid "Diese Tabelle gibt es nicht oder sie ist nicht für die API freigeschaltet."
 msgstr "This table does not exist or is not enabled for the API."
 
 #: api.py:131 blocks.py:180 scripting/ops.py:125
@@ -738,11 +737,8 @@ msgstr "Full width"
 
 #: datasources.py:106
 #, python-format
-msgid ""
-"Die Datenquelle „%(name)s“ ist gerade ausgelastet. Bitte gleich noch einmal "
-"versuchen."
-msgstr ""
-"The data source “%(name)s” is busy right now. Please try again in a moment."
+msgid "Die Datenquelle „%(name)s“ ist gerade ausgelastet. Bitte gleich noch einmal versuchen."
+msgstr "The data source “%(name)s” is busy right now. Please try again in a moment."
 
 #: datasources.py:189
 msgid "Die Abfrage ist leer."
@@ -758,11 +754,8 @@ msgstr "Only read-only queries starting with SELECT or WITH are allowed."
 
 #: datasources.py:196
 #, python-format
-msgid ""
-"Das Wort „%(word)s“ ist in Abfragen nicht erlaubt, weil es Daten verändern "
-"könnte."
-msgstr ""
-"The word “%(word)s” is not allowed in queries because it could change data."
+msgid "Das Wort „%(word)s“ ist in Abfragen nicht erlaubt, weil es Daten verändern könnte."
+msgstr "The word “%(word)s” is not allowed in queries because it could change data."
 
 #: datasources.py:206 datasources.py:212
 #, python-format
@@ -803,20 +796,13 @@ msgstr "The database reports: %(message)s"
 
 #: datasources.py:404
 #, python-format
-msgid ""
-"Die Abfrage „%(name)s“ wird gerade geladen. Bitte gleich noch einmal "
-"versuchen."
-msgstr ""
-"The query “%(name)s” is being loaded right now. Please try again in a "
-"moment."
+msgid "Die Abfrage „%(name)s“ wird gerade geladen. Bitte gleich noch einmal versuchen."
+msgstr "The query “%(name)s” is being loaded right now. Please try again in a moment."
 
 #: datasources.py:453
 #, python-format
-msgid ""
-"Die Abfrage liefert mehr als %(limit)s Zeilen. Bitte im SQL eingrenzen."
-msgstr ""
-"The query returns more than %(limit)s rows. Please narrow it down in the "
-"SQL."
+msgid "Die Abfrage liefert mehr als %(limit)s Zeilen. Bitte im SQL eingrenzen."
+msgstr "The query returns more than %(limit)s rows. Please narrow it down in the SQL."
 
 #: datasources.py:479
 #, python-format
@@ -868,20 +854,13 @@ msgstr "Version %(number)s saved."
 
 #: designer.py:155
 #, python-format
-msgid ""
-"Version %(number)s wiederhergestellt. Der vorherige Stand wurde als neue "
-"Version gesichert."
-msgstr ""
-"Version %(number)s restored. The previous state was saved as a new version."
+msgid "Version %(number)s wiederhergestellt. Der vorherige Stand wurde als neue Version gesichert."
+msgstr "Version %(number)s restored. The previous state was saved as a new version."
 
 #: designer.py:157
 #, python-format
-msgid ""
-"Diese Tabellen gab es in der Version noch nicht; sie bleiben mit ihren Daten"
-" erhalten: %(names)s"
-msgstr ""
-"These tables did not exist in that version yet; they are kept together with "
-"their data: %(names)s"
+msgid "Diese Tabellen gab es in der Version noch nicht; sie bleiben mit ihren Daten erhalten: %(names)s"
+msgstr "These tables did not exist in that version yet; they are kept together with their data: %(names)s"
 
 #: designer.py:174
 msgid "App gelöscht."
@@ -913,11 +892,8 @@ msgid "Seite gelöscht."
 msgstr "Page deleted."
 
 #: designer.py:327
-msgid ""
-"Baustein gespeichert. Er steht jetzt im Seiten-Designer unter „Eigene "
-"Bausteine“."
-msgstr ""
-"Block saved. It is now available in the page designer under “Custom blocks”."
+msgid "Baustein gespeichert. Er steht jetzt im Seiten-Designer unter „Eigene Bausteine“."
+msgstr "Block saved. It is now available in the page designer under “Custom blocks”."
 
 #: designer.py:341
 msgid "Baustein gelöscht."
@@ -945,8 +921,7 @@ msgid "Abfrage gespeichert."
 msgstr "Query saved."
 
 #: designer.py:488
-msgid ""
-"Abfrage gelöscht. Eine gespiegelte Tabelle bleibt mit ihren Daten erhalten."
+msgid "Abfrage gelöscht. Eine gespiegelte Tabelle bleibt mit ihren Daten erhalten."
 msgstr "Query deleted. A mirrored table is kept with its data."
 
 #: forms.py:26 forms.py:34
@@ -962,20 +937,12 @@ msgid "Bitte die Tabelle wählen, auf die verwiesen wird."
 msgstr "Please choose the table this field refers to."
 
 #: forms.py:149
-msgid ""
-"Was man am Baustein einstellen kann. Eine Einstellung pro Zeile: Bezeichnung"
-" = Standardwert"
-msgstr ""
-"What can be configured on the block. One setting per line: Label = default "
-"value"
+msgid "Was man am Baustein einstellen kann. Eine Einstellung pro Zeile: Bezeichnung = Standardwert"
+msgstr "What can be configured on the block. One setting per line: Label = default value"
 
 #: forms.py:150
-msgid ""
-"Erlaubt sind übliche Tags wie div, p, h3, strong, a, img, ul, table. Skripte"
-" werden entfernt."
-msgstr ""
-"Common tags such as div, p, h3, strong, a, img, ul and table are allowed. "
-"Scripts are removed."
+msgid "Erlaubt sind übliche Tags wie div, p, h3, strong, a, img, ul, table. Skripte werden entfernt."
+msgstr "Common tags such as div, p, h3, strong, a, img, ul and table are allowed. Scripts are removed."
 
 #: forms.py:156
 msgid "Nach dem Bereinigen ist kein Inhalt übrig. Bitte HTML eintragen."
@@ -990,12 +957,8 @@ msgid "Alle Tabellen"
 msgstr "All tables"
 
 #: forms.py:177
-msgid ""
-"JavaScript läuft im Browser und kann nur beim Öffnen einer Seite oder per "
-"Button starten."
-msgstr ""
-"JavaScript runs in the browser and can only start when a page opens or by "
-"button."
+msgid "JavaScript läuft im Browser und kann nur beim Öffnen einer Seite oder per Button starten."
+msgstr "JavaScript runs in the browser and can only start when a page opens or by button."
 
 #: forms.py:179
 msgid "Bitte ein Intervall von mindestens einer Minute angeben."
@@ -1136,12 +1099,8 @@ msgid "Im Formular anzeigen"
 msgstr "Show in form"
 
 #: models.py:152
-msgid ""
-"Aus für Felder, die ein Skript füllt (z. B. ein erzeugter Link). Der Wert "
-"bleibt beim Bearbeiten erhalten."
-msgstr ""
-"Off for fields filled by a script (e.g. a generated link). The value is kept"
-" when editing."
+msgid "Aus für Felder, die ein Skript füllt (z. B. ein erzeugter Link). Der Wert bleibt beim Bearbeiten erhalten."
+msgstr "Off for fields filled by a script (e.g. a generated link). The value is kept when editing."
 
 #: models.py:157 templates/builder/api_docs.html:61
 msgid "Feld"
@@ -1274,9 +1233,7 @@ msgid "Ergebnis zwischenspeichern (Sekunden)"
 msgstr "Cache the result (seconds)"
 
 #: models.py:406
-msgid ""
-"Wie lange ein Ergebnis wiederverwendet wird, bevor die Datenbank erneut "
-"gefragt wird."
+msgid "Wie lange ein Ergebnis wiederverwendet wird, bevor die Datenbank erneut gefragt wird."
 msgstr "How long a result is reused before the database is asked again."
 
 #: models.py:408
@@ -1288,12 +1245,8 @@ msgid "Schlüsselspalte"
 msgstr "Key column"
 
 #: models.py:411
-msgid ""
-"Spalte, die einen Datensatz eindeutig kennzeichnet. Leer: Tabelle wird bei "
-"jedem Abgleich neu befüllt."
-msgstr ""
-"Column that uniquely identifies a row. Empty: the table is refilled on every"
-" sync."
+msgid "Spalte, die einen Datensatz eindeutig kennzeichnet. Leer: Tabelle wird bei jedem Abgleich neu befüllt."
+msgstr "Column that uniquely identifies a row. Empty: the table is refilled on every sync."
 
 #: models.py:416
 msgid "Automatisch abgleichen alle … Minuten"
@@ -1405,9 +1358,7 @@ msgid "Eintrag anlegen"
 msgstr "Create entry"
 
 #: openapi.py:139
-msgid ""
-"Braucht einen Schlüssel mit Schreibrecht. Es gelten dieselben Prüfungen wie "
-"im Formular."
+msgid "Braucht einen Schlüssel mit Schreibrecht. Es gelten dieselben Prüfungen wie im Formular."
 msgstr "Needs a key with write access. The same checks as in the form apply."
 
 #: openapi.py:141
@@ -1473,15 +1424,8 @@ msgstr "%(app)s – API"
 
 #: openapi.py:201
 #, python-format
-msgid ""
-"Schnittstelle der App „%(app)s“. Jede Anfrage braucht einen API-Schlüssel "
-"dieser App im Kopf „Authorization: Bearer …“. Schlüssel erzeugt ein Designer"
-" in der App unter „Schnittstelle (API)“; dort wird auch festgelegt, welche "
-"Tabellen erreichbar sind."
-msgstr ""
-"API of the app “%(app)s”. Every request needs an API key of this app in the "
-"header “Authorization: Bearer …”. A designer creates keys in the app under "
-"“Interface (API)”, where they also choose which tables are reachable."
+msgid "Schnittstelle der App „%(app)s“. Jede Anfrage braucht einen API-Schlüssel dieser App im Kopf „Authorization: Bearer …“. Schlüssel erzeugt ein Designer in der App unter „Schnittstelle (API)“; dort wird auch festgelegt, welche Tabellen erreichbar sind."
+msgstr "API of the app “%(app)s”. Every request needs an API key of this app in the header “Authorization: Bearer …”. A designer creates keys in the app under “Interface (API)”, where they also choose which tables are reachable."
 
 #: openapi.py:212
 msgid "API-Schlüssel der App, beginnt mit bk_"
@@ -1544,14 +1488,12 @@ msgstr "Only http and https addresses are allowed."
 
 #: services.py:23
 #, python-format
-msgid ""
-"Der Host „%(host)s“ ist nicht freigegeben (Einstellung HTTP_ALLOWED_HOSTS)."
+msgid "Der Host „%(host)s“ ist nicht freigegeben (Einstellung HTTP_ALLOWED_HOSTS)."
 msgstr "The host “%(host)s” is not approved (setting HTTP_ALLOWED_HOSTS)."
 
 #: templates/admin/builder/app_data.html:24
 #, python-format
-msgid ""
-"Alle Tabellen der App „%(name)s“ mit ihren Einträgen, die neuesten zuerst."
+msgid "Alle Tabellen der App „%(name)s“ mit ihren Einträgen, die neuesten zuerst."
 msgstr "All tables of the app “%(name)s” with their entries, newest first."
 
 #: templates/admin/builder/app_data.html:25 templates/builder/profile.html:73
@@ -1669,14 +1611,8 @@ msgid "API von „%(name)s“"
 msgstr "API of “%(name)s”"
 
 #: templates/builder/api_docs.html:10
-msgid ""
-"Andere Programme lesen und schreiben hier die Einträge dieser App. Diese "
-"Seite zeigt alle Adressen, Felder und Antworten; unten lässt sich jede "
-"Anfrage direkt ausprobieren."
-msgstr ""
-"Other programs read and write this app’s entries here. This page shows all "
-"addresses, fields and responses; below you can try out every request "
-"directly."
+msgid "Andere Programme lesen und schreiben hier die Einträge dieser App. Diese Seite zeigt alle Adressen, Felder und Antworten; unten lässt sich jede Anfrage direkt ausprobieren."
+msgstr "Other programs read and write this app’s entries here. This page shows all addresses, fields and responses; below you can try out every request directly."
 
 #: templates/builder/api_docs.html:12
 msgid "Freigaben und Schlüssel"
@@ -1687,9 +1623,7 @@ msgid "In drei Schritten"
 msgstr "In three steps"
 
 #: templates/builder/api_docs.html:20
-msgid ""
-"Ein Designer schaltet die gewünschten Tabellen frei und erzeugt einen "
-"Schlüssel."
+msgid "Ein Designer schaltet die gewünschten Tabellen frei und erzeugt einen Schlüssel."
 msgstr "A designer enables the tables you need and creates a key."
 
 #: templates/builder/api_docs.html:21
@@ -1709,11 +1643,8 @@ msgid "Beispiel"
 msgstr "Example"
 
 #: templates/builder/api_docs.html:29
-msgid ""
-"In Python geht es einfacher mit der Bibliothek baukasten-client (siehe "
-"Handbuch)."
-msgstr ""
-"In Python it is easier with the baukasten-client library (see the handbook)."
+msgid "In Python geht es einfacher mit der Bibliothek baukasten-client (siehe Handbuch)."
+msgstr "In Python it is easier with the baukasten-client library (see the handbook)."
 
 #: templates/builder/api_docs.html:30
 msgid "Für Werkzeuge"
@@ -1721,12 +1652,8 @@ msgstr "For tools"
 
 #: templates/builder/api_docs.html:31
 #, python-format
-msgid ""
-"OpenAPI-Beschreibung für Postman, Insomnia oder Code-Generatoren: "
-"<code>%(public_spec_url)s</code> (mit Schlüssel abrufbar)"
-msgstr ""
-"OpenAPI description for Postman, Insomnia or code generators: "
-"<code>%(public_spec_url)s</code> (retrievable with a key)"
+msgid "OpenAPI-Beschreibung für Postman, Insomnia oder Code-Generatoren: <code>%(public_spec_url)s</code> (mit Schlüssel abrufbar)"
+msgstr "OpenAPI description for Postman, Insomnia or code generators: <code>%(public_spec_url)s</code> (retrievable with a key)"
 
 #: templates/builder/api_docs.html:32
 msgid "OpenAPI-Datei herunterladen"
@@ -1765,25 +1692,16 @@ msgid "Ausprobieren"
 msgstr "Try it out"
 
 #: templates/builder/api_docs.html:82
-msgid ""
-"Auf „Authorize“ klicken und einen Schlüssel dieser App eintragen. Danach bei"
-" einer Anfrage „Try it out“ und „Execute“ wählen. Achtung: Anfragen wirken "
-"auf echte Daten."
-msgstr ""
-"Click “Authorize” and enter a key of this app. Then choose “Try it out” and "
-"“Execute” on a request. Caution: requests act on real data."
+msgid "Auf „Authorize“ klicken und einen Schlüssel dieser App eintragen. Danach bei einer Anfrage „Try it out“ und „Execute“ wählen. Achtung: Anfragen wirken auf echte Daten."
+msgstr "Click “Authorize” and enter a key of this app. Then choose “Try it out” and “Execute” on a request. Caution: requests act on real data."
 
 #: templates/builder/api_docs.html:83
 msgid "Swagger UI"
 msgstr "Swagger UI"
 
 #: templates/builder/api_index.html:8
-msgid ""
-"Jede App hat eine eigene Schnittstelle. Wähle eine App, um ihre Adressen, "
-"Felder und Antworten zu sehen und Anfragen auszuprobieren."
-msgstr ""
-"Every app has its own API. Choose an app to see its addresses, fields and "
-"responses and to try out requests."
+msgid "Jede App hat eine eigene Schnittstelle. Wähle eine App, um ihre Adressen, Felder und Antworten zu sehen und Anfragen auszuprobieren."
+msgstr "Every app has its own API. Choose an app to see its addresses, fields and responses and to try out requests."
 
 #: templates/builder/api_index.html:13 templates/designer/app.html:166
 msgid "Freigeschaltete Tabellen"
@@ -1883,9 +1801,7 @@ msgid "Wird von einem Skript gefüllt (Name „%(name)s“)."
 msgstr "Filled by a script (name “%(name)s”)."
 
 #: templates/builder/block.html:256
-msgid ""
-"Gib dem Baustein im Seiten-Designer einen Namen, damit ein Skript ihn füllen"
-" kann."
+msgid "Gib dem Baustein im Seiten-Designer einen Namen, damit ein Skript ihn füllen kann."
 msgstr "Give the block a name in the page designer so a script can fill it."
 
 #: templates/builder/block.html:263
@@ -1894,10 +1810,8 @@ msgid "Stand %(fetched)s"
 msgstr "As of %(fetched)s"
 
 #: templates/builder/block.html:265
-msgid ""
-"Die Datenquelle antwortet gerade nicht. Angezeigt wird der letzte Stand."
-msgstr ""
-"The data source is not responding right now. Showing the last known data."
+msgid "Die Datenquelle antwortet gerade nicht. Angezeigt wird der letzte Stand."
+msgstr "The data source is not responding right now. Showing the last known data."
 
 #: templates/builder/block.html:273
 msgid "Es gibt weitere Zeilen, die hier nicht angezeigt werden."
@@ -1912,13 +1826,8 @@ msgid "Handbuch"
 msgstr "Handbook"
 
 #: templates/builder/help.html:24
-msgid ""
-"Alles zum Benutzen, Bauen, Entwickeln und Betreiben. Das Inhaltsverzeichnis "
-"führt zu jedem Abschnitt; mit Strg+F durchsuchst du die ganze Seite."
-msgstr ""
-"Everything about using, building, developing and running Baukasten. The "
-"table of contents leads to every section; press Ctrl+F to search the whole "
-"page."
+msgid "Alles zum Benutzen, Bauen, Entwickeln und Betreiben. Das Inhaltsverzeichnis führt zu jedem Abschnitt; mit Strg+F durchsuchst du die ganze Seite."
+msgstr "Everything about using, building, developing and running Baukasten. The table of contents leads to every section; press Ctrl+F to search the whole page."
 
 #: templates/builder/help.html:25
 msgid "Das Handbuch gibt es bisher nur auf Deutsch."
@@ -1954,12 +1863,8 @@ msgid "Noch keine App vorhanden"
 msgstr "No apps yet"
 
 #: templates/builder/home.html:28
-msgid ""
-"Im Designer legst du in wenigen Minuten die erste an: Tabelle anlegen, Seite"
-" erzeugen, veröffentlichen."
-msgstr ""
-"Create the first one in the designer in a few minutes: add a table, generate"
-" a page, publish."
+msgid "Im Designer legst du in wenigen Minuten die erste an: Tabelle anlegen, Seite erzeugen, veröffentlichen."
+msgstr "Create the first one in the designer in a few minutes: add a table, generate a page, publish."
 
 #: templates/builder/home.html:29
 msgid "Erste App bauen"
@@ -2042,12 +1947,8 @@ msgid "Keine Gruppe."
 msgstr "No group."
 
 #: templates/builder/profile.html:31
-msgid ""
-"Gruppen legen fest, welche Apps du siehst. Mit Firmenkonto kommen sie bei "
-"jeder Anmeldung aus Keycloak."
-msgstr ""
-"Groups decide which apps you see. With a company account they come from "
-"Keycloak at every sign-in."
+msgid "Gruppen legen fest, welche Apps du siehst. Mit Firmenkonto kommen sie bei jeder Anmeldung aus Keycloak."
+msgstr "Groups decide which apps you see. With a company account they come from Keycloak at every sign-in."
 
 #: templates/builder/profile.html:37 templates/builder/profile.html:38
 msgid "Erscheinungsbild"
@@ -2074,8 +1975,7 @@ msgid "Wieder anzeigen"
 msgstr "Show again"
 
 #: templates/builder/profile.html:48
-msgid ""
-"Erledigt. Die Führungen starten beim nächsten Besuch der jeweiligen Seite."
+msgid "Erledigt. Die Führungen starten beim nächsten Besuch der jeweiligen Seite."
 msgstr "Done. The tours start on your next visit to each page."
 
 #: templates/builder/profile.html:49
@@ -2137,18 +2037,12 @@ msgid "API-Doku"
 msgstr "API docs"
 
 #: templates/builder/profile.html:96 templates/designer/app.html:188
-msgid ""
-"Schlüssel löschen? Programme, die ihn verwenden, verlieren sofort den "
-"Zugriff."
+msgid "Schlüssel löschen? Programme, die ihn verwenden, verlieren sofort den Zugriff."
 msgstr "Delete this key? Programs using it lose access immediately."
 
 #: templates/builder/profile.html:105
-msgid ""
-"Du hast noch keinen Schlüssel erzeugt. Das geht im Designer in der App unter"
-" „Schnittstelle (API)“."
-msgstr ""
-"You have not created a key yet. You can do that in the designer, in the app "
-"under “Interface (API)”."
+msgid "Du hast noch keinen Schlüssel erzeugt. Das geht im Designer in der App unter „Schnittstelle (API)“."
+msgstr "You have not created a key yet. You can do that in the designer, in the app under “Interface (API)”."
 
 #: templates/builder/profile.html:110
 msgid "Meine Skripte"
@@ -2206,9 +2100,7 @@ msgid "Neuer API-Schlüssel – jetzt kopieren"
 msgstr "New API key – copy it now"
 
 #: templates/designer/app.html:14
-msgid ""
-"Er wird nur dieses eine Mal angezeigt und lässt sich später nicht wieder "
-"auslesen."
+msgid "Er wird nur dieses eine Mal angezeigt und lässt sich später nicht wieder auslesen."
 msgstr "It is shown only this once and cannot be read again later."
 
 #: templates/designer/app.html:22
@@ -2216,12 +2108,8 @@ msgid "Daten: Tabellen"
 msgstr "Data: tables"
 
 #: templates/designer/app.html:23
-msgid ""
-"Lege fest, welche Daten die App verwaltet. Aus jeder Tabelle lässt sich eine"
-" fertige Seite erzeugen."
-msgstr ""
-"Define which data the app manages. A ready-made page can be generated from "
-"every table."
+msgid "Lege fest, welche Daten die App verwaltet. Aus jeder Tabelle lässt sich eine fertige Seite erzeugen."
+msgstr "Define which data the app manages. A ready-made page can be generated from every table."
 
 #: templates/designer/app.html:30
 #, python-format
@@ -2267,13 +2155,8 @@ msgid "Einstellungen und Freigabe"
 msgstr "Settings and sharing"
 
 #: templates/designer/app.html:86
-msgid ""
-"Eine Version hält den Aufbau der App fest: Einstellungen, Tabellen, Felder "
-"und Seiten. Die erfassten Daten gehören nicht dazu und bleiben beim "
-"Wiederherstellen erhalten."
-msgstr ""
-"A version records the structure of the app: settings, tables, fields and "
-"pages. The entered data is not part of it and is kept when you restore."
+msgid "Eine Version hält den Aufbau der App fest: Einstellungen, Tabellen, Felder und Seiten. Die erfassten Daten gehören nicht dazu und bleiben beim Wiederherstellen erhalten."
+msgstr "A version records the structure of the app: settings, tables, fields and pages. The entered data is not part of it and is kept when you restore."
 
 #: templates/designer/app.html:89
 msgid "Was hat sich geändert? (optional)"
@@ -2297,12 +2180,8 @@ msgstr "Download"
 
 #: templates/designer/app.html:104
 #, python-format
-msgid ""
-"Auf Version %(number)s zurückgehen? Der jetzige Stand wird vorher als neue "
-"Version gesichert."
-msgstr ""
-"Go back to version %(number)s? The current state is saved as a new version "
-"first."
+msgid "Auf Version %(number)s zurückgehen? Der jetzige Stand wird vorher als neue Version gesichert."
+msgstr "Go back to version %(number)s? The current state is saved as a new version first."
 
 #: templates/designer/app.html:105
 msgid "Wiederherstellen"
@@ -2313,12 +2192,8 @@ msgid "Noch keine Version gespeichert."
 msgstr "No version saved yet."
 
 #: templates/designer/app.html:121
-msgid ""
-"Eigene Logik: Python läuft abgeschottet auf dem Server, JavaScript im "
-"Browser. Skripte füllen Bausteine, rechnen, prüfen oder gleichen Daten ab."
-msgstr ""
-"Your own logic: Python runs isolated on the server, JavaScript in the "
-"browser. Scripts fill blocks, calculate, check or sync data."
+msgid "Eigene Logik: Python läuft abgeschottet auf dem Server, JavaScript im Browser. Skripte füllen Bausteine, rechnen, prüfen oder gleichen Daten ab."
+msgstr "Your own logic: Python runs isolated on the server, JavaScript in the browser. Scripts fill blocks, calculate, check or sync data."
 
 #: templates/designer/app.html:128
 msgid "alle Seiten"
@@ -2337,12 +2212,8 @@ msgid "Datenquellen"
 msgstr "Data sources"
 
 #: templates/designer/app.html:142
-msgid ""
-"Daten aus Datenbanken oder Databricks live anzeigen oder regelmäßig in eine "
-"Tabelle spiegeln."
-msgstr ""
-"Show data from databases or Databricks live, or mirror it into a table "
-"regularly."
+msgid "Daten aus Datenbanken oder Databricks live anzeigen oder regelmäßig in eine Tabelle spiegeln."
+msgstr "Show data from databases or Databricks live, or mirror it into a table regularly."
 
 #: templates/designer/app.html:149
 msgid "nur live"
@@ -2354,24 +2225,16 @@ msgid "Neue Abfrage"
 msgstr "New query"
 
 #: templates/designer/app.html:158
-msgid ""
-"Noch keine Datenquelle eingerichtet. Das übernimmt der Betrieb (Handbuch, "
-"Abschnitt „Datenquellen“)."
-msgstr ""
-"No data source configured yet. Operations sets this up (manual, section "
-"“Data sources”)."
+msgid "Noch keine Datenquelle eingerichtet. Das übernimmt der Betrieb (Handbuch, Abschnitt „Datenquellen“)."
+msgstr "No data source configured yet. Operations sets this up (manual, section “Data sources”)."
 
 #: templates/designer/app.html:163
 msgid "Schnittstelle (API)"
 msgstr "Interface (API)"
 
 #: templates/designer/app.html:164
-msgid ""
-"Andere Programme können Einträge lesen und schreiben. Schalte dafür Tabellen"
-" frei und erzeuge einen Schlüssel."
-msgstr ""
-"Other programs can read and write entries. Enable tables for this and create"
-" a key."
+msgid "Andere Programme können Einträge lesen und schreiben. Schalte dafür Tabellen frei und erzeuge einen Schlüssel."
+msgstr "Other programs can read and write entries. Enable tables for this and create a key."
 
 #: templates/designer/app.html:173
 msgid "Freigaben speichern"
@@ -2407,13 +2270,8 @@ msgstr "YOUR_KEY"
 
 #: templates/designer/app.html:207
 #, python-format
-msgid ""
-"Die Adresse <code>%(api_base)s</code> beschreibt alle freigeschalteten "
-"Tabellen mit ihren Feldern. Mehr dazu steht im Handbuch (docs/HANDBUCH.md, "
-"Abschnitt „API“)."
-msgstr ""
-"The address <code>%(api_base)s</code> describes all enabled tables and their"
-" fields. See the manual for more (docs/HANDBUCH.md, section “API”)."
+msgid "Die Adresse <code>%(api_base)s</code> beschreibt alle freigeschalteten Tabellen mit ihren Feldern. Mehr dazu steht im Handbuch (docs/HANDBUCH.md, Abschnitt „API“)."
+msgstr "The address <code>%(api_base)s</code> describes all enabled tables and their fields. See the manual for more (docs/HANDBUCH.md, section “API”)."
 
 #: templates/designer/app.html:208
 msgid "Eigene Endpunkte aus Erweiterungen:"
@@ -2424,22 +2282,13 @@ msgid "App löschen"
 msgstr "Delete app"
 
 #: templates/designer/app.html:213
-msgid ""
-"Löscht die App mit allen Tabellen, Daten, Seiten und Versionen. Das lässt "
-"sich nicht rückgängig machen. Tipp: Lade vorher eine Version herunter, dann "
-"lässt sich zumindest der Aufbau wieder importieren."
-msgstr ""
-"Deletes the app with all tables, data, pages and versions. This cannot be "
-"undone. Tip: download a version first, then at least the structure can be "
-"imported again."
+msgid "Löscht die App mit allen Tabellen, Daten, Seiten und Versionen. Das lässt sich nicht rückgängig machen. Tipp: Lade vorher eine Version herunter, dann lässt sich zumindest der Aufbau wieder importieren."
+msgstr "Deletes the app with all tables, data, pages and versions. This cannot be undone. Tip: download a version first, then at least the structure can be imported again."
 
 #: templates/designer/app.html:214 templates/designer/home.html:26
 #, python-format
-msgid ""
-"App „%(name)s“ mit allen Tabellen, Daten, Seiten und Versionen endgültig "
-"löschen?"
-msgstr ""
-"Permanently delete app “%(name)s” with all tables, data, pages and versions?"
+msgid "App „%(name)s“ mit allen Tabellen, Daten, Seiten und Versionen endgültig löschen?"
+msgstr "Permanently delete app “%(name)s” with all tables, data, pages and versions?"
 
 #: templates/designer/block_edit.html:6
 msgid "Neuer HTML-Baustein"
@@ -2450,20 +2299,12 @@ msgid "Platzhalter"
 msgstr "Placeholders"
 
 #: templates/designer/block_edit.html:28
-msgid ""
-"Im HTML wird jeder Platzhalter durch den Wert ersetzt, den jemand im Seiten-"
-"Designer einträgt."
-msgstr ""
-"In the HTML, each placeholder is replaced by the value someone enters in the"
-" page designer."
+msgid "Im HTML wird jeder Platzhalter durch den Wert ersetzt, den jemand im Seiten-Designer einträgt."
+msgstr "In the HTML, each placeholder is replaced by the value someone enters in the page designer."
 
 #: templates/designer/block_edit.html:30
-msgid ""
-"Immer verfügbar: nutzer (Name der angemeldeten Person), app (Name der App), "
-"datum (heutiges Datum)."
-msgstr ""
-"Always available: nutzer (name of the signed-in person), app (name of the "
-"app), datum (today’s date)."
+msgid "Immer verfügbar: nutzer (Name der angemeldeten Person), app (Name der App), datum (heutiges Datum)."
+msgstr "Always available: nutzer (name of the signed-in person), app (name of the app), datum (today’s date)."
 
 #: templates/designer/block_edit.html:33
 msgid "Vorschau mit Standardwerten"
@@ -2478,20 +2319,12 @@ msgid "Einstellungen:"
 msgstr "Settings:"
 
 #: templates/designer/block_edit.html:51
-msgid ""
-"Die Klassen der Oberfläche kannst du mitverwenden, zum Beispiel card, btn, "
-"muted, small, badge, notice."
-msgstr ""
-"You can use the interface classes too, for example card, btn, muted, small, "
-"badge, notice."
+msgid "Die Klassen der Oberfläche kannst du mitverwenden, zum Beispiel card, btn, muted, small, badge, notice."
+msgstr "You can use the interface classes too, for example card, btn, muted, small, badge, notice."
 
 #: templates/designer/blocks.html:9
-msgid ""
-"Eigene Bausteine stehen im Seiten-Designer aller Apps zur Verfügung, unter "
-"„Eigene Bausteine“."
-msgstr ""
-"Custom blocks are available in the page designer of every app, under “Custom"
-" blocks”."
+msgid "Eigene Bausteine stehen im Seiten-Designer aller Apps zur Verfügung, unter „Eigene Bausteine“."
+msgstr "Custom blocks are available in the page designer of every app, under “Custom blocks”."
 
 #: templates/designer/blocks.html:11
 msgid "Neuen HTML-Baustein anlegen"
@@ -2502,14 +2335,12 @@ msgid "HTML-Bausteine"
 msgstr "HTML blocks"
 
 #: templates/designer/blocks.html:18
-msgid ""
-"Eigenes HTML mit Platzhaltern für Einstellungen, die du selbst festlegst."
+msgid "Eigenes HTML mit Platzhaltern für Einstellungen, die du selbst festlegst."
 msgstr "Your own HTML with placeholders for settings you define yourself."
 
 #: templates/designer/blocks.html:26
 #, python-format
-msgid ""
-"Baustein „%(name)s“ löschen? Auf Seiten, die ihn verwenden, verschwindet er."
+msgid "Baustein „%(name)s“ löschen? Auf Seiten, die ihn verwenden, verschwindet er."
 msgstr "Delete block “%(name)s”? It disappears from pages that use it."
 
 #: templates/designer/blocks.html:35
@@ -2521,17 +2352,12 @@ msgid "Vorlagen"
 msgstr "Templates"
 
 #: templates/designer/blocks.html:42
-msgid ""
-"Fertig eingestellte Bausteine zum Wiederverwenden. Du speicherst sie im "
-"Seiten-Designer über „Als Vorlage speichern“."
-msgstr ""
-"Preconfigured blocks for reuse. You save them in the page designer with "
-"“Save as template”."
+msgid "Fertig eingestellte Bausteine zum Wiederverwenden. Du speicherst sie im Seiten-Designer über „Als Vorlage speichern“."
+msgstr "Preconfigured blocks for reuse. You save them in the page designer with “Save as template”."
 
 #: templates/designer/blocks.html:50
 #, python-format
-msgid ""
-"Vorlage „%(name)s“ löschen? Bereits eingefügte Bausteine bleiben erhalten."
+msgid "Vorlage „%(name)s“ löschen? Bereits eingefügte Bausteine bleiben erhalten."
 msgstr "Delete template “%(name)s”? Blocks already inserted are kept."
 
 #: templates/designer/blocks.html:59
@@ -2600,14 +2426,11 @@ msgid "Feld bearbeiten"
 msgstr "Edit field"
 
 #: templates/designer/field.html:8
-msgid ""
-"Der Typ sollte nur geändert werden, solange noch keine Daten erfasst sind."
+msgid "Der Typ sollte nur geändert werden, solange noch keine Daten erfasst sind."
 msgstr "Only change the type while no data has been entered yet."
 
 #: templates/designer/home.html:8
-msgid ""
-"Apps anlegen und bearbeiten. Nutzer sehen eine App erst, wenn du sie "
-"veröffentlichst."
+msgid "Apps anlegen und bearbeiten. Nutzer sehen eine App erst, wenn du sie veröffentlichst."
 msgstr "Create and edit apps. Users only see an app once you publish it."
 
 #: templates/designer/home.html:18
@@ -2631,12 +2454,8 @@ msgid "App aus Datei anlegen"
 msgstr "Create app from file"
 
 #: templates/designer/home.html:46
-msgid ""
-"Für Apps, die in einer anderen Umgebung als Version heruntergeladen wurden. "
-"Daten werden nicht übertragen."
-msgstr ""
-"For apps downloaded as a version in another environment. Data is not "
-"transferred."
+msgid "Für Apps, die in einer anderen Umgebung als Version heruntergeladen wurden. Daten werden nicht übertragen."
+msgstr "For apps downloaded as a version in another environment. Data is not transferred."
 
 #: templates/designer/home.html:49
 msgid "App-Datei"
@@ -2684,26 +2503,16 @@ msgid "Noch keine Datenquelle eingerichtet"
 msgstr "No data source configured yet"
 
 #: templates/designer/query.html:11
-msgid ""
-"Datenquellen richtet der Betrieb über Umgebungsvariablen ein, zum Beispiel "
-"DATASOURCE_LAGER=postgresql://… oder DATASOURCE_DWH=databricks://…. Details "
-"im Handbuch, Abschnitt „Datenquellen“."
-msgstr ""
-"Operations configures data sources through environment variables, for "
-"example DATASOURCE_LAGER=postgresql://… or DATASOURCE_DWH=databricks://…. "
-"Details in the manual, section “Data sources”."
+msgid "Datenquellen richtet der Betrieb über Umgebungsvariablen ein, zum Beispiel DATASOURCE_LAGER=postgresql://… oder DATASOURCE_DWH=databricks://…. Details im Handbuch, Abschnitt „Datenquellen“."
+msgstr "Operations configures data sources through environment variables, for example DATASOURCE_LAGER=postgresql://… or DATASOURCE_DWH=databricks://…. Details in the manual, section “Data sources”."
 
 #: templates/designer/query.html:28
 msgid "In eine Tabelle spiegeln (optional)"
 msgstr "Mirror into a table (optional)"
 
 #: templates/designer/query.html:29
-msgid ""
-"Gespiegelte Daten stehen wie jede andere Tabelle für Listen, Diagramme, "
-"Skripte und die API bereit."
-msgstr ""
-"Mirrored data is available for lists, charts, scripts and the API like any "
-"other table."
+msgid "Gespiegelte Daten stehen wie jede andere Tabelle für Listen, Diagramme, Skripte und die API bereit."
+msgstr "Mirrored data is available for lists, charts, scripts and the API like any other table."
 
 #: templates/designer/query.html:37 templates/designer/script.html:38
 msgid "Speichern und testen"
@@ -2730,28 +2539,16 @@ msgid "So nutzt du die Abfrage"
 msgstr "How to use the query"
 
 #: templates/designer/query.html:73
-msgid ""
-"Live anzeigen: Baustein „Datenbank-Abfrage“ im Seiten-Designer, optional mit"
-" automatischer Aktualisierung."
-msgstr ""
-"Show live: block “Database query” in the page designer, optionally with "
-"automatic refresh."
+msgid "Live anzeigen: Baustein „Datenbank-Abfrage“ im Seiten-Designer, optional mit automatischer Aktualisierung."
+msgstr "Show live: block “Database query” in the page designer, optionally with automatic refresh."
 
 #: templates/designer/query.html:74
-msgid ""
-"Spiegeln: Ergebnis wird in eine Tabelle übernommen, auf Knopfdruck oder "
-"regelmäßig im Hintergrund."
-msgstr ""
-"Mirror: the result is copied into a table, on demand or regularly in the "
-"background."
+msgid "Spiegeln: Ergebnis wird in eine Tabelle übernommen, auf Knopfdruck oder regelmäßig im Hintergrund."
+msgstr "Mirror: the result is copied into a table, on demand or regularly in the background."
 
 #: templates/designer/query.html:75
-msgid ""
-"In Skripten (Python und JavaScript): db.saved() mit dem Kurznamen der "
-"Abfrage."
-msgstr ""
-"In scripts (Python and JavaScript): db.saved() with the short name of the "
-"query."
+msgid "In Skripten (Python und JavaScript): db.saved() mit dem Kurznamen der Abfrage."
+msgstr "In scripts (Python and JavaScript): db.saved() with the short name of the query."
 
 #: templates/designer/query.html:80
 msgid "Letzter Abgleich"
@@ -2781,24 +2578,16 @@ msgid "Neues Skript"
 msgstr "New script"
 
 #: templates/designer/script.html:33
-msgid ""
-"Im Seiten-Designer einem Button die Aktion „Skript ausführen“ und dieses "
-"Skript zuweisen."
-msgstr ""
-"In the page designer, give a button the action “Run a script” and choose "
-"this script."
+msgid "Im Seiten-Designer einem Button die Aktion „Skript ausführen“ und dieses Skript zuweisen."
+msgstr "In the page designer, give a button the action “Run a script” and choose this script."
 
 #: templates/designer/script.html:40
 msgid "Im Browser testen"
 msgstr "Test in the browser"
 
 #: templates/designer/script.html:43
-msgid ""
-"Testläufe arbeiten mit echten Daten: Was das Skript anlegt, ändert oder "
-"löscht, geschieht wirklich."
-msgstr ""
-"Test runs use real data: whatever the script creates, changes or deletes "
-"really happens."
+msgid "Testläufe arbeiten mit echten Daten: Was das Skript anlegt, ändert oder löscht, geschieht wirklich."
+msgstr "Test runs use real data: whatever the script creates, changes or deletes really happens."
 
 #: templates/designer/script.html:51
 msgid "Testlauf"
@@ -2834,17 +2623,11 @@ msgid "Kurzreferenz"
 msgstr "Quick reference"
 
 #: templates/designer/script.html:69
-msgid ""
-"Läuft im Browser der Person, die die Seite öffnet, mit ihren Rechten. Mit "
-"await auf Ergebnisse warten."
-msgstr ""
-"Runs in the browser of the person who opens the page, with their rights. Use"
-" await to wait for results."
+msgid "Läuft im Browser der Person, die die Seite öffnet, mit ihren Rechten. Mit await auf Ergebnisse warten."
+msgstr "Runs in the browser of the person who opens the page, with their rights. Use await to wait for results."
 
 #: templates/designer/script.html:90
-msgid ""
-"Läuft auf dem Server, abgeschottet, mit Zugriff auf alle Tabellen dieser "
-"App."
+msgid "Läuft auf dem Server, abgeschottet, mit Zugriff auf alle Tabellen dieser App."
 msgstr "Runs on the server, isolated, with access to all tables of this app."
 
 #: templates/designer/script.html:116
@@ -2906,34 +2689,24 @@ msgid "Passwort"
 msgstr "Password"
 
 #: templates/registration/login.html:71
-msgid ""
-"Kein Zugang? Wende dich an die Person, die den Baukasten bei euch betreut."
-msgstr ""
-"No access? Contact the person who looks after Baukasten in your "
-"organisation."
+msgid "Kein Zugang? Wende dich an die Person, die den Baukasten bei euch betreut."
+msgstr "No access? Contact the person who looks after Baukasten in your organisation."
 
 #: tours.py:11
 msgid "Willkommen im Baukasten"
 msgstr "Welcome to Baukasten"
 
 #: tours.py:12
-msgid ""
-"Hier arbeitest du mit Apps, die bei euch gebaut wurden. Die Führung zeigt "
-"dir in einer Minute, wo was ist."
-msgstr ""
-"Here you work with apps built in your organisation. The tour shows you where"
-" things are in one minute."
+msgid "Hier arbeitest du mit Apps, die bei euch gebaut wurden. Die Führung zeigt dir in einer Minute, wo was ist."
+msgstr "Here you work with apps built in your organisation. The tour shows you where things are in one minute."
 
 #: tours.py:13
 msgid "Deine Apps"
 msgstr "Your apps"
 
 #: tours.py:14
-msgid ""
-"Jede Kachel ist eine App. Ein Klick öffnet sie. Du siehst nur Apps, die für "
-"dich freigegeben sind."
-msgstr ""
-"Each tile is an app. A click opens it. You only see apps shared with you."
+msgid "Jede Kachel ist eine App. Ein Klick öffnet sie. Du siehst nur Apps, die für dich freigegeben sind."
+msgstr "Each tile is an app. A click opens it. You only see apps shared with you."
 
 #: tours.py:15
 msgid "Zurück zur Übersicht"
@@ -2944,11 +2717,8 @@ msgid "Über das Logo kommst du von überall wieder auf diese Seite."
 msgstr "The logo takes you back to this page from anywhere."
 
 #: tours.py:18
-msgid ""
-"Hier baust und änderst du Apps: Daten festlegen, Seiten zusammenstellen, "
-"freigeben."
-msgstr ""
-"This is where you build and change apps: define data, assemble pages, share."
+msgid "Hier baust und änderst du Apps: Daten festlegen, Seiten zusammenstellen, freigeben."
+msgstr "This is where you build and change apps: define data, assemble pages, share."
 
 #: tours.py:20
 msgid "Die Oberfläche gibt es auf Deutsch und Englisch. Hier wechselst du."
@@ -2967,256 +2737,164 @@ msgid "So entsteht eine App"
 msgstr "How an app is made"
 
 #: tours.py:26
-msgid ""
-"In drei Schritten: Erstens Daten festlegen (Tabellen und Felder). Zweitens "
-"Seiten zusammenstellen. Drittens veröffentlichen. Programmieren musst du "
-"dafür nicht."
-msgstr ""
-"In three steps: first define the data (tables and fields), second assemble "
-"pages, third publish. No programming required."
+msgid "In drei Schritten: Erstens Daten festlegen (Tabellen und Felder). Zweitens Seiten zusammenstellen. Drittens veröffentlichen. Programmieren musst du dafür nicht."
+msgstr "In three steps: first define the data (tables and fields), second assemble pages, third publish. No programming required."
 
 #: tours.py:27
 msgid "Neue App anlegen"
 msgstr "Create a new app"
 
 #: tours.py:28
-msgid ""
-"Gib der App einen Namen und ein Symbol. Danach landest du direkt in ihren "
-"Einstellungen."
-msgstr ""
-"Give the app a name and an icon. You are then taken straight to its "
-"settings."
+msgid "Gib der App einen Namen und ein Symbol. Danach landest du direkt in ihren Einstellungen."
+msgstr "Give the app a name and an icon. You are then taken straight to its settings."
 
 #: tours.py:29
 msgid "Vorhandene Apps"
 msgstr "Existing apps"
 
 #: tours.py:30
-msgid ""
-"Hier findest du alle Apps wieder. „Entwurf“ heißt: nur Designer sehen sie."
+msgid "Hier findest du alle Apps wieder. „Entwurf“ heißt: nur Designer sehen sie."
 msgstr "All apps are listed here. “Draft” means only designers can see it."
 
 #: tours.py:32
-msgid ""
-"Wenn die mitgelieferten Bausteine nicht reichen, legst du hier eigene an und"
-" verwendest sie in allen Apps."
-msgstr ""
-"If the built-in blocks are not enough, create your own here and use them in "
-"every app."
+msgid "Wenn die mitgelieferten Bausteine nicht reichen, legst du hier eigene an und verwendest sie in allen Apps."
+msgstr "If the built-in blocks are not enough, create your own here and use them in every app."
 
 #: tours.py:35
 msgid "Schritt 1: Daten"
 msgstr "Step 1: Data"
 
 #: tours.py:36
-msgid ""
-"Eine Tabelle beschreibt, was die App verwaltet, zum Beispiel Geräte oder "
-"Anträge. Lege eine an und gib ihr Felder."
-msgstr ""
-"A table describes what the app manages, for example devices or requests. Add"
-" one and give it fields."
+msgid "Eine Tabelle beschreibt, was die App verwaltet, zum Beispiel Geräte oder Anträge. Lege eine an und gib ihr Felder."
+msgstr "A table describes what the app manages, for example devices or requests. Add one and give it fields."
 
 #: tours.py:37
 msgid "Schritt 2: Seiten"
 msgstr "Step 2: Pages"
 
 #: tours.py:38
-msgid ""
-"Seiten sind das, was Nutzer sehen. Du stellst sie im Seiten-Designer aus "
-"Bausteinen zusammen. Aus jeder Tabelle lässt sich auch eine fertige Seite "
-"erzeugen."
-msgstr ""
-"Pages are what users see. You assemble them from blocks in the page "
-"designer. A ready-made page can also be generated from every table."
+msgid "Seiten sind das, was Nutzer sehen. Du stellst sie im Seiten-Designer aus Bausteinen zusammen. Aus jeder Tabelle lässt sich auch eine fertige Seite erzeugen."
+msgstr "Pages are what users see. You assemble them from blocks in the page designer. A ready-made page can also be generated from every table."
 
 #: tours.py:39
 msgid "Schritt 3: Freigabe"
 msgstr "Step 3: Sharing"
 
 #: tours.py:40
-msgid ""
-"Solange „Veröffentlicht“ nicht angehakt ist, sehen nur Designer die App. Mit"
-" Gruppen beschränkst du sie auf bestimmte Nutzer."
-msgstr ""
-"As long as “Published” is unchecked, only designers see the app. Use groups "
-"to limit it to certain users."
+msgid "Solange „Veröffentlicht“ nicht angehakt ist, sehen nur Designer die App. Mit Gruppen beschränkst du sie auf bestimmte Nutzer."
+msgstr "As long as “Published” is unchecked, only designers see the app. Use groups to limit it to certain users."
 
 #: tours.py:41
 msgid "Optional: API"
 msgstr "Optional: API"
 
 #: tours.py:42
-msgid ""
-"Andere Programme können die Daten über eine Schnittstelle lesen und "
-"schreiben. Dafür schaltest du Tabellen frei und erzeugst einen Schlüssel."
-msgstr ""
-"Other programs can read and write the data through an interface. Enable "
-"tables for this and create a key."
+msgid "Andere Programme können die Daten über eine Schnittstelle lesen und schreiben. Dafür schaltest du Tabellen frei und erzeugst einen Schlüssel."
+msgstr "Other programs can read and write the data through an interface. Enable tables for this and create a key."
 
 #: tours.py:43
 msgid "Ergebnis ansehen"
 msgstr "See the result"
 
 #: tours.py:44
-msgid ""
-"So sieht die App für Nutzer aus. Du kannst jederzeit hin- und herwechseln."
-msgstr ""
-"This is how the app looks to users. You can switch back and forth at any "
-"time."
+msgid "So sieht die App für Nutzer aus. Du kannst jederzeit hin- und herwechseln."
+msgstr "This is how the app looks to users. You can switch back and forth at any time."
 
 #: tours.py:47
 msgid "Felder der Tabelle"
 msgstr "Fields of the table"
 
 #: tours.py:48
-msgid ""
-"Jedes Feld ist eine Angabe pro Eintrag, etwa Bezeichnung, Datum oder Preis. "
-"Das erste Feld dient als Name des Eintrags."
-msgstr ""
-"Each field is one piece of information per entry, such as label, date or "
-"price. The first field serves as the name of the entry."
+msgid "Jedes Feld ist eine Angabe pro Eintrag, etwa Bezeichnung, Datum oder Preis. Das erste Feld dient als Name des Eintrags."
+msgstr "Each field is one piece of information per entry, such as label, date or price. The first field serves as the name of the entry."
 
 #: tours.py:50
-msgid ""
-"Wähle einen Typ: Text, Zahl, Datum, Ja/Nein, Auswahl aus festen Werten oder "
-"ein Verweis auf eine andere Tabelle."
-msgstr ""
-"Choose a type: text, number, date, yes/no, a choice from fixed values or a "
-"reference to another table."
+msgid "Wähle einen Typ: Text, Zahl, Datum, Ja/Nein, Auswahl aus festen Werten oder ein Verweis auf eine andere Tabelle."
+msgstr "Choose a type: text, number, date, yes/no, a choice from fixed values or a reference to another table."
 
 #: tours.py:51
 msgid "Fertige Seite erzeugen"
 msgstr "Generate a ready-made page"
 
 #: tours.py:52
-msgid ""
-"Ein Klick erzeugt eine Seite mit Liste, Suche, Anlegen, Bearbeiten und "
-"Löschen. Du kannst sie danach frei umbauen."
-msgstr ""
-"One click generates a page with a list, search, create, edit and delete. You"
-" can freely rework it afterwards."
+msgid "Ein Klick erzeugt eine Seite mit Liste, Suche, Anlegen, Bearbeiten und Löschen. Du kannst sie danach frei umbauen."
+msgstr "One click generates a page with a list, search, create, edit and delete. You can freely rework it afterwards."
 
 #: tours.py:55
 msgid "Der Seiten-Designer"
 msgstr "The page designer"
 
 #: tours.py:56
-msgid ""
-"Hier stellst du eine Seite aus Bausteinen zusammen. Links wählst du aus, in "
-"der Mitte ordnest du an, rechts stellst du ein."
-msgstr ""
-"Here you assemble a page from blocks. Choose on the left, arrange in the "
-"middle, configure on the right."
+msgid "Hier stellst du eine Seite aus Bausteinen zusammen. Links wählst du aus, in der Mitte ordnest du an, rechts stellst du ein."
+msgstr "Here you assemble a page from blocks. Choose on the left, arrange in the middle, configure on the right."
 
 #: tours.py:57
 msgid "Bausteine"
 msgstr "Blocks"
 
 #: tours.py:58
-msgid ""
-"Ziehe einen Baustein auf die Seite oder klicke ihn an. Sie sind nach Zweck "
-"gruppiert. Ganz unten stehen eigene Bausteine und Vorlagen."
-msgstr ""
-"Drag a block onto the page or click it. They are grouped by purpose. Custom "
-"blocks and templates are at the bottom."
+msgid "Ziehe einen Baustein auf die Seite oder klicke ihn an. Sie sind nach Zweck gruppiert. Ganz unten stehen eigene Bausteine und Vorlagen."
+msgstr "Drag a block onto the page or click it. They are grouped by purpose. Custom blocks and templates are at the bottom."
 
 #: tours.py:59
 msgid "Arbeitsfläche"
 msgstr "Canvas"
 
 #: tours.py:60
-msgid ""
-"Du siehst die Seite mit echten Daten. Bausteine verschiebst du per Ziehen. "
-"Ein Klick wählt einen Baustein aus."
-msgstr ""
-"You see the page with real data. Move blocks by dragging. A click selects a "
-"block."
+msgid "Du siehst die Seite mit echten Daten. Bausteine verschiebst du per Ziehen. Ein Klick wählt einen Baustein aus."
+msgstr "You see the page with real data. Move blocks by dragging. A click selects a block."
 
 #: tours.py:62
-msgid ""
-"Für den gewählten Baustein: Breite, Beschriftung, welche Tabelle er zeigt. "
-"Hier kannst du ihn auch duplizieren, als Vorlage speichern oder entfernen."
-msgstr ""
-"For the selected block: width, label, which table it shows. You can also "
-"duplicate it, save it as a template or remove it here."
+msgid "Für den gewählten Baustein: Breite, Beschriftung, welche Tabelle er zeigt. Hier kannst du ihn auch duplizieren, als Vorlage speichern oder entfernen."
+msgstr "For the selected block: width, label, which table it shows. You can also duplicate it, save it as a template or remove it here."
 
 #: tours.py:63
 msgid "Speichern und ansehen"
 msgstr "Save and view"
 
 #: tours.py:64
-msgid ""
-"Änderungen gelten erst nach „Speichern“. „Vorschau“ öffnet die Seite so, wie"
-" Nutzer sie sehen."
-msgstr ""
-"Changes only take effect after “Save”. “Preview” opens the page as users see"
-" it."
+msgid "Änderungen gelten erst nach „Speichern“. „Vorschau“ öffnet die Seite so, wie Nutzer sie sehen."
+msgstr "Changes only take effect after “Save”. “Preview” opens the page as users see it."
 
 #: tours.py:68
-msgid ""
-"Ein Skript ist eigene Logik in Python oder JavaScript. Python läuft auf dem "
-"Server und darf alle Tabellen dieser App lesen und schreiben. JavaScript "
-"läuft im Browser mit den Rechten der Person, die die Seite öffnet."
-msgstr ""
-"A script is your own logic in Python or JavaScript. Python runs on the "
-"server and may read and write all tables of this app. JavaScript runs in the"
-" browser with the rights of the person who opens the page."
+msgid "Ein Skript ist eigene Logik in Python oder JavaScript. Python läuft auf dem Server und darf alle Tabellen dieser App lesen und schreiben. JavaScript läuft im Browser mit den Rechten der Person, die die Seite öffnet."
+msgstr "A script is your own logic in Python or JavaScript. Python runs on the server and may read and write all tables of this app. JavaScript runs in the browser with the rights of the person who opens the page."
 
 #: tours.py:69
 msgid "Wann es läuft"
 msgstr "When it runs"
 
 #: tours.py:70
-msgid ""
-"Beim Öffnen einer Seite, per Button, nach dem Speichern eines Eintrags oder "
-"zeitgesteuert im Hintergrund. Die letzten beiden gibt es nur für Python."
-msgstr ""
-"When a page opens, by button, after an entry is saved or on a schedule in "
-"the background. The last two are Python only."
+msgid "Beim Öffnen einer Seite, per Button, nach dem Speichern eines Eintrags oder zeitgesteuert im Hintergrund. Die letzten beiden gibt es nur für Python."
+msgstr "When a page opens, by button, after an entry is saved or on a schedule in the background. The last two are Python only."
 
 #: tours.py:71
 msgid "Bausteine füllen"
 msgstr "Filling blocks"
 
 #: tours.py:72
-msgid ""
-"Gib einem Baustein im Seiten-Designer einen Namen. Mit ui.set(\"name\", "
-"value=…) füllt das Skript ihn. Rechts steht eine Kurzreferenz."
-msgstr ""
-"Give a block a name in the page designer. The script fills it with "
-"ui.set(\"name\", value=…). A quick reference is on the right."
+msgid "Gib einem Baustein im Seiten-Designer einen Namen. Mit ui.set(\"name\", value=…) füllt das Skript ihn. Rechts steht eine Kurzreferenz."
+msgstr "Give a block a name in the page designer. The script fills it with ui.set(\"name\", value=…). A quick reference is on the right."
 
 #: tours.py:76
-msgid ""
-"Ein eigener Baustein besteht aus HTML und aus Einstellungen, die du selbst "
-"festlegst. Programmieren ist dafür nicht nötig."
-msgstr ""
-"A custom block consists of HTML and of settings you define yourself. No "
-"programming is needed."
+msgid "Ein eigener Baustein besteht aus HTML und aus Einstellungen, die du selbst festlegst. Programmieren ist dafür nicht nötig."
+msgstr "A custom block consists of HTML and of settings you define yourself. No programming is needed."
 
 #: tours.py:77
 msgid "Einstellungen festlegen"
 msgstr "Define settings"
 
 #: tours.py:78
-msgid ""
-"Jede Zeile wird zu einem Eingabefeld im Seiten-Designer. „Titel = Hallo“ "
-"erzeugt das Feld „Titel“ mit dem Standardwert „Hallo“."
-msgstr ""
-"Each line becomes an input field in the page designer. “Titel = Hallo” "
-"creates the field “Titel” with the default value “Hallo”."
+msgid "Jede Zeile wird zu einem Eingabefeld im Seiten-Designer. „Titel = Hallo“ erzeugt das Feld „Titel“ mit dem Standardwert „Hallo“."
+msgstr "Each line becomes an input field in the page designer. “Titel = Hallo” creates the field “Titel” with the default value “Hallo”."
 
 #: tours.py:79
 msgid "HTML mit Platzhaltern"
 msgstr "HTML with placeholders"
 
 #: tours.py:80
-msgid ""
-"Wo im HTML {{ titel }} steht, erscheint später der eingestellte Wert. "
-"Skripte und unsichere Angaben werden beim Speichern entfernt."
-msgstr ""
-"Wherever the HTML contains {{ titel }}, the configured value appears later. "
-"Scripts and unsafe attributes are removed on saving."
+msgid "Wo im HTML {{ titel }} steht, erscheint später der eingestellte Wert. Skripte und unsichere Angaben werden beim Speichern entfernt."
+msgstr "Wherever the HTML contains {{ titel }}, the configured value appears later. Scripts and unsafe attributes are removed on saving."
 
 #: versions.py:161
 #, python-format
@@ -3239,3 +2917,2123 @@ msgstr "Saved."
 #: views.py:209
 msgid "Gelöscht."
 msgstr "Deleted."
+
+#: api.py
+msgid "Das Skript läuft ständig und lässt sich nicht einzeln starten."
+msgstr "The script runs continuously and can’t be started on its own."
+
+#: api.py
+msgid "Das Skript „%(name)s“ gibt es nicht."
+msgstr "The script “%(name)s” does not exist."
+
+#: api.py
+msgid "Der Inhalt ist zu groß (höchstens 256 KB)."
+msgstr "The content is too large (at most 256 KB)."
+
+#: api.py
+msgid "Diese App ist keine Automatisierung."
+msgstr "This app is not an automation."
+
+#: api.py
+msgid "Für dieses Skript wartet schon ein Start."
+msgstr "A start is already waiting for this script."
+
+#: blocks.py
+msgid "Adresse des Dashboards (https://…/views/…)"
+msgstr "Dashboard address (https://…/views/…)"
+
+#: blocks.py
+msgid "Anzahl Zeitabschnitte"
+msgstr "Number of periods"
+
+#: blocks.py
+msgid "Ausblenden"
+msgstr "Hide"
+
+#: blocks.py
+msgid "Auswahl: ein Wert je Zeile"
+msgstr "Choice: one value per line"
+
+#: blocks.py
+msgid "Das Eingabefeld braucht einen Namen aus Kleinbuchstaben, Ziffern und _ (z. B. vorname)."
+msgstr "The input field needs a name made of lowercase letters, digits and _ (e.g. firstname)."
+
+#: blocks.py
+msgid "Dashboard von eurem Tableau-Server oder Tableau Cloud"
+msgstr "Dashboard from your Tableau Server or Tableau Cloud"
+
+#: blocks.py
+msgid "Der Tableau-Server ist nicht freigegeben (Einstellung TABLEAU_HOSTS) oder die Adresse beginnt nicht mit https://."
+msgstr "The Tableau server is not allowed (setting TABLEAU_HOSTS) or the address does not start with https://."
+
+#: blocks.py
+msgid "Eingabefeld"
+msgstr "Input field"
+
+#: blocks.py
+msgid "Entwicklung"
+msgstr "Trend"
+
+#: blocks.py
+msgid "Filter, je Zeile „Feld = Wert“; {name} übernimmt ?name=… aus der Adresse"
+msgstr "Filters, one “field = value” per line; {name} takes ?name=… from the address"
+
+#: blocks.py
+msgid "Für diese Tableau-Ansicht fehlt die Adresse des Dashboards."
+msgstr "The dashboard address is missing for this Tableau view."
+
+#: blocks.py
+msgid "Für dieses Liniendiagramm ist keine Tabelle ausgewählt."
+msgstr "No table is selected for this line chart."
+
+#: blocks.py
+msgid "Höhe in Pixeln"
+msgstr "Height in pixels"
+
+#: blocks.py
+msgid "KW %(week)s"
+msgstr "Wk %(week)s"
+
+#: blocks.py
+msgid "KW %(week)s, ab %(date)s"
+msgstr "Wk %(week)s, from %(date)s"
+
+#: blocks.py
+msgid "Liniendiagramm"
+msgstr "Line chart"
+
+#: blocks.py
+msgid "Monate"
+msgstr "Months"
+
+#: blocks.py
+msgid "Name des Werts (im Skript: params[\"…\"])"
+msgstr "Name of the value (in the script: params[\"…\"])"
+
+#: blocks.py
+msgid "Oben"
+msgstr "Top"
+
+#: blocks.py
+msgid "Planung"
+msgstr "Planning"
+
+#: blocks.py
+msgid "Platzhalter (optional)"
+msgstr "Placeholder (optional)"
+
+#: blocks.py
+msgid "Reiter ausblenden"
+msgstr "Hide tabs"
+
+#: blocks.py widgets.py
+msgid "Schieberegler"
+msgstr "Slider"
+
+#: blocks.py
+msgid "Schieberegler: Schrittweite"
+msgstr "Slider: step"
+
+#: blocks.py
+msgid "Schieberegler: größter Wert"
+msgstr "Slider: largest value"
+
+#: blocks.py
+msgid "Schieberegler: kleinster Wert"
+msgstr "Slider: smallest value"
+
+#: blocks.py
+msgid "Tableau-Ansicht"
+msgstr "Tableau view"
+
+#: blocks.py
+msgid "Tableau-Ansichten gibt es nur für angemeldete Personen."
+msgstr "Tableau views are only available to signed-in people."
+
+#: blocks.py
+msgid "Tage"
+msgstr "Days"
+
+#: blocks.py
+msgid "Unten"
+msgstr "Bottom"
+
+#: blocks.py
+msgid "Werkzeugleiste"
+msgstr "Toolbar"
+
+#: blocks.py
+msgid "Wert, den ein Skript-Button auf der Seite mitschickt"
+msgstr "Value a script button on the page sends along"
+
+#: blocks.py
+msgid "Werte je Tag, Woche oder Monat als Linie"
+msgstr "Values per day, week or month as a line"
+
+#: blocks.py
+msgid "Wochen"
+msgstr "Weeks"
+
+#: blocks.py templates/builder/blocks/filter.html
+msgid "Zahl"
+msgstr "Number"
+
+#: blocks.py
+msgid "Zahlenfeld (für Summe/Durchschnitt)"
+msgstr "Number field (for sum/average)"
+
+#: blocks.py
+msgid "Zeitraster"
+msgstr "Time grid"
+
+#: designer.py
+msgid "%(count)s Übersetzungen übernommen."
+msgstr "%(count)s translations imported."
+
+#: designer.py
+msgid "%(name)s darf die App jetzt bearbeiten."
+msgstr "%(name)s may now edit the app."
+
+#: designer.py
+msgid "%(name)s darf keine Automatisierungen bearbeiten (Gruppe „Automatisierer“ fehlt)."
+msgstr "%(name)s may not edit automations (not in the “Automatisierer” group)."
+
+#: designer.py
+msgid "%(name)s hat kein Designer-Recht und könnte die App nicht bearbeiten."
+msgstr "%(name)s has no designer permission and could not edit the app."
+
+#: designer.py
+msgid "%(name)s ist schon Eigentümer/in der App."
+msgstr "%(name)s already owns the app."
+
+#: designer.py
+msgid "Bitte eine CSV-Datei auswählen (höchstens 2 MB)."
+msgstr "Please choose a CSV file (at most 2 MB)."
+
+#: designer.py
+msgid "Bitte eine heruntergeladene Version auswählen (höchstens 5 MB)."
+msgstr "Please choose a downloaded version (at most 5 MB)."
+
+#: designer.py
+msgid "Datei eingespielt. Der vorherige Stand ist als Version %(number)s gesichert."
+msgstr "File imported. The previous state was saved as version %(number)s."
+
+#: designer.py
+msgid "Designer in der Gruppe „%(name)s“ dürfen die App jetzt bearbeiten."
+msgstr "Designers in the group “%(name)s” may now edit the app."
+
+#: designer.py
+msgid "Die Datei ist keine lesbare CSV-Datei (UTF-8)."
+msgstr "The file is not a readable CSV file (UTF-8)."
+
+#: designer.py
+msgid "Die Datei lässt sich nicht einspielen: %(error)s"
+msgstr "The file can’t be imported: %(error)s"
+
+#: designer.py
+msgid "Diese Tabellen gab es in der Datei nicht; sie bleiben mit ihren Daten erhalten: %(names)s"
+msgstr "These tables were not in the file; they are kept with their data: %(names)s"
+
+#: designer.py
+msgid "Diese Version lässt sich nicht wiederherstellen: %(error)s"
+msgstr "This version can’t be restored: %(error)s"
+
+#: designer.py
+msgid "Du bist jetzt Eigentümer/in der App. Andere Designer brauchen ab sofort eine Einladung."
+msgstr "You now own the app. Other designers need an invitation from now on."
+
+#: designer.py
+msgid "Einführung beendet. Du kannst sie im Designer jederzeit neu starten."
+msgstr "Introduction ended. You can restart it in the designer at any time."
+
+#: designer.py
+msgid "Es gibt kein Konto mit dem Benutzernamen „%(name)s“."
+msgstr "There is no account with the user name “%(name)s”."
+
+#: designer.py
+msgid "Es ist nur eine Sprache eingerichtet (Einstellung LANGUAGES)."
+msgstr "Only one language is set up (setting LANGUAGES)."
+
+#: designer.py
+msgid "Fehler, Neustart geplant"
+msgstr "Error, restart scheduled"
+
+#: designer.py
+msgid "Für „%(name)s“ wartet schon ein Start."
+msgstr "A start is already waiting for “%(name)s”."
+
+#: designer.py
+msgid "Gruppe entfernt."
+msgstr "Group removed."
+
+#: designer.py
+msgid "Los geht's! Der Begleiter unten rechts führt dich Schritt für Schritt."
+msgstr "Let’s go! The guide at the bottom right takes you through it step by step."
+
+#: designer.py
+msgid "Mitbearbeiter entfernt."
+msgstr "Co-editor removed."
+
+#: designer.py models.py
+msgid "läuft"
+msgstr "running"
+
+#: designer.py
+msgid "startet gleich"
+msgstr "starting shortly"
+
+#: designer.py
+msgid "wartet"
+msgstr "waiting"
+
+#: designer.py
+msgid "Übersetzungen gespeichert."
+msgstr "Translations saved."
+
+#: designer.py
+msgid "„%(name)s“ ist angehalten."
+msgstr "“%(name)s” is stopped."
+
+#: designer.py
+msgid "„%(name)s“ ist eingeschaltet und startet in wenigen Sekunden."
+msgstr "“%(name)s” is switched on and starts in a few seconds."
+
+#: designer.py
+msgid "„%(name)s“ startet in wenigen Sekunden."
+msgstr "“%(name)s” starts in a few seconds."
+
+#: designer.py
+msgid "„%(name)s“ wird gestoppt."
+msgstr "“%(name)s” is being stopped."
+
+#: forms.py
+msgid "Bitte eine Uhrzeit angeben."
+msgstr "Please enter a time."
+
+#: forms.py
+msgid "Erlaubt sind 1 bis %(max)s Minuten."
+msgstr "1 to %(max)s minutes are allowed."
+
+#: forms.py
+msgid "Wann läuft das Skript?"
+msgstr "When does the script run?"
+
+#: models.py
+msgid "0 = keine Grenze."
+msgstr "0 = no limit."
+
+#: models.py
+msgid "1 bis 50. Seiten warten so lange auf ihre Skripte."
+msgstr "1 to 50. Pages wait this long for their scripts."
+
+#: models.py
+msgid "Anfragen von Gästen je Adresse und Minute"
+msgstr "Guest requests per address and minute"
+
+#: models.py templates/designer/automation.html templates/designer/home.html
+msgid "Automatisierung"
+msgid_plural "Automatisierungen"
+msgstr[0] "Automation"
+msgstr[1] "Automations"
+
+#: models.py
+msgid "Danach werden Einträge gelöscht. 0 = nie. Mit dem Datenschutz abstimmen."
+msgstr "After that, entries are deleted. 0 = never. Check with data protection."
+
+#: models.py
+msgid "Darf Automatisierungen mit uneingeschränktem Python bauen"
+msgstr "May build automations with unrestricted Python"
+
+#: models.py
+msgid "Dauert ein Lauf länger, wird er abgebrochen. Gilt nicht für „Läuft ständig“."
+msgstr "A run that takes longer is cancelled. Does not apply to “Runs continuously”."
+
+#: models.py
+msgid "Designer in diesen Gruppen dürfen die App bearbeiten."
+msgstr "Designers in these groups may edit the app."
+
+#: models.py
+msgid "Designer, die diese App zusätzlich zur Eigentümerin bearbeiten dürfen."
+msgstr "Designers who may edit this app in addition to the owner."
+
+#: models.py templates/designer/home.html
+msgid "Eigentümer/in"
+msgstr "Owner"
+
+#: models.py templates/builder/home.html
+msgid "Einführung"
+msgstr "Introduction"
+
+#: models.py
+msgid "Einführungen"
+msgstr "Introductions"
+
+#: models.py
+msgid "Einstellungen des Baukastens"
+msgstr "Baukasten settings"
+
+#: models.py
+msgid "Erst dann sehen alle Nutzer diesen Eintrag."
+msgstr "Only then do all users see this entry."
+
+#: models.py
+msgid "Geändert von"
+msgstr "Changed by"
+
+#: models.py
+msgid "In einem Satz: was bringt diese Version?"
+msgstr "In one sentence: what does this version bring?"
+
+#: models.py templates/designer/page.html
+msgid "Jeder mit dem Link kann die Seite öffnen, ihre Formulare absenden und ihre Buttons auslösen."
+msgstr "Anyone with the link can open the page, submit its forms and trigger its buttons."
+
+#: models.py
+msgid "KI-Zugang zum Designer"
+msgstr "AI access to the designer"
+
+#: models.py
+msgid "KI-Zugänge zum Designer"
+msgstr "AI access keys to the designer"
+
+#: models.py
+msgid "Kurzname der Tabelle bei Einträgen und Feldern"
+msgstr "Short name of the table for entries and fields"
+
+#: models.py
+msgid "Längstes Zeitlimit für Automatisierungen (Minuten)"
+msgstr "Longest time limit for automations (minutes)"
+
+#: models.py
+msgid "Läuft ständig"
+msgstr "Runs continuously"
+
+#: models.py
+msgid "Markdown: Absätze, **fett**, Listen mit „- “, Überschriften mit „### “."
+msgstr "Markdown: paragraphs, **bold**, lists with “- ”, headings with “### ”."
+
+#: models.py templates/designer/_share.html tutorial.py
+msgid "Mitbearbeiter"
+msgstr "Co-editors"
+
+#: models.py
+msgid "Mitbearbeiter-Gruppen"
+msgstr "Co-editor groups"
+
+#: models.py
+msgid "Nur von Hand oder per Webhook"
+msgstr "Only manually or by webhook"
+
+#: models.py
+msgid "Nur werktags (Mo–Fr)"
+msgstr "Weekdays only (Mon–Fri)"
+
+#: models.py templates/designer/app.html templates/designer/page.html
+msgid "Ohne Anmeldung erreichbar"
+msgstr "Reachable without signing in"
+
+#: models.py
+msgid "Protokolleintrag"
+msgstr "Log entry"
+
+#: models.py
+msgid "Release Note"
+msgstr "Release note"
+
+#: models.py
+msgid "Release Notes"
+msgstr "Release notes"
+
+#: models.py
+msgid "Täglich zu einer Uhrzeit"
+msgstr "Daily at a set time"
+
+#: models.py
+msgid "Uhrzeit"
+msgstr "Time"
+
+#: models.py
+msgid "Wofür der Schlüssel gedacht ist, z. B. „Claude Desktop“ oder „Cursor“."
+msgstr "What the key is for, e.g. “Claude Desktop” or “Cursor”."
+
+#: models.py
+msgid "Womit: API-Schlüssel, KI-Zugang, Skript …"
+msgstr "How: API key, AI access, script …"
+
+#: models.py
+msgid "Zeitlimit für Skripte normaler Apps (Sekunden)"
+msgstr "Time limit for scripts of normal apps (seconds)"
+
+#: models.py
+msgid "Zeitlimit in Minuten"
+msgstr "Time limit in minutes"
+
+#: models.py
+msgid "Zugriffe je Skriptlauf (normale Apps)"
+msgstr "Accesses per script run (normal apps)"
+
+#: models.py
+msgid "Zuletzt geändert"
+msgstr "Last changed"
+
+#: models.py
+msgid "abgebrochen"
+msgstr "cancelled"
+
+#: models.py
+msgid "gestoppt"
+msgstr "stopped"
+
+#: models.py
+msgid "z. B. 1.1.0"
+msgstr "e.g. 1.1.0"
+
+#: models.py
+msgid "Änderungen je KI-Zugang in 10 Minuten"
+msgstr "Changes per AI access in 10 minutes"
+
+#: models.py templates/designer/_audit_card.html templates/designer/audit.html
+msgid "Änderungsprotokoll"
+msgstr "Change log"
+
+#: models.py
+msgid "Änderungsprotokoll aufbewahren (Tage)"
+msgstr "Keep the change log (days)"
+
+#: models.py
+msgid "Öffentliche Seiten. 0 = keine Grenze."
+msgstr "Public pages. 0 = no limit."
+
+#: models.py
+msgid "übersprungen"
+msgstr "skipped"
+
+#: planning.py
+msgid "%(group)s hat Priorität %(prio)s und noch %(free)s offenen Platz."
+msgid_plural "%(group)s hat Priorität %(prio)s und noch %(free)s offene Plätze."
+msgstr[0] "%(group)s has priority %(prio)s and still %(free)s open place."
+msgstr[1] "%(group)s has priority %(prio)s and still %(free)s open places."
+
+#: planning.py
+msgid "%(person)s ist %(when)s schon in %(where)s eingeplant."
+msgstr "%(person)s is already scheduled in %(where)s on %(when)s."
+
+#: planning.py
+msgid "%(person)s ist bereits in %(where)s eingeplant."
+msgstr "%(person)s is already scheduled in %(where)s."
+
+#: planning.py
+msgid "%(person)s ist schon in %(where)s eingeplant."
+msgstr "%(person)s is already scheduled in %(where)s."
+
+#: planning.py
+msgid "%(where)s ist mit %(count)s von %(capacity)s Plätzen schon voll besetzt."
+msgstr "%(where)s is already fully staffed with %(count)s of %(capacity)s places."
+
+#: planning.py
+msgid "Belegung und Kapazität je Tag einer Woche"
+msgstr "Assignments and capacity per day of a week"
+
+#: planning.py
+msgid "Bitte prüfen"
+msgstr "Please check"
+
+#: planning.py
+msgid "Danach wären %(count)s von %(capacity)s Plätzen belegt."
+msgstr "Afterwards %(count)s of %(capacity)s places would be taken."
+
+#: planning.py
+msgid "Das Board braucht ein Auswahlfeld, dessen Werte die Spalten sind."
+msgstr "The board needs a choice field whose values are the columns."
+
+#: planning.py
+msgid "Das Board ist nicht vollständig eingerichtet."
+msgstr "The board is not fully set up."
+
+#: planning.py
+msgid "Die Wochenübersicht braucht ein Datumsfeld in der Zuordnungs-Tabelle."
+msgstr "The week overview needs a date field in the assignment table."
+
+#: planning.py
+msgid "Die Zuordnungs-Tabelle braucht ein Verweisfeld auf die Quell-Tabelle."
+msgstr "The assignment table needs a reference field to the source table."
+
+#: planning.py
+msgid "Die Zuordnungs-Tabelle braucht ein Verweisfeld auf die Ziel-Tabelle."
+msgstr "The assignment table needs a reference field to the target table."
+
+#: planning.py
+msgid "Diese Spalte gibt es nicht."
+msgstr "This column does not exist."
+
+#: planning.py
+msgid "Diese Zuordnung gibt es nicht (mehr). Bitte die Seite neu laden."
+msgstr "This assignment no longer exists. Please reload the page."
+
+#: planning.py widgets.py
+msgid "Diesen Eintrag gibt es nicht (mehr). Bitte die Seite neu laden."
+msgstr "This entry no longer exists. Please reload the page."
+
+#: planning.py views.py
+msgid "Dieser Baustein hat keine Aktionen."
+msgstr "This block has no actions."
+
+#: planning.py
+msgid "Dieses Ziel gibt es nicht (mehr). Bitte die Seite neu laden."
+msgstr "This target no longer exists. Please reload the page."
+
+#: planning.py
+msgid "Einsatzplanung"
+msgstr "Shift planning"
+
+#: planning.py
+msgid "Einträge per Drag-and-drop zwischen Status-Spalten verschieben"
+msgstr "Move entries between status columns by drag and drop"
+
+#: planning.py
+msgid "Erlauben"
+msgstr "Allow"
+
+#: planning.py
+msgid "Es fehlt der Tag, für den eingeplant wird."
+msgstr "The day to schedule for is missing."
+
+#: planning.py
+msgid "Für dieses Board ist keine Tabelle ausgewählt."
+msgstr "No table is selected for this board."
+
+#: planning.py
+msgid "Gruppieren nach (z. B. Linie)"
+msgstr "Group by (e.g. line)"
+
+#: planning.py
+msgid "Höchstens Karten je Spalte (0 = ohne Grenze)"
+msgstr "At most cards per column (0 = no limit)"
+
+#: planning.py
+msgid "In „%(column)s“ sind schon %(count)s von höchstens %(limit)s Einträgen."
+msgstr "“%(column)s” already holds %(count)s of at most %(limit)s entries."
+
+#: planning.py
+msgid "KW %(week)s · %(start)s – %(end)s"
+msgstr "Wk %(week)s · %(start)s – %(end)s"
+
+#: planning.py
+msgid "Kanban-Board"
+msgstr "Kanban board"
+
+#: planning.py
+msgid "Kapazität der Ziele (Zahlenfeld, z. B. Bedarf)"
+msgstr "Capacity of the targets (number field, e.g. demand)"
+
+#: planning.py
+msgid "Kapazität erreicht"
+msgstr "Capacity reached"
+
+#: planning.py
+msgid "Klick auf eine Zelle öffnet diese Seite (mit ?datum=…)"
+msgstr "Clicking a cell opens this page (with ?datum=…)"
+
+#: planning.py
+msgid "Nachfragen (Popup)"
+msgstr "Ask (pop-up)"
+
+#: planning.py
+msgid "Nachfragen, wenn eine wichtigere Gruppe noch offene Plätze hat"
+msgstr "Ask when a more important group still has open places"
+
+#: planning.py
+msgid "Nachfragen, wenn jemand am selben Tag schon eingeplant ist"
+msgstr "Ask when someone is already scheduled on the same day"
+
+#: planning.py
+msgid "Namen in den Zellen zeigen"
+msgstr "Show names in the cells"
+
+#: planning.py
+msgid "Nur Montag bis Freitag"
+msgstr "Monday to Friday only"
+
+#: planning.py
+msgid "Ohne Gruppe"
+msgstr "Without group"
+
+#: planning.py
+msgid "Ohne Zuordnung"
+msgstr "Unassigned"
+
+#: planning.py
+msgid "Personen per Drag-and-drop in Schichten oder Termine einplanen"
+msgstr "Schedule people into shifts or appointments by drag and drop"
+
+#: planning.py
+msgid "Priorität der Gruppe (Zahl, 1 = am wichtigsten)"
+msgstr "Priority of the group (number, 1 = most important)"
+
+#: planning.py
+msgid "Quelle (nur für Namen in den Zellen)"
+msgstr "Source (only for names in the cells)"
+
+#: planning.py
+msgid "Quelle: Name (leer: erstes Feld)"
+msgstr "Source: name (empty: first field)"
+
+#: planning.py
+msgid "Quelle: Zusatzinfo (z. B. Qualifikation)"
+msgstr "Source: extra info (e.g. qualification)"
+
+#: planning.py
+msgid "Quelle: nur wenn dieses Ja/Nein-Feld gesetzt ist"
+msgstr "Source: only if this yes/no field is set"
+
+#: planning.py
+msgid "Quelle: wer wird eingeplant? (z. B. Mitarbeitende)"
+msgstr "Source: who is scheduled? (e.g. staff)"
+
+#: planning.py
+msgid "Schon eingeplant"
+msgstr "Already scheduled"
+
+#: planning.py
+msgid "Spalte ist voll"
+msgstr "Column is full"
+
+#: planning.py
+msgid "Spalten aus Auswahlfeld (z. B. Status)"
+msgstr "Columns from a choice field (e.g. status)"
+
+#: planning.py widgets.py
+msgid "Unbekannte Aktion."
+msgstr "Unknown action."
+
+#: planning.py
+msgid "Verhindern"
+msgstr "Prevent"
+
+#: planning.py
+msgid "Wenn ein Ziel schon voll ist"
+msgstr "When a target is already full"
+
+#: planning.py
+msgid "Wochenübersicht"
+msgstr "Week overview"
+
+#: planning.py
+msgid "Wähle die Tabelle mit den Einträgen, die eingeplant werden (z. B. Personen)."
+msgstr "Choose the table with the entries to be scheduled (e.g. people)."
+
+#: planning.py
+msgid "Wähle die Tabelle mit den Zielen (z. B. Schichten)."
+msgstr "Choose the table with the targets (e.g. shifts)."
+
+#: planning.py
+msgid "Wähle die Tabelle, in der die Zuordnungen gespeichert werden (z. B. Einsätze)."
+msgstr "Choose the table in which the assignments are stored (e.g. shifts worked)."
+
+#: planning.py
+msgid "Ziele: Tabelle (z. B. Schichten)"
+msgstr "Targets: table (e.g. shifts)"
+
+#: planning.py
+msgid "Zuordnung: Datum (optional, Planung je Tag)"
+msgstr "Assignment: date (optional, planning per day)"
+
+#: planning.py
+msgid "Zuordnung: Verweis auf das Ziel"
+msgstr "Assignment: reference to the target"
+
+#: planning.py
+msgid "Zuordnung: Verweis auf die Quelle"
+msgstr "Assignment: reference to the source"
+
+#: planning.py
+msgid "Zuordnungen: Tabelle (z. B. Einsätze)"
+msgstr "Assignments: table (e.g. shifts worked)"
+
+#: planning.py
+msgid "Zusatzinfo auf der Karte (optional)"
+msgstr "Extra info on the card (optional)"
+
+#: planning.py
+msgid "Überplanung"
+msgstr "Overbooking"
+
+#: profile.py
+msgid "KI-Zugang"
+msgstr "AI access"
+
+#: profile.py
+msgid "KI-Zugang gelöscht. Er funktioniert ab sofort nicht mehr."
+msgstr "AI access deleted. It stops working immediately."
+
+#: scripting/automation.py
+msgid "Gestoppt."
+msgstr "Stopped."
+
+#: scripting/automation.py
+msgid "Zeitlimit von %(minutes)s Minuten überschritten."
+msgstr "Time limit of %(minutes)s minutes exceeded."
+
+#: scripting/automation.py
+msgid "ohne Meldung, z. B. Speichergrenze erreicht"
+msgstr "without a message, e.g. memory limit reached"
+
+#: scripting/python.py
+msgid "Das Geheimnis „%(name)s“ ist nicht eingerichtet (Umgebungsvariable %(var)s im Hintergrunddienst)."
+msgstr "The secret “%(name)s” is not set up (environment variable %(var)s in the background service)."
+
+#: scripting/python.py
+msgid "Ungültiger Name für ein Geheimnis: nur Buchstaben, Ziffern und _."
+msgstr "Invalid name for a secret: only letters, digits and _."
+
+#: scripting/schedule.py
+msgid "läuft ständig"
+msgstr "runs continuously"
+
+#: scripting/schedule.py
+msgid "nur von Hand oder per Webhook"
+msgstr "only manually or by webhook"
+
+#: scripting/schedule.py
+msgid "täglich um %(time)s"
+msgstr "daily at %(time)s"
+
+#: scripting/schedule.py
+msgid "werktags um %(time)s"
+msgstr "weekdays at %(time)s"
+
+#: scripting/worker.py
+msgid "%(n)s Termin entfallen, weil dieser Lauf noch lief."
+msgid_plural "%(n)s Termine entfallen, weil dieser Lauf noch lief."
+msgstr[0] "%(n)s scheduled run skipped because this run was still going."
+msgstr[1] "%(n)s scheduled runs skipped because this run was still going."
+
+#: scripting/worker.py
+msgid "Der Hintergrunddienst wurde während des Laufs beendet."
+msgstr "The background service was stopped during the run."
+
+#: templates/base.html
+msgid "Admin"
+msgstr "Admin"
+
+#: templates/base.html
+msgid "Als App installieren"
+msgstr "Install as app"
+
+#: templates/base.html
+msgid "Baukasten %(version)s"
+msgstr "Baukasten %(version)s"
+
+#: templates/base.html
+msgid "Verstanden"
+msgstr "Got it"
+
+#: templates/base.html
+msgid "Was ist neu?"
+msgstr "What’s new?"
+
+#: templates/builder/_coach.html
+msgid "%(done)s von %(total)s erledigt"
+msgstr "%(done)s of %(total)s done"
+
+#: templates/builder/_coach.html
+msgid "Begleiter schließen"
+msgstr "Close guide"
+
+#: templates/builder/_coach.html
+msgid "Code kopieren"
+msgstr "Copy code"
+
+#: templates/builder/_coach.html
+msgid "Deine App „%(name)s“ ist fertig: mit Tabelle, Seiten, Auswertung, Skript, veröffentlicht und gesichert."
+msgstr "Your app “%(name)s” is ready: with a table, pages, a chart, a script, published and backed up."
+
+#: templates/builder/_coach.html
+msgid "Deine erste App"
+msgstr "Your first app"
+
+#: templates/builder/_coach.html
+msgid "Der Schritt hakt sich von selbst ab, sobald er erledigt ist. Danach die Seite neu laden oder weiterklicken."
+msgstr "The step ticks itself off as soon as it is done. Then reload the page or click on."
+
+#: templates/builder/_coach.html
+msgid "Ein- und ausklappen"
+msgstr "Expand and collapse"
+
+#: templates/builder/_coach.html
+msgid "Einführung beenden"
+msgstr "End introduction"
+
+#: templates/builder/_coach.html
+msgid "Einführung: Deine erste App"
+msgstr "Introduction: your first app"
+
+#: templates/builder/_coach.html
+msgid "Geschafft! 🎉"
+msgstr "Done! 🎉"
+
+#: templates/builder/_coach.html
+msgid "Hierhin"
+msgstr "Here"
+
+#: templates/builder/_coach.html
+msgid "Schritt %(n)s von %(total)s"
+msgstr "Step %(n)s of %(total)s"
+
+#: templates/builder/_coach.html
+msgid "Wie es weitergehen kann:"
+msgstr "Where to go from here:"
+
+#: templates/builder/_coach.html
+msgid "Zeig mir wo"
+msgstr "Show me where"
+
+#: templates/builder/about.html
+msgid "Entwurf – nur für Verwalter sichtbar"
+msgstr "Draft – only visible to administrators"
+
+#: templates/builder/about.html
+msgid "Interne Apps aus Tabellen, Seiten und Bausteinen. Hier steht, welche Version läuft und was neu ist."
+msgstr "Internal apps from tables, pages and blocks. Here you can see which version is running and what’s new."
+
+#: templates/builder/about.html
+msgid "Neue Release Note"
+msgstr "New release note"
+
+#: templates/builder/about.html
+msgid "Noch keine Release Notes veröffentlicht."
+msgstr "No release notes published yet."
+
+#: templates/builder/about.html
+msgid "Release Notes schreibst und veröffentlichst du unter /admin/ → Release Notes."
+msgstr "Write and publish release notes under /admin/ → Release notes."
+
+#: templates/builder/about.html
+msgid "Technik"
+msgstr "Technology"
+
+#: templates/builder/about.html
+msgid "Was ist neu"
+msgstr "What’s new"
+
+#: templates/builder/about.html
+msgid "Weiterlesen"
+msgstr "Read more"
+
+#: templates/builder/about.html
+msgid "Über den Baukasten"
+msgstr "About Baukasten"
+
+#: templates/builder/block.html
+msgid "Im gewählten Zeitraum gibt es noch keine Werte."
+msgstr "There are no values in the selected period yet."
+
+#: templates/builder/block.html
+msgid "Lädt das Dashboard nicht, prüfe die Anmeldung bei Tableau oder öffne es <a href=\"%(src)s\" target=\"_blank\" rel=\"noopener\">direkt in Tableau</a>."
+msgstr "If the dashboard doesn’t load, check your Tableau sign-in or open it <a href=\"%(src)s\" target=\"_blank\" rel=\"noopener\">directly in Tableau</a>."
+
+#: templates/builder/blocks/assign.html
+msgid "%(name)s entfernen"
+msgstr "Remove %(name)s"
+
+#: templates/builder/blocks/assign.html
+msgid "%(open)s offen"
+msgstr "%(open)s open"
+
+#: templates/builder/blocks/assign.html
+msgid "%(over)s überplant"
+msgstr "%(over)s overbooked"
+
+#: templates/builder/blocks/assign.html
+msgid "<strong>%(count)s</strong> noch frei"
+msgstr "<strong>%(count)s</strong> still free"
+
+#: templates/builder/blocks/assign.html
+msgid "<strong>%(count)s</strong> von %(capacity)s Plätzen besetzt"
+msgstr "<strong>%(count)s</strong> of %(capacity)s places filled"
+
+#: templates/builder/blocks/assign.html templates/builder/blocks/weekplan.html
+msgid "<strong>%(open)s</strong> offen"
+msgstr "<strong>%(open)s</strong> open"
+
+#: templates/builder/blocks/assign.html templates/builder/blocks/weekplan.html
+msgid "<strong>%(over)s</strong> überplant"
+msgstr "<strong>%(over)s</strong> overbooked"
+
+#: templates/builder/blocks/assign.html
+msgid "Anzahl Einsätze"
+msgstr "Number of shifts"
+
+#: templates/builder/blocks/assign.html
+msgid "Eingeplant in"
+msgstr "Scheduled in"
+
+#: templates/builder/blocks/assign.html templates/designer/_share.html
+msgid "Entfernen"
+msgstr "Remove"
+
+#: templates/builder/blocks/assign.html
+msgid "Filtern …"
+msgstr "Filter …"
+
+#: templates/builder/blocks/assign.html templates/builder/blocks/calendar.html
+msgid "Heute"
+msgstr "Today"
+
+#: templates/builder/blocks/assign.html
+msgid "Hier einplanen"
+msgstr "Schedule here"
+
+#: templates/builder/blocks/assign.html
+msgid "Hierher ziehen"
+msgstr "Drag here"
+
+#: templates/builder/blocks/assign.html
+msgid "Keine Einträge in der Quell-Tabelle."
+msgstr "No entries in the source table."
+
+#: templates/builder/blocks/assign.html
+msgid "Liste filtern"
+msgstr "Filter list"
+
+#: templates/builder/blocks/assign.html
+msgid "Noch keine Ziele. Lege zuerst Einträge in der Ziel-Tabelle an."
+msgstr "No targets yet. First add entries to the target table."
+
+#: templates/builder/blocks/assign.html
+msgid "Noch nicht eingeplant"
+msgstr "Not scheduled yet"
+
+#: templates/builder/blocks/assign.html
+msgid "Noch niemand"
+msgstr "Nobody yet"
+
+#: templates/builder/blocks/assign.html
+msgid "Nächster Tag"
+msgstr "Next day"
+
+#: templates/builder/blocks/assign.html
+msgid "Priorität"
+msgstr "Priority"
+
+#: templates/builder/blocks/assign.html templates/builder/blocks/weekplan.html
+msgid "Priorität %(prio)s"
+msgstr "Priority %(prio)s"
+
+#: templates/builder/blocks/assign.html
+msgid "Tag wählen"
+msgstr "Choose day"
+
+#: templates/builder/blocks/assign.html
+msgid "Verfügbar"
+msgstr "Available"
+
+#: templates/builder/blocks/assign.html
+msgid "Verfügbare Einträge"
+msgstr "Available entries"
+
+#: templates/builder/blocks/assign.html
+msgid "Vorheriger Tag"
+msgstr "Previous day"
+
+#: templates/builder/blocks/assign.html
+msgid "Ziehen und in einem Ziel ablegen. Ohne Maus: Eintrag antippen, dann „Hier einplanen“."
+msgstr "Drag and drop onto a target. Without a mouse: tap an entry, then “Schedule here”."
+
+#: templates/builder/blocks/calendar.html
+msgid "+%(n)s weiterer"
+msgid_plural "+%(n)s weitere"
+msgstr[0] "+%(n)s more"
+msgstr[1] "+%(n)s more"
+
+#: templates/builder/blocks/calendar.html
+msgid "Monat wählen"
+msgstr "Choose month"
+
+#: templates/builder/blocks/calendar.html
+msgid "Neuer Eintrag am %(day)s"
+msgstr "New entry on %(day)s"
+
+#: templates/builder/blocks/calendar.html
+msgid "Neuer Eintrag an diesem Tag"
+msgstr "New entry on this day"
+
+#: templates/builder/blocks/calendar.html
+msgid "Nächster Monat"
+msgstr "Next month"
+
+#: templates/builder/blocks/calendar.html
+msgid "Vorheriger Monat"
+msgstr "Previous month"
+
+#: templates/builder/blocks/checklist.html
+msgid "%(done)s von %(count)s erledigt"
+msgstr "%(done)s of %(count)s done"
+
+#: templates/builder/blocks/checklist.html
+msgid "Alles erledigt."
+msgstr "All done."
+
+#: templates/builder/blocks/checklist.html
+msgid "Erledigt"
+msgstr "Done"
+
+#: templates/builder/blocks/checklist.html
+msgid "Neuer Punkt"
+msgstr "New item"
+
+#: templates/builder/blocks/filter.html
+msgid "%(count)s von %(total)s Einträgen"
+msgstr "%(count)s of %(total)s entries"
+
+#: templates/builder/blocks/filter.html
+msgid "%(name)s filtern"
+msgstr "Filter %(name)s"
+
+#: templates/builder/blocks/filter.html
+msgid "%(total)s Einträge, kein Filter aktiv"
+msgstr "%(total)s entries, no filter active"
+
+#: templates/builder/blocks/filter.html
+msgid "Alle"
+msgstr "All"
+
+#: templates/builder/blocks/filter.html
+msgid "Filtern"
+msgstr "Filter"
+
+#: templates/builder/blocks/filter.html
+msgid "Zurücksetzen"
+msgstr "Reset"
+
+#: templates/builder/blocks/filter.html
+msgid "bis"
+msgstr "to"
+
+#: templates/builder/blocks/filter.html
+msgid "enthält …"
+msgstr "contains …"
+
+#: templates/builder/blocks/filter.html
+msgid "von"
+msgstr "from"
+
+#: templates/builder/blocks/kanban.html
+msgid "Hierher verschieben"
+msgstr "Move here"
+
+#: templates/builder/blocks/weekplan.html
+msgid "<strong>%(count)s</strong> von %(capacity)s Plätzen"
+msgstr "<strong>%(count)s</strong> of %(capacity)s places"
+
+#: templates/builder/blocks/weekplan.html
+msgid "Auslastung <strong>%(percent)s %%</strong>"
+msgstr "Utilisation <strong>%(percent)s %%</strong>"
+
+#: templates/builder/blocks/weekplan.html
+msgid "Diese Woche"
+msgstr "This week"
+
+#: templates/builder/blocks/weekplan.html
+msgid "Kapazität gesamt"
+msgstr "Total capacity"
+
+#: templates/builder/blocks/weekplan.html
+msgid "Legende"
+msgstr "Legend"
+
+#: templates/builder/blocks/weekplan.html
+msgid "Noch keine Ziele."
+msgstr "No targets yet."
+
+#: templates/builder/blocks/weekplan.html
+msgid "Nächste Woche"
+msgstr "Next week"
+
+#: templates/builder/blocks/weekplan.html
+msgid "Vorherige Woche"
+msgstr "Previous week"
+
+#: templates/builder/blocks/weekplan.html
+msgid "Woche"
+msgstr "Week"
+
+#: templates/builder/blocks/weekplan.html
+msgid "Woche wählen"
+msgstr "Choose week"
+
+#: templates/builder/blocks/weekplan.html
+msgid "teilweise"
+msgstr "partly"
+
+#: templates/builder/blocks/weekplan.html
+msgid "unbesetzt"
+msgstr "unstaffed"
+
+#: templates/builder/blocks/weekplan.html
+msgid "voll"
+msgstr "full"
+
+#: templates/builder/blocks/weekplan.html
+msgid "überplant"
+msgstr "overbooked"
+
+#: templates/builder/home.html
+msgid "Apps durchsuchen"
+msgstr "Search apps"
+
+#: templates/builder/home.html
+msgid "Benutzen, bauen, entwickeln"
+msgstr "Use, build, develop"
+
+#: templates/builder/home.html
+msgid "Deine erste App, Schritt für Schritt"
+msgstr "Your first app, step by step"
+
+#: templates/builder/home.html
+msgid "HTML-Bausteine und Vorlagen"
+msgstr "HTML blocks and templates"
+
+#: templates/builder/home.html
+msgid "Keine App passt zur Suche."
+msgstr "No app matches the search."
+
+#: templates/builder/home.html
+msgid "Konto, Gruppen, API-Schlüssel"
+msgstr "Account, groups, API keys"
+
+#: templates/builder/home.html
+msgid "Schnellzugriff"
+msgstr "Quick access"
+
+#: templates/builder/home.html
+msgid "Schnittstellen deiner Apps"
+msgstr "Interfaces of your apps"
+
+#: templates/builder/home.html
+msgid "Zum Designer"
+msgstr "To the designer"
+
+#: templates/builder/offline.html
+msgid "Der Baukasten ist gerade nicht erreichbar. Prüfe die Verbindung zum Netz und versuche es noch einmal."
+msgstr "Baukasten can’t be reached right now. Check your network connection and try again."
+
+#: templates/builder/offline.html
+msgid "Erneut versuchen"
+msgstr "Try again"
+
+#: templates/builder/offline.html
+msgid "Keine Verbindung"
+msgstr "No connection"
+
+#: templates/builder/profile.html
+msgid "Adresse (Transport „Streamable HTTP“) und Kopfzeile:"
+msgstr "Address (transport “Streamable HTTP”) and header:"
+
+#: templates/builder/profile.html
+msgid "Apps mit KI bauen"
+msgstr "Build apps with AI"
+
+#: templates/builder/profile.html
+msgid "Beispiele für Claude Code, Claude Desktop und Cursor"
+msgstr "Examples for Claude Code, Claude Desktop and Cursor"
+
+#: templates/builder/profile.html
+msgid "DEIN_KI_ZUGANG"
+msgstr "YOUR_AI_ACCESS"
+
+#: templates/builder/profile.html
+msgid "Danach zum Beispiel: „Bau mir im Baukasten eine App für Raumbuchungen mit Räumen, Buchungen und einer Übersichtsseite.“"
+msgstr "Then, for example: “Build me an app in Baukasten for room bookings with rooms, bookings and an overview page.”"
+
+#: templates/builder/profile.html
+msgid "Einrichten"
+msgstr "Set up"
+
+#: templates/builder/profile.html
+msgid "Er wird nur dieses eine Mal angezeigt. Wer ihn hat, kann in deinem Namen Apps ändern."
+msgstr "It is only shown this once. Whoever has it can change apps in your name."
+
+#: templates/builder/profile.html
+msgid "KI-Zugang erzeugen"
+msgstr "Create AI access"
+
+#: templates/builder/profile.html
+msgid "KI-Zugang löschen? Die KI verliert sofort den Zugriff."
+msgstr "Delete AI access? The AI loses access immediately."
+
+#: templates/builder/profile.html
+msgid "Mit einem persönlichen Schlüssel baut eine KI deiner Wahl (Claude, Cursor, n8n …) Apps über den MCP-Server des Designers: anlegen, ändern, Versionen zurückholen. Sie hat dabei genau deine Rechte. Neue Apps sind Entwürfe, Skripte bleiben aus, bis du sie prüfst."
+msgstr "With a personal key, an AI of your choice (Claude, Cursor, n8n …) builds apps through the designer’s MCP server: create, change, restore versions. It has exactly your permissions. New apps are drafts, scripts stay off until you review them."
+
+#: templates/builder/profile.html
+msgid "Name des KI-Zugangs"
+msgstr "Name of the AI access"
+
+#: templates/builder/profile.html
+msgid "Neuer KI-Zugang – jetzt kopieren"
+msgstr "New AI access – copy it now"
+
+#: templates/builder/profile.html
+msgid "Wofür? z. B. Claude Desktop"
+msgstr "What for? e.g. Claude Desktop"
+
+#: templates/builder/profile.html
+msgid "claude_desktop_config.json, braucht Node.js"
+msgstr "claude_desktop_config.json, needs Node.js"
+
+#: templates/builder/profile.html
+msgid "noch nie genutzt"
+msgstr "never used"
+
+#: templates/builder/record_form.html
+msgid "Ganzer Verlauf im Änderungsprotokoll"
+msgstr "Full history in the change log"
+
+#: templates/designer/_audit_card.html
+msgid "Ganzes Protokoll"
+msgstr "Full log"
+
+#: templates/designer/_audit_card.html
+msgid "Noch keine Änderungen protokolliert."
+msgstr "No changes logged yet."
+
+#: templates/designer/_automation_buttons.html
+msgid "Ausschalten"
+msgstr "Switch off"
+
+#: templates/designer/_automation_buttons.html
+msgid "Einschalten"
+msgstr "Switch on"
+
+#: templates/designer/_automation_buttons.html
+msgid "Jetzt starten"
+msgstr "Start now"
+
+#: templates/designer/_automation_buttons.html
+msgid "Stoppen"
+msgstr "Stop"
+
+#: templates/designer/_share.html
+msgid "App übernehmen"
+msgstr "Take over app"
+
+#: templates/designer/_share.html
+msgid "Bearbeiten dürfen die Eigentümerin, die Mitbearbeiter unten und Admins. Mitbearbeiter brauchen das Designer-Recht. Einladen, entfernen und die App löschen dürfen nur Eigentümerin und Admins."
+msgstr "The owner, the co-editors below and admins may edit. Co-editors need the designer permission. Only the owner and admins may invite, remove and delete the app."
+
+#: templates/designer/_share.html
+msgid "Deshalb dürfen alle Designer sie bearbeiten. Übernimmst du sie, brauchen andere Designer eine Einladung."
+msgstr "That is why all designers may edit it. If you take it over, other designers need an invitation."
+
+#: templates/designer/_share.html
+msgid "Diese App hat keine Eigentümerin."
+msgstr "This app has no owner."
+
+#: templates/designer/_share.html
+msgid "Eigentümer/in:"
+msgstr "Owner:"
+
+#: templates/designer/_share.html
+msgid "Einladen"
+msgstr "Invite"
+
+#: templates/designer/_share.html
+msgid "Gruppe"
+msgstr "Group"
+
+#: templates/designer/_share.html
+msgid "Gruppe hinzufügen"
+msgstr "Add group"
+
+#: templates/designer/_share.html
+msgid "Noch keine."
+msgstr "None yet."
+
+#: templates/designer/_share.html
+msgid "Personen"
+msgstr "People"
+
+#: templates/designer/_share.html templates/designer/home.html
+msgid "du"
+msgstr "you"
+
+#: templates/designer/_versions.html
+msgid "Bringt diese App auf den Stand einer heruntergeladenen Datei, auch aus einer älteren Baukasten-Version. Der jetzige Stand wird vorher als Version gesichert; Einträge bleiben erhalten."
+msgstr "Brings this app to the state of a downloaded file, also from an older Baukasten version. The current state is saved as a version first; entries are kept."
+
+#: templates/designer/_versions.html
+msgid "Diese App auf den Stand der Datei bringen? Der jetzige Stand wird vorher als Version gesichert."
+msgstr "Bring this app to the state of the file? The current state is saved as a version first."
+
+#: templates/designer/_versions.html
+msgid "Einspielen"
+msgstr "Import"
+
+#: templates/designer/_versions.html
+msgid "Heruntergeladene Version einspielen"
+msgstr "Import downloaded version"
+
+#: templates/designer/_versions.html
+msgid "Versionsdatei"
+msgstr "Version file"
+
+#: templates/designer/app.html templates/designer/translations.html
+msgid "%(done)s von %(total)s Texten übersetzt"
+msgstr "%(done)s of %(total)s texts translated"
+
+#: templates/designer/app.html
+msgid "MCP-Server für KI-Agenten und n8n"
+msgstr "MCP server for AI agents and n8n"
+
+#: templates/designer/app.html
+msgid "Texte der App (Namen, Felder, Auswahlwerte, Seiten, Bausteine) in weiteren Sprachen. Nutzer sehen sie, wenn sie die Sprache umschalten."
+msgstr "Texts of the app (names, fields, choices, pages, blocks) in further languages. Users see them when they switch the language."
+
+#: templates/designer/app.html
+msgid "Transport „HTTP Streamable“, Kopfzeile <code>Authorization: Bearer DEIN_SCHLÜSSEL</code>. Die Tools entstehen aus den freigeschalteten Tabellen; ein Schlüssel ohne Schreibrecht bekommt nur die lesenden."
+msgstr "Transport “HTTP Streamable”, header <code>Authorization: Bearer YOUR_KEY</code>. The tools are created from the enabled tables; a key without write permission only gets the reading ones."
+
+#: templates/designer/app.html templates/designer/translations.html tutorial.py
+msgid "Übersetzungen"
+msgstr "Translations"
+
+#: templates/designer/app.html
+msgid "Übersetzungen bearbeiten"
+msgstr "Edit translations"
+
+#: templates/designer/app.html
+msgid "öffentlich"
+msgstr "public"
+
+#: templates/designer/audit.html
+msgid "Alles"
+msgstr "Everything"
+
+#: templates/designer/audit.html
+msgid "Aufbau der App"
+msgstr "Structure of the app"
+
+#: templates/designer/audit.html
+msgid "Bereich"
+msgstr "Area"
+
+#: templates/designer/audit.html
+msgid "Eintrag #%(record_id)s"
+msgstr "Entry #%(record_id)s"
+
+#: templates/designer/audit.html
+msgid "Einträge werden nicht automatisch gelöscht."
+msgstr "Entries are not deleted automatically."
+
+#: templates/designer/audit.html
+msgid "Filter zurücksetzen"
+msgstr "Reset filters"
+
+#: templates/designer/audit.html
+msgid "Keine Einträge."
+msgstr "No entries."
+
+#: templates/designer/audit.html
+msgid "Person, Objekt, Hinweis …"
+msgstr "Person, object, note …"
+
+#: templates/designer/audit.html
+msgid "Was"
+msgstr "What"
+
+#: templates/designer/audit.html
+msgid "Wer"
+msgstr "Who"
+
+#: templates/designer/audit.html
+msgid "Wer hat wann was geändert, und auf welchem Weg. Einträge werden nach %(days)s Tag gelöscht."
+msgid_plural "Wer hat wann was geändert, und auf welchem Weg. Einträge werden nach %(days)s Tagen gelöscht."
+msgstr[0] "Who changed what, when and how. Entries are deleted after %(days)s day."
+msgstr[1] "Who changed what, when and how. Entries are deleted after %(days)s days."
+
+#: templates/designer/audit.html
+msgid "Zeit"
+msgstr "Time"
+
+#: templates/designer/audit.html
+msgid "Änderung"
+msgstr "Change"
+
+#: templates/designer/automation.html
+msgid "Alle Bibliotheken der gemeinsamen Umgebung sind da (requirements-automation.txt). Neue Bibliotheken trägt der Betrieb dort ein."
+msgstr "All libraries of the shared environment are available (requirements-automation.txt). Operations adds new libraries there."
+
+#: templates/designer/automation.html
+msgid "Andere Programme (z. B. n8n) starten ein Skript mit einem Schlüssel, der schreiben darf. Der mitgeschickte JSON-Inhalt steht im Skript in event[\"daten\"]."
+msgstr "Other programs (e.g. n8n) start a script with a key that may write. The JSON content sent along is available in the script as event[\"daten\"]."
+
+#: templates/designer/automation.html
+msgid "Antwort 202: Start angenommen. 409: Für das Skript wartet schon ein Start, oder es läuft ständig. Der MCP-Server bietet dieselben Starts als Tools an:"
+msgstr "Response 202: start accepted. 409: a start is already waiting for the script, or it runs continuously. The MCP server offers the same starts as tools:"
+
+#: templates/designer/automation.html templates/designer/automation_script.html
+msgid "Der Start lässt auf sich warten."
+msgstr "The start is taking a while."
+
+#: templates/designer/automation.html
+msgid "Die Skripte laufen im Hintergrunddienst, nicht im Browser und nicht beim Öffnen einer Seite."
+msgstr "The scripts run in the background service, not in the browser and not when a page is opened."
+
+#: templates/designer/automation.html
+msgid "Echtes Python im Hintergrund, mit allen Bibliotheken der gemeinsamen Umgebung. Ein Skript läuft nie zweimal gleichzeitig: Ist ein Termin fällig, während der vorige Lauf noch arbeitet, entfällt er."
+msgstr "Real Python in the background, with all libraries of the shared environment. A script never runs twice at the same time: if a run is due while the previous one is still working, it is skipped."
+
+#: templates/designer/automation.html
+msgid "Name der neuen Tabelle, z. B. Protokoll"
+msgstr "Name of the new table, e.g. Log"
+
+#: templates/designer/automation.html
+msgid "Noch kein Skript. Lege oben rechts das erste an."
+msgstr "No script yet. Add the first one at the top right."
+
+#: templates/designer/automation.html
+msgid "Optional: Hier merken sich Skripte Ergebnisse, Zähler oder was sie zuletzt gesehen haben. Seiten gibt es in Automatisierungen nicht; die Daten siehst du in der Verwaltung oder über die API."
+msgstr "Optional: scripts remember results, counters or what they saw last here. Automations have no pages; you see the data in the administration or through the API."
+
+#: templates/designer/automation.html templates/designer/automation_script.html
+msgid "Skripte von Automatisierungen startet der Hintergrunddienst. Läuft er? Im Cluster ist das der Pod <code>baukasten-worker</code>, beim Entwickeln <code>python manage.py hintergrund --dauerhaft</code>."
+msgstr "Scripts of automations are started by the background service. Is it running? In the cluster it is the pod <code>baukasten-worker</code>, during development <code>python manage.py hintergrund --dauerhaft</code>."
+
+#: templates/designer/automation.html
+msgid "So läuft eine Automatisierung"
+msgstr "How an automation runs"
+
+#: templates/designer/automation.html
+msgid "Speichern übernimmt neuen Code ab dem nächsten Lauf. Dauerläufer übernehmen ihn nach Aus- und Einschalten."
+msgstr "Saving applies new code from the next run on. Continuous runs pick it up after switching off and on."
+
+#: templates/designer/automation.html
+msgid "Tabellen als Speicher"
+msgstr "Tables as storage"
+
+#: templates/designer/automation.html
+msgid "Tabellen über die API"
+msgstr "Tables through the API"
+
+#: templates/designer/automation.html
+msgid "Von außen starten: Webhook und MCP"
+msgstr "Start from outside: webhook and MCP"
+
+#: templates/designer/automation.html
+msgid "Zugangsdaten nie in den Code: secret(\"NAME\") liest ein Geheimnis, das der Betrieb einrichtet."
+msgstr "Never put credentials in the code: secret(\"NAME\") reads a secret that operations sets up."
+
+#: templates/designer/automation.html templates/designer/home.html
+msgid "Zustand"
+msgstr "State"
+
+#: templates/designer/automation.html
+msgid "nächster Lauf"
+msgstr "next run"
+
+#: templates/designer/automation.html
+msgid "seit"
+msgstr "since"
+
+#: templates/designer/automation_script.html
+msgid "Arbeitsordner: das aktuelle Verzeichnis, wird nach jedem Lauf gelöscht. Mehr im Handbuch, Abschnitt „Automatisierungen“."
+msgstr "Working directory: the current directory, deleted after every run. More in the handbook, section “Automations”."
+
+#: templates/designer/automation_script.html
+msgid "Dauert ein Lauf länger als das Zeitlimit, wird er abgebrochen (höchstens %(max)s Minuten). Fällt während eines Laufs ein Termin an, entfällt er."
+msgstr "A run that takes longer than the time limit is cancelled (at most %(max)s minutes). A scheduled run that falls due during a run is skipped."
+
+#: templates/designer/automation_script.html
+msgid "Echtes Python 3 mit allen Bibliotheken der gemeinsamen Umgebung. print() erscheint sofort im Live-Protokoll."
+msgstr "Real Python 3 with all libraries of the shared environment. print() appears immediately in the live log."
+
+#: templates/designer/automation_script.html
+msgid "Live-Protokoll"
+msgstr "Live log"
+
+#: templates/designer/automation_script.html
+msgid "Läufe arbeiten mit echten Daten und echten Verbindungen. Was das Skript anlegt, ändert, sendet oder löscht, geschieht wirklich."
+msgstr "Runs work with real data and real connections. Whatever the script creates, changes, sends or deletes really happens."
+
+#: templates/designer/automation_script.html
+msgid "Läuft ohne Zeitlimit. Endet das Skript oder stürzt es ab, startet es von selbst neu: nach einem Fehler mit wachsender Wartezeit (10 Sekunden bis 10 Minuten). Typisch ist eine Schleife mit time.sleep()."
+msgstr "Runs without a time limit. If the script ends or crashes, it restarts by itself: after an error with an increasing delay (10 seconds to 10 minutes). Typically a loop with time.sleep()."
+
+#: templates/designer/automation_script.html
+msgid "Noch kein Lauf."
+msgstr "No run yet."
+
+#: templates/designer/automation_script.html
+msgid "Skript „%(name)s“ löschen? Ein laufender Lauf wird gestoppt."
+msgstr "Delete script “%(name)s”? A running run is stopped."
+
+#: templates/designer/automation_script.html
+msgid "Speichern und jetzt starten"
+msgstr "Save and start now"
+
+#: templates/designer/automation_script.html
+msgid "Startet nur per Knopf, Webhook oder MCP. „Aktiv“ ist dafür nicht nötig."
+msgstr "Only starts by button, webhook or MCP. “Active” is not needed for that."
+
+#: templates/designer/home.html
+msgid "%(n)s Fehler"
+msgid_plural "%(n)s Fehler"
+msgstr[0] "%(n)s error"
+msgstr[1] "%(n)s errors"
+
+#: templates/designer/home.html
+msgid "%(n)s Skript"
+msgid_plural "%(n)s Skripte"
+msgstr[0] "%(n)s script"
+msgstr[1] "%(n)s scripts"
+
+#: templates/designer/home.html
+msgid "%(n)s läuft"
+msgid_plural "%(n)s laufen"
+msgstr[0] "%(n)s running"
+msgstr[1] "%(n)s running"
+
+#: templates/designer/home.html
+msgid "%(n)s ständig"
+msgid_plural "%(n)s ständig"
+msgstr[0] "%(n)s continuous"
+msgstr[1] "%(n)s continuous"
+
+#: templates/designer/home.html
+msgid "Aus Datei"
+msgstr "From file"
+
+#: templates/designer/home.html
+msgid "Automatisierung „%(name)s“ mit allen Skripten, Tabellen und Versionen endgültig löschen? Laufende Skripte werden gestoppt."
+msgstr "Permanently delete the automation “%(name)s” with all scripts, tables and versions? Running scripts are stopped."
+
+#: templates/designer/home.html
+msgid "Automatisierungen"
+msgstr "Automations"
+
+#: templates/designer/home.html
+msgid "Einführung starten"
+msgstr "Start introduction"
+
+#: templates/designer/home.html
+msgid "Für Apps und Automatisierungen, die in einer anderen Umgebung als Version heruntergeladen wurden. Daten werden nicht übertragen."
+msgstr "For apps and automations that were downloaded as a version in another environment. Data is not transferred."
+
+#: templates/designer/home.html
+msgid "In etwa 20 Minuten mit Begleiter die erste App bauen."
+msgstr "Build your first app with a guide in about 20 minutes."
+
+#: templates/designer/home.html
+msgid "Keine Seiten, nur Python-Skripte im Hintergrund: zeitgesteuert, täglich, ständig laufend oder per Webhook. Echtes Python mit allen Bibliotheken der gemeinsamen Umgebung."
+msgstr "No pages, only Python scripts in the background: scheduled, daily, running continuously or by webhook. Real Python with all libraries of the shared environment."
+
+#: templates/designer/home.html
+msgid "Mit KI bauen"
+msgstr "Build with AI"
+
+#: templates/designer/home.html
+msgid "Mit Tabellen, Seiten und Bausteinen. Startet als Entwurf mit einer leeren Startseite."
+msgstr "With tables, pages and blocks. Starts as a draft with an empty home page."
+
+#: templates/designer/home.html
+msgid "Neu anlegen"
+msgstr "Create new"
+
+#: templates/designer/home.html
+msgid "Neu hier?"
+msgstr "New here?"
+
+#: templates/designer/home.html
+msgid "Noch keine Automatisierung. Lege rechts unter „Neu anlegen“ die erste an."
+msgstr "No automation yet. Create the first one on the right under “Create new”."
+
+#: templates/designer/home.html
+msgid "Nächster Lauf"
+msgstr "Next run"
+
+#: templates/designer/home.html
+msgid "Python-Skripte im Hintergrund"
+msgstr "Python scripts in the background"
+
+#: templates/designer/home.html
+msgid "Skript läuft"
+msgid_plural "Skripte laufen"
+msgstr[0] "Script running"
+msgstr[1] "Scripts running"
+
+#: templates/designer/home.html
+msgid "alle Designer"
+msgstr "all designers"
+
+#: templates/designer/home.html
+msgid "bereit"
+msgstr "ready"
+
+#: templates/designer/home.html
+msgid "eine KI deiner Wahl legt Apps über MCP an."
+msgstr "an AI of your choice creates apps through MCP."
+
+#: templates/designer/home.html
+msgid "leer"
+msgstr "empty"
+
+#: templates/designer/page.html
+msgid "Jeder mit dem Link sieht diese Seite, ohne Anmeldung und ohne Rechte an der App. Listen, Karten, Kennzahlen, Diagramme und Abfragen zeigen ihre Daten dann allen. Gäste dürfen nur die Formulare und Skript-Buttons dieser Seite benutzen; Skripte bekommen für sie user = None. Wirkt erst, wenn die App veröffentlicht ist."
+msgstr "Anyone with the link sees this page, without signing in and without permissions for the app. Lists, cards, key figures, charts and queries then show their data to everyone. Guests may only use this page’s forms and script buttons; scripts get user = None for them. Only takes effect once the app is published."
+
+#: templates/designer/page.html
+msgid "Öffentliche Seite"
+msgstr "Public page"
+
+#: templates/designer/translations.html
+msgid "Alle Texte zeigen"
+msgstr "Show all texts"
+
+#: templates/designer/translations.html
+msgid "Alles übersetzt."
+msgstr "Everything is translated."
+
+#: templates/designer/translations.html
+msgid "CSV einlesen"
+msgstr "Import CSV"
+
+#: templates/designer/translations.html
+msgid "CSV-Datei"
+msgstr "CSV file"
+
+#: templates/designer/translations.html
+msgid "Die App hat noch keine Texte."
+msgstr "The app has no texts yet."
+
+#: templates/designer/translations.html
+msgid "Die App ist in der Quellsprache „%(source)s“ gebaut. Trage zu jedem Text die Übersetzung ein; wer die Oberfläche auf diese Sprache umschaltet, sieht sie. Leere Felder zeigen den Originaltext. Gespeicherte Daten, die API und Skripte behalten die Werte der Quellsprache."
+msgstr "The app is built in the source language “%(source)s”. Enter the translation for each text; whoever switches the interface to this language sees it. Empty fields show the original text. Stored data, the API and scripts keep the source-language values."
+
+#: templates/designer/translations.html
+msgid "Einlesen"
+msgstr "Import"
+
+#: templates/designer/translations.html
+msgid "Für Übersetzer ohne Designer-Zugang: CSV herunterladen, in Excel die Spalte der Sprache ausfüllen, hier wieder einlesen. Übernommen werden nur ausgefüllte Zellen zu Texten, die es in der App gibt; vorhandene Übersetzungen werden dabei überschrieben, leere Zellen löschen nichts."
+msgstr "For translators without designer access: download the CSV, fill in the language column in Excel, import it here again. Only filled cells for texts that exist in the app are taken over; existing translations are overwritten, empty cells delete nothing."
+
+#: templates/designer/translations.html
+msgid "Nur fehlende Übersetzungen zeigen"
+msgstr "Only show missing translations"
+
+#: templates/designer/translations.html
+msgid "Übersetzungen speichern"
+msgstr "Save translations"
+
+#: tutorial.py
+msgid "App anlegen"
+msgstr "Create app"
+
+#: tutorial.py
+msgid "Excel, n8n oder KI-Agenten anbinden"
+msgstr "Connect Excel, n8n or AI agents"
+
+#: tutorial.py
+msgid "Felder hinzufügen"
+msgstr "Add fields"
+
+#: tutorial.py
+msgid "Im Designer unter „Neue App“: Name „Urlaub“, Symbol 🌴, dann „Anlegen“."
+msgstr "In the designer under “New app”: name “Urlaub”, icon 🌴, then “Create”."
+
+#: tutorial.py
+msgid "Im Kasten „1 Daten: Tabellen“ die Tabelle „Anträge“ anlegen. Sie bekommt automatisch das Feld „Bezeichnung“ – trag dort später z. B. „Sommerurlaub“ ein."
+msgstr "In the box “1 Data: tables”, create the table “Anträge”. It automatically gets the field “Bezeichnung” – later enter e.g. “Summer holiday” there."
+
+#: tutorial.py
+msgid "Im Seiten-Designer der Startseite: den Text-Baustein entfernen, eine „Kennzahl“ (Anträge gesamt) und ein „Kreisdiagramm“ nach „Status“ hinzufügen – oder ein „Liniendiagramm“. Dann „Speichern“."
+msgstr "In the page designer of the home page: remove the text block, add a “Key figure” (all requests) and a “Pie chart” by “Status” – or a “Line chart”. Then “Save”."
+
+#: tutorial.py
+msgid "Kolleginnen und Kollegen zum Mitbauen einladen"
+msgstr "Invite colleagues to build with you"
+
+#: tutorial.py
+msgid "Neues Python-Skript, Auslöser „Nach dem Speichern“, Tabelle „Anträge“. Den Code unten einfügen und speichern. Ab jetzt rechnet der Baukasten die Tage selbst aus und setzt neue Anträge auf „offen“."
+msgstr "New Python script, trigger “After saving”, table “Anträge”. Paste the code below and save. From now on Baukasten works out the days itself and sets new requests to “offen”."
+
+#: tutorial.py
+msgid "Oben auf „Seite aus dieser Tabelle erzeugen“ klicken. Daraus entsteht eine Liste mit Suche, Anlegen, Bearbeiten und Löschen."
+msgstr "Click “Create page from this table” at the top. This creates a list with search, create, edit and delete."
+
+#: tutorial.py
+msgid "Schnittstelle (API) und MCP"
+msgstr "Interface (API) and MCP"
+
+#: tutorial.py
+msgid "Seite erzeugen"
+msgstr "Create page"
+
+#: tutorial.py
+msgid "Skript: Tage ausrechnen"
+msgstr "Script: work out the days"
+
+#: tutorial.py
+msgid "So sieht die App für Nutzer aus. Mit „Neu“ zwei Anträge anlegen, z. B. „Sommerurlaub“ vom 4. bis 15. August. Tage und Status darfst du leer lassen – das übernimmt gleich ein Skript."
+msgstr "This is what the app looks like for users. Use “New” to add two requests, e.g. “Summer holiday” from 4 to 15 August. You may leave days and status empty – a script takes care of that in a moment."
+
+#: tutorial.py
+msgid "Stand sichern"
+msgstr "Save state"
+
+#: tutorial.py
+msgid "Startseite gestalten"
+msgstr "Design the home page"
+
+#: tutorial.py
+msgid "Unter „3 Einstellungen und Freigabe“ den Haken „Veröffentlicht“ setzen und speichern. Ohne Gruppen sehen jetzt alle angemeldeten Personen die App."
+msgstr "Under “3 Settings and sharing”, tick “Published” and save. Without groups, all signed-in people now see the app."
+
+#: tutorial.py
+msgid "Unter „Feld hinzufügen“ nacheinander: „Von“ (Datum, Pflichtfeld), „Bis“ (Datum, Pflichtfeld), „Tage“ (Ganze Zahl) und „Status“ (Auswahl, Werte je Zeile: offen, genehmigt, abgelehnt)."
+msgstr "Under “Add field”, one after another: “Von” (date, required), “Bis” (date, required), “Tage” (whole number) and “Status” (choice, one value per line: offen, genehmigt, abgelehnt)."
+
+#: tutorial.py
+msgid "Unter „Versionen“ eine Version mit der Notiz „erste Fassung“ speichern. Geht später ein Umbau schief, holst du diesen Stand mit einem Klick zurück."
+msgstr "Under “Versions”, save a version with the note “first draft”. If a change goes wrong later, you get this state back with one click."
+
+#: tutorial.py
+msgid "Veröffentlichen"
+msgstr "Publish"
+
+#: tutorial.py
+msgid "Zwei Anträge erfassen"
+msgstr "Add two requests"
+
+#: tutorial.py
+msgid "die App auf Englisch anbieten"
+msgstr "offer the app in English"
+
+#: versions.py
+msgid "Automatisch gesichert vor dem Einspielen der Datei %(name)s"
+msgstr "Saved automatically before importing the file %(name)s"
+
+#: versions.py
+msgid "Datei aus Baukasten %(version)s; vorher gesichert als Version %(number)s"
+msgstr "File from Baukasten %(version)s; previously saved as version %(number)s"
+
+#: versions.py
+msgid "Die Datei enthält eine Automatisierung, diese App ist aber keine."
+msgstr "The file contains an automation, but this app is not one."
+
+#: versions.py
+msgid "Die Datei enthält eine Automatisierung. Importieren dürfen das nur Mitglieder der Gruppe „Automatisierer“."
+msgstr "The file contains an automation. Only members of the “Automatisierer” group may import it."
+
+#: versions.py
+msgid "Die Datei enthält eine normale App, diese App ist aber eine Automatisierung."
+msgstr "The file contains a normal app, but this app is an automation."
+
+#: versions.py
+msgid "Die Datei hatte ein älteres Format (%(old)s) und wurde automatisch auf das aktuelle (%(new)s) umgestellt."
+msgstr "The file had an older format (%(old)s) and was converted to the current one (%(new)s) automatically."
+
+#: versions.py
+msgid "Die Datei stammt aus einer neueren Version des Baukastens (Format %(new)s, dieser Baukasten kennt bis %(current)s). Bitte zuerst den Baukasten aktualisieren."
+msgstr "The file comes from a newer version of Baukasten (format %(new)s, this Baukasten knows up to %(current)s). Please update Baukasten first."
+
+#: versions.py
+msgid "Die Skripte passen nicht zu dieser Art von App."
+msgstr "The scripts don’t fit this kind of app."
+
+#: versions.py
+msgid "Seite „%(page)s“: Diese Bausteine gibt es nicht mehr und werden weggelassen: %(types)s."
+msgstr "Page “%(page)s”: these blocks no longer exist and are left out: %(types)s."
+
+#: versions.py
+msgid "Unbekannter Feldtyp „%(type)s“ im Feld „%(field)s“."
+msgstr "Unknown field type “%(type)s” in the field “%(field)s”."
+
+#: versions.py
+msgid "Unbekanntes Format: Das ist keine exportierte App des Baukastens."
+msgstr "Unknown format: this is not an app exported from Baukasten."
+
+#: versions.py
+msgid "aus Datei %(name)s"
+msgstr "from file %(name)s"
+
+#: views.py
+msgid "Diesen Baustein gibt es auf der Seite nicht (mehr)."
+msgstr "This block no longer exists on the page."
+
+#: views.py
+msgid "Guten Abend"
+msgstr "Good evening"
+
+#: views.py
+msgid "Guten Morgen"
+msgstr "Good morning"
+
+#: views.py
+msgid "Guten Tag"
+msgstr "Good afternoon"
+
+#: views.py
+msgid "Zu viele Anfragen. Bitte versuche es gleich noch einmal."
+msgstr "Too many requests. Please try again in a moment."
+
+#: widgets.py
+msgid "Anfangs aufgeklappt"
+msgstr "Expanded at first"
+
+#: widgets.py
+msgid "Aufklappbereich"
+msgstr "Expandable section"
+
+#: widgets.py
+msgid "Beschriftung (leer: erstes Feld)"
+msgstr "Label (empty: first field)"
+
+#: widgets.py
+msgid "Bitte eine Zahl angeben."
+msgstr "Please enter a number."
+
+#: widgets.py
+msgid "Checkliste"
+msgstr "Checklist"
+
+#: widgets.py
+msgid "Datumsfeld (Beginn)"
+msgstr "Date field (start)"
+
+#: widgets.py
+msgid "Der Kalender braucht ein Datumsfeld."
+msgstr "The calendar needs a date field."
+
+#: widgets.py
+msgid "Die Checkliste braucht ein Ja/Nein-Feld (z. B. Erledigt)."
+msgstr "The checklist needs a yes/no field (e.g. Done)."
+
+#: widgets.py
+msgid "Die Schieberegler brauchen ein Zahlenfeld (z. B. Fortschritt)."
+msgstr "The sliders need a number field (e.g. Progress)."
+
+#: widgets.py
+msgid "Drittes Feld (optional)"
+msgstr "Third field (optional)"
+
+#: widgets.py
+msgid "Einheit (optional, z. B. %)"
+msgstr "Unit (optional, e.g. %)"
+
+#: widgets.py
+msgid "Einträge im Monatskalender nach einem Datumsfeld"
+msgstr "Entries in a monthly calendar by a date field"
+
+#: widgets.py
+msgid "Einträge per Häkchen abhaken, mit Fortschritt"
+msgstr "Tick off entries, with progress"
+
+#: widgets.py
+msgid "Enddatum (optional, für mehrtägige Einträge)"
+msgstr "End date (optional, for entries spanning several days)"
+
+#: widgets.py
+msgid "Erlaubt sind Werte von %(min)s bis %(max)s."
+msgstr "Values from %(min)s to %(max)s are allowed."
+
+#: widgets.py
+msgid "Erledigt-Feld (Ja/Nein)"
+msgstr "Done field (yes/no)"
+
+#: widgets.py
+msgid "Erledigte ausblenden"
+msgstr "Hide done items"
+
+#: widgets.py
+msgid "Farbe nach Auswahlfeld (optional)"
+msgstr "Colour by choice field (optional)"
+
+#: widgets.py
+msgid "Filter nach Feld"
+msgstr "Filter by field"
+
+#: widgets.py
+msgid "Filterleiste"
+msgstr "Filter bar"
+
+#: widgets.py
+msgid "Filtert alle Listen, Karten und Auswertungen dieser Tabelle auf der Seite"
+msgstr "Filters all lists, cards and charts of this table on the page"
+
+#: widgets.py
+msgid "Für diese Checkliste ist keine Tabelle ausgewählt."
+msgstr "No table is selected for this checklist."
+
+#: widgets.py
+msgid "Für diese Filterleiste ist keine Tabelle ausgewählt."
+msgstr "No table is selected for this filter bar."
+
+#: widgets.py
+msgid "Für diese Schieberegler ist keine Tabelle ausgewählt."
+msgstr "No table is selected for these sliders."
+
+#: widgets.py
+msgid "Für diesen Kalender ist keine Tabelle ausgewählt."
+msgstr "No table is selected for this calendar."
+
+#: widgets.py
+msgid "Größter Wert"
+msgstr "Largest value"
+
+#: widgets.py
+msgid "Kalender"
+msgstr "Calendar"
+
+#: widgets.py
+msgid "Kleinster Wert"
+msgstr "Smallest value"
+
+#: widgets.py
+msgid "Mehr erfahren"
+msgstr "Learn more"
+
+#: widgets.py
+msgid "Schrittweite"
+msgstr "Step"
+
+#: widgets.py
+msgid "Text (aufgeklappt)"
+msgstr "Text (when expanded)"
+
+#: widgets.py
+msgid "Text zum Auf- und Zuklappen, z. B. für Fragen und Antworten"
+msgstr "Text that expands and collapses, e.g. for questions and answers"
+
+#: widgets.py
+msgid "Viertes Feld (optional)"
+msgstr "Fourth field (optional)"
+
+#: widgets.py
+msgid "Wähle mindestens ein Feld, nach dem gefiltert wird."
+msgstr "Choose at least one field to filter by."
+
+#: widgets.py
+msgid "Zahlenfeld, das der Regler ändert"
+msgstr "Number field the slider changes"
+
+#: widgets.py
+msgid "Zahlenwerte von Einträgen direkt per Regler ändern"
+msgstr "Change number values of entries right away with a slider"
+
+#: widgets.py
+msgid "Zusatzinfo (optional)"
+msgstr "Extra info (optional)"
+
+#: widgets.py
+msgid "Zweites Feld (optional)"
+msgstr "Second field (optional)"
+
+#: widgets.py
+msgid "Überschrift (immer sichtbar)"
+msgstr "Heading (always visible)"
+
+#: widgets.py
+msgid "„+“ an jedem Tag zum Anlegen"
+msgstr "“+” on every day to create an entry"
+
+#: app_i18n.py
+msgid "App: Beschreibung"
+msgstr "App: description"
+
+#: app_i18n.py
+msgid "App: Name"
+msgstr "App: name"
+
+#: app_i18n.py
+msgid "Auswahlwert von „%(name)s“"
+msgstr "Choice of “%(name)s”"
+
+#: app_i18n.py
+msgid "Feld in „%(name)s“"
+msgstr "Field in “%(name)s”"
+
+#: app_i18n.py
+msgid "Seite „%(name)s“: %(block)s"
+msgstr "Page “%(name)s”: %(block)s"
+
+#: app_i18n.py
+msgid "Seite „%(name)s“: Titel"
+msgstr "Page “%(name)s”: title"
+
+#: app_i18n.py
+msgid "Tabelle „%(name)s“"
+msgstr "Table “%(name)s”"
+
+#: audit.py
+msgid "API"
+msgstr "API"
+
+#: audit.py
+msgid "Abgleich"
+msgstr "Sync"
+
+#: audit.py
+msgid "Freigabe"
+msgstr "Sharing"
+
+#: audit.py
+msgid "MCP"
+msgstr "MCP"
+
+#: audit.py
+msgid "Oberfläche"
+msgstr "Interface"
+
+#: audit.py
+msgid "Verwaltung"
+msgstr "Administration"
+
+#: audit.py
+msgid "abgeglichen"
+msgstr "synced"
+
+#: audit.py
+msgid "angelegt"
+msgstr "created"
+
+#: audit.py
+msgid "gelöscht"
+msgstr "deleted"
+
+#: audit.py
+msgid "gestartet"
+msgstr "started"
+
+#: audit.py
+msgid "geändert"
+msgstr "changed"
+
+#: audit.py
+msgid "importiert"
+msgstr "imported"
+
+#: audit.py
+msgid "wiederhergestellt"
+msgstr "restored"
+
+#: blocks.py planning.py
+msgid "d.m."
+msgstr "n/j"
+
+#: blocks.py planning.py
+msgid "l, j. F Y"
+msgstr "l, F j, Y"
+
+#: planning.py
+msgid "D, j. F"
+msgstr "D, F j"
+
+#: planning.py
+msgid "d.m.Y"
+msgstr "n/j/Y"
+
+#: planning.py
+msgid "l, j. F"
+msgstr "l, F j"

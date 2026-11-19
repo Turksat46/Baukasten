@@ -401,7 +401,7 @@ def _line_buckets(period, count, today):
 
 def _line_label(period, start):
     if period == "day":
-        return date_format(start, "d.m."), date_format(start, "SHORT_DATE_FORMAT")
+        return date_format(start, gettext("d.m.")), date_format(start, "SHORT_DATE_FORMAT")
     if period == "week":
         week = start.isocalendar()[1]
         return gettext("KW %(week)s") % {"week": week}, gettext("KW %(week)s, ab %(date)s") % {
@@ -556,7 +556,7 @@ def prep_image(request, app, block):
 def prep_greeting(request, app, block):
     user = request.user
     name = user.first_name or user.get_username()
-    return {"name": name, "today": date_format(timezone.localdate(), "l, j. F Y")}
+    return {"name": name, "today": date_format(timezone.localdate(), gettext("l, j. F Y"))}
 
 
 def prep_export(request, app, block):
