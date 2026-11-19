@@ -62,6 +62,7 @@ At the end you find [Frequently asked questions](#frequently-asked-questions),
 |---|---|---|
 | Inventar (inventory) | tables, forms, metrics, charts, data source, Python and JavaScript scripts | `python manage.py demo` |
 | Aufnahme-Einwilligung (recording consent) | a process across several people: create an event, send a link, agree or decline, evaluation; also for guests without an account | `python manage.py beispiel_einwilligung` |
+| Personaleinsatz (shift planning) | scheduling staff into shifts by drag and drop, lines with priorities, confirmations when overbooking, week overview, Kanban board; a tasks page with filter bar, checklist, sliders and calendar | `python manage.py beispiel_einsatzplanung` |
 
 The example apps are built in German. With [translations](#translating-an-app)
 they can also be shown in English.
@@ -404,10 +405,18 @@ on the entry, append it to the link as `?code=…` and check it on the page with
 | | Notice | coloured box: information, success, warning, important |
 | | Image | image from an https address or from `/static/` |
 | | Greeting | "Hello <name>" with date |
+| | Expandable section | a heading that expands a text when clicked, e.g. for questions and answers |
 | Data | List | table with search, paging, create, edit, delete |
 | | Cards | the same entries as cards |
 | | Form | capture a new entry directly on the page |
 | | CSV export | download all entries of a table |
+| | Filter bar | up to four fields to filter by; applies to all blocks of the same table on the page, see [Filtering](#filtering) |
+| | Sliders | one slider per entry that changes a number field right away (e.g. progress in %), with range and step |
+| Planning | Shift planning | assign entries (e.g. staff) to targets (e.g. shifts) by drag and drop, per day; with capacity, groups with priority and confirmations, see [Planning with drag and drop](#planning-with-drag-and-drop) |
+| | Week overview | assignments and capacity per target and day of a week, coloured by open, full, overbooked; a click opens the day’s planning |
+| | Kanban board | move entries between the values of a choice field (e.g. status) by drag and drop, optionally with a maximum per column |
+| | Calendar | monthly view by a date field, optionally with an end date (several days) and colour by a choice field; “+” creates an entry for that day |
+| | Checklist | tick a yes/no field, with progress; done items can be hidden |
 | Evaluation | Metric | count, sum or average, optionally with a unit |
 | | Progress | value relative to a target |
 | | Bar chart | entries per value of a field, as a ranking |
@@ -421,8 +430,69 @@ on the entry, append it to the link as `?code=…` and check it on the page with
 | | Database query | live data from a data source, see [below](#data-from-databases-and-databricks) |
 | | Tableau view | embeds a dashboard from your Tableau Server or Tableau Cloud, optionally with filters from the address (see [Tableau](#tableau)) |
 | Scripts | Output | shows values, text or tables that a script sets |
-| | Input field | text, email, number or long text that a script button sends along (`params["…"]`) |
+| | Input field | text, email, number, long text, slider, date, choice or yes/no that a script button sends along (`params["…"]`; yes/no as `"1"` or empty) |
 | Custom blocks | see below | |
+
+### Filtering
+
+The **Filter bar** shows an input for up to four fields of a table: choice and
+reference fields as a list, yes/no as yes/no, dates as a from–to range, text as
+“contains”. A change filters right away. The filter is part of the address, e.g.
+`?aufgaben.status=Offen&aufgaben.faellig.von=2026-11-01`, so it can be shared as a
+link. It applies to **all** blocks of the same table on the page: list, cards, key
+figure, progress, charts, timeline, line chart, Kanban board, calendar, checklist
+and sliders. Other parameters of the address are kept when filtering.
+
+A **“New” link can prefill fields**: `…/t/<table>/neu/?faellig=2026-12-24` fills in
+the field “faellig” in the form (this is what the “+” in the calendar does).
+
+### Planning with drag and drop
+
+The blocks of the **Planning** group work with tables you create yourself. In the
+example “Personaleinsatz” (`python manage.py beispiel_einsatzplanung`):
+
+| Role | Example | needs |
+|---|---|---|
+| Source: who is scheduled | staff (Mitarbeitende) | a name field; optionally extra info and a yes/no field “active” |
+| Target: where to | shifts (early, late, night per line) | a number field for the capacity; optionally a reference to a group |
+| Group with priority | lines (Linien) | a number field “priority” (1 = most important) |
+| Assignment | shifts worked (Einsätze) | reference to the source, reference to the target, optionally a date |
+
+With a date, **Shift planning** plans per day (browse at the top right, address
+`?datum=2026-11-19`); the targets are then templates that apply every day. Without
+a date the assignment is permanent, e.g. “who belongs to which team”.
+
+- **Schedule:** drag an entry from the list on the left onto a target. Without a
+  mouse (phone, keyboard): tap the entry or select it with Enter, then
+  “Schedule here”.
+- **Move:** drag a scheduled name onto another target.
+- **Remove:** × next to the name, or drag the name back into the list on the left.
+- **Confirmations** in a dialog, configurable on the block:
+  - The target is already full. “When a target is already full”: *Ask*
+    (default), *Prevent* or *Allow*.
+  - The person is already scheduled elsewhere on the same day.
+  - A group with a higher priority still has open places.
+
+  Scheduling someone into the same target twice is never possible.
+
+Groups are sorted by priority (priority 1 at the top). You choose the fields for
+capacity, group and priority in the page designer; for the priority it offers the
+fields of the table the group field refers to.
+
+The **Week overview** uses the same settings and shows “scheduled / capacity” per
+target and day: red when unstaffed or overbooked, yellow when partly staffed, green
+when full. Totals per day are at the bottom, utilisation, open and overbooked
+places at the top. With “Clicking a cell opens this page”, a click leads to the
+day’s planning.
+
+The **Kanban board** shows entries in columns by the values of a choice field.
+Moving a card changes the value. With “At most cards per column” Baukasten asks
+for confirmation when a column is full.
+
+Saving uses the person’s permissions: if creating, editing or deleting is
+switched off in the assignment table, scheduling, moving or removing doesn’t work
+either. Everything appears in the change log. In the designer preview the blocks
+are view-only.
 
 ### Custom blocks
 
@@ -881,6 +951,8 @@ builder/
   models.py          App, Entity (table), Field, Record (entry), Page,
                      CustomBlock, ApiKey, AppVersion
   blocks.py          blocks: schema, data retrieval, layout validation
+  planning.py        planning blocks (shift planning, week overview, Kanban) and their actions
+  widgets.py         filter bar, calendar, checklist, sliders, expandable section
   forms.py           forms; RecordForm is built from a table's fields
   views.py           runtime: home page, pages, entries, CSV export, public pages
   designer.py        Designer: apps, tables, fields, pages, blocks, versions,
@@ -901,7 +973,11 @@ builder/
   tours.py           texts of the tours
   locale/en/         English translation of the interface
   static/builder/    theme.css, theme.js, style.css, designer.js, tour.js,
-                     transitions.js, inputs.js, home.js, font, logo
+                     transitions.js, inputs.js, home.js, font, logo;
+                     modal.js (dialog BaukastenDialog.confirm/alert on every page),
+                     dnd.js (drag and drop BaukastenDnD, with mouse, touch and keyboard),
+                     planning.js (shift planning and Kanban, BaukastenBlocks.act),
+                     widgets.js (checklist and sliders)
   templates/         templates
   tests.py           automated tests
 extensions/          your own Python extensions
@@ -1296,20 +1372,39 @@ A new standard block consists of three parts:
 The test `test_every_block_type_renders` automatically checks that every
 registered block renders without errors.
 
+Blocks working with several tables give field settings an `"of"`:
+`{"type": "field", "of": "target"}` shows the fields of the table in the setting
+`target`; if `of` names a reference field, the fields of the table it refers to.
+The designer and the AI validation understand this.
+
+Interactive blocks (shift planning, Kanban, checklist, sliders) register their
+action with `register(..., action=function)` and send actions as JSON to
+`/a/<app>/p/<page>/b/<block>/aktion/` (`views.block_action`). What is allowed is
+read from the block’s saved settings, never from the request; writing goes through
+`TableOps` with the person’s permissions. A 409 response with `confirm: true` is a
+confirmation: the browser shows it with `BaukastenDialog.confirm` (modal.js) and
+sends the action again with `force: true`. Drag and drop comes from
+`BaukastenDnD.register(selector, {accepts, drop})` in `dnd.js`.
+
 ### Maintaining translations
 
 German is the source language in the code. Texts are marked with `gettext`
 (Python), `{% translate %}` (templates) and `gettext()` (JavaScript). After text
-changes, in the folder `builder/`:
+changes, in the main folder:
 
 ```
-django-admin makemessages -l en -d django
-django-admin makemessages -l en -d djangojs --ignore "static/builder/swagger/*"
-(enter translations in locale/en/LC_MESSAGES/*.po)
-django-admin compilemessages
+python manage.py uebersetzungen pruefen       (which texts are missing?)
+python manage.py uebersetzungen ergaenzen     (add new texts empty to the .po files)
+(enter translations in builder/locale/en/LC_MESSAGES/*.po)
+python manage.py uebersetzungen kompilieren   (build the .mo files)
 ```
 
-This requires GNU gettext. The compiled `.mo` files are in the repository; the
+This works without GNU gettext, so also on Windows. The test
+`InterfaceTranslationTests` fails as long as an interface text has no English
+translation or the `.mo` files don’t match the `.po` files. Date formats go
+through translation as well (`gettext("l, j. F Y")` becomes `l, F j, Y` in
+English). With GNU gettext, `django-admin makemessages -l en` and
+`compilemessages` in the folder `builder/` still work. The compiled `.mo` files are in the repository; the
 container does not need gettext. Another language is added via `LANGUAGES` in
 `config/settings.py` and a new folder under `locale/`; the language switch in
 `templates/builder/_language.html` then needs another button. The handbook has
@@ -1644,8 +1739,8 @@ within 30 seconds and appear in the audit log. Credentials and technical values
 variables.
 
 **Release notes:** under `/admin/` → Release Notes you describe what a version
-brings (Markdown). Once "published", it appears for everyone on the page **Über
-den Baukasten** (`/ueber/`), reachable via "Baukasten 1.x · Was ist neu?" at the
+brings (Markdown). Once "published", it appears for everyone on the page **About
+Baukasten** (`/ueber/`), reachable via "Baukasten 1.x · What’s new?" at the
 bottom of every page. If there is news someone has not seen yet, the link lights
 up. Drafts are visible to superusers only.
 

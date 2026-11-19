@@ -14,6 +14,7 @@
 (function () {
   "use strict";
 
+  var gettext = window.gettext || function (text) { return text; };
   var handlers = [];
   var dragged = null;   // {item, root, handler} während Maus-Ziehen
   var picked = null;    // dasselbe im Auswahl-Modus (Tippen/Tastatur)
@@ -109,7 +110,7 @@
       if (button) button.hidden = !zone.classList.contains("is-drop-target");
     });
     var status = picked.root.querySelector("[data-plan-status]");
-    if (status) status.textContent = (window.gettext || String)("Ausgewählt. Jetzt ein Ziel wählen oder Escape zum Abbrechen.");
+    if (status) status.textContent = gettext("Ausgewählt. Jetzt ein Ziel wählen oder Escape zum Abbrechen.");
   }
 
   function unpick() {

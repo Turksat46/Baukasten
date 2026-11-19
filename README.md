@@ -135,7 +135,7 @@ an. Einzelheiten im Handbuch unter „Lokal mit Kubernetes“.
 
 ## Stand
 
-Version 1.0.0 (siehe `CHANGELOG.md`). 246 automatische Tests laufen bei jeder Änderung
+Version 1.0.0 (siehe `CHANGELOG.md`). 249 automatische Tests laufen bei jeder Änderung
 in GitHub Actions gegen SQLite und PostgreSQL, dazu Durchläufe im Browser. Docker-Build und die lokalen Manifeste laufen auf Kubernetes in Docker
 Desktop mit PostgreSQL 16. Nicht getestet: ein echter Produktions-Cluster (Ingress,
 TLS), der vollständige Login gegen einen echten Keycloak und Verbindungen zu

@@ -1395,16 +1395,21 @@ registrierte Baustein fehlerfrei anzeigen lässt.
 
 Deutsch ist die Ausgangssprache im Code. Texte werden mit `gettext` (Python),
 `{% translate %}` (Vorlagen) und `gettext()` (JavaScript) markiert. Nach
-Textänderungen, im Ordner `builder/`:
+Textänderungen, im Hauptordner:
 
 ```
-django-admin makemessages -l en -d django
-django-admin makemessages -l en -d djangojs --ignore "static/builder/swagger/*"
-(Übersetzungen in locale/en/LC_MESSAGES/*.po eintragen)
-django-admin compilemessages
+python manage.py uebersetzungen pruefen       (welche Texte fehlen?)
+python manage.py uebersetzungen ergaenzen     (neue Texte leer in die .po-Dateien)
+(Übersetzungen in builder/locale/en/LC_MESSAGES/*.po eintragen)
+python manage.py uebersetzungen kompilieren   (.mo-Dateien erzeugen)
 ```
 
-Dafür muss GNU gettext installiert sein. Die kompilierten `.mo`-Dateien liegen
+Das geht ohne GNU gettext, also auch unter Windows. Der Test
+`InterfaceTranslationTests` schlägt fehl, solange ein Text der Oberfläche keine
+englische Übersetzung hat oder die `.mo`-Dateien nicht zu den `.po`-Dateien passen.
+Datumsformate laufen ebenfalls durch die Übersetzung (`gettext("l, j. F Y")` wird
+auf Englisch `l, F j, Y`). Mit GNU gettext gehen weiterhin
+`django-admin makemessages -l en` und `compilemessages` im Ordner `builder/`. Die kompilierten `.mo`-Dateien liegen
 im Repository, im Container ist gettext nicht nötig. Eine weitere Sprache kommt
 über `LANGUAGES` in `config/settings.py` und einen neuen Ordner unter
 `locale/` dazu; der Sprachumschalter in `templates/builder/_language.html`
