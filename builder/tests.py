@@ -3405,8 +3405,15 @@ class PlanningTests(TestCase):
 
     def test_example_data_command(self):
         call_command("beispiel_einsatzplanung", "--app", self.app.slug, verbosity=0)
-        # Es gab schon Linien: keine doppelten Beispieldaten
+        # Tabellen mit Daten bleiben unverändert, leere bekommen Beispiele
         self.assertEqual(self.t["linien"].records.count(), 2)
+        self.assertEqual(self.t["mitarbeitende"].records.count(), 3)
+        self.assertEqual(self.t["aufgaben"].records.count(), 0)  # braucht drei Linien
+        self.assertEqual(self.t["tauschwuensche"].records.count(), 0)  # braucht zwölf Personen
+        self.assertGreater(self.t["einsaetze"].records.count(), 0)
+        before = self.t["einsaetze"].records.count()
+        call_command("beispiel_einsatzplanung", "--app", self.app.slug, verbosity=0)
+        self.assertEqual(self.t["einsaetze"].records.count(), before)
 
 
 class WidgetTests(TestCase):

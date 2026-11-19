@@ -160,30 +160,63 @@ class Command(BaseCommand):
         return app
 
     def _data(self, app):
+        """Füllt jede leere Tabelle mit Beispieldaten. Tabellen mit Daten bleiben unverändert;
+        so bekommt auch eine nachträglich ergänzte Tabelle (z. B. Aufgaben) ihre Beispiele."""
         tables = {e.slug: e for e in app.entities.all()}
-        if tables["linien"].records.exists():
-            self.stdout.write("Es gibt schon Daten; Beispieldaten werden nicht noch einmal angelegt.")
-            return
+        missing = [slug for slug in ("linien", "schichten", "mitarbeitende", "einsaetze", "aufgaben",
+                                     "tauschwuensche") if slug not in tables]
+        if missing:
+            self.stdout.write(f"Diese Tabellen fehlen in der App und bleiben leer: {', '.join(missing)}")
+
+        def empty(table):
+            return table in tables and not tables[table].records.exists()
 
         def add(table, **data):
             return Record.objects.create(entity=tables[table], data=data)
 
-        linien = [add("linien", name=n, prioritaet=p, bereich=b) for n, p, b in LINIEN]
-        schichten = []
-        for index, items in SCHICHTEN.items():
-            for name, zeit, bedarf in items:
-                schichten.append(add("schichten", bezeichnung=name, linie=linien[index].pk, zeit=zeit, bedarf=bedarf))
-        personen = [add("mitarbeitende", name=n, qualifikation=q, aktiv=n != "Rosa Klein") for n, q in PERSONEN]
+        def existing(table):
+            return list(tables[table].records.order_by("id")) if table in tables else []
 
-        # Diese Woche teilweise verplant: Linie 1 fast voll, Linie 2 und 3 mit Lücken, ein Tag überplant.
+        filled = []
+        if empty("linien") and empty("schichten"):
+            linien = [add("linien", name=n, prioritaet=p, bereich=b) for n, p, b in LINIEN]
+            for index, items in SCHICHTEN.items():
+                for name, zeit, bedarf in items:
+                    add("schichten", bezeichnung=name, linie=linien[index].pk, zeit=zeit, bedarf=bedarf)
+            filled += ["linien", "schichten"]
+        if empty("mitarbeitende"):
+            for n, q in PERSONEN:
+                add("mitarbeitende", name=n, qualifikation=q, aktiv=n != "Rosa Klein")
+            filled.append("mitarbeitende")
+        linien, schichten, personen = existing("linien"), existing("schichten"), existing("mitarbeitende")
         today = timezone.localdate()
+
+        if empty("einsaetze") and schichten and len(personen) >= 3:
+            self._einsaetze(add, schichten, personen, today)
+            filled.append("einsaetze")
+        if empty("aufgaben") and len(linien) >= 3:
+            self._aufgaben(add, linien, today)
+            filled.append("aufgaben")
+        if empty("tauschwuensche") and len(personen) >= 12:
+            for wunsch, person, status in [
+                ("Früh gegen Spät tauschen (Do)", 1, "Neu"), ("Freier Freitag wegen Arzttermin", 4, "Neu"),
+                ("Nachtschicht abgeben", 8, "In Prüfung"), ("Linie 2 statt Linie 3", 11, "Genehmigt"),
+                ("Samstag zusätzlich", 6, "Abgelehnt"),
+            ]:
+                add("tauschwuensche", wunsch=wunsch, mitarbeiter=personen[person].pk, status=status)
+            filled.append("tauschwuensche")
+        self.stdout.write("Beispieldaten in: " + (", ".join(filled) if filled else
+                                                  "keiner Tabelle (alle haben schon Daten)"))
+
+    def _einsaetze(self, add, schichten, personen, today):
+        # Diese Woche teilweise verplant: Linie 1 fast voll, Linie 2 und 3 mit Lücken, ein Tag überplant.
         monday = today - timedelta(days=today.weekday())
         for offset in range(5):
             day = (monday + timedelta(days=offset)).isoformat()
             pool = personen[offset:] + personen[:offset]
             nr = 0
             for s_index, shift in enumerate(schichten):
-                need = shift.data["bedarf"] - (1 if (s_index + offset) % 3 == 0 else 0)
+                need = int(shift.data.get("bedarf") or 0) - (1 if (s_index + offset) % 3 == 0 else 0)
                 if s_index >= 5 and offset >= 3:
                     need = 0  # zum Wochenende hin noch offen
                 for _ in range(max(need, 0)):
@@ -195,6 +228,7 @@ class Command(BaseCommand):
                 add("einsaetze", mitarbeiter=pool[-2].pk, schicht=schichten[0].pk, datum=day,
                     bemerkung="Einarbeitung")
 
+    def _aufgaben(self, add, linien, today):
         aufgaben = [
             ("Übergabeprotokoll Frühschicht", 0, "Hoch", 0, 100, True),
             ("Sicherheitsunterweisung neue Kollegen", 0, "Hoch", 2, 40, False),
@@ -208,10 +242,3 @@ class Command(BaseCommand):
         for name, linie, wichtig, tage, fortschritt, erledigt in aufgaben:
             add("aufgaben", aufgabe=name, linie=linien[linie].pk, wichtigkeit=wichtig,
                 faellig=(today + timedelta(days=tage)).isoformat(), fortschritt=fortschritt, erledigt=erledigt)
-
-        for wunsch, person, status in [
-            ("Früh gegen Spät tauschen (Do)", 1, "Neu"), ("Freier Freitag wegen Arzttermin", 4, "Neu"),
-            ("Nachtschicht abgeben", 8, "In Prüfung"), ("Linie 2 statt Linie 3", 11, "Genehmigt"),
-            ("Samstag zusätzlich", 6, "Abgelehnt"),
-        ]:
-            add("tauschwuensche", wunsch=wunsch, mitarbeiter=personen[person].pk, status=status)
