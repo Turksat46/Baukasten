@@ -104,7 +104,8 @@ def normalize(definition, app=None, kind=App.APP):
         entities = current["entities"]
     else:
         entities = _entities(data.get("entities", []), errors, warnings)
-    entity_fields = {e["slug"]: {f["key"] for f in e["fields"]} for e in entities}
+    # je Tabelle: Feld-Key -> Zieltabelle (nur bei Verweisen, sonst None)
+    entity_fields = {e["slug"]: {f["key"]: f.get("reference") for f in e["fields"]} for e in entities}
     _check_references(entities, errors)
 
     if kind == App.AUTOMATION and data.get("pages"):
@@ -241,7 +242,6 @@ def _check_block(block, path, types, entity_fields, errors, warnings):
         if key not in specs:
             warnings.append(f"{path}.props.{key}: Diese Einstellung kennt der Baustein „{block['type']}“ nicht; "
                             f"sie wird ignoriert. Bekannt: {', '.join(specs) or 'keine'}.")
-    entity = props.get("entity")
     for key, spec in specs.items():
         value = props.get(key)
         if value in (None, ""):
@@ -249,13 +249,26 @@ def _check_block(block, path, types, entity_fields, errors, warnings):
         if spec["type"] == "entity" and value not in entity_fields:
             errors.append(f"{path}.props.{key}: Eine Tabelle „{value}“ gibt es nicht. "
                           f"Vorhanden: {', '.join(sorted(entity_fields)) or 'keine'}.")
-        elif spec["type"] == "field" and entity in entity_fields and value not in entity_fields[entity]:
-            errors.append(f"{path}.props.{key}: Die Tabelle „{entity}“ hat kein Feld „{value}“. "
-                          f"Vorhanden: {', '.join(sorted(entity_fields[entity]))}.")
+        elif spec["type"] == "field":
+            entity = field_entity(spec, specs, props, entity_fields)
+            if entity in entity_fields and value not in entity_fields[entity]:
+                errors.append(f"{path}.props.{key}: Die Tabelle „{entity}“ hat kein Feld „{value}“. "
+                              f"Vorhanden: {', '.join(sorted(entity_fields[entity]))}.")
         elif spec["type"] == "select":
             allowed = [str(option[0]) for option in spec.get("options", [])]
             if allowed and str(value) not in allowed:
                 errors.append(f"{path}.props.{key}: „{value}“ ist nicht erlaubt. Erlaubt: {', '.join(allowed)}.")
+
+
+def field_entity(spec, specs, props, entity_fields, depth=0):
+    """Zu welcher Tabelle gehört eine Feld-Einstellung? Standard: die Einstellung „entity“.
+    Mit "of" eine andere Tabellen-Einstellung oder, wenn "of" ein Verweisfeld nennt, dessen Zieltabelle."""
+    of = spec.get("of", "entity")
+    parent = specs.get(of)
+    if parent and parent["type"] == "field" and depth < 3:
+        owner = field_entity(parent, specs, props, entity_fields, depth + 1)
+        return (entity_fields.get(owner) or {}).get(props.get(of))
+    return props.get(of)
 
 
 def _scripts(raw, kind, pages, entity_fields, errors, warnings):

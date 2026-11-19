@@ -54,7 +54,7 @@ class BlockType:
 
 REGISTRY = {}
 CATEGORIES = [
-    ("Inhalt", _("Inhalt")), ("Daten", _("Daten")), ("Auswertung", _("Auswertung")),
+    ("Inhalt", _("Inhalt")), ("Daten", _("Daten")), ("Planung", _("Planung")), ("Auswertung", _("Auswertung")),
     ("Navigation", _("Navigation")), ("Layout", _("Layout")), ("Anbindung", _("Anbindung")),
     ("Skripte", _("Skripte")), ("Eigene", _("Eigene Bausteine")),
 ]
@@ -815,6 +815,9 @@ register("input", _("Eingabefeld"), "⌨️", [
 ], prep_input, "Skripte", _("Wert, den ein Skript-Button auf der Seite mitschickt"))
 
 
+# Planung (Einsatzplanung, Wochenübersicht, Kanban) steht in einer eigenen Datei.
+from . import planning  # noqa: E402,F401  registriert die Planungs-Bausteine
+
 # ---------- Anzeige, Prüfung, Designer-Konfiguration ----------
 
 def render_block(request, app, block, types=None, overrides=None):
@@ -863,7 +866,7 @@ def render_layout(request, app, page, layout=None, overrides=None, lazy=False):
         html = render_placeholder(request, app, block) if deferred else render_block(request, app, block, types, overrides)
         if html is None:
             continue
-        rendered.append({"id": block["id"], "width": block.get("width", 12), "name": block.get("name", ""),
+        rendered.append({"id": block["id"], "type": block.get("type"), "width": block.get("width", 12), "name": block.get("name", ""),
                          "refresh": block.get("refresh", 0), "lazy": deferred, "html": html})
     return rendered
 
@@ -934,8 +937,9 @@ def designer_config(app, page):
         "categories": [{"key": key, "label": label} for key, label in CATEGORIES],
         "entities": [
             {"slug": e.slug, "name": e.name,
-             "fields": [{"key": f.key, "label": f.label, "type": f.type} for f in e.fields.all()]}
-            for e in app.entities.prefetch_related("fields")
+             "fields": [{"key": f.key, "label": f.label, "type": f.type,
+                         "reference": f.reference.slug if f.reference_id else None} for f in e.fields.all()]}
+            for e in app.entities.prefetch_related("fields__reference")
         ],
         "pages": [{"slug": p.slug, "title": p.title} for p in app.pages.all()],
         "actions": [{"name": n, "label": a["label"]} for n, a in hooks.ACTIONS.items()],

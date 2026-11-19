@@ -324,6 +324,15 @@
     {% endif %}
   </section>
 
+{% elif type == "assign" %}
+  {% include "builder/blocks/assign.html" %}
+
+{% elif type == "weekplan" %}
+  {% include "builder/blocks/weekplan.html" %}
+
+{% elif type == "kanban" %}
+  {% include "builder/blocks/kanban.html" %}
+
 {% elif custom_plain is not None %}
   <div class="custom-block">{{ custom_plain }}</div>
 

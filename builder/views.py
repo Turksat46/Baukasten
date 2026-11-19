@@ -29,6 +29,9 @@ from .scripting import python as python_scripts
 from .scripting.ops import OpsError, TableOps
 from .scripting.triggers import execute, page_scripts, run_page
 
+INTERACTIVE_TYPES = {"assign", "kanban"}  # Bausteine mit Drag-and-drop (dnd.js, planning.js)
+
+
 def get_app(request, slug):
     app = get_object_or_404(App, slug=slug, kind=App.APP)  # Automatisierungen haben keine Seiten
     if not app.user_can_use(request.user):
@@ -143,6 +146,7 @@ def page(request, app, page=None):
         "script_notes": notes,
         "script_errors": errors if app.user_can_edit(request.user) else [],
         "runtime": runtime_config(request, app, current, blocks) if current else None,
+        "interactive": any(b.get("type") in INTERACTIVE_TYPES for b in blocks),
     })
 
 
@@ -163,6 +167,33 @@ def page_block(request, app, page, block):
     response = HttpResponse(html or "", content_type="text/html; charset=utf-8")
     response["Cache-Control"] = "no-store"
     return response
+
+
+@login_required
+@require_POST
+def block_action(request, app, page, block):
+    """Aktionen interaktiver Bausteine (Einsatzplanung, Kanban): einplanen, verschieben, entfernen.
+
+    Was erlaubt ist, steht in den Einstellungen des Bausteins auf der gespeicherten Seite, nie in der
+    Anfrage. Gespeichert wird mit den Rechten der Person (Tabellen-Schalter, Pflichtfelder, Protokoll).
+    Antwort 409 mit confirm=true: Warnung (z. B. Überplanung), mit force=true trotzdem ausführen."""
+    from . import planning
+
+    app = get_app(request, app)
+    current = get_object_or_404(app.pages, slug=page)
+    found = next((b for b in current.layout or [] if b.get("id") == block), None)
+    if found is None:
+        return JsonResponse({"error": _("Diesen Baustein gibt es auf der Seite nicht (mehr).")}, status=404)
+    try:
+        payload = json.loads(request.body)
+    except ValueError:
+        return JsonResponse({"error": _("Ungültige Daten.")}, status=400)
+    try:
+        return JsonResponse(planning.handle(app, found, payload, request.user))
+    except planning.Refused as exc:
+        return JsonResponse(exc.payload(), status=409)
+    except OpsError as exc:
+        return JsonResponse({"error": str(exc), "fields": exc.fields}, status=400)
 
 
 @require_POST

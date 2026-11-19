@@ -1,0 +1,73 @@
+{% load i18n baukasten %}<section class="card plan plan-week">
+  <div class="card-head">
+    <div>
+      <h3 data-slot="title">{{ p.title|default:_("Wochenübersicht") }}</h3>
+      <p class="muted small">{{ week_label }}</p>
+    </div>
+    <nav class="plan-nav" aria-label="{% translate 'Woche wählen' %}">
+      <a class="btn btn-secondary btn-small" href="?{{ week_param }}={{ prev_week }}" aria-label="{% translate 'Vorherige Woche' %}" title="{% translate 'Vorherige Woche' %}">‹</a>
+      {% if not is_this_week %}<a class="btn btn-secondary btn-small" href="?{{ week_param }}={{ this_week }}">{% translate "Diese Woche" %}</a>{% endif %}
+      <a class="btn btn-secondary btn-small" href="?{{ week_param }}={{ next_week }}" aria-label="{% translate 'Nächste Woche' %}" title="{% translate 'Nächste Woche' %}">›</a>
+    </nav>
+  </div>
+
+  <ul class="stat-chips plan-summary">
+    <li>{% blocktranslate with percent=percent %}Auslastung <strong>{{ percent }} %</strong>{% endblocktranslate %}</li>
+    <li>{% blocktranslate with count=total.count capacity=total.capacity %}<strong>{{ count }}</strong> von {{ capacity }} Plätzen{% endblocktranslate %}</li>
+    <li{% if total.open %} class="chip-open"{% endif %}>{% blocktranslate with open=total.open %}<strong>{{ open }}</strong> offen{% endblocktranslate %}</li>
+    {% if total.over %}<li class="chip-error">{% blocktranslate with over=total.over %}<strong>{{ over }}</strong> überplant{% endblocktranslate %}</li>{% endif %}
+  </ul>
+
+  <div class="table-wrap">
+    <table class="plan-grid">
+      <thead>
+        <tr>
+          <th scope="col">{{ target_name|tr }}</th>
+          {% for d in days %}<th scope="col" class="{% if d.today %}is-today{% endif %}{% if d.weekend %} is-weekend{% endif %}"><span>{{ d.short }}</span> <span class="muted">{{ d.date }}</span></th>{% endfor %}
+          <th scope="col" class="plan-sum">{% translate "Woche" %}</th>
+        </tr>
+      </thead>
+      {% for group in groups %}
+        <tbody>
+          {% if group.label %}
+            <tr class="plan-grid-group"><th colspan="{{ columns }}" scope="rowgroup">{{ group.label }}{% if group.priority_label %} <span class="plan-prio prio-{{ forloop.counter }}">{% blocktranslate with prio=group.priority_label %}Priorität {{ prio }}{% endblocktranslate %}</span>{% endif %}</th></tr>
+          {% endif %}
+          {% for row in group.rows %}
+            <tr>
+              <th scope="row">{{ row.label }}{% if row.capacity %} <span class="muted small">({{ row.cells.0.capacity }})</span>{% endif %}</th>
+              {% for cell in row.cells %}
+                <td class="plan-cell state-{{ cell.state }}" title="{{ cell.title }}">
+                  {% if cell.href %}<a href="{{ cell.href }}">{% endif %}
+                  <span class="plan-cell-count">{{ cell.count }}{% if cell.capacity %}<span class="muted">/{{ cell.capacity }}</span>{% endif %}</span>
+                  {% if cell.names %}<span class="plan-cell-names">{{ cell.names|join:", " }}</span>{% endif %}
+                  {% if cell.href %}</a>{% endif %}
+                </td>
+              {% endfor %}
+              <td class="plan-sum state-{{ row.state }}">{{ row.count }}<span class="muted">/{{ row.capacity }}</span></td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      {% empty %}
+        <tbody><tr><td colspan="{{ columns }}" class="empty">{% translate "Noch keine Ziele." %}</td></tr></tbody>
+      {% endfor %}
+      <tfoot>
+        <tr>
+          <th scope="row">{% translate "Kapazität gesamt" %}</th>
+          {% for d in day_totals %}
+            <td class="plan-sum state-{{ d.state }}">
+              <span class="plan-cell-count">{{ d.count }}<span class="muted">/{{ d.capacity }}</span></span>
+              <span class="plan-meter" aria-hidden="true"><span style="width: {% if d.percent > 100 %}100{% else %}{{ d.percent }}{% endif %}%"></span></span>
+            </td>
+          {% endfor %}
+          <td class="plan-sum"><strong>{{ total.count }}</strong><span class="muted">/{{ total.capacity }}</span></td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+  <ul class="plan-legend muted small" aria-label="{% translate 'Legende' %}">
+    <li><span class="swatch state-empty"></span>{% translate "unbesetzt" %}</li>
+    <li><span class="swatch state-open"></span>{% translate "teilweise" %}</li>
+    <li><span class="swatch state-full"></span>{% translate "voll" %}</li>
+    <li><span class="swatch state-over"></span>{% translate "überplant" %}</li>
+  </ul>
+</section>

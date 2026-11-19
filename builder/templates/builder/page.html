@@ -25,6 +25,10 @@
 {% endblock %}
 {% block scripts %}
 <script src="{% asset 'builder/inputs.js' %}" defer></script>
+{% if interactive %}
+  <script src="{% asset 'builder/dnd.js' %}" defer></script>
+  <script src="{% asset 'builder/planning.js' %}" defer></script>
+{% endif %}
 {% if runtime %}
   {{ runtime|json_script:"bk-runtime" }}
   <script src="{% asset 'builder/runtime.js' %}"></script>

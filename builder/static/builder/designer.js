@@ -39,6 +39,9 @@
     http: "M12 3a9 9 0 100 18 9 9 0 000-18zM3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18",
     query: "M12 4c4.4 0 8 1.3 8 3s-3.6 3-8 3-8-1.3-8-3 3.6-3 8-3zM4 7v10c0 1.7 3.6 3 8 3s8-1.3 8-3V7M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3",
     output: "M8 9l-4 3 4 3M16 9l4 3-4 3M13.5 6l-3 12",
+    assign: "M7 8a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM3 13c.8-2 2.3-3 4-3s3.2 1 4 3M13 6h8v14h-8zM13 11h8M13 16h8",
+    weekplan: "M4 5h16v15H4zM4 9h16M8 3v4M16 3v4M8 13h2M14 13h2M8 17h2M14 17h2",
+    kanban: "M4 4h4v16H4zM10 4h4v10h-4zM16 4h4v7h-4z",
     custom: "M12 3l2.6 5.6 6 .7-4.4 4.2 1.1 6-5.3-3-5.3 3 1.1-6L3.4 9.3l6-.7z",
   };
   var SVG_NS = "http://www.w3.org/2000/svg";
@@ -87,6 +90,24 @@
 
   function find(id) { return layout.filter(function (b) { return b.id === id; })[0]; }
   function entity(slug) { return cfg.entities.filter(function (e) { return e.slug === slug; })[0]; }
+
+  // Zu welcher Tabelle gehört eine Feld-Einstellung? Standard ist die Einstellung „entity“;
+  // mit spec.of eine andere Tabellen-Einstellung oder die Zieltabelle eines Verweisfelds.
+  function fieldEntity(spec, block, depth) {
+    var of = spec.of || "entity";
+    var parent = (types[block.type].fields || []).filter(function (s) { return s.key === of; })[0];
+    if (parent && parent.type === "field" && (depth || 0) < 3) {
+      var owner = fieldEntity(parent, block, (depth || 0) + 1);
+      var ref = owner && owner.fields.filter(function (f) { return f.key === block.props[of]; })[0];
+      return ref && ref.reference ? entity(ref.reference) : null;
+    }
+    return entity(block.props[of]);
+  }
+
+  function dependsOnField(spec, block) {
+    var parent = (types[block.type].fields || []).filter(function (s) { return s.key === spec.of; })[0];
+    return parent && parent.type === "field";
+  }
 
   function markDirty() {
     dirty = true;
@@ -265,7 +286,7 @@
       case "select": return spec.options;
       case "entity": return [["", gettext("– wählen –")]].concat(cfg.entities.map(function (e) { return [e.slug, e.name]; }));
       case "field":
-        var ent = entity(block.props.entity);
+        var ent = fieldEntity(spec, block);
         return [["", gettext("– wählen –")]].concat((ent ? ent.fields : []).map(function (f) { return [f.key, f.label]; }));
       case "page": return [["", gettext("– wählen –")]].concat(cfg.pages.map(function (p) { return [p.slug, p.title]; }));
       case "action": return [["", gettext("– wählen –")]].concat(cfg.actions.map(function (a) { return [a.name, a.label]; }));
@@ -294,6 +315,10 @@
     if (spec.key === "field" && "aggregate" in block.props && block.props.aggregate === "count") {
       return null;
     }
+    // Feld einer verknüpften Tabelle (z. B. Priorität der Linie) erst zeigen, wenn es die Tabelle gibt.
+    if (spec.type === "field" && spec.of && dependsOnField(spec, block) && !fieldEntity(spec, block)) {
+      return null;
+    }
     var id = "prop-" + spec.key;
     var value = block.props[spec.key];
     var options = optionList(spec, block);
@@ -313,7 +338,7 @@
     input.addEventListener(options || spec.type === "checkbox" ? "change" : "input", function () {
       block.props[spec.key] = spec.type === "checkbox" ? input.checked : input.value;
       markDirty();
-      if (spec.type === "entity" || spec.key === "target" || spec.key === "aggregate") renderProps();
+      if (spec.type === "entity" || spec.type === "field" || spec.key === "target" || spec.key === "aggregate") renderProps();
     });
     if (spec.type === "checkbox") {
       var label = el("label", { for: id });

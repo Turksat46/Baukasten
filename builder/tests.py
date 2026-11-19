@@ -3238,3 +3238,172 @@ class PwaTests(TestCase):
         self.assertContains(page, "builder/pwa.js")
         for name in ("icon-192.png", "icon-512.png", "maskable-512.png", "apple-touch-icon.png"):
             self.assertTrue((Path(__file__).parent / "static" / "builder" / "app" / name).exists(), name)
+
+
+class PlanningTests(TestCase):
+    """Planungs-Bausteine: Einsatzplanung, Wochenübersicht, Kanban (builder/planning.py)."""
+
+    def setUp(self):
+        from django.utils import timezone
+
+        call_command("beispiel_einsatzplanung", "--ohne-daten", verbosity=0)
+        self.app = App.objects.get(slug="personaleinsatz")
+        self.user = User.objects.create_user("planer", password="x")
+        self.client.force_login(self.user)
+        t = {e.slug: e for e in self.app.entities.all()}
+        self.t = t
+        self.l1 = Record.objects.create(entity=t["linien"], data={"name": "Linie A", "prioritaet": 1})
+        self.l2 = Record.objects.create(entity=t["linien"], data={"name": "Linie B", "prioritaet": 2})
+        # Die weniger wichtige Linie zuerst anlegen: sortiert wird trotzdem nach Priorität.
+        self.s2 = Record.objects.create(entity=t["schichten"], data={"bezeichnung": "Früh B", "linie": self.l2.pk, "bedarf": 2})
+        self.s1 = Record.objects.create(entity=t["schichten"], data={"bezeichnung": "Früh A", "linie": self.l1.pk, "bedarf": 1})
+        self.anna = Record.objects.create(entity=t["mitarbeitende"], data={"name": "Anna", "aktiv": True})
+        self.ben = Record.objects.create(entity=t["mitarbeitende"], data={"name": "Ben", "aktiv": True})
+        self.alt = Record.objects.create(entity=t["mitarbeitende"], data={"name": "Ruheständler", "aktiv": False})
+        self.today = timezone.localdate()
+        self.day = self.today.isoformat()
+        self.page = self.app.pages.get(slug="planung")
+        self.url = reverse("block_action", args=[self.app.slug, "planung", self.page.layout[0]["id"]])
+
+    def act(self, **payload):
+        return self.client.post(self.url, json.dumps(payload), content_type="application/json")
+
+    def links(self):
+        return list(self.t["einsaetze"].records.values_list("data", flat=True))
+
+    def test_board_sorted_by_priority_and_only_active_sources(self):
+        html = self.client.get(reverse("page", args=[self.app.slug, "planung"])).content.decode()
+        self.assertLess(html.index("Linie A"), html.index("Linie B"))
+        self.assertIn("Priorität 1", html)
+        self.assertNotIn("Ruheständler", html)
+        self.assertIn('data-plan="assign"', html)
+        self.assertIn("planning.js", html)
+
+    def test_assign_move_and_unassign(self):
+        response = self.act(op="assign", source=self.anna.pk, target=self.s1.pk, day=self.day)
+        self.assertEqual(response.json(), {"ok": True})
+        link = self.t["einsaetze"].records.get()
+        self.assertEqual((link.data["mitarbeiter"], link.data["schicht"], link.data["datum"]),
+                         (self.anna.pk, self.s1.pk, self.day))
+        self.assertEqual(link.created_by, self.user)
+        # Schon in derselben Schicht: immer abgelehnt, auch mit force
+        response = self.act(op="assign", source=self.anna.pk, target=self.s1.pk, day=self.day, force=True)
+        self.assertEqual(response.status_code, 409)
+        self.assertFalse(response.json()["confirm"])
+        self.assertEqual(self.act(op="move", link=link.pk, target=self.s2.pk, force=True).status_code, 200)
+        link.refresh_from_db()
+        self.assertEqual(link.data["schicht"], self.s2.pk)
+        self.assertEqual(self.act(op="unassign", link=link.pk).json(), {"ok": True})
+        self.assertEqual(self.links(), [])
+
+    def test_overbooking_asks_and_force_saves(self):
+        self.act(op="assign", source=self.anna.pk, target=self.s1.pk, day=self.day)
+        response = self.act(op="assign", source=self.ben.pk, target=self.s1.pk, day=self.day)
+        self.assertEqual(response.status_code, 409)
+        data = response.json()
+        self.assertTrue(data["confirm"])
+        self.assertEqual(data["error"], "Überplanung")
+        self.assertIn("1 von 1", data["problems"][0])
+        self.assertEqual(len(self.links()), 1)
+        forced = self.act(op="assign", source=self.ben.pk, target=self.s1.pk, day=self.day, force=True)
+        self.assertEqual(forced.status_code, 200)
+        self.assertEqual(len(self.links()), 2)
+        html = self.client.get(reverse("page", args=[self.app.slug, "planung"])).content.decode()
+        self.assertIn("state-over", html)
+
+    def test_overbooking_blocked_when_configured(self):
+        self.page.layout[0]["props"]["overbook"] = "block"
+        self.page.save()
+        self.act(op="assign", source=self.anna.pk, target=self.s1.pk, day=self.day)
+        response = self.act(op="assign", source=self.ben.pk, target=self.s1.pk, day=self.day, force=True)
+        self.assertEqual(response.status_code, 409)
+        self.assertFalse(response.json()["confirm"])
+        self.assertEqual(len(self.links()), 1)
+
+    def test_priority_and_double_booking_warnings(self):
+        # Linie B (Priorität 2) füllen, solange Linie A (Priorität 1) noch frei ist
+        response = self.act(op="assign", source=self.anna.pk, target=self.s2.pk, day=self.day)
+        self.assertEqual(response.status_code, 409)
+        self.assertIn("Linie A hat Priorität 1 und noch 1 offenen Platz.", response.json()["problems"])
+        self.act(op="assign", source=self.anna.pk, target=self.s1.pk, day=self.day)
+        # Anna ist jetzt in Linie A; ein zweiter Einsatz am selben Tag fragt nach
+        problems = self.act(op="assign", source=self.anna.pk, target=self.s2.pk, day=self.day).json()["problems"]
+        self.assertTrue(any("schon in „Früh A“ (Linie A)" in p for p in problems), problems)
+        # An einem anderen Tag gibt es keine Rückfrage
+        from datetime import timedelta
+        other = (self.today + timedelta(days=1)).isoformat()
+        self.assertEqual(self.act(op="assign", source=self.anna.pk, target=self.s1.pk, day=other).status_code, 200)
+
+    def test_actions_respect_table_switches_and_login(self):
+        self.t["einsaetze"].allow_create = False
+        self.t["einsaetze"].save()
+        response = self.act(op="assign", source=self.anna.pk, target=self.s1.pk, day=self.day)
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("nicht erlaubt", response.json()["error"])
+        self.client.logout()
+        self.assertEqual(self.act(op="assign", source=self.anna.pk, target=self.s1.pk, day=self.day).status_code, 302)
+
+    def test_targets_from_other_tables_are_rejected(self):
+        response = self.act(op="assign", source=self.anna.pk, target=self.l1.pk, day=self.day)
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(self.links(), [])
+
+    def test_week_overview_counts_capacity(self):
+        self.act(op="assign", source=self.anna.pk, target=self.s1.pk, day=self.day)
+        self.act(op="assign", source=self.ben.pk, target=self.s1.pk, day=self.day, force=True)
+        html = self.client.get(reverse("page", args=[self.app.slug, "woche"])).content.decode()
+        self.assertIn('2<span class="muted">/1</span>', html)
+        self.assertIn("Anna, Ben", html)
+        self.assertIn(f"/a/personaleinsatz/p/planung/?datum={self.day}", html)
+        self.assertIn("überplant", html)
+
+    def test_kanban_move_with_limit(self):
+        t = self.t["tauschwuensche"]
+        card = Record.objects.create(entity=t, data={"wunsch": "A", "status": "Neu"})
+        Record.objects.create(entity=t, data={"wunsch": "B", "status": "Genehmigt"})
+        page = self.app.pages.get(slug="tausch")
+        page.layout[0]["props"]["limit"] = 1
+        page.save()
+        url = reverse("block_action", args=[self.app.slug, "tausch", page.layout[0]["id"]])
+
+        def move(**extra):
+            return self.client.post(url, json.dumps({"op": "move", "record": card.pk, **extra}),
+                                    content_type="application/json")
+
+        self.assertEqual(move(value="Gibt es nicht").status_code, 400)
+        response = move(value="Genehmigt")
+        self.assertEqual(response.status_code, 409)
+        self.assertTrue(response.json()["confirm"])
+        self.assertEqual(move(value="Genehmigt", force=True).status_code, 200)
+        card.refresh_from_db()
+        self.assertEqual(card.data["status"], "Genehmigt")
+
+    def test_ai_designer_checks_fields_of_linked_tables(self):
+        from .ai_designer import Invalid, normalize
+        from .management.commands.beispiel_einsatzplanung import DEFINITION
+
+        normalize(DEFINITION)  # gültig
+        broken = json.loads(json.dumps(DEFINITION))
+        broken["pages"][0]["layout"][0]["props"]["priority_field"] = "gibts_nicht"
+        broken["pages"][0]["layout"][0]["props"]["capacity_field"] = "auch_nicht"
+        with self.assertRaises(Invalid) as ctx:
+            normalize(broken)
+        text = " ".join(ctx.exception.errors)
+        self.assertIn("Die Tabelle „linien“ hat kein Feld „gibts_nicht“", text)
+        self.assertIn("Die Tabelle „schichten“ hat kein Feld „auch_nicht“", text)
+
+    def test_preview_in_designer_is_read_only(self):
+        from django.test import RequestFactory
+
+        from .blocks import render_block
+
+        request = RequestFactory().get("/designer/x/seite/1/vorschau/")
+        request.user = self.user
+        html = render_block(request, self.app, self.page.layout[0])
+        self.assertIn("Schichtplanung", html)
+        self.assertNotIn("data-action-url", html)
+
+    def test_example_data_command(self):
+        call_command("beispiel_einsatzplanung", "--app", self.app.slug, verbosity=0)
+        # Es gab schon Linien: keine doppelten Beispieldaten
+        self.assertEqual(self.t["linien"].records.count(), 2)

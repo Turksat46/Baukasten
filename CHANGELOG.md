@@ -11,6 +11,16 @@ Neue Einträge oben unter „Unveröffentlicht“ sammeln und beim Release zur V
 ## Unveröffentlicht
 
 ### Neu
+- Bausteingruppe **Planung**: „Einsatzplanung“ (Einträge per Drag-and-drop Zielen je Tag
+  zuordnen, mit Kapazität, Gruppen mit Priorität und Rückfragen bei Überplanung,
+  Doppelbelegung oder offenen Plätzen in wichtigeren Gruppen), „Wochenübersicht“ (Belegung
+  und Kapazität je Tag) und „Kanban-Board“ (Status per Drag-and-drop, Höchstzahl je Spalte).
+  Beispiel-App: `python manage.py beispiel_einsatzplanung`.
+- Dialog `BaukastenDialog` (modal.js) für alle Seiten; Rückfragen wie „Eintrag wirklich
+  löschen?“ erscheinen jetzt darin statt im Fenster des Browsers.
+- Wiederverwendbares Drag-and-drop `BaukastenDnD` (dnd.js), auch ohne Maus bedienbar.
+- Feld-Einstellungen von Bausteinen können sich auf andere Tabellen beziehen (`"of"`),
+  auch über ein Verweisfeld; Seiten-Designer und KI-Prüfung verstehen das.
 - Änderungsprotokoll: wer hat wann was geändert und auf welchem Weg (Oberfläche, Designer, API,
   MCP, KI-Zugang, Skript, Automatisierung, Abgleich, Verwaltung). Je App im Designer mit Filter,
   Suche und CSV-Export, „Verlauf“ im Formular eines Eintrags, alle Apps unter `/admin/`.
