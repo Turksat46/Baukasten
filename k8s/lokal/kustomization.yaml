@@ -42,8 +42,10 @@ patches:
       - {op: add, path: /data/COOKIE_SECURE, value: "false"}
       - {op: replace, path: /data/GUNICORN_WORKERS, value: "2"}
   # Image nicht aus einer Registry ziehen; kleinere Anforderungen für den Laptop.
+  # Ein Pod genügt lokal und spart rund 0,5–1,5 GB Arbeitsspeicher in der WSL-VM.
   - target: {kind: Deployment, name: baukasten}
     patch: |-
+      - {op: replace, path: /spec/replicas, value: 1}
       - {op: add, path: /spec/template/spec/containers/0/imagePullPolicy, value: IfNotPresent}
       - {op: replace, path: /spec/template/spec/containers/0/resources/requests/cpu, value: 100m}
       - {op: replace, path: /spec/template/spec/containers/0/resources/requests/memory, value: 256Mi}

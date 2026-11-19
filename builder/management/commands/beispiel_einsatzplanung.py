@@ -6,6 +6,7 @@ Zeigt die Planungs-Bausteine:
   Linie füllt, solange eine wichtigere noch Lücken hat, bekommt einen Dialog zum Bestätigen.
 - „Wochenübersicht“: Belegung und Kapazität je Schicht und Tag, Klick führt zur Tagesplanung.
 - „Kanban-Board“: Tauschwünsche nach Status.
+- Seite „Aufgaben“: Filterleiste, Checkliste, Schieberegler, Kalender und Aufklappbereich.
 
 Mit --neu wird die App ersetzt, mit --ohne-daten bleibt sie leer. Die Definition ist dieselbe,
 die eine KI über den MCP-Server /mcp/designer/ anlegen würde (siehe DEFINITION).
@@ -53,6 +54,14 @@ DEFINITION = {
             {"label": "Datum", "key": "datum", "type": "date", "required": True},
             {"label": "Bemerkung", "key": "bemerkung", "type": "text", "show_in_list": False},
         ]},
+        {"name": "Aufgaben", "slug": "aufgaben", "fields": [
+            {"label": "Aufgabe", "key": "aufgabe", "type": "text", "required": True},
+            {"label": "Linie", "key": "linie", "type": "reference", "reference": "linien"},
+            {"label": "Wichtigkeit", "key": "wichtigkeit", "type": "choice", "choices": ["Hoch", "Mittel", "Niedrig"]},
+            {"label": "Fällig am", "key": "faellig", "type": "date"},
+            {"label": "Fortschritt (%)", "key": "fortschritt", "type": "number"},
+            {"label": "Erledigt", "key": "erledigt", "type": "bool"},
+        ]},
         {"name": "Tauschwünsche", "slug": "tauschwuensche", "fields": [
             {"label": "Wunsch", "key": "wunsch", "type": "text", "required": True},
             {"label": "Mitarbeiter/in", "key": "mitarbeiter", "type": "reference", "reference": "mitarbeitende"},
@@ -75,6 +84,19 @@ DEFINITION = {
         {"title": "Tauschwünsche", "slug": "tausch", "layout": [
             {"type": "kanban", "props": {"title": "Tauschwünsche", "entity": "tauschwuensche", "field": "status",
                                          "detail": "mitarbeiter", "limit": 5}},
+        ]},
+        {"title": "Aufgaben", "slug": "aufgaben", "layout": [
+            {"type": "filter", "props": {"entity": "aufgaben", "field": "linie", "field2": "wichtigkeit",
+                                         "field3": "erledigt", "field4": "faellig"}},
+            {"type": "checklist", "width": 6, "props": {"title": "Übergabe-Checkliste", "entity": "aufgaben",
+                                                        "field": "erledigt", "detail": "linie"}},
+            {"type": "sliders", "width": 6, "props": {"title": "Fortschritt", "entity": "aufgaben",
+                                                      "field": "fortschritt", "unit": "%", "step": 10}},
+            {"type": "calendar", "props": {"title": "Fälligkeiten", "entity": "aufgaben", "date_field": "faellig",
+                                           "color_field": "wichtigkeit"}},
+            {"type": "details", "props": {"title": "Wie funktioniert diese Seite?", "text":
+                "Die Filterleiste oben gilt für alle Bausteine der Tabelle „Aufgaben“ auf dieser Seite.\n"
+                "Häkchen und Regler speichern sofort. Im Kalender legt „+“ eine Aufgabe für diesen Tag an."}},
         ]},
         {"title": "Stammdaten", "slug": "stammdaten", "layout": [
             {"type": "table", "width": 6, "props": {"entity": "linien", "title": "Linien und Prioritäten"}},
@@ -172,6 +194,20 @@ class Command(BaseCommand):
             if offset == 1:  # ein überplanter Tag als Beispiel
                 add("einsaetze", mitarbeiter=pool[-2].pk, schicht=schichten[0].pk, datum=day,
                     bemerkung="Einarbeitung")
+
+        aufgaben = [
+            ("Übergabeprotokoll Frühschicht", 0, "Hoch", 0, 100, True),
+            ("Sicherheitsunterweisung neue Kollegen", 0, "Hoch", 2, 40, False),
+            ("Lackvorrat prüfen", 1, "Mittel", 1, 70, False),
+            ("Filter der Lackierkabine tauschen", 1, "Hoch", 4, 0, False),
+            ("Kartonagen bestellen", 2, "Niedrig", 3, 20, False),
+            ("Etikettendrucker warten", 2, "Mittel", 8, 0, False),
+            ("5S-Rundgang Montage", 0, "Niedrig", 10, 50, False),
+            ("Inventur Verpackungsmaterial", 2, "Mittel", -2, 100, True),
+        ]
+        for name, linie, wichtig, tage, fortschritt, erledigt in aufgaben:
+            add("aufgaben", aufgabe=name, linie=linien[linie].pk, wichtigkeit=wichtig,
+                faellig=(today + timedelta(days=tage)).isoformat(), fortschritt=fortschritt, erledigt=erledigt)
 
         for wunsch, person, status in [
             ("Früh gegen Spät tauschen (Do)", 1, "Neu"), ("Freier Freitag wegen Arzttermin", 4, "Neu"),

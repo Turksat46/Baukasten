@@ -21,7 +21,7 @@ from django.utils.formats import date_format
 from django.utils.translation import gettext, ngettext
 from django.utils.translation import gettext_lazy as _
 
-from .blocks import _entity, display_value, register
+from .blocks import _entity, display_value, filtered, register
 from .models import Field, Record
 
 DAY_PARAM = "datum"     # ?datum=2026-11-19: Tag der Einsatzplanung
@@ -357,7 +357,7 @@ def prep_kanban(request, app, block):
     choices = column_field.choice_list()
     columns = {c: {"value": c, "label": display_value(column_field, c), "cards": []} for c in choices}
     loose = {"value": "", "label": gettext("Ohne Zuordnung"), "cards": []}
-    records = list(entity.records.order_by("id")[:MAX_SOURCES])
+    records = list(filtered(request, entity).order_by("id")[:MAX_SOURCES])
     from .blocks import reference_labels
     refs = reference_labels([detail], records) if detail else {}
     for r in records:
@@ -570,7 +570,7 @@ register("assign", _("Einsatzplanung"), "🧑‍🏭", [
      "type": "checkbox", "default": True},
     {"key": "priority_check", "label": _("Nachfragen, wenn eine wichtigere Gruppe noch offene Plätze hat"),
      "type": "checkbox", "default": True},
-], prep_assign, "Planung", _("Personen per Drag-and-drop in Schichten oder Termine einplanen"))
+], prep_assign, "Planung", _("Personen per Drag-and-drop in Schichten oder Termine einplanen"), action=handle)
 
 register("weekplan", _("Wochenübersicht"), "🗓️", [
     {"key": "title", "label": _("Titel (optional)"), "type": "text", "default": ""},
@@ -587,4 +587,4 @@ register("kanban", _("Kanban-Board"), "🗃️", [
     {"key": "field", "label": _("Spalten aus Auswahlfeld (z. B. Status)"), "type": "field"},
     {"key": "detail", "label": _("Zusatzinfo auf der Karte (optional)"), "type": "field"},
     {"key": "limit", "label": _("Höchstens Karten je Spalte (0 = ohne Grenze)"), "type": "number", "default": 0},
-], prep_kanban, "Planung", _("Einträge per Drag-and-drop zwischen Status-Spalten verschieben"))
+], prep_kanban, "Planung", _("Einträge per Drag-and-drop zwischen Status-Spalten verschieben"), action=handle)

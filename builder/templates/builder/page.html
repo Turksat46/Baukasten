@@ -28,6 +28,7 @@
 {% if interactive %}
   <script src="{% asset 'builder/dnd.js' %}" defer></script>
   <script src="{% asset 'builder/planning.js' %}" defer></script>
+  <script src="{% asset 'builder/widgets.js' %}" defer></script>
 {% endif %}
 {% if runtime %}
   {{ runtime|json_script:"bk-runtime" }}

@@ -1,0 +1,38 @@
+{% load i18n baukasten %}<section class="card calendar-block">
+  <div class="card-head">
+    <h3 data-slot="title">{{ p.title|default:entity.name|tr }} · {{ month_label }}</h3>
+    <nav class="plan-nav" aria-label="{% translate 'Monat wählen' %}">
+      <a class="btn btn-secondary btn-small" href="?{{ param }}={{ prev }}" aria-label="{% translate 'Vorheriger Monat' %}" title="{% translate 'Vorheriger Monat' %}">‹</a>
+      {% if not is_this %}<a class="btn btn-secondary btn-small" href="?{{ param }}={{ this }}">{% translate "Heute" %}</a>{% endif %}
+      <a class="btn btn-secondary btn-small" href="?{{ param }}={{ next }}" aria-label="{% translate 'Nächster Monat' %}" title="{% translate 'Nächster Monat' %}">›</a>
+    </nav>
+  </div>
+  <div class="calendar-wrap">
+    <table class="calendar">
+      <thead><tr>{% for name in weekdays %}<th scope="col">{{ name }}</th>{% endfor %}</tr></thead>
+      <tbody>
+        {% for week in weeks %}
+          <tr>
+            {% for d in week %}
+              <td class="{% if not d.in_month %}is-other{% endif %}{% if d.today %} is-today{% endif %}{% if d.weekend %} is-weekend{% endif %}">
+                <div class="calendar-day">
+                  <span class="calendar-num"{% if d.today %} aria-current="date"{% endif %}>{{ d.num }}</span>
+                  {% if create_url %}<a class="calendar-add" href="{{ create_url }}?{{ date_key }}={{ d.iso }}&amp;next={{ next_url|urlencode }}" title="{% translate 'Neuer Eintrag an diesem Tag' %}" aria-label="{% blocktranslate with day=d.day|date:'SHORT_DATE_FORMAT' %}Neuer Eintrag am {{ day }}{% endblocktranslate %}">+</a>{% endif %}
+                </div>
+                <ul class="calendar-items">
+                  {% for item in d.items %}
+                    <li class="calendar-item{% if item.tone %} tone-{{ item.tone }}{% endif %}{% if item.multi %} is-multi{% endif %}">
+                      {% if edit %}<a href="{% url 'record_edit' app.slug entity.slug item.id %}?next={{ next_url|urlencode }}" title="{{ item.label }}">{{ item.label }}</a>{% else %}<span title="{{ item.label }}">{{ item.label }}</span>{% endif %}
+                    </li>
+                  {% endfor %}
+                  {% if d.more %}<li class="calendar-more muted small">{% blocktranslate count n=d.more %}+{{ n }} weiterer{% plural %}+{{ n }} weitere{% endblocktranslate %}</li>{% endif %}
+                </ul>
+              </td>
+            {% endfor %}
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% if legend %}<ul class="plan-legend muted small">{% for l in legend %}<li><span class="swatch seg-{{ l.tone }}"></span>{{ l.label }}</li>{% endfor %}</ul>{% endif %}
+</section>

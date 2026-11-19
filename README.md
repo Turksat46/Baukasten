@@ -17,9 +17,10 @@ Kubernetes.
 
 - **Daten → fertige App:** Tabellen und Felder festlegen, daraus entsteht per
   Klick eine Seite mit Liste, Suche, Anlegen, Bearbeiten und Löschen.
-- **Seiten-Designer:** 27 Bausteine per Drag-and-drop, mit Vorschau auf echten
+- **Seiten-Designer:** 32 Bausteine per Drag-and-drop, mit Vorschau auf echten
   Daten (Listen, Karten, Formulare, Kennzahlen, Diagramme, Liniendiagramme, Verlauf, Export,
-  Eingabefelder, Einsatzplanung per Drag-and-drop, Wochenübersicht, Kanban …).
+  Eingabefelder mit Schiebereglern, Filterleiste, Kalender, Checkliste, Einsatzplanung per
+  Drag-and-drop, Wochenübersicht, Kanban …).
 - **Öffentliche Seiten:** einzelne Seiten „ohne Anmeldung erreichbar“ machen, etwa
   für Anmeldeformulare oder Einwilligungen von Externen. Gäste dürfen nur
   Formulare und Skript-Buttons dieser Seite benutzen; mit Anfragebegrenzung.
@@ -134,7 +135,7 @@ an. Einzelheiten im Handbuch unter „Lokal mit Kubernetes“.
 
 ## Stand
 
-Version 1.0.0 (siehe `CHANGELOG.md`). 237 automatische Tests laufen bei jeder Änderung
+Version 1.0.0 (siehe `CHANGELOG.md`). 246 automatische Tests laufen bei jeder Änderung
 in GitHub Actions gegen SQLite und PostgreSQL, dazu Durchläufe im Browser. Docker-Build und die lokalen Manifeste laufen auf Kubernetes in Docker
 Desktop mit PostgreSQL 16. Nicht getestet: ein echter Produktions-Cluster (Ingress,
 TLS), der vollständige Login gegen einen echten Keycloak und Verbindungen zu

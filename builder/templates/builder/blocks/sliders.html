@@ -1,0 +1,16 @@
+{% load i18n baukasten %}<section class="card sliders-block"{% if action_url and editable %} data-widget="sliders" data-csrf="{{ csrf_token }}" data-action-url="{{ action_url }}" data-reload-url="{{ reload_url }}"{% endif %}>
+  <div class="card-head"><h3 data-slot="title">{{ p.title|default:entity.name|tr }}</h3></div>
+  <ul class="sliders">
+    {% for item in items %}
+      <li class="slider-row">
+        <label for="sl_{{ bid }}_{{ item.id }}" class="slider-label">{{ item.label }}</label>
+        <input id="sl_{{ bid }}_{{ item.id }}" type="range" min="{{ min }}" max="{{ max }}" step="{{ step }}" value="{{ item.value }}" style="--fill: {{ item.percent }}%"
+               {% if action_url and editable %}data-slide="{{ item.id }}"{% else %}disabled{% endif %} aria-valuetext="{{ item.value }}{% if p.unit %} {{ p.unit }}{% endif %}">
+        <output for="sl_{{ bid }}_{{ item.id }}" class="slider-value{% if item.empty %} muted{% endif %}"><span data-value>{% if item.empty %}–{% else %}{{ item.value }}{% endif %}</span>{% if p.unit %} {{ p.unit }}{% endif %}</output>
+      </li>
+    {% empty %}
+      <li class="empty">{% translate "Noch keine Einträge." %}</li>
+    {% endfor %}
+  </ul>
+  <p class="visually-hidden" role="status" aria-live="polite" data-plan-status></p>
+</section>

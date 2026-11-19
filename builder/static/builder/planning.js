@@ -1,4 +1,4 @@
-// Interaktive Planungs-Bausteine: Einsatzplanung und Kanban-Board.
+// Interaktive Bausteine: Einsatzplanung und Kanban-Board; stellt BaukastenBlocks.act/reload bereit.
 // Ziehen und Ablegen kommt aus dnd.js, Rückfragen aus modal.js. Gespeichert wird über
 // den Endpunkt des Bausteins (data-action-url); danach lädt der Baustein sich neu.
 (function () {
@@ -67,7 +67,7 @@
     return fetch(url, {credentials: "same-origin"}).then(function (r) { return r.ok ? r.text() : null; }).then(function (html) {
       if (html === null) { window.location.reload(); return; }
       holder.innerHTML = html;  // vom Server erzeugt und maskiert
-      var fresh = holder.querySelector("[data-plan]");
+      var fresh = holder.querySelector("[data-action-url]");
       var input = fresh && fresh.querySelector("[data-plan-filter]");
       if (input && filterText) { input.value = filterText; applyFilter(input); }
       if (fresh) announce(fresh, message || gettext("Gespeichert."));
@@ -137,8 +137,6 @@
     if (e.target.matches("[data-plan-filter]")) applyFilter(e.target);
   });
 
-  // Datumsfeld: Tag sofort wechseln
-  document.addEventListener("change", function (e) {
-    if (e.target.matches("[data-autosubmit]") && e.target.value && e.target.form) e.target.form.submit();
-  });
+  // Für weitere interaktive Bausteine (widgets.js): Aktion mit Rückfrage senden, Baustein neu laden.
+  window.BaukastenBlocks = {act: act, reload: reload, announce: announce};
 })();

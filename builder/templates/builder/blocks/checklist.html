@@ -1,0 +1,22 @@
+{% load i18n baukasten %}<section class="card checklist-block"{% if action_url and editable %} data-widget="checklist" data-csrf="{{ csrf_token }}" data-action-url="{{ action_url }}" data-reload-url="{{ reload_url }}"{% endif %}>
+  <div class="card-head">
+    <h3 data-slot="title">{{ p.title|default:entity.name|tr }}</h3>
+    <span class="muted small">{% blocktranslate with done=done count=count %}{{ done }} von {{ count }} erledigt{% endblocktranslate %}</span>
+  </div>
+  <span class="plan-meter checklist-meter{% if percent == 100 %} is-done{% endif %}" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ percent }}" aria-label="{% translate 'Erledigt' %}"><span style="width: {{ percent }}%"></span></span>
+  <ul class="checklist">
+    {% for item in items %}
+      <li class="checklist-item{% if item.done %} is-done{% endif %}">
+        <label>
+          <input type="checkbox" {% if item.done %}checked{% endif %}{% if action_url and editable %} data-check="{{ item.id }}"{% else %} disabled{% endif %}>
+          <span class="checklist-label">{{ item.label }}</span>
+          {% if item.detail %}<span class="checklist-detail muted small">{{ item.detail }}</span>{% endif %}
+        </label>
+      </li>
+    {% empty %}
+      <li class="empty">{% if p.hide_done and count %}{% translate "Alles erledigt." %}{% else %}{% translate "Noch keine Einträge." %}{% endif %}</li>
+    {% endfor %}
+  </ul>
+  {% if entity.allow_create %}<a class="link-add small" href="{% url 'record_create' app.slug entity.slug %}?next={{ request.get_full_path|urlencode }}">+ {% translate "Neuer Punkt" %}</a>{% endif %}
+  <p class="visually-hidden" role="status" aria-live="polite" data-plan-status></p>
+</section>

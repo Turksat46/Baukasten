@@ -248,10 +248,24 @@
   </div>
 
 {% elif type == "input" %}
-  <div class="form input-block">
+  <div class="form input-block{% if kind == 'checkbox' %} input-check{% endif %}">
     <div>
       <label for="in_{{ bid }}" data-slot="label">{{ p.label }}{% if p.required %} *{% endif %}</label>
-      {% if kind == "textarea" %}
+      {% if kind == "range" %}
+        <span class="range-input">
+          <input id="in_{{ bid }}" type="range" name="{{ param }}" min="{{ min }}" max="{{ max }}" step="{{ step }}" value="{{ value }}" data-page-input data-range-output="out_{{ bid }}">
+          <output id="out_{{ bid }}" for="in_{{ bid }}" class="slider-value">{{ value }}</output>
+        </span>
+      {% elif kind == "select" %}
+        <select id="in_{{ bid }}" name="{{ param }}" data-page-input{% if p.required %} required{% endif %}>
+          <option value="">{{ p.placeholder|default:_("– wählen –") }}</option>
+          {% for option in options %}<option{% if option == value %} selected{% endif %}>{{ option }}</option>{% endfor %}
+        </select>
+      {% elif kind == "checkbox" %}
+        <input id="in_{{ bid }}" type="checkbox" name="{{ param }}" value="1" data-page-input{% if value == "1" %} checked{% endif %}{% if p.required %} required{% endif %}>
+      {% elif kind == "date" %}
+        <input id="in_{{ bid }}" type="date" name="{{ param }}" value="{{ value }}" data-page-input{% if p.required %} required{% endif %}>
+      {% elif kind == "textarea" %}
         <textarea id="in_{{ bid }}" name="{{ param }}" rows="3" maxlength="2000" data-page-input{% if p.required %} required{% endif %}{% if p.placeholder %} placeholder="{{ p.placeholder }}"{% endif %}>{{ value }}</textarea>
       {% else %}
         <input id="in_{{ bid }}" type="{{ kind }}" name="{{ param }}" maxlength="500" value="{{ value }}" data-page-input{% if p.required %} required{% endif %}{% if p.placeholder %} placeholder="{{ p.placeholder }}"{% endif %}{% if kind == "email" %} autocomplete="email"{% endif %}>
@@ -323,6 +337,24 @@
       <p class="empty">{% translate "Die Abfrage liefert keine Zeilen." %}</p>
     {% endif %}
   </section>
+
+{% elif type == "details" %}
+  <details class="card details-block"{% if p.open %} open{% endif %}>
+    <summary data-slot="title">{{ p.title }}</summary>
+    <p class="text-block" data-slot="text">{{ p.text|linebreaksbr }}</p>
+  </details>
+
+{% elif type == "filter" %}
+  {% include "builder/blocks/filter.html" %}
+
+{% elif type == "calendar" %}
+  {% include "builder/blocks/calendar.html" %}
+
+{% elif type == "checklist" %}
+  {% include "builder/blocks/checklist.html" %}
+
+{% elif type == "sliders" %}
+  {% include "builder/blocks/sliders.html" %}
 
 {% elif type == "assign" %}
   {% include "builder/blocks/assign.html" %}

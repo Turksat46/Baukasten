@@ -1,0 +1,32 @@
+{% load i18n baukasten %}<section class="card filter-block">
+  <form method="get" class="filter-form" role="search" aria-label="{% blocktranslate with name=entity.name|tr %}{{ name }} filtern{% endblocktranslate %}">
+    {% for key, value in keep %}<input type="hidden" name="{{ key }}" value="{{ value }}">{% endfor %}
+    {% for c in controls %}
+      <div class="filter-control{% if c.kind == 'date' %} filter-range{% endif %}">
+        {% if c.kind == "date" %}
+          <span class="filter-label">{{ c.label }}</span>
+          <span class="filter-pair">
+            <input type="date" name="{{ c.low }}" value="{{ c.low_value }}" aria-label="{{ c.label }} {% translate 'von' %}" data-autosubmit>
+            <span class="muted" aria-hidden="true">–</span>
+            <input type="date" name="{{ c.high }}" value="{{ c.high_value }}" aria-label="{{ c.label }} {% translate 'bis' %}" data-autosubmit>
+          </span>
+        {% else %}
+          <label class="filter-label" for="f_{{ bid }}_{{ forloop.counter }}">{{ c.label }}</label>
+          {% if c.kind == "select" %}
+            <select id="f_{{ bid }}_{{ forloop.counter }}" name="{{ c.name }}" data-autosubmit>
+              <option value="">{% translate "Alle" %}</option>
+              {% for value, text in c.options %}<option value="{{ value }}"{% if value == c.value %} selected{% endif %}>{{ text }}</option>{% endfor %}
+            </select>
+          {% else %}
+            <input id="f_{{ bid }}_{{ forloop.counter }}" type="{% if c.kind == 'number' %}number{% else %}search{% endif %}" name="{{ c.name }}" value="{{ c.value }}" placeholder="{% if c.kind == 'number' %}{% translate 'Zahl' %}{% else %}{% translate 'enthält …' %}{% endif %}">
+          {% endif %}
+        {% endif %}
+      </div>
+    {% endfor %}
+    <div class="filter-actions">
+      <button class="btn btn-small">{% translate "Filtern" %}</button>
+      {% if active %}<a class="btn btn-secondary btn-small" href="{{ reset }}">{% translate "Zurücksetzen" %}</a>{% endif %}
+    </div>
+  </form>
+  <p class="filter-count muted small" role="status">{% if active %}{% blocktranslate with count=count total=total %}{{ count }} von {{ total }} Einträgen{% endblocktranslate %}{% else %}{% blocktranslate with total=total %}{{ total }} Einträge, kein Filter aktiv{% endblocktranslate %}{% endif %}</p>
+</section>

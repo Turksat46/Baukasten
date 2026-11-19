@@ -42,6 +42,11 @@
     assign: "M7 8a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM3 13c.8-2 2.3-3 4-3s3.2 1 4 3M13 6h8v14h-8zM13 11h8M13 16h8",
     weekplan: "M4 5h16v15H4zM4 9h16M8 3v4M16 3v4M8 13h2M14 13h2M8 17h2M14 17h2",
     kanban: "M4 4h4v16H4zM10 4h4v10h-4zM16 4h4v7h-4z",
+    details: "M4 5h16v5H4zM9 7.5l1.5 1 1.5-1M4 13h16M4 17h11",
+    filter: "M4 5h16l-6 7v6l-4 2v-8z",
+    calendar: "M4 5h16v15H4zM4 9h16M8 3v4M16 3v4M8 13h3v3H8z",
+    checklist: "M4 6l2 2 3-3M4 12l2 2 3-3M4 18l2 2 3-3M12 7h8M12 13h8M12 19h8",
+    sliders: "M4 7h16M4 12h16M4 17h16M9 5v4M15 10v4M7 15v4",
     custom: "M12 3l2.6 5.6 6 .7-4.4 4.2 1.1 6-5.3-3-5.3 3 1.1-6L3.4 9.3l6-.7z",
   };
   var SVG_NS = "http://www.w3.org/2000/svg";
