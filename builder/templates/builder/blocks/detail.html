@@ -1,0 +1,23 @@
+{% load i18n baukasten %}<section class="card detail-block">
+  <div class="card-head">
+    <h3 data-slot="title">{{ p.title|default:entity.name|tr }}{% if title_text %} · {{ title_text }}{% endif %}</h3>
+    {% if edit_url or delete_url %}
+      <div class="detail-actions">
+        {% if edit_url %}<a class="btn btn-secondary btn-small" href="{{ edit_url }}?next={{ next_url|urlencode }}">{% translate "Bearbeiten" %}</a>{% endif %}
+        {% if delete_url %}<a class="btn btn-secondary btn-small" href="{{ delete_url }}?next={{ next_url|urlencode }}">{% translate "Löschen" %}</a>{% endif %}
+      </div>
+    {% endif %}
+  </div>
+  {% if missing %}
+    <p class="muted">{% blocktranslate with param=param %}Wähle einen Eintrag über ?{{ param }}=… aus.{% endblocktranslate %}</p>
+  {% else %}
+    <dl class="detail-grid">
+      {% for row in rows %}
+        <div class="detail-row">
+          <dt>{{ row.label }}</dt>
+          <dd>{{ row.value }}</dd>
+        </div>
+      {% endfor %}
+    </dl>
+  {% endif %}
+</section>

@@ -36,4 +36,14 @@
       done: label + ": " + slider.value + " " + gettext("gespeichert.")
     });
   });
+
+  // Status-Leiste: Schritt direkt per Klick speichern
+  document.addEventListener("click", function (e) {
+    var btn = e.target.closest && e.target.closest("[data-step]");
+    var root = btn && btn.closest("[data-widget='stepper']");
+    if (!root) return;
+    blocks.act(root, {op: "step", record: root.dataset.record, value: btn.dataset.step}, {
+      done: gettext("Status gespeichert.")
+    });
+  });
 })();

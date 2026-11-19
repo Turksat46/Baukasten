@@ -277,3 +277,7 @@ msgstr "saved."
 #: static/builder/widgets.js
 msgid "wieder offen."
 msgstr "open again."
+
+#: builder/static/builder/widgets.js
+msgid "Status gespeichert."
+msgstr "Status saved."

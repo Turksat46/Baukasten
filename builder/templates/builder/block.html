@@ -371,6 +371,18 @@
 {% elif type == "gantt" %}
   {% include "builder/blocks/gantt.html" %}
 
+{% elif type == "detail" %}
+  {% include "builder/blocks/detail.html" %}
+
+{% elif type == "related_list" %}
+  {% include "builder/blocks/related_list.html" %}
+
+{% elif type == "search" %}
+  {% include "builder/blocks/search.html" %}
+
+{% elif type == "stepper" %}
+  {% include "builder/blocks/stepper.html" %}
+
 {% elif custom_plain is not None %}
   <div class="custom-block">{{ custom_plain }}</div>
 

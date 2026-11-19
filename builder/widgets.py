@@ -490,6 +490,147 @@ def prep_gantt(request, app, block):
     }
 
 
+# ---------- Detailansicht, Verknüpfte Unterliste, Suchbox, Status-Leiste ----------
+
+def _target_record(request, entity, param_name):
+    raw = (request.GET.get(param_name or "id") or "").strip()
+    if not raw.isdigit():
+        return None, False
+    return entity.records.filter(pk=int(raw)).first(), True
+
+
+def prep_detail(request, app, block):
+    props = block["props"]
+    entity = _entity(app, props.get("entity"))
+    if not entity:
+        return {"error": gettext("Für diese Detailansicht ist keine Tabelle ausgewählt.")}
+    param = (props.get("param") or "id").strip() or "id"
+    record, has_param = _target_record(request, entity, param)
+    if not has_param:
+        return {"entity": entity, "missing": True, "param": param}
+    if not record:
+        return {"error": gettext("Der ausgewählte Eintrag wurde nicht gefunden.")}
+    fields = list(entity.fields.all())
+    refs = reference_labels(fields, [record])
+    rows = [{"label": app_i18n.t(f.label), "value": display_value(f, record.data.get(f.key), refs) or "—"}
+            for f in fields]
+    show_actions = bool(props.get("show_actions", True))
+    return {
+        "entity": entity,
+        "record": record,
+        "title_text": str(record),
+        "rows": rows,
+        "edit_url": reverse("record_edit", args=[app.slug, entity.slug, record.pk]) if (show_actions and entity.allow_edit) else "",
+        "delete_url": reverse("record_delete", args=[app.slug, entity.slug, record.pk]) if (show_actions and entity.allow_delete) else "",
+        "next_url": _next(request),
+    }
+
+
+def prep_related_list(request, app, block):
+    props = block["props"]
+    entity = _entity(app, props.get("entity"))
+    if not entity:
+        return {"error": gettext("Für diese Unterliste ist keine Tabelle ausgewählt.")}
+    ref_field = _field(entity, props.get("ref_field"), [Field.REFERENCE])
+    if not ref_field:
+        return {"error": gettext("Die Unterliste braucht ein Verweisfeld.")}
+    param = (props.get("param") or "id").strip() or "id"
+    raw = (request.GET.get(param) or "").strip()
+    if not raw.isdigit():
+        return {"entity": entity, "missing": True, "param": param}
+    parent_id = int(raw)
+    all_records = list(entity.records.order_by("id")[:500])
+    records = [r for r in all_records if str(r.data.get(ref_field.key)) == str(parent_id)][:MAX_ITEMS]
+    cols = [f for f in entity.fields.all() if f.show_in_list and f.key != ref_field.key] or list(entity.fields.all()[:4])
+    refs = reference_labels(cols, records)
+    items = [{
+        "id": r.pk,
+        "cells": [display_value(c, r.data.get(c.key), refs) or "—" for c in cols],
+    } for r in records]
+    can_create = entity.allow_create and bool(props.get("show_add", True))
+    create_url = reverse("record_create", args=[app.slug, entity.slug]) if can_create else ""
+    return {
+        "entity": entity,
+        "cols": [app_i18n.t(c.label) for c in cols],
+        "items": items,
+        "edit": entity.allow_edit,
+        "create_url": create_url,
+        "ref_key": ref_field.key,
+        "parent_id": parent_id,
+        "next_url": _next(request),
+    }
+
+
+def prep_search(request, app, block):
+    props = block["props"]
+    entity = _entity(app, props.get("entity"))
+    if not entity:
+        return {"error": gettext("Für diese Suchbox ist keine Tabelle ausgewählt.")}
+    field = _field(entity, props.get("field"))
+    if not field:
+        return {"error": gettext("Die Suchbox braucht ein Suchfeld.")}
+    name = filter_param(entity, field)
+    target_slug = (props.get("target_page") or "").strip()
+    target_page = app.pages.filter(slug=target_slug).first() if target_slug else None
+    action_url = reverse("page", args=[app.slug, target_page.slug]) if target_page else ""
+    value = request.GET.get(name, "")
+    return {
+        "entity": entity,
+        "name": name,
+        "value": value,
+        "action_url": action_url,
+        "placeholder": props.get("placeholder") or gettext("Suchen …"),
+        "field_label": app_i18n.t(field.label),
+    }
+
+
+def prep_stepper(request, app, block):
+    props = block["props"]
+    entity = _entity(app, props.get("entity"))
+    if not entity:
+        return {"error": gettext("Für diese Status-Leiste ist keine Tabelle ausgewählt.")}
+    field = _field(entity, props.get("field"), [Field.CHOICE])
+    if not field:
+        return {"error": gettext("Die Status-Leiste braucht ein Auswahlfeld.")}
+    param = (props.get("param") or "id").strip() or "id"
+    record, has_param = _target_record(request, entity, param)
+    if not has_param:
+        return {"entity": entity, "missing": True, "param": param}
+    if not record:
+        return {"error": gettext("Der ausgewählte Eintrag wurde nicht gefunden.")}
+    choices = field.choice_list()
+    current = record.data.get(field.key)
+    current_idx = choices.index(current) if current in choices else -1
+    steps = []
+    for i, c in enumerate(choices):
+        state = "done" if (current_idx >= 0 and i < current_idx) else ("current" if i == current_idx else "upcoming")
+        steps.append({"value": c, "label": display_value(field, c), "state": state, "num": i + 1})
+    return {
+        "entity": entity,
+        "record": record,
+        "field_label": app_i18n.t(field.label),
+        "steps": steps,
+        "editable": entity.allow_edit,
+        **_urls(request, app, block),
+    }
+
+
+def handle_stepper(app, block, payload, user):
+    from .scripting.ops import OpsError, TableOps
+
+    props = block["props"]
+    entity = _entity(app, props.get("entity"))
+    field = _field(entity, props.get("field"), [Field.CHOICE])
+    if not entity or not field or not isinstance(payload, dict) or payload.get("op") != "step":
+        raise OpsError(gettext("Unbekannte Aktion."))
+    record = _record(entity, payload.get("record"))
+    value = payload.get("value")
+    if value not in field.choice_list():
+        raise OpsError(gettext("Ungültiger Status."))
+    TableOps(app, user=user, enforce_flags=True).update(entity.slug, record.pk, {field.key: value})
+    return {"ok": True, "value": value}
+
+
 # ---------- Registrierung ----------
 
 FIELD = {"type": "field"}
@@ -558,4 +699,34 @@ register("gantt", _("Zeitstrahl"), "📐", [
     {"key": "group_field", "label": _("Gruppierung (optional)"), **FIELD},
     {"key": "color_field", "label": _("Farbe nach Auswahlfeld (optional)"), **FIELD},
 ], prep_gantt, "Planung", _("Einträge als Balken auf einer Zeitleiste (4 Wochen)"))
+
+register("detail", _("Detailansicht"), "🪪", [
+    {"key": "title", "label": _("Titel (optional)"), "type": "text", "default": ""},
+    {"key": "entity", "label": _("Tabelle"), "type": "entity"},
+    {"key": "param", "label": _("URL-Parameter (Standard: id)"), "type": "text", "default": "id"},
+    {"key": "show_actions", "label": _("Bearbeiten-/Löschen-Links anzeigen"), "type": "checkbox", "default": True},
+], prep_detail, "Daten", _("Zeigt alle Felder eines einzelnen Datensatzes (?id=…)"))
+
+register("related_list", _("Unterliste"), "🔗", [
+    {"key": "title", "label": _("Titel (optional)"), "type": "text", "default": ""},
+    {"key": "entity", "label": _("Zieltabelle"), "type": "entity"},
+    {"key": "ref_field", "label": _("Verweisfeld auf Haupttabelle"), **FIELD},
+    {"key": "param", "label": _("URL-Parameter der Haupt-ID (Standard: id)"), "type": "text", "default": "id"},
+    {"key": "show_add", "label": _("„+ Neu“-Link anzeigen"), "type": "checkbox", "default": True},
+], prep_related_list, "Daten", _("Verknüpfte Einträge zum aktuellen Datensatz (?id=…)"))
+
+register("search", _("Suchbox"), "🔍", [
+    {"key": "title", "label": _("Titel (optional)"), "type": "text", "default": ""},
+    {"key": "entity", "label": _("Tabelle"), "type": "entity"},
+    {"key": "field", "label": _("Suchfeld"), **FIELD},
+    {"key": "target_page", "label": _("Zielseite (leer: aktuelle Seite)"), "type": "page"},
+    {"key": "placeholder", "label": _("Platzhaltertext"), "type": "text", "default": _("Suchen …")},
+], prep_search, "Daten", _("Schnellsuche über ein Feld (optional mit Sprung auf Zielseite)"))
+
+register("stepper", _("Status-Leiste"), "🚦", [
+    {"key": "title", "label": _("Titel (optional)"), "type": "text", "default": ""},
+    {"key": "entity", "label": _("Tabelle"), "type": "entity"},
+    {"key": "field", "label": _("Status-Auswahlfeld"), **FIELD},
+    {"key": "param", "label": _("URL-Parameter der Datensatz-ID (Standard: id)"), "type": "text", "default": "id"},
+], prep_stepper, "Planung", _("Fortschritts- und Freigabeschritte eines Datensatzes (?id=…)"), action=handle_stepper)
 

@@ -3566,6 +3566,35 @@ class WidgetTests(TestCase):
         self.assertIn("Alpha", html)
         self.assertIn("Keine Einträge in diesem Zeitraum.", self.get("?zeitraum=2000-01-03"))
 
+    def test_detail_related_list_search_and_stepper(self):
+        notizen = Entity.objects.create(app=self.app, name="Notizen", slug="notizen")
+        Field.objects.create(entity=notizen, label="Aufgabe", key="aufgabe", type=Field.REFERENCE, reference=self.entity)
+        Field.objects.create(entity=notizen, label="Text", key="text")
+        Record.objects.create(entity=notizen, data={"aufgabe": self.a.pk, "text": "Erste Notiz"})
+        Record.objects.create(entity=notizen, data={"aufgabe": self.b.pk, "text": "Andere Notiz"})
+
+        Page.objects.filter(pk=self.page.pk).update(layout=clean_layout([
+            make_block("search", entity="aufgaben", field="aufgabe", target_page="start"),
+            make_block("detail", entity="aufgaben"),
+            make_block("stepper", entity="aufgaben", field="status"),
+            make_block("related_list", entity="notizen", ref_field="aufgabe"),
+        ]))
+        self.ids = {b["type"]: b["id"] for b in Page.objects.get(pk=self.page.pk).layout}
+
+        html = self.get(f"?id={self.a.pk}")
+        self.assertIn('class="card detail-block"', html)
+        self.assertIn("Alpha", html)
+        self.assertIn("Erste Notiz", html)
+        self.assertNotIn("Andere Notiz", html)
+        self.assertIn(f"/a/{self.app.slug}/t/notizen/neu/?aufgabe={self.a.pk}", html)
+        self.assertIn('data-widget="stepper"', html)
+        self.assertIn('name="aufgaben.aufgabe"', html)
+
+        self.assertEqual(self.post("stepper", op="step", record=self.a.pk, value="Zu").status_code, 200)
+        self.a.refresh_from_db()
+        self.assertEqual(self.a.data["status"], "Zu")
+        self.assertEqual(self.post("stepper", op="step", record=self.a.pk, value="Ungueltig").status_code, 400)
+
 
 class InterfaceTranslationTests(TestCase):
     """Englische Oberfläche: jeder Text hat eine Übersetzung (manage.py uebersetzungen)."""

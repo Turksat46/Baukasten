@@ -5125,3 +5125,127 @@ msgstr "Row field"
 #: builder/widgets.py
 msgid "Zeitstrahl"
 msgstr "Timeline"
+
+#: builder/templates/builder/blocks/detail.html builder/templates/builder/blocks/stepper.html
+msgid "Wähle einen Eintrag über ?%(param)s=… aus."
+msgstr "Select an entry via ?%(param)s=…."
+
+#: builder/templates/builder/blocks/related_list.html
+msgid "Noch keine verknüpften Einträge."
+msgstr "No related entries yet."
+
+#: builder/templates/builder/blocks/related_list.html
+msgid "Wähle einen Haupteintrag über ?%(param)s=… aus."
+msgstr "Select a main entry via ?%(param)s=…."
+
+#: builder/widgets.py
+msgid "Bearbeiten-/Löschen-Links anzeigen"
+msgstr "Show edit/delete links"
+
+#: builder/widgets.py
+msgid "Der ausgewählte Eintrag wurde nicht gefunden."
+msgstr "The selected entry was not found."
+
+#: builder/widgets.py
+msgid "Detailansicht"
+msgstr "Detail view"
+
+#: builder/widgets.py
+msgid "Die Status-Leiste braucht ein Auswahlfeld."
+msgstr "The status bar needs a choice field."
+
+#: builder/widgets.py
+msgid "Die Suchbox braucht ein Suchfeld."
+msgstr "The search box needs a search field."
+
+#: builder/widgets.py
+msgid "Die Unterliste braucht ein Verweisfeld."
+msgstr "The related list needs a reference field."
+
+#: builder/widgets.py
+msgid "Fortschritts- und Freigabeschritte eines Datensatzes (?id=…)"
+msgstr "Progress and approval steps of a record (?id=…)"
+
+#: builder/widgets.py
+msgid "Für diese Detailansicht ist keine Tabelle ausgewählt."
+msgstr "No table is selected for this detail view."
+
+#: builder/widgets.py
+msgid "Für diese Status-Leiste ist keine Tabelle ausgewählt."
+msgstr "No table is selected for this status bar."
+
+#: builder/widgets.py
+msgid "Für diese Suchbox ist keine Tabelle ausgewählt."
+msgstr "No table is selected for this search box."
+
+#: builder/widgets.py
+msgid "Für diese Unterliste ist keine Tabelle ausgewählt."
+msgstr "No table is selected for this related list."
+
+#: builder/widgets.py
+msgid "Platzhaltertext"
+msgstr "Placeholder text"
+
+#: builder/widgets.py
+msgid "Schnellsuche über ein Feld (optional mit Sprung auf Zielseite)"
+msgstr "Quick search on a field (optionally jumping to a target page)"
+
+#: builder/widgets.py
+msgid "Status-Auswahlfeld"
+msgstr "Status choice field"
+
+#: builder/widgets.py
+msgid "Status-Leiste"
+msgstr "Status bar"
+
+#: builder/widgets.py
+msgid "Suchbox"
+msgstr "Search box"
+
+#: builder/widgets.py
+msgid "Suchfeld"
+msgstr "Search field"
+
+#: builder/widgets.py
+msgid "URL-Parameter (Standard: id)"
+msgstr "URL parameter (default: id)"
+
+#: builder/widgets.py
+msgid "URL-Parameter der Datensatz-ID (Standard: id)"
+msgstr "URL parameter of the record ID (default: id)"
+
+#: builder/widgets.py
+msgid "URL-Parameter der Haupt-ID (Standard: id)"
+msgstr "URL parameter of the main ID (default: id)"
+
+#: builder/widgets.py
+msgid "Ungültiger Status."
+msgstr "Invalid status."
+
+#: builder/widgets.py
+msgid "Unterliste"
+msgstr "Related list"
+
+#: builder/widgets.py
+msgid "Verknüpfte Einträge zum aktuellen Datensatz (?id=…)"
+msgstr "Related entries for the current record (?id=…)"
+
+#: builder/widgets.py
+msgid "Verweisfeld auf Haupttabelle"
+msgstr "Reference field to main table"
+
+#: builder/widgets.py
+msgid "Zeigt alle Felder eines einzelnen Datensatzes (?id=…)"
+msgstr "Shows all fields of a single record (?id=…)"
+
+#: builder/widgets.py
+msgid "Zielseite (leer: aktuelle Seite)"
+msgstr "Target page (empty: current page)"
+
+#: builder/widgets.py
+msgid "Zieltabelle"
+msgstr "Target table"
+
+#: builder/widgets.py
+msgid "„+ Neu“-Link anzeigen"
+msgstr "Show “+ New” link"
