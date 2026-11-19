@@ -32,6 +32,7 @@ urlpatterns = [
     path("a/<slug:app>/p/<slug:page>/b/<str:block>/aktion/", views.block_action, name="block_action"),
     path("skript-sandbox/", views.script_sandbox, name="script_sandbox"),
     path("a/<slug:app>/t/<slug:entity>/export.csv", views.entity_export, name="entity_export"),
+    path("a/<slug:app>/t/<slug:entity>/import/", views.entity_import, name="entity_import"),
     # MCP-Server je App (für KI-Agenten und n8n), Schlüssel wie bei der API
     path("mcp/designer/", mcp_designer.endpoint, name="mcp_designer"),
     path("mcp/<slug:app>/", mcp.endpoint, name="mcp"),

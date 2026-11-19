@@ -631,6 +631,15 @@ def handle_stepper(app, block, payload, user):
     return {"ok": True, "value": value}
 
 
+def prep_csv_import(request, app, block):
+    entity = _entity(app, block["props"].get("entity"))
+    if not entity:
+        return {"error": gettext("Für diesen CSV-Import ist keine Tabelle ausgewählt.")}
+    if not entity.allow_create or not getattr(request.user, "is_authenticated", False):
+        return {"entity": entity, "href": ""}
+    return {"entity": entity, "href": reverse("entity_import", args=[app.slug, entity.slug]), "next": _next(request)}
+
+
 # ---------- Registrierung ----------
 
 FIELD = {"type": "field"}
@@ -729,4 +738,9 @@ register("stepper", _("Status-Leiste"), "🚦", [
     {"key": "field", "label": _("Status-Auswahlfeld"), **FIELD},
     {"key": "param", "label": _("URL-Parameter der Datensatz-ID (Standard: id)"), "type": "text", "default": "id"},
 ], prep_stepper, "Planung", _("Fortschritts- und Freigabeschritte eines Datensatzes (?id=…)"), action=handle_stepper)
+
+register("csv_import", _("CSV-Import"), "⬆️", [
+    {"key": "entity", "label": _("Tabelle"), "type": "entity"},
+    {"key": "label", "label": _("Beschriftung"), "type": "text", "default": _("CSV-Datei importieren")},
+], prep_csv_import, "Daten", _("Einträge aus einer CSV-Datei in diese Tabelle laden"))
 

@@ -3596,6 +3596,64 @@ class WidgetTests(TestCase):
         self.assertEqual(self.post("stepper", op="step", record=self.a.pk, value="Ungueltig").status_code, 400)
 
 
+class CsvImportTests(TestCase):
+    """Zweistufiger CSV-Import für Tabellendaten."""
+
+    def setUp(self):
+        self.user = User.objects.create_user("importer", password="x")
+        self.client.force_login(self.user)
+        self.app = App.objects.create(name="Lager", slug="lager-import", published=True)
+        self.kategorien = Entity.objects.create(app=self.app, name="Kategorien", slug="kategorien")
+        Field.objects.create(entity=self.kategorien, label="Name", key="name", required=True)
+        self.kat = Record.objects.create(entity=self.kategorien, data={"name": "Elektronik"})
+        self.entity = Entity.objects.create(app=self.app, name="Artikel", slug="artikel")
+        Field.objects.create(entity=self.entity, label="Bezeichnung", key="bezeichnung", required=True)
+        Field.objects.create(entity=self.entity, label="Menge", key="menge", type=Field.NUMBER)
+        Field.objects.create(entity=self.entity, label="Aktiv", key="aktiv", type=Field.BOOL)
+        Field.objects.create(entity=self.entity, label="Datum", key="datum", type=Field.DATE)
+        Field.objects.create(entity=self.entity, label="Kategorie", key="kategorie", type=Field.REFERENCE, reference=self.kategorien)
+        self.url = reverse("entity_import", args=[self.app.slug, self.entity.slug])
+
+    def test_two_step_csv_import_and_audit(self):
+        from django.core.files.uploadedfile import SimpleUploadedFile
+
+        csv_bytes = "Bezeichnung;Menge;Aktiv;Datum;Kategorie\nMonitor;5;ja;19.11.2026;Elektronik\nMaus;12;nein;2026-11-20;Elektronik\n".encode("utf-8")
+        res = self.client.post(self.url, {"step": "upload", "file": SimpleUploadedFile("daten.csv", csv_bytes, content_type="text/csv")})
+        self.assertEqual(res.status_code, 200)
+        self.assertIn("2 Datenzeilen erkannt", res.content.decode())
+
+        res = self.client.post(self.url, {"step": "import", "col_0": "bezeichnung", "col_1": "menge", "col_2": "aktiv", "col_3": "datum", "col_4": "kategorie"})
+        self.assertEqual(res.status_code, 302)
+        records = list(self.entity.records.order_by("id"))
+        self.assertEqual(len(records), 2)
+        self.assertEqual(records[0].data["bezeichnung"], "Monitor")
+        self.assertEqual(records[0].data["menge"], 5)
+        self.assertIs(records[0].data["aktiv"], True)
+        self.assertEqual(records[0].data["datum"], "2026-11-19")
+        self.assertEqual(records[0].data["kategorie"], self.kat.pk)
+        from .models import AuditEntry
+
+        self.assertTrue(AuditEntry.objects.filter(app=self.app, action="create", target_type="record").exists())
+
+    def test_csv_import_validation_abort_and_skip(self):
+        from django.core.files.uploadedfile import SimpleUploadedFile
+
+        csv_bytes = "Bezeichnung,Menge\nMonitor,5\nKaputt,keinezahl\n".encode("utf-8")
+        self.client.post(self.url, {"step": "upload", "file": SimpleUploadedFile("bad.csv", csv_bytes, content_type="text/csv")})
+        res = self.client.post(self.url, {"step": "import", "col_0": "bezeichnung", "col_1": "menge"})
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(self.entity.records.count(), 0)  # bei Fehler abgebrochen
+
+        res = self.client.post(self.url, {"step": "import", "col_0": "bezeichnung", "col_1": "menge", "skip_errors": "1"})
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(self.entity.records.count(), 1)  # gültige Zeile importiert
+
+    def test_csv_import_respects_allow_create(self):
+        self.entity.allow_create = False
+        self.entity.save()
+        self.assertEqual(self.client.get(self.url).status_code, 403)
+
+
 class InterfaceTranslationTests(TestCase):
     """Englische Oberfläche: jeder Text hat eine Übersetzung (manage.py uebersetzungen)."""
 

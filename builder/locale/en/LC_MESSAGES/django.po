@@ -5249,3 +5249,183 @@ msgstr "Target table"
 #: builder/widgets.py
 msgid "„+ Neu“-Link anzeigen"
 msgstr "Show “+ New” link"
+
+#: builder/csv_import.py
+msgid "%(n)s Einträge"
+msgstr "%(n)s entries"
+
+#: builder/csv_import.py
+msgid "Bitte mindestens eine Spalte einem Tabellenfeld zuordnen."
+msgstr "Please map at least one column to a table field."
+
+#: builder/csv_import.py
+msgid "CSV-Import: %(n)s Einträge angelegt"
+msgstr "CSV import: %(n)s entries created"
+
+#: builder/csv_import.py
+msgid "Die CSV-Datei braucht eine Kopfzeile und mindestens eine Datenzeile."
+msgstr "The CSV file needs a header row and at least one data row."
+
+#: builder/csv_import.py
+msgid "Die CSV-Datei ist größer als 2 MB."
+msgstr "The CSV file is larger than 2 MB."
+
+#: builder/csv_import.py
+msgid "Die Datei ist leer."
+msgstr "The file is empty."
+
+#: builder/csv_import.py
+msgid "Die Datei muss als UTF-8 gespeichert sein."
+msgstr "The file must be saved as UTF-8."
+
+#: builder/csv_import.py
+msgid "Die Kopfzeile der CSV-Datei enthält keine Spaltennamen."
+msgstr "The CSV header row contains no column names."
+
+#: builder/csv_import.py
+msgid "Höchstens %(max)s Zeilen pro Import erlaubt."
+msgstr "At most %(max)s rows allowed per import."
+
+#: builder/csv_import.py
+msgid "Pflichtfeld „%(field)s“ ist leer."
+msgstr "Required field “%(field)s” is empty."
+
+#: builder/csv_import.py
+msgid "Pflichtfelder nicht zugeordnet: %(fields)s"
+msgstr "Required fields not mapped: %(fields)s"
+
+#: builder/csv_import.py
+msgid "Verweis „%(val)s“ in „%(field)s“ nicht gefunden."
+msgstr "Reference “%(val)s” in “%(field)s” not found."
+
+#: builder/csv_import.py
+msgid "Zeile %(line)s: %(msg)s"
+msgstr "Row %(line)s: %(msg)s"
+
+#: builder/csv_import.py
+msgid "„%(val)s“ ist kein Ja/Nein-Wert."
+msgstr "“%(val)s” is not a yes/no value."
+
+#: builder/csv_import.py
+msgid "„%(val)s“ ist kein gültiges Datum (JJJJ-MM-TT oder TT.MM.JJJJ)."
+msgstr "“%(val)s” is not a valid date (YYYY-MM-DD or DD.MM.YYYY)."
+
+#: builder/csv_import.py
+msgid "„%(val)s“ ist keine Zahl."
+msgstr "“%(val)s” is not a number."
+
+#: builder/csv_import.py
+msgid "„%(val)s“ ist keine ganze Zahl."
+msgstr "“%(val)s“ is not a whole number."
+
+#: builder/csv_import.py
+msgid "„%(val)s“ ist keine gültige Auswahl für „%(field)s“."
+msgstr "“%(val)s” is not a valid choice for “%(field)s”."
+
+#: builder/csv_import.py
+msgid "„%(val)s“ ist keine gültige E-Mail-Adresse."
+msgstr "“%(val)s” is not a valid email address."
+
+#: builder/csv_import.py
+msgid "„%(val)s“ ist keine gültige Webadresse."
+msgstr "“%(val)s” is not a valid web address."
+
+#: builder/templates/builder/block.html builder/widgets.py
+msgid "CSV-Datei importieren"
+msgstr "Import CSV file"
+
+#: builder/templates/builder/block.html builder/templates/builder/entity_import.html builder/widgets.py
+msgid "CSV-Import"
+msgstr "CSV import"
+
+#: builder/templates/builder/block.html
+msgid "CSV-Import für diese Tabelle derzeit nicht verfügbar."
+msgstr "CSV import is currently not available for this table."
+
+#: builder/templates/builder/entity_import.html
+msgid "%(n)s Datenzeile erkannt. Ordne die Spalten den Feldern der Tabelle zu."
+msgid_plural "%(n)s Datenzeilen erkannt. Ordne die Spalten den Feldern der Tabelle zu."
+msgstr[0] "%(n)s data row detected. Map the columns to the table fields."
+msgstr[1] "%(n)s data rows detected. Map the columns to the table fields."
+
+#: builder/templates/builder/entity_import.html
+msgid "1. CSV-Datei hochladen"
+msgstr "1. Upload CSV file"
+
+#: builder/templates/builder/entity_import.html
+msgid "2. Spalten zuordnen"
+msgstr "2. Map columns"
+
+#: builder/templates/builder/entity_import.html
+msgid "Andere Datei wählen"
+msgstr "Choose another file"
+
+#: builder/templates/builder/entity_import.html
+msgid "CSV-Spalte"
+msgstr "CSV column"
+
+#: builder/templates/builder/entity_import.html
+msgid "Fehlerhafte Zeilen überspringen (sonst bricht der gesamte Import bei Fehlern ab)"
+msgstr "Skip invalid rows (otherwise the entire import aborts on errors)"
+
+#: builder/templates/builder/entity_import.html
+msgid "Fehlerhafte Zeilen:"
+msgstr "Invalid rows:"
+
+#: builder/templates/builder/entity_import.html
+msgid "Import starten"
+msgstr "Start import"
+
+#: builder/templates/builder/entity_import.html
+msgid "Tabellenfeld"
+msgstr "Table field"
+
+#: builder/templates/builder/entity_import.html
+msgid "UTF-8-kodierte CSV-Datei (Trennzeichen Semikolon oder Komma, höchstens 2 MB und 2.000 Zeilen)."
+msgstr "UTF-8 encoded CSV file (semicolon or comma delimiter, at most 2 MB and 2,000 rows)."
+
+#: builder/templates/builder/entity_import.html
+msgid "Vorschau (erste 5 Zeilen)"
+msgstr "Preview (first 5 rows)"
+
+#: builder/templates/builder/entity_import.html
+msgid "Vorschau laden"
+msgstr "Load preview"
+
+#: builder/templates/builder/entity_import.html
+msgid "— ignorieren —"
+msgstr "— ignore —"
+
+#: builder/templates/builder/entity_import.html
+msgid "… und %(n)s weiterer Fehler"
+msgid_plural "… und %(n)s weitere Fehler"
+msgstr[0] "… and %(n)s more error"
+msgstr[1] "… and %(n)s more errors"
+
+#: builder/views.py
+msgid "%(n)s Einträge importiert, %(err)s Zeilen übersprungen."
+msgstr "%(n)s entries imported, %(err)s rows skipped."
+
+#: builder/views.py
+msgid "%(n)s Einträge importiert."
+msgstr "%(n)s entries imported."
+
+#: builder/views.py
+msgid "Bitte eine CSV-Datei auswählen."
+msgstr "Please select a CSV file."
+
+#: builder/views.py
+msgid "Bitte zuerst eine CSV-Datei hochladen."
+msgstr "Please upload a CSV file first."
+
+#: builder/views.py
+msgid "Import abgebrochen: %(err)s fehlerhafte Zeilen."
+msgstr "Import aborted: %(err)s invalid rows."
+
+#: builder/widgets.py
+msgid "Einträge aus einer CSV-Datei in diese Tabelle laden"
+msgstr "Load entries from a CSV file into this table"
+
+#: builder/widgets.py
+msgid "Für diesen CSV-Import ist keine Tabelle ausgewählt."
+msgstr "No table is selected for this CSV import."
