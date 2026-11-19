@@ -1,0 +1,41 @@
+{% load i18n baukasten %}<section class="card pivot-block">
+  <div class="card-head">
+    <h3 data-slot="title">{{ p.title|default:entity.name|tr }}</h3>
+    <span class="muted small">{% blocktranslate count n=total_records %}{{ n }} Eintrag{% plural %}{{ n }} Einträge{% endblocktranslate %}</span>
+  </div>
+  {% if rows %}
+    <div class="table-wrap">
+      <table class="pivot-table">
+        <thead>
+          <tr>
+            <th scope="col">{{ row_label }}</th>
+            {% for col in cols %}<th scope="col" class="num">{{ col }}</th>{% endfor %}
+            {% if show_totals and has_cols %}<th scope="col" class="num">{% translate "Gesamt" %}</th>{% endif %}
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in rows %}
+            <tr>
+              <th scope="row">{{ row.label }}</th>
+              {% for cell in row.values %}
+                <td class="num{% if cell.empty %} muted{% endif %}">{{ cell.display }}</td>
+              {% endfor %}
+              {% if show_totals and has_cols %}<td class="num pivot-total">{{ row.total }}</td>{% endif %}
+            </tr>
+          {% endfor %}
+        </tbody>
+        {% if show_totals %}
+          <tfoot>
+            <tr>
+              <th scope="row">{% translate "Gesamt" %}</th>
+              {% for tot in col_totals %}<td class="num pivot-total">{{ tot }}</td>{% endfor %}
+              {% if has_cols %}<td class="num pivot-grand">{{ grand_total }}</td>{% endif %}
+            </tr>
+          </tfoot>
+        {% endif %}
+      </table>
+    </div>
+  {% else %}
+    <p class="muted">{% translate "Noch keine Daten für diese Kreuztabelle." %}</p>
+  {% endif %}
+</section>

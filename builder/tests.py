@@ -3538,6 +3538,34 @@ class WidgetTests(TestCase):
         self.assertIn('type="checkbox" name="ok" value="1" data-page-input checked', html)
         self.assertIn('type="date" name="tag"', html)
 
+    def test_pivot_count_sum_and_filter(self):
+        Page.objects.filter(pk=self.page.pk).update(layout=clean_layout([
+            make_block("filter", entity="aufgaben", field="status"),
+            make_block("pivot", entity="aufgaben", row_field="status", col_field="erledigt", agg="count"),
+            make_block("pivot", entity="aufgaben", row_field="status", agg="sum", value_field="fortschritt"),
+        ]))
+        html = self.get()
+        self.assertIn('class="pivot-table"', html)
+        self.assertIn("Offen", html)
+        self.assertIn("Zu", html)
+        self.assertIn("110", html)  # Gesamtsumme 20 + 90
+        filtered_html = self.get("?aufgaben.status=Zu")
+        self.assertIn("90", filtered_html)
+        self.assertNotIn("Offen", filtered_html.split('class="pivot-table"')[1])
+
+    def test_gantt_timeline_and_grouping(self):
+        Page.objects.filter(pk=self.page.pk).update(layout=clean_layout([
+            make_block("gantt", entity="aufgaben", start_field="faellig", end_field="bis",
+                       group_field="status", color_field="status"),
+        ]))
+        win = self.today.replace(day=1).isoformat()
+        html = self.get(f"?zeitraum={win}")
+        self.assertIn('class="card gantt-block"', html)
+        self.assertIn('class="gantt-group">Offen</div>', html)
+        self.assertIn('class="gantt-bar', html)
+        self.assertIn("Alpha", html)
+        self.assertIn("Keine Einträge in diesem Zeitraum.", self.get("?zeitraum=2000-01-03"))
+
 
 class InterfaceTranslationTests(TestCase):
     """Englische Oberfläche: jeder Text hat eine Übersetzung (manage.py uebersetzungen)."""

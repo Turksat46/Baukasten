@@ -1,0 +1,54 @@
+{% load i18n baukasten %}<section class="card gantt-block">
+  <div class="card-head">
+    <h3 data-slot="title">{{ p.title|default:entity.name|tr }} · {{ range_label }}</h3>
+    <nav class="plan-nav" aria-label="{% translate 'Zeitraum wählen' %}">
+      <a class="btn btn-secondary btn-small" href="?{{ param }}={{ prev }}" aria-label="{% translate 'Vorheriger Zeitraum' %}" title="{% translate 'Vorheriger Zeitraum' %}">‹</a>
+      {% if not is_this %}<a class="btn btn-secondary btn-small" href="?{{ param }}={{ this }}">{% translate "Heute" %}</a>{% endif %}
+      <a class="btn btn-secondary btn-small" href="?{{ param }}={{ next }}" aria-label="{% translate 'Nächster Zeitraum' %}" title="{% translate 'Nächster Zeitraum' %}">›</a>
+    </nav>
+  </div>
+  <div class="gantt-wrap">
+    <div class="gantt">
+      <div class="gantt-head">
+        <div class="gantt-label-col muted small">{% translate "Eintrag" %}</div>
+        <div class="gantt-days">
+          {% for d in days %}
+            <div class="gantt-day{% if d.today %} is-today{% endif %}{% if d.weekend %} is-weekend{% endif %}" title="{{ d.day|date:'SHORT_DATE_FORMAT' }}">
+              {% if d.label %}<span class="gantt-date">{{ d.label }}</span>{% endif %}
+              <span class="gantt-num">{{ d.num }}</span>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% if items %}
+        {% for item in items %}
+          {% if has_groups %}{% ifchanged item.group %}
+            <div class="gantt-group">{{ item.group }}</div>
+          {% endifchanged %}{% endif %}
+          <div class="gantt-row">
+            <div class="gantt-label-col">
+              {% if edit %}
+                <a href="{% url 'record_edit' app.slug entity.slug item.id %}?next={{ next_url|urlencode }}" title="{{ item.label }}">{{ item.label }}</a>
+              {% else %}
+                <span title="{{ item.label }}">{{ item.label }}</span>
+              {% endif %}
+            </div>
+            <div class="gantt-track">
+              <div class="gantt-grid" aria-hidden="true">
+                {% for d in days %}<span class="{% if d.today %}is-today{% endif %}{% if d.weekend %} is-weekend{% endif %}"></span>{% endfor %}
+              </div>
+              <div class="gantt-bar{% if item.tone %} tone-{{ item.tone }}{% endif %}{% if item.clip_left %} is-clip-left{% endif %}{% if item.clip_right %} is-clip-right{% endif %}"
+                   style="left: {{ item.left }}%; width: {{ item.width }}%;"
+                   title="{{ item.label }} ({{ item.start|date:'SHORT_DATE_FORMAT' }} – {{ item.end|date:'SHORT_DATE_FORMAT' }})">
+                <span>{{ item.label }}</span>
+              </div>
+            </div>
+          </div>
+        {% endfor %}
+      {% else %}
+        <p class="muted gantt-empty">{% translate "Keine Einträge in diesem Zeitraum." %}</p>
+      {% endif %}
+    </div>
+  </div>
+  {% if legend %}<ul class="plan-legend muted small">{% for l in legend %}<li><span class="swatch seg-{{ l.tone }}"></span>{{ l.label }}</li>{% endfor %}</ul>{% endif %}
+</section>

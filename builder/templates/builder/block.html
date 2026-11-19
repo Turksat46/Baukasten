@@ -365,6 +365,12 @@
 {% elif type == "kanban" %}
   {% include "builder/blocks/kanban.html" %}
 
+{% elif type == "pivot" %}
+  {% include "builder/blocks/pivot.html" %}
+
+{% elif type == "gantt" %}
+  {% include "builder/blocks/gantt.html" %}
+
 {% elif custom_plain is not None %}
   <div class="custom-block">{{ custom_plain }}</div>
 

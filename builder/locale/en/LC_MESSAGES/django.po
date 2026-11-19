@@ -5037,3 +5037,91 @@ msgstr "n/j/Y"
 #: planning.py
 msgid "l, j. F"
 msgstr "l, F j"
+
+#: builder/templates/builder/blocks/gantt.html
+msgid "Keine Einträge in diesem Zeitraum."
+msgstr "No entries in this period."
+
+#: builder/templates/builder/blocks/gantt.html
+msgid "Nächster Zeitraum"
+msgstr "Next period"
+
+#: builder/templates/builder/blocks/gantt.html
+msgid "Vorheriger Zeitraum"
+msgstr "Previous period"
+
+#: builder/templates/builder/blocks/gantt.html
+msgid "Zeitraum wählen"
+msgstr "Select period"
+
+#: builder/templates/builder/blocks/pivot.html
+msgid "Gesamt"
+msgstr "Total"
+
+#: builder/templates/builder/blocks/pivot.html
+msgid "Noch keine Daten für diese Kreuztabelle."
+msgstr "No data for this pivot table yet."
+
+#: builder/widgets.py
+msgid "Die Kreuztabelle braucht ein Zeilenfeld."
+msgstr "The pivot table needs a row field."
+
+#: builder/widgets.py
+msgid "Die Zeitstrahl-Ansicht braucht ein Startdatum."
+msgstr "The timeline view needs a start date."
+
+#: builder/widgets.py
+msgid "Einträge als Balken auf einer Zeitleiste (4 Wochen)"
+msgstr "Entries as bars on a timeline (4 weeks)"
+
+#: builder/widgets.py
+msgid "Enddatum (optional)"
+msgstr "End date (optional)"
+
+#: builder/widgets.py
+msgid "Für Summe oder Durchschnitt braucht die Kreuztabelle ein Zahlenfeld."
+msgstr "For sum or average, the pivot table needs a number field."
+
+#: builder/widgets.py
+msgid "Für diese Kreuztabelle ist keine Tabelle ausgewählt."
+msgstr "No table is selected for this pivot table."
+
+#: builder/widgets.py
+msgid "Für diese Zeitstrahl-Ansicht ist keine Tabelle ausgewählt."
+msgstr "No table is selected for this timeline view."
+
+#: builder/widgets.py
+msgid "Gruppierung (optional)"
+msgstr "Grouping (optional)"
+
+#: builder/widgets.py
+msgid "Kreuztabelle"
+msgstr "Pivot table"
+
+#: builder/widgets.py
+msgid "Pivot-Auswertung nach Zeilen- und Spaltenfeld"
+msgstr "Pivot summary by row and column field"
+
+#: builder/widgets.py
+msgid "Spaltenfeld (optional)"
+msgstr "Column field (optional)"
+
+#: builder/widgets.py
+msgid "Startdatum"
+msgstr "Start date"
+
+#: builder/widgets.py
+msgid "Summen anzeigen"
+msgstr "Show totals"
+
+#: builder/widgets.py
+msgid "Wert"
+msgstr "Value"
+
+#: builder/widgets.py
+msgid "Zeilenfeld"
+msgstr "Row field"
+
+#: builder/widgets.py
+msgid "Zeitstrahl"
+msgstr "Timeline"
