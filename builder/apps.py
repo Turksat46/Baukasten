@@ -35,6 +35,7 @@ class BuilderConfig(AppConfig):
 
         post_save.connect(about.forget, sender=ReleaseNote, dispatch_uid="baukasten-release-notes")
         post_delete.connect(about.forget, sender=ReleaseNote, dispatch_uid="baukasten-release-notes-del")
+        _register_checks()
 
         try:
             import extensions
@@ -45,3 +46,22 @@ class BuilderConfig(AppConfig):
                 importlib.import_module(f"extensions.{module.name}")
             except Exception:  # eine kaputte Erweiterung darf den Start nicht verhindern
                 log.exception("Erweiterung %s konnte nicht geladen werden", module.name)
+
+
+def _register_checks():
+    import os
+    from django.conf import settings
+    from django.core.checks import Tags, Warning, register
+
+    @register(Tags.security, deploy=True)
+    def check_production_database(app_configs, **kwargs):
+        warnings = []
+        engine = settings.DATABASES.get("default", {}).get("ENGINE", "")
+        allow_sqlite = os.environ.get("ALLOW_SQLITE_IN_PROD", "").strip().lower() in ("1", "true", "yes", "on")
+        if not settings.DEBUG and engine.endswith("sqlite3") and not allow_sqlite:
+            warnings.append(Warning(
+                "SQLite ist im Produktivbetrieb (DEBUG=0) aktiv.",
+                hint="DATABASE_URL für PostgreSQL setzen oder ALLOW_SQLITE_IN_PROD=1 angeben.",
+                id="builder.W001",
+            ))
+        return warnings

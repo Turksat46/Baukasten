@@ -85,15 +85,15 @@ Voraussetzung: Python 3.10 oder neuer.
 
 ```
 python -m venv .venv
-.venv\Scripts\activate            (Linux/macOS: source .venv/bin/activate)
+.venv\Scripts\activate            # Linux/macOS: source .venv/bin/activate
 pip install -r requirements.txt -r requirements-automation.txt
 
-$env:DEBUG=1                      (cmd: set DEBUG=1, Linux/macOS: export DEBUG=1)
+$env:DEBUG=1                      # cmd: set DEBUG=1, Linux/macOS: export DEBUG=1
 python manage.py migrate
 python manage.py createsuperuser
-python manage.py demo             (Beispiel-App „Inventar“; mit --neu wird sie ersetzt)
-python manage.py beispiel_einwilligung   (Beispiel-App „Aufnahme-Einwilligung“)
-python manage.py beispiel_einsatzplanung (Beispiel-App „Personaleinsatz“ mit Schichtplanung)
+python manage.py demo             # Beispiel-App „Inventar“; mit --neu wird sie ersetzt
+python manage.py beispiel_einwilligung   # Beispiel-App „Aufnahme-Einwilligung“
+python manage.py beispiel_einsatzplanung # Beispiel-App „Personaleinsatz“ mit Schichtplanung
 python manage.py runserver
 ```
 

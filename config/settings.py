@@ -16,6 +16,15 @@ def env_list(name, default=""):
     return [v.strip() for v in os.environ.get(name, default).split(",") if v.strip()]
 
 
+def _oidc_verify_ssl():
+    raw = os.environ.get("OIDC_VERIFY_SSL", "1").strip()
+    if raw.lower() in ("0", "false", "no", "off"):
+        return False
+    if raw.lower() in ("1", "true", "yes", "on", ""):
+        return True
+    return raw
+
+
 DEBUG = env_bool("DEBUG", False)
 
 SECRET_KEY = os.environ.get("SECRET_KEY") or ("nur-fuer-lokale-entwicklung" if DEBUG else "")
@@ -90,7 +99,8 @@ REDIS_URL = os.environ.get("REDIS_URL", "")
 CACHE_BACKEND = os.environ.get("CACHE_BACKEND", "redis" if REDIS_URL else ("memory" if DEBUG else "database"))
 if CACHE_BACKEND == "redis":
     CACHES = {"default": {"BACKEND": "django.core.cache.backends.redis.RedisCache",
-                          "LOCATION": REDIS_URL, "KEY_PREFIX": "baukasten", "TIMEOUT": 300}}
+                          "LOCATION": REDIS_URL, "KEY_PREFIX": "baukasten", "TIMEOUT": 300,
+                          "OPTIONS": {"socket_connect_timeout": 2, "socket_timeout": 2}}}
 elif CACHE_BACKEND == "database":
     CACHES = {"default": {"BACKEND": "django.core.cache.backends.db.DatabaseCache",
                           "LOCATION": "baukasten_cache", "TIMEOUT": 300,
@@ -123,11 +133,22 @@ STORAGES = {
     "staticfiles": {"BACKEND": "whitenoise.storage.CompressedStaticFilesStorage"},
 }
 
+SECURE_REDIRECT_EXEMPT = [r"^healthz/?$", r"^readyz/?$", r"^metrics/?$"]
+
 if not DEBUG:
     # Hinter dem Ingress: TLS endet dort, die App sieht den Header.
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
     SESSION_COOKIE_SECURE = env_bool("COOKIE_SECURE", True)
     CSRF_COOKIE_SECURE = env_bool("COOKIE_SECURE", True)
+    SECURE_SSL_REDIRECT = env_bool("SECURE_SSL_REDIRECT", False)
+    SECURE_HSTS_SECONDS = int(os.environ.get("SECURE_HSTS_SECONDS", "0"))
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = env_bool("SECURE_HSTS_INCLUDE_SUBDOMAINS", False)
+    SECURE_HSTS_PRELOAD = env_bool("SECURE_HSTS_PRELOAD", False)
+    if not CSRF_TRUSTED_ORIGINS:
+        CSRF_TRUSTED_ORIGINS = [
+            f"https://{h}" for h in ALLOWED_HOSTS
+            if h and h not in ("localhost", "127.0.0.1", "*", "host.docker.internal") and not h.startswith(".")
+        ]
 
 # Gruppen, zu denen jede Person automatisch gehört (kommagetrennt). Leer lassen: keine.
 DEFAULT_USER_GROUPS = env_list("DEFAULT_USER_GROUPS", "Viewer")
@@ -137,7 +158,9 @@ OIDC_ISSUER = os.environ.get("OIDC_ISSUER", "").rstrip("/")  # z. B. https://key
 OIDC_ENABLED = bool(OIDC_ISSUER and os.environ.get("OIDC_CLIENT_ID"))
 OIDC_ONLY = OIDC_ENABLED and env_bool("OIDC_ONLY", False)  # lokale Anmeldung ausblenden
 OIDC_GROUPS_CLAIM = os.environ.get("OIDC_GROUPS_CLAIM", "groups")
+OIDC_GROUP_PREFIX = os.environ.get("OIDC_GROUP_PREFIX", "")
 OIDC_DESIGNER_ROLE = os.environ.get("OIDC_DESIGNER_ROLE", "baukasten-designer")
+OIDC_VERIFY_SSL = _oidc_verify_ssl()
 if OIDC_ENABLED:
     INSTALLED_APPS.append("mozilla_django_oidc")
     AUTHENTICATION_BACKENDS = [
@@ -147,6 +170,8 @@ if OIDC_ENABLED:
     _oidc = f"{OIDC_ISSUER}/protocol/openid-connect"
     OIDC_RP_CLIENT_ID = os.environ["OIDC_CLIENT_ID"]
     OIDC_RP_CLIENT_SECRET = os.environ.get("OIDC_CLIENT_SECRET", "")
+    if not OIDC_RP_CLIENT_SECRET and not DEBUG:
+        raise ImproperlyConfigured("OIDC_CLIENT_SECRET fehlt bei eingeschaltetem OIDC.")
     OIDC_OP_AUTHORIZATION_ENDPOINT = f"{_oidc}/auth"
     OIDC_OP_TOKEN_ENDPOINT = f"{_oidc}/token"
     OIDC_OP_USER_ENDPOINT = f"{_oidc}/userinfo"

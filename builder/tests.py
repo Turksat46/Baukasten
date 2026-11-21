@@ -3952,3 +3952,57 @@ class HomePageEnhancementTests(TestCase):
         rem_res = self.client.post(reverse("home_widget_remove", args=[widget.pk]))
         self.assertEqual(rem_res.status_code, 302)
         self.assertFalse(HomeWidget.objects.filter(pk=widget.pk).exists())
+
+
+class ReviewHardeningTests(TestCase):
+    """Tests für Review-Härtungen: Probes, OIDC-Claims, SSRF, SQLite-Guard, API-Key-Aktivstatus, Slugs."""
+
+    def test_healthz_readyz_and_redirect_exempt(self):
+        from django.conf import settings
+
+        self.assertEqual(self.client.get("/healthz").status_code, 200)
+        self.assertEqual(self.client.get("/readyz").status_code, 200)
+        self.assertTrue(any("healthz" in pat for pat in settings.SECURE_REDIRECT_EXEMPT))
+        self.assertTrue(any("readyz" in pat for pat in settings.SECURE_REDIRECT_EXEMPT))
+
+    def test_oidc_claim_names_and_username_fallback(self):
+        from .auth import _username_from_claims, claim_names
+
+        claims = {"groups": ["/Automatisierer/", " /Team/Labor ", "/extern"]}
+        self.assertEqual(claim_names(claims, "groups"), {"Automatisierer", "Labor", "extern"})
+        self.assertEqual(claim_names(claims, "groups", prefix="Auto"), {"Automatisierer"})
+
+        self.assertEqual(_username_from_claims({"preferred_username": "alice"}), "alice")
+        self.assertEqual(_username_from_claims({"email": "bob@example.com"}), "bob@example.com")
+        self.assertEqual(_username_from_claims({"sub": "uuid-1234"}), "uuid-1234")
+
+    def test_ssrf_forbidden_hosts_and_internal_sqlite_guard(self):
+        from django.conf import settings
+        from django.test import override_settings
+        from .datasources import QueryError, _connect
+        from .services import HttpNotAllowed, http_request
+
+        with override_settings(BAUKASTEN_HTTP_ALLOWED_HOSTS=["127.0.0.1", "169.254.169.254", "localhost"]):
+            for bad in ("http://127.0.0.1/x", "http://169.254.169.254/latest/meta-data/", "http://localhost/x"):
+                with self.assertRaises(HttpNotAllowed):
+                    http_request("GET", bad)
+
+        db_path = settings.DATABASES["default"]["NAME"]
+        with self.assertRaises(QueryError):
+            _connect(f"sqlite:///{db_path}", 5)
+
+    def test_deactivated_user_api_key_rejected_and_reserved_slugs(self):
+        from .models import ApiKey, unique_slug
+
+        owner = User.objects.create_user("apiuser", password="x", is_active=True)
+        app = App.objects.create(name="Test", slug="test-api", created_by=owner, published=True)
+        entity = Entity.objects.create(app=app, name="Items", slug="items", api_enabled=True)
+        _key_obj, raw = ApiKey.issue(app, "Key", can_write=False, user=owner)
+        auth = {"HTTP_AUTHORIZATION": f"Bearer {raw}"}
+        self.assertEqual(self.client.get(f"/api/v1/{app.slug}/{entity.slug}/", **auth).status_code, 200)
+
+        owner.is_active = False
+        owner.save()
+        self.assertEqual(self.client.get(f"/api/v1/{app.slug}/{entity.slug}/", **auth).status_code, 401)
+
+        self.assertEqual(unique_slug(app.entities, "neu"), "neu-2")

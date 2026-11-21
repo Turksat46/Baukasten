@@ -5563,3 +5563,7 @@ msgstr "Add widget"
 #: builder/templates/builder/home.html
 msgid "Wähle einen Baustein aus deinen Apps. Er erscheint oben auf der Startseite."
 msgstr "Pick a block from your apps. It will appear at the top of your home page."
+
+#: builder/datasources.py
+msgid "Die interne Datenbank des Baukastens darf nicht als Datenquelle abgefragt werden."
+msgstr "The internal Baukasten database must not be queried as a data source."

@@ -15,11 +15,13 @@ worker_class = "gthread"
 threads = int(os.environ.get("GUNICORN_THREADS", "4"))
 # Muss über QUERY_TIMEOUT liegen, sonst bricht gunicorn wartende Abfragen vorher ab.
 timeout = int(os.environ.get("GUNICORN_TIMEOUT", "60"))
-graceful_timeout = 30
+graceful_timeout = int(os.environ.get("GUNICORN_GRACEFUL_TIMEOUT", str(max(30, timeout))))
 keepalive = 5
+worker_tmp_dir = "/dev/shm" if os.path.isdir("/dev/shm") else None
+forwarded_allow_ips = os.environ.get("GUNICORN_FORWARDED_ALLOW_IPS", "127.0.0.1")
 # Prozesse regelmäßig erneuern: hält den Speicherverbrauch über Wochen stabil.
 max_requests = int(os.environ.get("GUNICORN_MAX_REQUESTS", "2000"))
-max_requests_jitter = 200
+max_requests_jitter = min(200, max(1, max_requests // 10))
 accesslog = "-"
 errorlog = "-"
 loglevel = os.environ.get("LOG_LEVEL", "info").lower()
