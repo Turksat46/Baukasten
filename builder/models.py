@@ -30,7 +30,7 @@ RESERVED_APP_SLUGS = {
     "bausteine", "import", "designer", "admin", "oidc", "api", "mcp",
     "healthz", "readyz", "metrics", "login", "logout", "profil", "hilfe", "ueber", "offline",
 }  # Adressen, die keine App belegen darf
-RESERVED_RESOURCE_SLUGS = {"neu", "loeschen", "seite", "vorschau", "starten", "stoppen", "export", "import"}
+RESERVED_RESOURCE_SLUGS = {"neu"}
 
 
 def unique_slug(queryset, base, field="slug", sep="-", reserved=RESERVED_RESOURCE_SLUGS):

@@ -3973,8 +3973,8 @@ class ReviewHardeningTests(TestCase):
         self.assertEqual(claim_names(claims, "groups", prefix="Auto"), {"Automatisierer"})
 
         self.assertEqual(_username_from_claims({"preferred_username": "alice"}), "alice")
-        self.assertEqual(_username_from_claims({"email": "bob@example.com"}), "bob@example.com")
         self.assertEqual(_username_from_claims({"sub": "uuid-1234"}), "uuid-1234")
+        self.assertEqual(_username_from_claims({"email": "bob@example.com"}), "")
 
     def test_ssrf_forbidden_hosts_and_internal_sqlite_guard(self):
         from django.conf import settings
@@ -3987,9 +3987,10 @@ class ReviewHardeningTests(TestCase):
                 with self.assertRaises(HttpNotAllowed):
                     http_request("GET", bad)
 
-        db_path = settings.DATABASES["default"]["NAME"]
-        with self.assertRaises(QueryError):
-            _connect(f"sqlite:///{db_path}", 5)
+        fake_db = str(Path(_DEMO_DIR) / "internal-test.sqlite3")
+        with override_settings(DATABASES={"default": {**settings.DATABASES["default"], "NAME": fake_db}}):
+            with self.assertRaises(QueryError):
+                _connect(f"sqlite:///{fake_db}", 5)
 
     def test_deactivated_user_api_key_rejected_and_reserved_slugs(self):
         from .models import ApiKey, unique_slug

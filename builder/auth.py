@@ -46,8 +46,8 @@ def claim_names(claims, key, prefix=""):
 
 
 def _username_from_claims(claims):
-    """Bestimmt einen eindeutigen Benutzernamen aus preferred_username, email oder sub."""
-    for key in ("preferred_username", "email", "sub"):
+    """Bestimmt einen eindeutigen Benutzernamen aus preferred_username oder sub."""
+    for key in ("preferred_username", "sub"):
         val = str(claims.get(key) or "").strip()
         if val:
             return val[:150]
