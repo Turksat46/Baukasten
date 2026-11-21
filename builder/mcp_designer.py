@@ -11,9 +11,10 @@ from django.views.decorators.csrf import csrf_exempt
 
 from . import ai_designer, versions
 from .api import unauthorized
-from .blocks import WIDTHS, all_types
+from .blocks import BUILTIN_PLACEHOLDERS, WIDTHS, all_types
 from .mcp import ToolError, _object, dispatch, serve
-from .models import App, AppVersion, DesignerToken, Field, Script, can_automate, can_design
+from .models import App, AppVersion, CustomBlock, DesignerToken, Field, Script, can_automate, can_design
+from .sanitize import ALLOWED_ATTRS, ALLOWED_TAGS, DROP_WITH_CONTENT, sanitize_html_report
 
 INSTRUCTIONS = (
     "Designer des Baukastens: Apps aus Tabellen (entities) mit Feldern und Seiten (pages) aus Bausteinen. "
@@ -82,6 +83,21 @@ def guide():
             "Vor jeder Änderung entsteht eine Version; restore_version holt sie zurück.",
             "Datenquellen und Übersetzungen pflegt nur der Designer.",
         ],
+        "design_system": {
+            "css_classes": [
+                "card", "card-head", "grid", "col col-3", "col col-4", "col col-6", "col col-8", "col col-12",
+                "btn", "btn-secondary", "btn-small", "badge", "notice", "notice-warning", "muted", "small", "key",
+            ],
+            "note": "Keine externen CSS-Frameworks (kein Tailwind/Bootstrap). Inline-Styles sind stark eingeschränkt.",
+        },
+        "custom_block_html_rules": {
+            "allowed_tags": sorted(ALLOWED_TAGS),
+            "allowed_attrs": {k: sorted(v) for k, v in ALLOWED_ATTRS.items()},
+            "forbidden_tags": sorted(DROP_WITH_CONTENT),
+            "builtin_placeholders": BUILTIN_PLACEHOLDERS,
+            "setting_types": ["text", "textarea", "number", "checkbox", "select"],
+            "usage": "Eigene HTML-Bausteine per save_custom_block anlegen und als type=\"c-<slug>\" in Seiten nutzen.",
+        },
         "example": EXAMPLE,
     }
 
@@ -238,6 +254,86 @@ def build_tools(token, request):
         "Holt einen gespeicherten Stand zurück. Der jetzige Stand wird vorher selbst als Version gesichert.",
         _object({"app": app_arg, "number": {"type": "integer", "description": "Nummer der Version"}},
                 ["app", "number"]), write(run_restore), read_only=False, destructive=True)
+
+    def run_list_custom_blocks(args, request):
+        items = []
+        for cb in CustomBlock.objects.filter(kind=CustomBlock.HTML).order_by("name"):
+            items.append({
+                "slug": cb.slug,
+                "type": f"c-{cb.slug}",
+                "name": cb.name,
+                "description": cb.description,
+                "settings": cb.setting_specs(),
+                "placeholders": [s["key"] for s in cb.setting_specs()] + BUILTIN_PLACEHOLDERS,
+                "html": cb.html,
+            })
+        return {"custom_blocks": items}
+
+    add("list_custom_blocks", "Eigene Bausteine auflisten",
+        "Listet alle eigenen HTML-Bausteine (c-<slug>) mit ihren Einstellungen und Platzhaltern auf.",
+        _object({}), run_list_custom_blocks)
+
+    def run_save_custom_block(args, request):
+        import json as _json
+
+        name = str(args.get("name") or "").strip()[:80]
+        if not name:
+            raise ToolError("Bitte einen Namen für den Baustein angeben.")
+        raw_html = str(args.get("html") or "")
+        clean_html, warnings = sanitize_html_report(raw_html)
+        if not clean_html.strip():
+            raise ToolError("Nach der Sicherheitsbereinigung ist kein HTML übrig. Siehe custom_block_html_rules in guide.")
+        raw_settings = args.get("settings")
+        if isinstance(raw_settings, list):
+            settings_text = _json.dumps(raw_settings, ensure_ascii=False)
+        else:
+            settings_text = str(raw_settings or "")
+        slug = str(args.get("slug") or "").strip()
+        cb = CustomBlock.objects.filter(slug=slug, kind=CustomBlock.HTML).first() if slug else None
+        created = cb is None
+        if cb is None:
+            cb = CustomBlock(name=name, kind=CustomBlock.HTML, created_by=user)
+            if slug:
+                cb.slug = slug
+        else:
+            cb.name = name
+        cb.description = str(args.get("description") or "")[:120]
+        cb.settings = settings_text
+        cb.html = clean_html
+        cb.save()
+        return {
+            "saved": True,
+            "created": created,
+            "slug": cb.slug,
+            "type": f"c-{cb.slug}",
+            "placeholders": [s["key"] for s in cb.setting_specs()] + BUILTIN_PLACEHOLDERS,
+            "settings": cb.setting_specs(),
+            "warnings": warnings,
+        }
+
+    add("save_custom_block", "Eigenen Baustein anlegen oder ändern",
+        "Legt einen eigenen HTML-Baustein (c-<slug>) an oder aktualisiert ihn. Einstellungen können als "
+        "JSON-Liste ([{key?, label, type?, default?, options?}]) oder Textzeilen übergeben werden.",
+        _object({
+            "name": {"type": "string", "description": "Anzeigename des Bausteins"},
+            "slug": {"type": "string", "description": "Optional: bestehender Kurzname zum Aktualisieren"},
+            "description": {"type": "string", "description": "Kurze Beschreibung"},
+            "settings": {"description": "Einstellungen als JSON-Liste oder Textzeilen"},
+            "html": {"type": "string", "description": "HTML mit {{ platzhalter }}-Marken"},
+        }, ["name", "html"]), write(run_save_custom_block), read_only=False)
+
+    def run_delete_custom_block(args, request):
+        slug = str(args.get("slug") or "").strip()
+        cb = CustomBlock.objects.filter(slug=slug, kind=CustomBlock.HTML).first()
+        if cb is None:
+            raise ToolError(f"Eigenen Baustein „{slug}“ gibt es nicht.")
+        cb.delete()
+        return {"deleted": True, "slug": slug}
+
+    add("delete_custom_block", "Eigenen Baustein löschen",
+        "Löscht einen eigenen HTML-Baustein anhand seines Kurznamens (slug).",
+        _object({"slug": {"type": "string", "description": "Kurzname (slug) des Bausteins"}}, ["slug"]),
+        write(run_delete_custom_block), read_only=False, destructive=True)
     return tools
 
 

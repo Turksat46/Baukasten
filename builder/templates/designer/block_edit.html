@@ -5,7 +5,7 @@
 <p class="crumbs"><a href="{% url 'designer_home' %}">{% translate "Designer" %}</a> / <a href="{% url 'designer_blocks' %}">{% translate "Eigene Bausteine" %}</a> / {% if custom %}{{ custom.name }}{% else %}{% translate "Neu" %}{% endif %}</p>
 <h1>{% if custom %}{{ custom.name }}{% else %}{% translate "Neuer HTML-Baustein" %}{% endif %}</h1>
 
-<div class="grid">
+<div class="grid" id="block-editor" data-csrf="{{ csrf_token }}" data-preview-url="{% url 'designer_block_preview' %}">
   <div class="col col-6">
     <section class="card">
       <form method="post" class="form">
@@ -14,6 +14,13 @@
         <div>{{ form.name.errors }}{{ form.name.label_tag }}{{ form.name }}</div>
         <div>{{ form.description.errors }}{{ form.description.label_tag }}{{ form.description }}</div>
         <div data-tour="block-settings">{{ form.settings.errors }}{{ form.settings.label_tag }}{{ form.settings }}<span class="helptext">{{ form.settings.help_text }}</span></div>
+        <div class="snippet-bar">
+          <span class="muted small">{% translate "Vorlagen:" %}</span>
+          <button type="button" class="btn btn-secondary btn-small" data-snippet="card">{% translate "Infokarte" %}</button>
+          <button type="button" class="btn btn-secondary btn-small" data-snippet="kpi">{% translate "Kennzahl" %}</button>
+          <button type="button" class="btn btn-secondary btn-small" data-snippet="notice">{% translate "Hinweisbox" %}</button>
+          <button type="button" class="btn btn-secondary btn-small" data-snippet="split">{% translate "Zweispaltig" %}</button>
+        </div>
         <div data-tour="block-html">{{ form.html.errors }}{{ form.html.label_tag }}{{ form.html }}<span class="helptext">{{ form.html.help_text }}</span></div>
         <div class="actions">
           <button class="btn">{% translate "Speichern" %}</button>
@@ -24,24 +31,25 @@
   </div>
   <div class="col col-6">
     <section class="card">
-      <h3>{% translate "Platzhalter" %}</h3>
+      <h3>{% translate "Platzhalter (klicken zum Einfügen)" %}</h3>
       <p class="muted">{% translate "Im HTML wird jeder Platzhalter durch den Wert ersetzt, den jemand im Seiten-Designer einträgt." %}</p>
-      <p>{% for name in placeholders %}<code class="key">{% templatetag openvariable %} {{ name }} {% templatetag closevariable %}</code> {% endfor %}</p>
+      <p id="block-placeholders">{% for name in placeholders %}<code class="key" data-placeholder="{{ name }}">{% templatetag openvariable %} {{ name }} {% templatetag closevariable %}</code> {% endfor %}</p>
       <p class="muted small">{% translate "Immer verfügbar: nutzer (Name der angemeldeten Person), app (Name der App), datum (heutiges Datum)." %}</p>
     </section>
     <section class="card">
-      <h3>{% translate "Vorschau mit Standardwerten" %}</h3>
-      {% if custom %}
-        <div class="custom-preview"><div class="custom-block">{{ preview }}</div></div>
-      {% else %}
-        <p class="empty">{% translate "Die Vorschau erscheint nach dem ersten Speichern." %}</p>
-      {% endif %}
+      <h3>{% translate "Live-Vorschau mit Standardwerten" %}</h3>
+      <div class="custom-preview"><div class="custom-block" id="block-preview-target">{{ preview }}</div></div>
+      <div class="notice notice-warning" id="block-warnings"{% if not warnings %} hidden{% endif %} role="status">
+        <strong>{% translate "Sicherheitsbereinigung:" %}</strong>
+        <ul id="block-warnings-list">{% for w in warnings %}<li>{{ w }}</li>{% endfor %}</ul>
+      </div>
     </section>
     <section class="card">
       <h3>{% translate "Beispiel" %}</h3>
-      <p class="muted small">{% translate "Einstellungen:" %}</p>
+      <p class="muted small">{% translate "Einstellungen (optional mit Typ: number, checkbox, textarea, select(a, b) oder als JSON):" %}</p>
       <pre class="json">Titel = Wartung
-Text = Am Freitag ist das System ab 16 Uhr nicht erreichbar.</pre>
+Text = Am Freitag ist das System ab 16 Uhr nicht erreichbar.
+Stufe : select(info, warnung) = warnung</pre>
       <p class="muted small">HTML:</p>
       <pre class="json">&lt;div class="card"&gt;
   &lt;h3&gt;{% templatetag openvariable %} titel {% templatetag closevariable %}&lt;/h3&gt;
@@ -54,3 +62,4 @@ Text = Am Freitag ist das System ab 16 Uhr nicht erreichbar.</pre>
 </div>
 {% endblock %}
 {% block tour %}{% tour "eigene-bausteine" %}{% endblock %}
+{% block scripts %}<script src="{% asset 'builder/block_edit.js' %}"></script>{% endblock %}

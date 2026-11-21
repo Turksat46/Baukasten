@@ -28,7 +28,7 @@ from django.utils.translation import gettext_lazy as _
 from . import app_i18n, hooks
 from .forms import RecordForm
 from .models import CustomBlock, DataQuery, Field, Record, Script
-from .sanitize import fill_placeholders, sanitize_html
+from .sanitize import fill_placeholders, sanitize_html, sanitize_html_report
 from .services import HttpNotAllowed, http_json
 
 log = logging.getLogger(__name__)
@@ -65,14 +65,27 @@ def register(key, label, icon, fields=(), prepare=None, category="Inhalt", hint=
     REGISTRY[key] = BlockType(key, label, icon, list(fields), prepare, category, hint, action)
 
 
+def _call_hook_block(fn, request, app, props):
+    import inspect
+
+    try:
+        sig = inspect.signature(fn)
+        accepts_props = len(sig.parameters) >= 3 or any(
+            p.kind == inspect.Parameter.VAR_POSITIONAL for p in sig.parameters.values()
+        )
+    except (ValueError, TypeError):
+        accepts_props = False
+    return fn(request, app, props) if accepts_props else fn(request, app)
+
+
 def all_types():
     types = dict(REGISTRY)
     for key, custom in hooks.CUSTOM_BLOCKS.items():
         fn = custom["fn"]
         types[f"x-{key}"] = BlockType(
-            f"x-{key}", custom["label"], custom["icon"], [],
-            lambda request, app, block, fn=fn: {"custom_html": fn(request, app)},
-            "Eigene", _("Aus dem Ordner extensions"),
+            f"x-{key}", custom["label"], custom["icon"], custom.get("fields", []),
+            lambda request, app, block, fn=fn: {"custom_html": _call_hook_block(fn, request, app, block.get("props", {}))},
+            "Eigene", custom.get("hint") or _("Aus dem Ordner extensions"),
         )
     for custom in CustomBlock.objects.filter(kind=CustomBlock.HTML):
         types[f"c-{custom.slug}"] = BlockType(
@@ -85,8 +98,8 @@ def all_types():
 
 # ---------- Eigene HTML-Bausteine ----------
 
-def render_custom(custom, request, app, props):
-    """Setzt Einstellungen und feste Platzhalter ein und bereinigt das Ergebnis."""
+def render_custom_report(custom, request, app, props):
+    """Setzt Einstellungen und feste Platzhalter ein und liefert (HTML, Sanitizer-Hinweise)."""
     user = request.user
     values = {spec["key"]: props.get(spec["key"], spec["default"]) for spec in custom.setting_specs()}
     values.update({
@@ -94,7 +107,13 @@ def render_custom(custom, request, app, props):
         "app": app.name if app else "",
         "datum": date_format(timezone.localdate(), "SHORT_DATE_FORMAT"),
     })
-    return mark_safe(sanitize_html(fill_placeholders(custom.html, values)))
+    clean, warnings = sanitize_html_report(fill_placeholders(custom.html, values))
+    return mark_safe(clean), warnings
+
+
+def render_custom(custom, request, app, props):
+    """Setzt Einstellungen und feste Platzhalter ein und bereinigt das Ergebnis."""
+    return render_custom_report(custom, request, app, props)[0]
 
 
 BUILTIN_PLACEHOLDERS = ["nutzer", "app", "datum"]

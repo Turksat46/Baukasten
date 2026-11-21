@@ -5461,3 +5461,93 @@ msgstr "save"
 #: builder/templates/designer/page.html
 msgid "verschieben"
 msgstr "move"
+
+#: builder/designer.py
+msgid "Sicherheitsbereinigung: "
+msgstr "Security sanitization: "
+
+#: builder/templates/designer/block_edit.html
+msgid "Einstellungen (optional mit Typ: number, checkbox, textarea, select(a, b) oder als JSON):"
+msgstr "Settings (optional with type: number, checkbox, textarea, select(a, b), or as JSON):"
+
+#: builder/templates/designer/block_edit.html
+msgid "Hinweisbox"
+msgstr "Notice box"
+
+#: builder/templates/designer/block_edit.html
+msgid "Infokarte"
+msgstr "Info card"
+
+#: builder/templates/designer/block_edit.html
+msgid "Live-Vorschau mit Standardwerten"
+msgstr "Live preview with defaults"
+
+#: builder/templates/designer/block_edit.html
+msgid "Platzhalter (klicken zum Einfügen)"
+msgstr "Placeholders (click to insert)"
+
+#: builder/templates/designer/block_edit.html
+msgid "Sicherheitsbereinigung:"
+msgstr "Security sanitization:"
+
+#: builder/templates/designer/block_edit.html
+msgid "Vorlagen:"
+msgstr "Snippets:"
+
+#: builder/templates/designer/block_edit.html
+msgid "Zweispaltig"
+msgstr "Two columns"
+
+#: builder/templates/builder/home.html
+msgid "+ Widget"
+msgstr "+ Widget"
+
+#: builder/templates/builder/home.html
+msgid "Meine Widgets"
+msgstr "My widgets"
+
+#: builder/templates/builder/home.html
+msgid "Widget auswählen"
+msgstr "Select widget"
+
+#: builder/templates/builder/home.html
+msgid "Widget entfernen"
+msgstr "Remove widget"
+
+#: builder/templates/builder/home.html
+msgid "Wird geladen …"
+msgstr "Loading …"
+
+#: builder/views.py
+msgid "Bitte einen gültigen Baustein auswählen."
+msgstr "Please select a valid block."
+
+#: builder/views.py
+msgid "Dieser Baustein kann nicht als Widget angepinnt werden."
+msgstr "This block cannot be pinned as a widget."
+
+#: builder/templates/builder/home.html
+msgid "%(n)s Widget"
+msgid_plural "%(n)s Widgets"
+msgstr[0] "%(n)s widget"
+msgstr[1] "%(n)s widgets"
+
+#: builder/templates/builder/home.html
+msgid "Auf die Startseite"
+msgstr "Add to home"
+
+#: builder/templates/builder/home.html
+msgid "Kein Widget passt zur Suche."
+msgstr "No widget matches your search."
+
+#: builder/templates/builder/home.html
+msgid "Schließen"
+msgstr "Close"
+
+#: builder/templates/builder/home.html
+msgid "Widgets"
+msgstr "Widgets"
+
+#: builder/templates/builder/home.html
+msgid "Widgets durchsuchen"
+msgstr "Search widgets"

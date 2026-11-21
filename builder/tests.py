@@ -3792,3 +3792,162 @@ class InterfaceTranslationTests(TestCase):
         self.assertNotIn("Verfügbar", html)
         today = timezone.localdate()
         self.assertIn(f"{today:%B} {today.day}, {today.year}", html)  # z. B. „Thursday, November 19, 2026“
+
+
+class CustomBlockEnhancementTests(TestCase):
+    """Eigene Bausteine: typisierte Einstellungen, Live-Vorschau, Sanitizer-Report, Hooks & MCP."""
+
+    def setUp(self):
+        from .models import DesignerToken
+
+        self.designer = User.objects.create_user("bauherr", password="x", is_staff=True)
+        self.token, self.raw_token = DesignerToken.issue(self.designer, "KI-Test")
+        self.auth = {"HTTP_AUTHORIZATION": f"Bearer {self.raw_token}"}
+
+    def test_typed_and_json_setting_specs(self):
+        from .models import CustomBlock
+
+        cb = CustomBlock(
+            name="KPI",
+            settings="Anzahl : number = 5\nAktiv : checkbox = true\nStufe : select(info, warnung) = warnung",
+            html="<p>{{ anzahl }}</p>",
+        )
+        specs = cb.setting_specs()
+        self.assertEqual([s["type"] for s in specs], ["number", "checkbox", "select"])
+        self.assertEqual(specs[1]["default"], True)
+        self.assertEqual(specs[2]["options"], [["info", "info"], ["warnung", "warnung"]])
+
+        cb_json = CustomBlock(
+            name="JSON",
+            settings='[{"key": "limit", "label": "Limit", "type": "number", "default": 10}]',
+            html="<p>{{ limit }}</p>",
+        )
+        self.assertEqual(cb_json.setting_specs(), [{"key": "limit", "label": "Limit", "default": "10", "type": "number"}])
+
+    def test_sanitize_report_and_live_preview(self):
+        from .sanitize import sanitize_html_report
+
+        clean, warnings = sanitize_html_report('<div onclick="x()">Hi</div><script>alert(1)</script>')
+        self.assertEqual(clean, "<div>Hi</div>")
+        self.assertEqual(len(warnings), 2)
+
+        self.client.force_login(self.designer)
+        resp = self.client.post(
+            reverse("designer_block_preview"),
+            data=json.dumps({
+                "name": "Test",
+                "settings": "Titel = Hallo",
+                "html": '<div class="card"><h3>{{ titel }}</h3><script>bad()</script></div>',
+            }),
+            content_type="application/json",
+        )
+        self.assertEqual(resp.status_code, 200)
+        data = resp.json()
+        self.assertTrue(data["ok"])
+        self.assertIn("<h3>Hallo</h3>", data["html"])
+        self.assertNotIn("<script>", data["html"])
+        self.assertIn("titel", data["placeholders"])
+        self.assertIn("nutzer", data["placeholders"])
+        self.assertTrue(data["warnings"])
+
+    def test_hook_block_with_fields_and_props(self):
+        from . import hooks
+        from .blocks import all_types
+
+        @hooks.block("test_props_block", label="Props-Test", fields=[{"key": "titel", "label": "Titel", "type": "text"}])
+        def _test_block(request, app, props):
+            return f"Hallo {props.get('titel', '')}"
+
+        try:
+            btype = all_types()["x-test_props_block"]
+            self.assertEqual(len(btype.fields), 1)
+            res = btype.prepare(None, None, {"props": {"titel": "Welt"}})
+            self.assertEqual(res["custom_html"], "Hallo Welt")
+        finally:
+            hooks.CUSTOM_BLOCKS.pop("test_props_block", None)
+
+    def test_mcp_custom_block_tools_and_guide(self):
+        def call_mcp(method, params=None):
+            body = {"jsonrpc": "2.0", "id": 1, "method": method, "params": params or {}}
+            return self.client.post(
+                reverse("mcp_designer"), data=json.dumps(body), content_type="application/json", **self.auth
+            ).json()
+
+        guide_res = call_mcp("tools/call", {"name": "guide", "arguments": {}})
+        guide_data = json.loads(guide_res["result"]["content"][0]["text"])
+        self.assertIn("design_system", guide_data)
+        self.assertIn("custom_block_html_rules", guide_data)
+
+        save_res = call_mcp("tools/call", {
+            "name": "save_custom_block",
+            "arguments": {
+                "name": "Status-Karte",
+                "description": "Zeigt Status",
+                "settings": [{"key": "titel", "label": "Titel", "type": "text", "default": "OK"}],
+                "html": '<div class="card"><h3>{{ titel }}</h3><script>x()</script></div>',
+            },
+        })
+        saved = json.loads(save_res["result"]["content"][0]["text"])
+        self.assertTrue(saved["saved"])
+        self.assertEqual(saved["type"], "c-status-karte")
+        self.assertTrue(saved["warnings"])
+
+        listed = json.loads(call_mcp("tools/call", {"name": "list_custom_blocks", "arguments": {}})["result"]["content"][0]["text"])
+        self.assertEqual(len(listed["custom_blocks"]), 1)
+
+        deleted = json.loads(call_mcp("tools/call", {"name": "delete_custom_block", "arguments": {"slug": "status-karte"}})["result"]["content"][0]["text"])
+        self.assertTrue(deleted["deleted"])
+
+
+class HomePageEnhancementTests(TestCase):
+    """Startseite: unterschiedliche Designer-Links, Seiten-Meldungen, Fehler-Badge und Widgets."""
+
+    def setUp(self):
+        self.designer = User.objects.create_user("chef", password="x", is_staff=True)
+        self.viewer = User.objects.create_user("leser", password="x")
+        self.app = App.objects.create(name="Werk", slug="werk", created_by=self.designer, published=True)
+        self.entity = Entity.objects.create(app=self.app, name="Geräte", slug="geraete")
+        self.page = Page.objects.create(
+            app=self.app,
+            title="Start",
+            slug="start",
+            layout=[
+                {"id": "bnotice1", "type": "notice", "width": 12, "props": {"title": "Wartung", "text": "Freitag 16 Uhr"}},
+                {"id": "bstat1", "type": "stat", "width": 4, "props": {"label": "Geräte", "entity": "geraete"}},
+            ],
+        )
+
+    def test_hero_links_notices_and_error_badges(self):
+        from .models import Script
+
+        Script.objects.create(app=self.app, name="Kaputt", language=Script.PYTHON, trigger=Script.PAGE, failures=2)
+        self.client.force_login(self.designer)
+        res = self.client.get(reverse("home"))
+        self.assertContains(res, '?neu=app#neu-anlegen"')
+        self.assertContains(res, "Freitag 16 Uhr")
+        self.assertContains(res, "1 Fehler")
+
+        self.client.force_login(self.viewer)
+        res_viewer = self.client.get(reverse("home"))
+        self.assertContains(res_viewer, "Freitag 16 Uhr")
+        self.assertNotContains(res_viewer, "1 Fehler")
+
+    def test_home_widgets_add_render_and_remove(self):
+        from .models import HomeWidget
+
+        self.client.force_login(self.viewer)
+        sheet = self.client.get(reverse("home"))
+        self.assertContains(sheet, 'id="widget-sheet"')
+        self.assertContains(sheet, 'data-widget-app')
+        self.assertContains(sheet, f'value="{self.page.pk}:bstat1"')
+        self.assertNotContains(sheet, "<select name=\"target\"")
+        add_res = self.client.post(reverse("home_widget_add"), {"target": f"{self.page.pk}:bstat1"})
+        self.assertEqual(add_res.status_code, 302)
+        widget = HomeWidget.objects.get(user=self.viewer, page=self.page, block_id="bstat1")
+
+        home_res = self.client.get(reverse("home"))
+        self.assertContains(home_res, reverse("page_block", args=["werk", "start", "bstat1"]))
+
+        rem_res = self.client.post(reverse("home_widget_remove", args=[widget.pk]))
+        self.assertEqual(rem_res.status_code, 302)
+        self.assertFalse(HomeWidget.objects.filter(pk=widget.pk).exists())

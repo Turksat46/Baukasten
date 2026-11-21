@@ -20,7 +20,8 @@ from django.views.decorators.http import require_POST
 
 from . import app_i18n, audit, hooks, platform
 from .blocks import (BUILTIN_PLACEHOLDERS, all_types, clean_layout, designer_config, make_block,
-                     render_custom, render_layout)
+                     render_custom, render_custom_report, render_layout)
+from .sanitize import sanitize_html_report
 from . import datasources
 from .forms import (ApiKeyForm, AppForm, AutomationForm, AutomationScriptForm, CustomBlockForm, EntityForm,
                     FieldForm, NewAppForm, NewPageForm, QueryForm, ScriptForm)
@@ -614,17 +615,46 @@ def custom_block_edit(request, pk=None):
     block = get_object_or_404(CustomBlock, pk=pk, kind=CustomBlock.HTML) if pk else None
     form = CustomBlockForm(request.POST or None, instance=block)
     if request.method == "POST" and form.is_valid():
+        raw_html = request.POST.get("html") or ""
+        _, stripped = sanitize_html_report(raw_html)
         block = form.save(commit=False)
         block.kind = CustomBlock.HTML
         block.created_by = block.created_by or request.user
         block.save()
         messages.success(request, _("Baustein gespeichert. Er steht jetzt im Seiten-Designer unter „Eigene Bausteine“."))
+        if stripped:
+            messages.warning(request, _("Sicherheitsbereinigung: ") + " ".join(stripped))
         return redirect("designer_block_edit", block.pk)
-    preview = render_custom(block, request, None, {}) if block else ""
+    preview, warnings = render_custom_report(block, request, None, {}) if block else ("", [])
     placeholders = ([s["key"] for s in block.setting_specs()] if block else []) + BUILTIN_PLACEHOLDERS
     # Nicht „block“ nennen: in Vorlagen ist das der Name des umgebenden {% block %}.
     return render(request, "designer/block_edit.html", {
-        "form": form, "custom": block, "preview": preview, "placeholders": placeholders,
+        "form": form, "custom": block, "preview": preview, "placeholders": placeholders, "warnings": warnings,
+    })
+
+
+@designer_required
+@require_POST
+def custom_block_preview(request):
+    """Live-Vorschau für einen noch nicht gespeicherten HTML-Baustein."""
+    try:
+        payload = json.loads(request.body)
+        if not isinstance(payload, dict):
+            raise ValueError
+    except ValueError:
+        return JsonResponse({"ok": False}, status=400)
+    temp = CustomBlock(
+        name=str(payload.get("name") or "Vorschau")[:80],
+        html=str(payload.get("html") or ""),
+        settings=str(payload.get("settings") or ""),
+    )
+    preview, warnings = render_custom_report(temp, request, None, {})
+    placeholders = [s["key"] for s in temp.setting_specs()] + BUILTIN_PLACEHOLDERS
+    return JsonResponse({
+        "ok": True,
+        "html": str(preview),
+        "placeholders": placeholders,
+        "warnings": warnings,
     })
 
 

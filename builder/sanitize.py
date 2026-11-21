@@ -33,22 +33,36 @@ class _Sanitizer(HTMLParser):
         self.out = []
         self.dropping = 0
         self.open_tags = []
+        self.warnings = []
+        self._seen = set()
+
+    def _warn(self, message):
+        if message not in self._seen:
+            self._seen.add(message)
+            self.warnings.append(message)
 
     def handle_starttag(self, tag, attrs):
         if tag in DROP_WITH_CONTENT:
+            self._warn(f"Tag <{tag}> samt Inhalt entfernt.")
             self.dropping += 1
             return
-        if self.dropping or tag not in ALLOWED_TAGS:
+        if self.dropping:
+            return
+        if tag not in ALLOWED_TAGS:
+            self._warn(f"Tag <{tag}> nicht erlaubt und entfernt.")
             return
         allowed = ALLOWED_ATTRS["*"] | ALLOWED_ATTRS.get(tag, set())
         parts = []
         for name, value in attrs:
             value = value or ""
             if name not in allowed:
+                self._warn(f"Attribut {name} auf <{tag}> entfernt.")
                 continue
             if name in URL_ATTRS and not SAFE_URL.match(value.strip()):
+                self._warn(f"Unsichere Adresse in {name} auf <{tag}> entfernt.")
                 continue
             if name == "style" and UNSAFE_STYLE.search(value):
+                self._warn(f"Unsicheres style-Attribut auf <{tag}> entfernt.")
                 continue
             parts.append(f' {name}="{escape(value, quote=True)}"')
         if tag == "a":
@@ -85,11 +99,16 @@ class _Sanitizer(HTMLParser):
         return "".join(self.out)
 
 
-def sanitize_html(html):
+def sanitize_html_report(html):
+    """Bereinigt HTML und liefert (bereinigtes_html, liste_entfernter_elemente)."""
     parser = _Sanitizer()
     parser.feed(html or "")
     parser.close()
-    return parser.result()
+    return parser.result(), parser.warnings
+
+
+def sanitize_html(html):
+    return sanitize_html_report(html)[0]
 
 
 PLACEHOLDER = re.compile(r"\{\{\s*([a-z0-9_]+)\s*\}\}")

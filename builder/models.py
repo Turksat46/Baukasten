@@ -346,17 +346,69 @@ class CustomBlock(models.Model):
         super().save(*args, **kwargs)
 
     def setting_specs(self):
-        """Liest die Einstellungen: eine pro Zeile, „Bezeichnung = Standardwert“."""
+        """Liest Einstellungen: JSON-Liste oder Zeilen „Bezeichnung [: typ] = Standardwert“."""
+        import json as _json
+        import re as _re
+
+        text = (self.settings or "").strip()
+        if text.startswith("["):
+            try:
+                raw = _json.loads(text)
+            except ValueError:
+                raw = None
+            if isinstance(raw, list):
+                specs, seen = [], set()
+                for item in raw:
+                    if not isinstance(item, dict):
+                        continue
+                    label = str(item.get("label") or item.get("key") or "").strip()
+                    key = slugify(str(item.get("key") or label)).replace("-", "_")
+                    if not key or key in seen:
+                        continue
+                    seen.add(key)
+                    ftype = str(item.get("type") or "text").strip().lower()
+                    if ftype not in ("text", "textarea", "number", "checkbox", "select"):
+                        ftype = "text"
+                    default = item.get("default", "")
+                    if ftype == "checkbox":
+                        default = bool(default) if isinstance(default, bool) else str(default).lower() in ("1", "true", "ja", "yes")
+                    else:
+                        default = str(default) if default is not None else ""
+                    spec = {"key": key, "label": label or key, "default": default, "type": ftype}
+                    if ftype == "select":
+                        opts = [str(o).strip() for o in (item.get("options") or []) if str(o).strip()]
+                        spec["options"] = [[o, o] for o in opts]
+                    specs.append(spec)
+                return specs
+
         specs, seen = [], set()
         for line in self.settings.splitlines():
-            label, _sep, default = line.partition("=")
-            label, default = label.strip(), default.strip()
+            left, _sep, default = line.partition("=")
+            left, default = left.strip(), default.strip()
+            if not left:
+                continue
+            label, sep_type, type_expr = left.partition(":")
+            label = label.strip()
             key = slugify(label).replace("-", "_")
             if not key or key in seen:
                 continue
             seen.add(key)
-            specs.append({"key": key, "label": label, "default": default,
-                          "type": "textarea" if len(default) > 60 else "text"})
+            ftype = "textarea" if len(default) > 60 else "text"
+            options = None
+            if sep_type:
+                expr = type_expr.strip()
+                m = _re.match(r"^select\((.+)\)$", expr, _re.IGNORECASE)
+                if m:
+                    ftype = "select"
+                    options = [[o.strip(), o.strip()] for o in m.group(1).split(",") if o.strip()]
+                elif expr.lower() in ("text", "textarea", "number", "checkbox"):
+                    ftype = expr.lower()
+            if ftype == "checkbox":
+                default = default.lower() in ("1", "true", "ja", "yes")
+            spec = {"key": key, "label": label, "default": default, "type": ftype}
+            if options is not None:
+                spec["options"] = options
+            specs.append(spec)
         return specs
 
 
@@ -708,3 +760,22 @@ class ReleaseNote(models.Model):
 
     def __str__(self):
         return f"{self.version}: {self.title}"
+
+
+class HomeWidget(models.Model):
+    """Persönliches Widget auf der Startseite: verweist auf einen Baustein einer App-Seite."""
+
+    user = models.ForeignKey(settings_module.AUTH_USER_MODEL, related_name="home_widgets", on_delete=models.CASCADE)
+    page = models.ForeignKey(Page, related_name="home_widgets", on_delete=models.CASCADE)
+    block_id = models.CharField(max_length=40)
+    title = models.CharField(max_length=80, blank=True)
+    width = models.PositiveSmallIntegerField(default=4)
+    order = models.PositiveIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["order", "id"]
+        constraints = [models.UniqueConstraint(fields=["user", "page", "block_id"], name="home_widget_per_user")]
+
+    def __str__(self):
+        return f"{self.user} -> {self.page}:{self.block_id}"

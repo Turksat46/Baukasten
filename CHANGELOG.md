@@ -11,6 +11,22 @@ Neue Einträge oben unter „Unveröffentlicht“ sammeln und beim Release zur V
 ## Unveröffentlicht
 
 ### Neu
+- **Startseite:** Persönliche Widgets („Meine Widgets“) zum Anpinnen von Kennzahlen, Diagrammen, Hinweisen,
+  Abfragen und eigenen Bausteinen mit asynchronem Nachladen (`HomeWidget`); Auswahl über ein
+  Widget-Sheet wie unter Android (je App aufklappbar, mit Suche und Live-Vorschau); App-Kacheln zeigen
+  Hinweise (`notice`-Bausteine) der Seiten sowie für Designer Fehler-Badges bei fehlgeschlagenen Skripten
+  oder Abgleichen; „Neue App bauen“ springt direkt zum Anlege-Formular (`?neu=app#neu-anlegen`).
+- **Seiten-Designer:** Drag-and-drop mit Vor-/Nach-Indikatoren je Blockhälfte, Quell-Markierung,
+  Auto-Scroll und No-Op-Schutz; vollständige Tastaturbedienung auf Bausteinen (Pfeiltasten zur
+  Navigation, `Alt+Pfeil` zum Verschieben, `Entf` zum Entfernen, `Strg+S`/`Cmd+S` zum Speichern,
+  `Escape` zum Abwählen) samt Kürzel-Hinweis; Überschreib-Schutz (`Page.version` / HTTP `409 Conflict`
+  mit Konflikt-Hinweis); Seiten-Footer im Designer ausgeblendet.
+- **Eigene Bausteine (Mensch & KI):** Live-Vorschau beim Tippen, klickbare Platzhalter-Chips,
+  Start-Vorlagen (Snippets) und Sanitizer-Hinweise (`sanitize_html_report`); typisierte Einstellungen
+  (`Name : typ = Wert` mit `number`, `checkbox`, `textarea`, `select(...)` sowie JSON-Format);
+  `@hooks.block` unterstützt `fields` und `hint` sowie `(request, app, props)`; MCP-Designer-Tools
+  `list_custom_blocks`, `save_custom_block` und `delete_custom_block` samt `design_system`- und
+  HTML-Regel-Referenz in `guide`.
 - Englische Oberfläche vollständig: rund 530 fehlende Texte übersetzt (auch aus Änderungsprotokoll,
   Einstellungen, App-Installation, Automatisierungen, Übersetzungsseite), Datumsformate je Sprache.
 - `python manage.py uebersetzungen pruefen|ergaenzen|kompilieren` pflegt Übersetzungen ohne GNU
@@ -44,6 +60,10 @@ Neue Einträge oben unter „Unveröffentlicht“ sammeln und beim Release zur V
   statische Dateien und eine Offline-Seite; Knopf „Als App installieren“ unten auf jeder Seite.
 - Seite „Über den Baukasten“ (`/ueber/`) mit Version und Release Notes, gepflegt unter `/admin/`;
   Hinweis „Was ist neu?“ unten auf jeder Seite.
+
+### Behoben
+- Status-Leiste (`stepper`): `field_label` wird auch dann bereitgestellt, wenn noch kein Eintrag über `?id=…` gewählt ist.
+- Altlasten-Ordner `_to_delete/` entfernt.
 
 ## 1.0.0 – 2026-11-17
 
