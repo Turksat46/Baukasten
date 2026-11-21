@@ -46,3 +46,13 @@ def uhrzeit(request, app):
 def statistik(request, app, daten):
     """Ein eigener API-Endpunkt: GET /api/v1/<app>/x/statistik/"""
     return {"app": app.name, "tabellen": {e.name: e.records.count() for e in app.entities.all()}}
+
+
+# Eigene Python-Bausteine mit Konfigurationsfeldern im Designer (z. B. für Visualisierungen):
+#
+#   @hooks.block("kpi_karte", label="KPI-Karte (Beispiel)", icon="📊", fields=[
+#       {"key": "titel", "label": "Titel", "type": "text", "default": "Kennzahl"},
+#       {"key": "entity", "label": "Tabelle", "type": "entity"},
+#   ])
+#   def kpi_karte(request, app, props):
+#       return format_html("<h3>{}</h3><p>Tabelle: {}</p>", props.get("titel", ""), props.get("entity", "-"))

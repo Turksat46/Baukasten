@@ -166,13 +166,18 @@ lokalen Benutzernamen und Passwort.
 
 ### Startseite
 
-Nach der Anmeldung siehst du eine Begrüßung mit dem heutigen Datum und deine
-Apps als Kacheln, jede mit eigener Farbe und der Zahl ihrer Seiten. Du siehst nur
-Apps, die veröffentlicht und für dich freigegeben sind; Designer sehen zusätzlich
-ihre Entwürfe. Bei mehr als sechs Apps filtert ein Suchfeld über den Kacheln beim
-Tippen. Unter den Kacheln führt der **Schnellzugriff** zum Handbuch, zum Profil,
-zur API-Dokumentation und für Designer zu den eigenen Bausteinen. Ein Klick auf
-eine Kachel öffnet die App; über das Logo oben links kommst du jederzeit zurück.
+Nach der Anmeldung siehst du eine Begrüßung mit dem heutigen Datum, optional deine
+persönlich angepinnten Widgets (**Meine Widgets**, die asynchron nachgeladen werden;
+„+ Widget“ öffnet eine Auswahl wie unter Android, nach Apps gruppiert, mit Suche
+und Vorschau – ein Klick pinnt das Widget an, „×“ entfernt es wieder)
+und deine Apps als Kacheln, jede mit eigener Farbe, der Zahl ihrer Seiten sowie
+wichtigen Hinweisen (`notice`-Bausteine) aus ihren Seiten. Du siehst nur Apps, die
+veröffentlicht und für dich freigegeben sind; Designer sehen zusätzlich ihre Entwürfe
+und bei fehlgeschlagenen Skripten oder Abgleichen ein Fehler-Badge. Bei mehr als sechs
+Apps filtert ein Suchfeld über den Kacheln beim Tippen. Unter den Kacheln führt der
+**Schnellzugriff** zum Handbuch, zum Profil, zur API-Dokumentation und für Designer zu
+den eigenen Bausteinen. Ein Klick auf eine Kachel öffnet die App; über das Logo oben
+links kommst du jederzeit zurück.
 
 ### In einer App arbeiten
 
@@ -512,11 +517,14 @@ an einer Seite ändern die Vorlage nicht, und umgekehrt.
 **HTML-Bausteine** bestehen aus eigenem HTML und aus Einstellungen, die du
 selbst festlegst:
 
-- *Einstellungen:* eine pro Zeile im Format `Bezeichnung = Standardwert`. Jede
-  Zeile wird im Seiten-Designer zu einem Eingabefeld.
+- *Einstellungen:* eine pro Zeile im Format `Bezeichnung = Standardwert` (optional
+  mit Typ: `Bezeichnung : number = 5`, `checkbox`, `textarea` oder `select(a, b)`)
+  oder als JSON-Liste. Jede Einstellung wird im Seiten-Designer zu einem Eingabefeld.
 - *HTML:* Wo `{{ bezeichnung }}` steht, erscheint später der eingestellte Wert.
   Der Platzhalter ist die Bezeichnung in Kleinbuchstaben, Leerzeichen werden
-  zu Unterstrichen (`Ansprech Partner` → `{{ ansprech_partner }}`).
+  zu Unterstrichen (`Ansprech Partner` → `{{ ansprech_partner }}`). Im Editor
+  lassen sich Platzhalter per Klick einfügen, Start-Vorlagen übernehmen und die
+  Live-Vorschau samt Hinweisen zur Sicherheitsbereinigung direkt prüfen.
 - *Immer verfügbar:* `{{ nutzer }}` (angemeldete Person), `{{ app }}` (Name
   der App), `{{ datum }}` (heutiges Datum).
 
@@ -1955,8 +1963,9 @@ Als Verwalter unter `/admin/` → bei der App „Daten ansehen“.
   Feld (Ausnahme: öffentliche Seiten). Wer eine App benutzen darf, sieht alle ihre Seiten. Im Designer gibt es
   nur „darf die ganze App bearbeiten“, keine Rechte je Seite oder Skript.
   Eigene Bausteine und Vorlagen gelten weiterhin für alle Designer.
-- **Gleichzeitiges Bearbeiten:** Speichern zwei Mitbearbeiter dieselbe Seite
-  oder dasselbe Skript, gilt die zuletzt gespeicherte Fassung, ohne Warnung.
+- **Gleichzeitiges Bearbeiten:** Seiten im Seiten-Designer prüfen beim Speichern
+  die Version (`409 Conflict`) und warnen, falls jemand anderes inzwischen gespeichert
+  hat. Bei Skripten gilt weiterhin die zuletzt gespeicherte Fassung ohne Warnung.
 - **Versionen** entstehen nur auf Knopfdruck und enthalten keine Daten.
   Tabellen werden beim Wiederherstellen nie gelöscht.
 - **API:** keine Begrenzung der Anfragen pro Zeit, keine Sortierung außer nach
@@ -1969,9 +1978,10 @@ Als Verwalter unter `/admin/` → bei der App „Daten ansehen“.
   Einige neuere Oberflächentexte (Übersetzungen, Mitbearbeiter, öffentliche
   Seiten, MCP- und Tableau-Hinweise im Designer) gibt es noch nur auf Deutsch.
 - **Zugänglichkeit:** Tastaturbedienung und Beschriftungen sind berücksichtigt,
-  eine Prüfung nach einem Standard (z. B. WCAG) hat nicht stattgefunden. Das
-  Ziehen im Seiten-Designer braucht eine Maus; als Ersatz gibt es Anklicken und
-  „Nach vorn“ / „Nach hinten“.
+  eine Prüfung nach einem Standard (z. B. WCAG) hat nicht stattgefunden. Im
+  Seiten-Designer lassen sich Bausteine per Tastatur auswählen, mit Pfeiltasten
+  navigieren, mit `Alt + Pfeiltasten` verschieben, mit `Entf` entfernen und mit
+  `Strg+S` speichern.
 
 ## Glossar
 

@@ -8,6 +8,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import Group
 from django.core.exceptions import PermissionDenied
+from django.db import transaction
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -19,7 +20,8 @@ from django.views.decorators.http import require_POST
 
 from . import app_i18n, audit, hooks, platform
 from .blocks import (BUILTIN_PLACEHOLDERS, all_types, clean_layout, designer_config, make_block,
-                     render_custom, render_layout)
+                     render_custom, render_custom_report, render_layout)
+from .sanitize import sanitize_html_report
 from . import datasources
 from .forms import (ApiKeyForm, AppForm, AutomationForm, AutomationScriptForm, CustomBlockForm, EntityForm,
                     FieldForm, NewAppForm, NewPageForm, QueryForm, ScriptForm)
@@ -451,16 +453,35 @@ def page_designer(request, app, pk):
     if request.method == "POST":
         try:
             payload = json.loads(request.body)
-            page.layout = clean_layout(payload.get("layout"))
+            if not isinstance(payload, dict):
+                raise ValueError("Payload muss ein JSON-Objekt sein.")
+            cleaned_layout = clean_layout(payload.get("layout"))
         except (ValueError, AttributeError):
             return JsonResponse({"ok": False, "error": _("Ungültige Daten.")}, status=400)
-        title = str(payload.get("title") or "").strip()[:80]
-        if title:
-            page.title = title
-        page.show_in_nav = bool(payload.get("show_in_nav", True))
-        page.public = bool(payload.get("public", page.public))
-        page.save()
-        return JsonResponse({"ok": True, "layout": page.layout})
+        has_version = "version" in payload
+        expected_version = None
+        if has_version:
+            raw_version = payload.get("version")
+            if isinstance(raw_version, bool) or not isinstance(raw_version, int) or raw_version < 1:
+                return JsonResponse({"ok": False, "error": _("Ungültige Daten.")}, status=400)
+            expected_version = raw_version
+        with transaction.atomic():
+            page = get_object_or_404(Page.objects.select_for_update(), pk=pk, app=app)
+            if has_version and expected_version != page.version:
+                return JsonResponse({
+                    "ok": False,
+                    "conflict": True,
+                    "version": page.version,
+                    "error": _("Diese Seite wurde inzwischen von jemand anderem gespeichert. Bitte lade die Seite neu, um keine Änderungen zu überschreiben."),
+                }, status=409)
+            page.layout = cleaned_layout
+            title = str(payload.get("title") or "").strip()[:80]
+            if title:
+                page.title = title
+            page.show_in_nav = bool(payload.get("show_in_nav", True))
+            page.public = bool(payload.get("public", page.public))
+            page.save()
+        return JsonResponse({"ok": True, "layout": page.layout, "version": page.version})
     return render(request, "designer/page.html", {
         "app": app, "page": page, "config": designer_config(app, page),
     })
@@ -594,17 +615,46 @@ def custom_block_edit(request, pk=None):
     block = get_object_or_404(CustomBlock, pk=pk, kind=CustomBlock.HTML) if pk else None
     form = CustomBlockForm(request.POST or None, instance=block)
     if request.method == "POST" and form.is_valid():
+        raw_html = request.POST.get("html") or ""
+        _clean_html, stripped = sanitize_html_report(raw_html)
         block = form.save(commit=False)
         block.kind = CustomBlock.HTML
         block.created_by = block.created_by or request.user
         block.save()
         messages.success(request, _("Baustein gespeichert. Er steht jetzt im Seiten-Designer unter „Eigene Bausteine“."))
+        if stripped:
+            messages.warning(request, _("Sicherheitsbereinigung: ") + " ".join(stripped))
         return redirect("designer_block_edit", block.pk)
-    preview = render_custom(block, request, None, {}) if block else ""
+    preview, warnings = render_custom_report(block, request, None, {}) if block else ("", [])
     placeholders = ([s["key"] for s in block.setting_specs()] if block else []) + BUILTIN_PLACEHOLDERS
     # Nicht „block“ nennen: in Vorlagen ist das der Name des umgebenden {% block %}.
     return render(request, "designer/block_edit.html", {
-        "form": form, "custom": block, "preview": preview, "placeholders": placeholders,
+        "form": form, "custom": block, "preview": preview, "placeholders": placeholders, "warnings": warnings,
+    })
+
+
+@designer_required
+@require_POST
+def custom_block_preview(request):
+    """Live-Vorschau für einen noch nicht gespeicherten HTML-Baustein."""
+    try:
+        payload = json.loads(request.body)
+        if not isinstance(payload, dict):
+            raise ValueError
+    except ValueError:
+        return JsonResponse({"ok": False}, status=400)
+    temp = CustomBlock(
+        name=str(payload.get("name") or "Vorschau")[:80],
+        html=str(payload.get("html") or ""),
+        settings=str(payload.get("settings") or ""),
+    )
+    preview, warnings = render_custom_report(temp, request, None, {})
+    placeholders = [s["key"] for s in temp.setting_specs()] + BUILTIN_PLACEHOLDERS
+    return JsonResponse({
+        "ok": True,
+        "html": str(preview),
+        "placeholders": placeholders,
+        "warnings": warnings,
     })
 
 

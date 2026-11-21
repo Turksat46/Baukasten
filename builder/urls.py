@@ -20,6 +20,8 @@ urlpatterns = [
     path("profil/ki-zugang/<int:pk>/loeschen/", profile.delete_designer_token, name="profile_ai_token_delete"),
     # Laufzeit
     path("", views.home, name="home"),
+    path("start/widgets/hinzufuegen/", views.home_widget_add, name="home_widget_add"),
+    path("start/widgets/<int:pk>/entfernen/", views.home_widget_remove, name="home_widget_remove"),
     path("a/<slug:app>/", views.page, name="page"),
     path("a/<slug:app>/p/<slug:page>/", views.page, name="page"),
     path("a/<slug:app>/t/<slug:entity>/neu/", views.record_create, name="record_create"),
@@ -32,6 +34,7 @@ urlpatterns = [
     path("a/<slug:app>/p/<slug:page>/b/<str:block>/aktion/", views.block_action, name="block_action"),
     path("skript-sandbox/", views.script_sandbox, name="script_sandbox"),
     path("a/<slug:app>/t/<slug:entity>/export.csv", views.entity_export, name="entity_export"),
+    path("a/<slug:app>/t/<slug:entity>/import/", views.entity_import, name="entity_import"),
     # MCP-Server je App (für KI-Agenten und n8n), Schlüssel wie bei der API
     path("mcp/designer/", mcp_designer.endpoint, name="mcp_designer"),
     path("mcp/<slug:app>/", mcp.endpoint, name="mcp"),
@@ -49,6 +52,7 @@ urlpatterns = [
     path("designer/einfuehrung/ende/", designer.tutorial_stop, name="tutorial_stop"),
     path("designer/bausteine/", designer.custom_blocks, name="designer_blocks"),
     path("designer/bausteine/neu/", designer.custom_block_edit, name="designer_block_new"),
+    path("designer/bausteine/vorschau/", designer.custom_block_preview, name="designer_block_preview"),
     path("designer/bausteine/vorlage/", designer.preset_save, name="designer_preset_save"),
     path("designer/bausteine/<int:pk>/", designer.custom_block_edit, name="designer_block_edit"),
     path("designer/bausteine/<int:pk>/loeschen/", designer.custom_block_delete, name="designer_block_delete"),

@@ -167,10 +167,14 @@ user name and password.
 
 ### Home page
 
-After signing in you see a greeting with today's date and your apps as tiles,
-each with its own color and the number of pages. You only see apps that are
-published and shared with you; designers also see their drafts. With more than
-six apps, a search field above the tiles filters them as you type. Below the
+After signing in you see a greeting with today's date, optionally your pinned
+widgets (**My widgets**, loaded asynchronously; "+ Widget" opens an Android-style
+picker grouped by app, with search and preview – one click pins a widget, "×"
+removes it) and your apps as tiles, each with its own color, the number of pages
+and important notices (`notice` blocks) from its pages. You only see apps that
+are published and shared with you; designers also see their drafts and an error
+badge when scripts or data syncs failed. With more than six apps, a search field
+above the tiles filters them as you type. Below the
 tiles, **Quick access** leads to the handbook, your profile, the API
 documentation and, for designers, custom blocks. A click on a tile opens the
 app; the logo in the top left always takes you back.
@@ -508,11 +512,14 @@ versa.
 
 **HTML blocks** consist of your own HTML and settings you define yourself:
 
-- *Settings:* one per line in the format `Label = default value`. Each line
-  becomes an input field in the page designer.
+- *Settings:* one per line in the format `Label = default value` (optionally typed:
+  `Label : number = 5`, `checkbox`, `textarea` or `select(a, b)`) or as a JSON list.
+  Each setting becomes an input field in the page designer.
 - *HTML:* wherever `{{ label }}` appears, the configured value is inserted
   later. The placeholder is the label in lower case, spaces become underscores
-  (`Contact Person` → `{{ contact_person }}`).
+  (`Contact Person` → `{{ contact_person }}`). In the editor you can click
+  placeholders to insert them, use starter snippets, and inspect the live preview
+  including security-sanitization notices.
 - *Always available:* `{{ nutzer }}` (signed-in person), `{{ app }}` (name of
   the app), `{{ datum }}` (today's date).
 
@@ -1917,8 +1924,9 @@ Select **DE** in the language switch in the top right. The choice is remembered.
   (public pages are the exception). Whoever may use an app sees all its pages.
   In the Designer there is only "may edit the whole app", no permissions per
   page or script. Custom blocks and presets apply to all designers.
-- **Concurrent editing:** if two co-editors save the same page or the same
-  script, the last saved version wins, without a warning.
+- **Concurrent editing:** pages in the page designer check their version on save
+  (`409 Conflict`) and warn before overwriting concurrent changes. Scripts still
+  save last-write-wins without a warning.
 - **Versions** are only created at the push of a button and contain no data.
   Tables are never deleted when restoring.
 - **API:** no rate limit, no sorting other than by `id`, filters only on
@@ -1931,9 +1939,9 @@ Select **DE** in the language switch in the top right. The choice is remembered.
   Some newer interface texts (translations, co-editors, public pages, MCP and
   Tableau settings in the Designer) are still only in German.
 - **Accessibility:** keyboard operation and labels are taken into account; a
-  check against a standard (e.g. WCAG) has not taken place. Dragging in the page
-  designer requires a mouse; as an alternative there is clicking and "Forward" /
-  "Back".
+  check against a standard (e.g. WCAG) has not taken place. In the page designer
+  you can navigate blocks with arrow keys, reorder them with `Alt + Arrow`,
+  remove them with `Delete` and save with `Ctrl+S`.
 
 ## Glossary
 

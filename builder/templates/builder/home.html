@@ -14,7 +14,7 @@
     {% endif %}
     {% if can_design %}
       <div class="home-actions">
-        <a class="btn" href="{% url 'designer_home' %}" data-tour="new-app">{% translate "Neue App bauen" %}</a>
+        <a class="btn" href="{% url 'designer_home' %}?neu=app#neu-anlegen" data-tour="new-app">{% translate "Neue App bauen" %}</a>
         <a class="btn btn-secondary" href="{% url 'designer_home' %}">{% translate "Zum Designer" %}</a>
       </div>
     {% endif %}
@@ -29,6 +29,73 @@
   </svg>
 </section>
 
+{% if widgets or widget_groups %}
+  <div class="section-head">
+    <h2>{% translate "Meine Widgets" %}</h2>
+    {% if widget_groups %}
+      <button type="button" class="btn btn-secondary btn-small" data-widget-sheet-open>{% translate "+ Widget" %}</button>
+    {% endif %}
+  </div>
+  {% if widget_groups %}
+    <dialog class="widget-sheet" id="widget-sheet" aria-labelledby="widget-sheet-title" aria-describedby="widget-sheet-hint">
+      <div class="widget-sheet-head">
+        <div class="widget-sheet-title">
+          <h3 id="widget-sheet-title">{% translate "Widget hinzufügen" %}</h3>
+          <p class="muted small" id="widget-sheet-hint">{% translate "Wähle einen Baustein aus deinen Apps. Er erscheint oben auf der Startseite." %}</p>
+          <input type="search" class="widget-sheet-search" placeholder="{% translate 'Widgets durchsuchen' %}" aria-label="{% translate 'Widgets durchsuchen' %}" autocomplete="off">
+        </div>
+        <button type="button" class="widget-sheet-close" data-widget-sheet-close aria-label="{% translate 'Schließen' %}" title="{% translate 'Schließen' %}">×</button>
+      </div>
+      <div class="widget-sheet-body">
+        {% for group in widget_groups %}
+          <details class="widget-app" data-widget-app>
+            <summary>
+              <span class="tile-icon tone-{{ group.app.tone }}" aria-hidden="true">{{ group.app.icon }}</span>
+              <span class="widget-app-name">{{ group.app.name|tr:group.app }}</span>
+              <span class="widget-app-count muted small">{% blocktranslate count n=group.items|length %}{{ n }} Widget{% plural %}{{ n }} Widgets{% endblocktranslate %}</span>
+            </summary>
+            <div class="widget-app-items">
+              {% for item in group.items %}
+                <form method="post" action="{% url 'home_widget_add' %}" class="widget-option" data-search="{{ group.app.name|lower }} {{ item.label|lower }} {{ item.page|lower }} {{ item.kind|lower }}">
+                  {% csrf_token %}
+                  <input type="hidden" name="target" value="{{ item.value }}">
+                  <button class="widget-option-btn" title="{% translate 'Auf die Startseite' %}">
+                    <span class="widget-option-add" aria-hidden="true">+</span>
+                    <span class="widget-option-preview" data-preview-url="{{ item.preview_url }}" inert aria-hidden="true"><span class="muted small">{% translate "Vorschau wird geladen …" %}</span></span>
+                    <span class="widget-option-text">
+                      <strong>{{ item.label }}</strong>
+                      <span class="muted small">{{ item.kind }} · {{ item.page }}</span>
+                    </span>
+                  </button>
+                </form>
+              {% endfor %}
+            </div>
+          </details>
+        {% endfor %}
+        <p class="empty" data-widget-sheet-empty hidden>{% translate "Kein Widget passt zur Suche." %}</p>
+      </div>
+    </dialog>
+  {% endif %}
+  {% if widgets %}
+    <div class="grid home-widgets">
+      {% for w in widgets %}
+        <div class="col col-{{ w.col_width }} home-widget-card">
+          <div class="home-widget-head">
+            <a class="muted small" href="{% url 'page' w.page.app.slug w.page.slug %}">{{ w.page.app.name|tr:w.page.app }} · {{ w.display_title }}</a>
+            <form method="post" action="{% url 'home_widget_remove' w.pk %}">
+              {% csrf_token %}
+              <button class="link small muted" title="{% translate 'Widget entfernen' %}" aria-label="{% translate 'Widget entfernen' %}">×</button>
+            </form>
+          </div>
+          <div class="home-widget-body" data-widget-url="{% url 'page_block' w.page.app.slug w.page.slug w.block_id %}">
+            <span class="muted small">{% translate "Wird geladen …" %}</span>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+{% endif %}
+
 {% if apps %}
   <div class="section-head">
     <h2>{% translate "Deine Apps" %}</h2>
@@ -41,8 +108,19 @@
       <a class="tile" href="{% url 'page' app.slug %}" data-search="{{ app.name|tr:app|lower }} {{ app.description|tr:app|lower }}">
         <span class="tile-icon tone-{{ app.tone }}" aria-hidden="true">{{ app.icon }}</span>
         <span class="tile-body">
-          <span class="tile-name">{{ app.name|tr:app }}{% if not app.published %} <span class="badge">{% translate "Entwurf" %}</span>{% endif %}</span>
+          <span class="tile-name">
+            {{ app.name|tr:app }}
+            {% if not app.published %}<span class="badge">{% translate "Entwurf" %}</span>{% endif %}
+            {% if app.error_count %}<span class="badge badge-warn">{% blocktranslate count n=app.error_count %}{{ n }} Fehler{% plural %}{{ n }} Fehler{% endblocktranslate %}</span>{% endif %}
+          </span>
           <span class="tile-text">{{ app.description|tr:app|default:_("Ohne Beschreibung") }}</span>
+          {% if app.page_notices %}
+            <span class="tile-notices">
+              {% for n in app.page_notices %}
+                <span class="tile-notice">{{ n.page }}: {{ n.text }}</span>
+              {% endfor %}
+            </span>
+          {% endif %}
           {% if app.page_count %}<span class="tile-meta">{% blocktranslate count n=app.page_count %}{{ n }} Seite{% plural %}{{ n }} Seiten{% endblocktranslate %}</span>{% endif %}
         </span>
         <span class="tile-arrow" aria-hidden="true">→</span>
@@ -94,4 +172,4 @@
 </div>
 {% endblock %}
 {% block tour %}{% tour "start" %}{% endblock %}
-{% block scripts %}{% if show_search %}<script src="{% asset 'builder/home.js' %}" defer></script>{% endif %}{% endblock %}
+{% block scripts %}{% if show_search or widgets or widget_groups %}<script src="{% asset 'builder/home.js' %}" defer></script>{% endif %}{% endblock %}

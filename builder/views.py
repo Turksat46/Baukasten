@@ -24,7 +24,7 @@ from . import datasources, hooks, openapi, platform
 from . import app_i18n
 from .blocks import all_types, display_value, reference_labels, render_block, render_layout
 from .forms import RecordForm
-from .models import App, Record, Script
+from .models import App, HomeWidget, Page, Record, Script
 from .scripting import python as python_scripts
 from .scripting.ops import OpsError, TableOps
 from .scripting.triggers import execute, page_scripts, run_page
@@ -85,18 +85,125 @@ def safe_next(request, fallback):
     return fallback
 
 
+PINNABLE_WIDGET_TYPES = {
+    "stat", "progress", "chart", "donut", "line", "timeline", "notice",
+    "table", "cards", "checklist", "query", "output",
+}
+
+
+def _is_pinnable(block):
+    btype = block.get("type") or ""
+    return btype in PINNABLE_WIDGET_TYPES or btype.startswith(("c-", "x-"))
+
+
+def _block_label(block, types_map):
+    props = block.get("props") or {}
+    btype = types_map.get(block.get("type"))
+    fallback = str(btype.label) if btype else str(block.get("type") or "")
+    return str(props.get("title") or props.get("label") or props.get("text") or fallback).strip()[:80]
+
+
 @login_required
 def home(request):
-    apps = [a for a in App.objects.prefetch_related("pages") if a.user_can_use(request.user)]
+    apps = [a for a in App.objects.prefetch_related("pages", "scripts", "queries") if a.user_can_use(request.user)]
+    app_ids = {a.pk for a in apps}
+    types_map = all_types()
     for app in apps:
-        app.page_count = sum(1 for p in app.pages.all() if p.show_in_nav)
+        pages = list(app.pages.all())
+        app.page_count = sum(1 for p in pages if p.show_in_nav)
         app.tone = sum(map(ord, app.slug)) % 5 + 1  # feste Farbe je App für die Kachel
+        notices = []
+        for p in pages:
+            for b in p.layout or []:
+                if b.get("type") == "notice":
+                    props = b.get("props") or {}
+                    text = str(props.get("text") or props.get("title") or "").strip()
+                    if text:
+                        notices.append({"page": p.title, "text": text[:100]})
+                        if len(notices) >= 2:
+                            break
+            if len(notices) >= 2:
+                break
+        app.page_notices = notices
+        if app.user_can_edit(request.user):
+            script_errors = sum(1 for s in app.scripts.all() if s.failures > 0)
+            query_errors = sum(1 for q in app.queries.all() if q.last_sync_at and not q.last_sync_ok)
+            app.error_count = script_errors + query_errors
+        else:
+            app.error_count = 0
+
+    widgets = []
+    pinned_keys = set()
+    for w in HomeWidget.objects.filter(user=request.user).select_related("page", "page__app"):
+        if w.page.app_id not in app_ids:
+            continue
+        block = next((b for b in (w.page.layout or []) if b.get("id") == w.block_id), None)
+        if block is None:
+            continue
+        pinned_keys.add((w.page_id, w.block_id))
+        w.display_title = w.title or _block_label(block, types_map)
+        w.col_width = w.width if w.width in (4, 6, 12) else 4
+        widgets.append(w)
+
+    # Widget-Auswahl wie unter Android: je App eine Gruppe mit allen anpinnbaren Bausteinen.
+    widget_groups = []
+    for app in apps:
+        items = []
+        for p in app.pages.all():
+            for b in p.layout or []:
+                bid = b.get("id")
+                if not bid or not _is_pinnable(b) or (p.pk, bid) in pinned_keys:
+                    continue
+                btype = types_map.get(b.get("type"))
+                items.append({
+                    "value": f"{p.pk}:{bid}",
+                    "label": _block_label(b, types_map),
+                    "page": p.title,
+                    "kind": str(btype.label) if btype else str(b.get("type") or ""),
+                    "preview_url": reverse("page_block", args=[app.slug, p.slug, bid]),
+                })
+        if items:
+            widget_groups.append({"app": app, "items": items})
+
     hour = timezone.localtime().hour
     greeting = _("Guten Morgen") if 5 <= hour < 11 else _("Guten Tag") if hour < 18 else _("Guten Abend")
     return render(request, "builder/home.html", {
         "apps": apps, "greeting": greeting, "today": timezone.localdate(),
         "drafts": sum(1 for a in apps if not a.published), "show_search": len(apps) > 6,
+        "widgets": widgets, "widget_groups": widget_groups,
     })
+
+
+@login_required
+@require_POST
+def home_widget_add(request):
+    target = str(request.POST.get("target") or "").strip()
+    page_id, sep, block_id = target.partition(":")
+    if not sep or not page_id.isdigit() or not block_id:
+        messages.error(request, _("Bitte einen gültigen Baustein auswählen."))
+        return redirect("home")
+    page = get_object_or_404(Page.objects.select_related("app"), pk=int(page_id))
+    if not page.app.user_can_use(request.user):
+        raise PermissionDenied
+    block = next((b for b in (page.layout or []) if b.get("id") == block_id), None)
+    if block is None or not _is_pinnable(block):
+        messages.error(request, _("Dieser Baustein kann nicht als Widget angepinnt werden."))
+        return redirect("home")
+    width = int(block.get("width") or 4)
+    if width not in (4, 6, 12):
+        width = 6 if width >= 6 else 4
+    HomeWidget.objects.get_or_create(
+        user=request.user, page=page, block_id=block_id,
+        defaults={"title": _block_label(block, all_types()), "width": width},
+    )
+    return redirect("home")
+
+
+@login_required
+@require_POST
+def home_widget_remove(request, pk):
+    get_object_or_404(HomeWidget, pk=pk, user=request.user).delete()
+    return redirect("home")
 
 
 def runtime_config(request, app, page, blocks):
@@ -388,6 +495,84 @@ def entity_export(request, app, entity):
     response = StreamingHttpResponse(rows(), content_type="text/csv; charset=utf-8")
     response["Content-Disposition"] = f'attachment; filename="{entity.slug}.csv"'
     return response
+
+
+@login_required
+def entity_import(request, app, entity):
+    """Zweistufiger CSV-Import für eine Tabelle: Datei hochladen, Spalten zuordnen, importieren."""
+    from . import csv_import
+
+    app = get_app(request, app)
+    entity = get_object_or_404(app.entities, slug=entity)
+    if not entity.allow_create:
+        raise PermissionDenied
+    fields = list(entity.fields.all())
+    session_key = f"csv_import:{app.slug}:{entity.slug}"
+    back = safe_next(request, reverse("page", args=[app.slug]))
+    errors = []
+
+    if request.method == "POST":
+        step = request.POST.get("step", "upload")
+        if step == "reset":
+            request.session.pop(session_key, None)
+            return redirect(request.path + (f"?next={request.GET.get('next', '')}" if request.GET.get("next") else ""))
+        if step == "upload":
+            upload = request.FILES.get("file")
+            if not upload:
+                messages.error(request, _("Bitte eine CSV-Datei auswählen."))
+            else:
+                try:
+                    headers, rows = csv_import.parse_csv(upload.read())
+                    request.session[session_key] = {"headers": headers, "rows": rows}
+                except csv_import.CsvImportError as exc:
+                    messages.error(request, str(exc))
+        elif step == "import":
+            staged = request.session.get(session_key)
+            if not staged:
+                messages.error(request, _("Bitte zuerst eine CSV-Datei hochladen."))
+            else:
+                headers, rows = staged["headers"], staged["rows"]
+                mapping = [request.POST.get(f"col_{i}", "") for i in range(len(headers))]
+                skip_errors = bool(request.POST.get("skip_errors"))
+                try:
+                    created, errors = csv_import.run_import(
+                        app, entity, rows, mapping, request.user, skip_errors=skip_errors,
+                    )
+                    if created and not errors:
+                        request.session.pop(session_key, None)
+                        messages.success(request, _("%(n)s Einträge importiert.") % {"n": created})
+                        return redirect(back)
+                    if created and errors:
+                        request.session.pop(session_key, None)
+                        messages.warning(
+                            request,
+                            _("%(n)s Einträge importiert, %(err)s Zeilen übersprungen.") % {"n": created, "err": len(errors)},
+                        )
+                    elif errors:
+                        messages.error(request, _("Import abgebrochen: %(err)s fehlerhafte Zeilen.") % {"err": len(errors)})
+                except csv_import.CsvImportError as exc:
+                    messages.error(request, str(exc))
+
+    staged = request.session.get(session_key)
+    columns = []
+    preview = []
+    if staged:
+        guessed = csv_import.guess_mapping(staged["headers"], fields)
+        columns = [{"index": i, "header": h, "guess": guessed[i]} for i, h in enumerate(staged["headers"])]
+        preview = staged["rows"][:5]
+
+    return render(request, "builder/entity_import.html", {
+        "app": app,
+        "entity": entity,
+        "fields": fields,
+        "staged": staged,
+        "columns": columns,
+        "preview": preview,
+        "row_count": len(staged["rows"]) if staged else 0,
+        "errors": errors[:20],
+        "more_errors": max(len(errors) - 20, 0),
+        "back": back,
+    })
 
 
 

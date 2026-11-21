@@ -40,15 +40,22 @@ def on_save(entity=None, app=None):
     return decorator
 
 
-def block(key, label, icon="🧩"):
+def block(key, label, icon="🧩", fields=(), hint=""):
     """Registriert einen eigenen Baustein für den Seiten-Designer.
 
-    Die Funktion bekommt (request, app) und gibt Text oder mit format_html
-    erzeugtes HTML zurück. Normaler Text wird automatisch maskiert.
+    Die Funktion bekommt (request, app) oder (request, app, props) und gibt Text oder
+    mit format_html erzeugtes HTML zurück. Optional definieren fields Konfigurationsfelder
+    wie bei eingebauten Bausteinen.
     """
 
     def decorator(fn):
-        CUSTOM_BLOCKS[key] = {"label": label, "icon": icon, "fn": fn}
+        CUSTOM_BLOCKS[key] = {
+            "label": label,
+            "icon": icon,
+            "fields": list(fields),
+            "hint": hint,
+            "fn": fn,
+        }
         return fn
 
     return decorator

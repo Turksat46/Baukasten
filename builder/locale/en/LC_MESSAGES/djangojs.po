@@ -277,3 +277,35 @@ msgstr "saved."
 #: static/builder/widgets.js
 msgid "wieder offen."
 msgstr "open again."
+
+#: builder/static/builder/widgets.js
+msgid "Status gespeichert."
+msgstr "Status saved."
+
+#: builder/static/builder/designer.js
+msgid "Auf der Seite bleiben"
+msgstr "Stay on page"
+
+#: builder/static/builder/designer.js
+msgid "Diese Seite wurde inzwischen von jemand anderem gespeichert. Bitte lade die Seite neu, um keine Änderungen zu überschreiben."
+msgstr "This page has been saved by someone else in the meantime. Please reload the page so you don’t overwrite any changes."
+
+#: builder/static/builder/designer.js
+msgid "Konflikt – nicht gespeichert"
+msgstr "Conflict – not saved"
+
+#: builder/static/builder/designer.js
+msgid "Seite neu laden"
+msgstr "Reload page"
+
+#: builder/static/builder/designer.js
+msgid "Speichern nicht möglich – Konflikt"
+msgstr "Unable to save – conflict"
+
+#: builder/static/builder/home.js
+msgid "Keine Vorschau"
+msgstr "No preview"
+
+#: builder/static/builder/home.js
+msgid "Konnte nicht geladen werden."
+msgstr "Could not be loaded."

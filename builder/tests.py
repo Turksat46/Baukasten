@@ -334,6 +334,88 @@ class DesignerTests(Base):
         self.assertNotEqual(page.layout[0]["id"], page.layout[1]["id"])
         self.assertEqual(self.client.post(url, "kaputt", content_type="application/json").status_code, 400)
 
+    def test_page_designer_optimistic_locking_and_conflict(self):
+        import re
+
+        self.client.force_login(self.designer)
+        page = self.app.pages.get(slug="gerate")
+        url = reverse("designer_page", args=["inventar", page.pk])
+        html = self.client.get(url).content.decode()
+        match = re.search(r'<script id="designer-config" type="application/json">(.*?)</script>', html)
+        self.assertIsNotNone(match)
+        cfg = json.loads(match.group(1))
+        v1 = cfg["version"]
+        self.assertEqual(v1, page.version)
+
+        layout_1 = [{"id": "b1", "type": "heading", "width": 12, "props": {"text": "Erste Fassung", "level": "2"}}]
+        res1 = self.client.post(
+            url,
+            json.dumps({"title": "Geräte v2", "show_in_nav": True, "public": False, "layout": layout_1, "version": v1}),
+            content_type="application/json",
+        )
+        self.assertEqual(res1.status_code, 200)
+        data1 = res1.json()
+        self.assertTrue(data1["ok"])
+        self.assertEqual(data1["version"], v1 + 1)
+        page.refresh_from_db()
+        self.assertEqual((page.title, page.version), ("Geräte v2", v1 + 1))
+
+        # Zweiter Tab speichert mit veralteter Version v1 -> 409 Conflict, ohne zu überschreiben
+        layout_2 = [{"id": "b2", "type": "heading", "width": 12, "props": {"text": "Veraltet", "level": "2"}}]
+        res2 = self.client.post(
+            url,
+            json.dumps({"title": "Überschrieben", "show_in_nav": False, "public": True, "layout": layout_2, "version": v1}),
+            content_type="application/json",
+        )
+        self.assertEqual(res2.status_code, 409)
+        data2 = res2.json()
+        self.assertFalse(data2["ok"])
+        self.assertTrue(data2["conflict"])
+        self.assertEqual(data2["version"], v1 + 1)
+        self.assertTrue(data2["error"])
+        page.refresh_from_db()
+        self.assertEqual(page.title, "Geräte v2")
+        self.assertEqual(page.show_in_nav, True)
+        self.assertEqual(page.public, False)
+        self.assertEqual(page.layout, data1["layout"])
+        self.assertEqual(page.version, v1 + 1)
+
+        # Erneutes Speichern mit aktueller Version v1 + 1 funktioniert und erhöht weiter
+        res3 = self.client.post(
+            url,
+            json.dumps({"title": "Geräte v3", "show_in_nav": True, "public": False, "layout": layout_1, "version": v1 + 1}),
+            content_type="application/json",
+        )
+        self.assertEqual(res3.status_code, 200)
+        self.assertEqual(res3.json()["version"], v1 + 2)
+
+        # Ungültige Versionsangaben werden mit 400 abgewiesen
+        for bad_version in (None, True, "1", 0):
+            bad_res = self.client.post(
+                url,
+                json.dumps({"title": "Ungültig", "layout": layout_1, "version": bad_version}),
+                content_type="application/json",
+            )
+            self.assertEqual(bad_res.status_code, 400)
+
+    def test_page_designer_keyboard_hint_and_save_shortcut(self):
+        self.client.force_login(self.designer)
+        page = self.app.pages.get(slug="gerate")
+        response = self.client.get(reverse("designer_page", args=["inventar", page.pk]))
+        self.assertEqual(response.status_code, 200)
+        html = response.content.decode()
+        self.assertIn('id="conflict-note"', html)
+        self.assertIn('aria-keyshortcuts="Control+S Meta+S"', html)
+        self.assertIn("Alt+Pfeil", html)
+        self.assertIn("Entf", html)
+        self.assertIn("Strg+S", html)
+
+        js = (Path(__file__).resolve().parent / "static" / "builder" / "designer.js").read_text(encoding="utf-8")
+        self.assertIn("e.ctrlKey || e.metaKey", js)
+        self.assertIn('e.key.toLowerCase() === "s"', js)
+        self.assertIn("e.preventDefault()", js)
+        self.assertIn("save()", js)
+
     def test_live_preview_renders_unsaved_layout(self):
         self.client.force_login(self.designer)
         page = self.app.pages.get(slug="gerate")
@@ -2721,7 +2803,8 @@ class AiDesignerTests(TestCase):
         self.assertEqual(info["serverInfo"]["name"], "baukasten-designer")
         names = {t["name"] for t in self.rpc("tools/list").json()["result"]["tools"]}
         self.assertEqual(names, {"guide", "list_apps", "get_app", "validate_app", "create_app", "update_app",
-                                 "list_versions", "restore_version"})
+                                 "list_versions", "restore_version",
+                                 "list_custom_blocks", "save_custom_block", "delete_custom_block"})
 
     def test_guide_example_is_valid_and_lists_blocks(self):
         error, guide = self.call("guide")
@@ -3538,6 +3621,137 @@ class WidgetTests(TestCase):
         self.assertIn('type="checkbox" name="ok" value="1" data-page-input checked', html)
         self.assertIn('type="date" name="tag"', html)
 
+    def test_pivot_count_sum_and_filter(self):
+        Page.objects.filter(pk=self.page.pk).update(layout=clean_layout([
+            make_block("filter", entity="aufgaben", field="status"),
+            make_block("pivot", entity="aufgaben", row_field="status", col_field="erledigt", agg="count"),
+            make_block("pivot", entity="aufgaben", row_field="status", agg="sum", value_field="fortschritt"),
+        ]))
+        html = self.get()
+        self.assertIn('class="pivot-table"', html)
+        self.assertIn("Offen", html)
+        self.assertIn("Zu", html)
+        self.assertIn("110", html)  # Gesamtsumme 20 + 90
+        filtered_html = self.get("?aufgaben.status=Zu")
+        self.assertIn("90", filtered_html)
+        self.assertNotIn("Offen", filtered_html.split('class="pivot-table"')[1])
+
+    def test_gantt_timeline_and_grouping(self):
+        Page.objects.filter(pk=self.page.pk).update(layout=clean_layout([
+            make_block("gantt", entity="aufgaben", start_field="faellig", end_field="bis",
+                       group_field="status", color_field="status"),
+        ]))
+        win = self.today.replace(day=1).isoformat()
+        html = self.get(f"?zeitraum={win}")
+        self.assertIn('class="card gantt-block"', html)
+        self.assertIn('class="gantt-group">Offen</div>', html)
+        self.assertIn('class="gantt-bar', html)
+        self.assertIn("Alpha", html)
+        self.assertIn("Keine Einträge in diesem Zeitraum.", self.get("?zeitraum=2000-01-03"))
+
+    def test_detail_related_list_search_and_stepper(self):
+        notizen = Entity.objects.create(app=self.app, name="Notizen", slug="notizen")
+        Field.objects.create(entity=notizen, label="Aufgabe", key="aufgabe", type=Field.REFERENCE, reference=self.entity)
+        Field.objects.create(entity=notizen, label="Text", key="text")
+        Record.objects.create(entity=notizen, data={"aufgabe": self.a.pk, "text": "Erste Notiz"})
+        Record.objects.create(entity=notizen, data={"aufgabe": self.b.pk, "text": "Andere Notiz"})
+
+        Page.objects.filter(pk=self.page.pk).update(layout=clean_layout([
+            make_block("search", entity="aufgaben", field="aufgabe", target_page="start"),
+            make_block("detail", entity="aufgaben"),
+            make_block("stepper", entity="aufgaben", field="status"),
+            make_block("related_list", entity="notizen", ref_field="aufgabe"),
+        ]))
+        self.ids = {b["type"]: b["id"] for b in Page.objects.get(pk=self.page.pk).layout}
+
+        html = self.get(f"?id={self.a.pk}")
+        self.assertIn('class="card detail-block"', html)
+        self.assertIn("Alpha", html)
+        self.assertIn("Erste Notiz", html)
+        self.assertNotIn("Andere Notiz", html)
+        self.assertIn(f"/a/{self.app.slug}/t/notizen/neu/?aufgabe={self.a.pk}", html)
+        self.assertIn('data-widget="stepper"', html)
+        self.assertIn('name="aufgaben.aufgabe"', html)
+
+        self.assertEqual(self.post("stepper", op="step", record=self.a.pk, value="Zu").status_code, 200)
+        self.a.refresh_from_db()
+        self.assertEqual(self.a.data["status"], "Zu")
+        self.assertEqual(self.post("stepper", op="step", record=self.a.pk, value="Ungueltig").status_code, 400)
+
+    def test_stepper_missing_param_uses_field_label_and_title_override(self):
+        Page.objects.filter(pk=self.page.pk).update(layout=clean_layout([
+            make_block("stepper", entity="aufgaben", field="status"),
+        ]))
+        html = self.get()
+        self.assertIn('<h3 data-slot="title">Status</h3>', html)
+        self.assertIn("Wähle einen Eintrag über ?id=… aus.", html)
+        self.assertNotIn('data-widget="stepper"', html)
+
+        Page.objects.filter(pk=self.page.pk).update(layout=clean_layout([
+            make_block("stepper", entity="aufgaben", field="status", title="Mein Fortschritt"),
+        ]))
+        html_titled = self.get()
+        self.assertIn('<h3 data-slot="title">Mein Fortschritt</h3>', html_titled)
+        self.assertIn("Wähle einen Eintrag über ?id=… aus.", html_titled)
+
+
+class CsvImportTests(TestCase):
+    """Zweistufiger CSV-Import für Tabellendaten."""
+
+    def setUp(self):
+        self.user = User.objects.create_user("importer", password="x")
+        self.client.force_login(self.user)
+        self.app = App.objects.create(name="Lager", slug="lager-import", published=True)
+        self.kategorien = Entity.objects.create(app=self.app, name="Kategorien", slug="kategorien")
+        Field.objects.create(entity=self.kategorien, label="Name", key="name", required=True)
+        self.kat = Record.objects.create(entity=self.kategorien, data={"name": "Elektronik"})
+        self.entity = Entity.objects.create(app=self.app, name="Artikel", slug="artikel")
+        Field.objects.create(entity=self.entity, label="Bezeichnung", key="bezeichnung", required=True)
+        Field.objects.create(entity=self.entity, label="Menge", key="menge", type=Field.NUMBER)
+        Field.objects.create(entity=self.entity, label="Aktiv", key="aktiv", type=Field.BOOL)
+        Field.objects.create(entity=self.entity, label="Datum", key="datum", type=Field.DATE)
+        Field.objects.create(entity=self.entity, label="Kategorie", key="kategorie", type=Field.REFERENCE, reference=self.kategorien)
+        self.url = reverse("entity_import", args=[self.app.slug, self.entity.slug])
+
+    def test_two_step_csv_import_and_audit(self):
+        from django.core.files.uploadedfile import SimpleUploadedFile
+
+        csv_bytes = "Bezeichnung;Menge;Aktiv;Datum;Kategorie\nMonitor;5;ja;19.11.2026;Elektronik\nMaus;12;nein;2026-11-20;Elektronik\n".encode("utf-8")
+        res = self.client.post(self.url, {"step": "upload", "file": SimpleUploadedFile("daten.csv", csv_bytes, content_type="text/csv")})
+        self.assertEqual(res.status_code, 200)
+        self.assertIn("2 Datenzeilen erkannt", res.content.decode())
+
+        res = self.client.post(self.url, {"step": "import", "col_0": "bezeichnung", "col_1": "menge", "col_2": "aktiv", "col_3": "datum", "col_4": "kategorie"})
+        self.assertEqual(res.status_code, 302)
+        records = list(self.entity.records.order_by("id"))
+        self.assertEqual(len(records), 2)
+        self.assertEqual(records[0].data["bezeichnung"], "Monitor")
+        self.assertEqual(records[0].data["menge"], 5)
+        self.assertIs(records[0].data["aktiv"], True)
+        self.assertEqual(records[0].data["datum"], "2026-11-19")
+        self.assertEqual(records[0].data["kategorie"], self.kat.pk)
+        from .models import AuditEntry
+
+        self.assertTrue(AuditEntry.objects.filter(app=self.app, action="create", target_type="record").exists())
+
+    def test_csv_import_validation_abort_and_skip(self):
+        from django.core.files.uploadedfile import SimpleUploadedFile
+
+        csv_bytes = "Bezeichnung,Menge\nMonitor,5\nKaputt,keinezahl\n".encode("utf-8")
+        self.client.post(self.url, {"step": "upload", "file": SimpleUploadedFile("bad.csv", csv_bytes, content_type="text/csv")})
+        res = self.client.post(self.url, {"step": "import", "col_0": "bezeichnung", "col_1": "menge"})
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(self.entity.records.count(), 0)  # bei Fehler abgebrochen
+
+        res = self.client.post(self.url, {"step": "import", "col_0": "bezeichnung", "col_1": "menge", "skip_errors": "1"})
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(self.entity.records.count(), 1)  # gültige Zeile importiert
+
+    def test_csv_import_respects_allow_create(self):
+        self.entity.allow_create = False
+        self.entity.save()
+        self.assertEqual(self.client.get(self.url).status_code, 403)
+
 
 class InterfaceTranslationTests(TestCase):
     """Englische Oberfläche: jeder Text hat eine Übersetzung (manage.py uebersetzungen)."""
@@ -3579,3 +3793,162 @@ class InterfaceTranslationTests(TestCase):
         self.assertNotIn("Verfügbar", html)
         today = timezone.localdate()
         self.assertIn(f"{today:%B} {today.day}, {today.year}", html)  # z. B. „Thursday, November 19, 2026“
+
+
+class CustomBlockEnhancementTests(TestCase):
+    """Eigene Bausteine: typisierte Einstellungen, Live-Vorschau, Sanitizer-Report, Hooks & MCP."""
+
+    def setUp(self):
+        from .models import DesignerToken
+
+        self.designer = User.objects.create_user("bauherr", password="x", is_staff=True)
+        self.token, self.raw_token = DesignerToken.issue(self.designer, "KI-Test")
+        self.auth = {"HTTP_AUTHORIZATION": f"Bearer {self.raw_token}"}
+
+    def test_typed_and_json_setting_specs(self):
+        from .models import CustomBlock
+
+        cb = CustomBlock(
+            name="KPI",
+            settings="Anzahl : number = 5\nAktiv : checkbox = true\nStufe : select(info, warnung) = warnung",
+            html="<p>{{ anzahl }}</p>",
+        )
+        specs = cb.setting_specs()
+        self.assertEqual([s["type"] for s in specs], ["number", "checkbox", "select"])
+        self.assertEqual(specs[1]["default"], True)
+        self.assertEqual(specs[2]["options"], [["info", "info"], ["warnung", "warnung"]])
+
+        cb_json = CustomBlock(
+            name="JSON",
+            settings='[{"key": "limit", "label": "Limit", "type": "number", "default": 10}]',
+            html="<p>{{ limit }}</p>",
+        )
+        self.assertEqual(cb_json.setting_specs(), [{"key": "limit", "label": "Limit", "default": "10", "type": "number"}])
+
+    def test_sanitize_report_and_live_preview(self):
+        from .sanitize import sanitize_html_report
+
+        clean, warnings = sanitize_html_report('<div onclick="x()">Hi</div><script>alert(1)</script>')
+        self.assertEqual(clean, "<div>Hi</div>")
+        self.assertEqual(len(warnings), 2)
+
+        self.client.force_login(self.designer)
+        resp = self.client.post(
+            reverse("designer_block_preview"),
+            data=json.dumps({
+                "name": "Test",
+                "settings": "Titel = Hallo",
+                "html": '<div class="card"><h3>{{ titel }}</h3><script>bad()</script></div>',
+            }),
+            content_type="application/json",
+        )
+        self.assertEqual(resp.status_code, 200)
+        data = resp.json()
+        self.assertTrue(data["ok"])
+        self.assertIn("<h3>Hallo</h3>", data["html"])
+        self.assertNotIn("<script>", data["html"])
+        self.assertIn("titel", data["placeholders"])
+        self.assertIn("nutzer", data["placeholders"])
+        self.assertTrue(data["warnings"])
+
+    def test_hook_block_with_fields_and_props(self):
+        from . import hooks
+        from .blocks import all_types
+
+        @hooks.block("test_props_block", label="Props-Test", fields=[{"key": "titel", "label": "Titel", "type": "text"}])
+        def _test_block(request, app, props):
+            return f"Hallo {props.get('titel', '')}"
+
+        try:
+            btype = all_types()["x-test_props_block"]
+            self.assertEqual(len(btype.fields), 1)
+            res = btype.prepare(None, None, {"props": {"titel": "Welt"}})
+            self.assertEqual(res["custom_html"], "Hallo Welt")
+        finally:
+            hooks.CUSTOM_BLOCKS.pop("test_props_block", None)
+
+    def test_mcp_custom_block_tools_and_guide(self):
+        def call_mcp(method, params=None):
+            body = {"jsonrpc": "2.0", "id": 1, "method": method, "params": params or {}}
+            return self.client.post(
+                reverse("mcp_designer"), data=json.dumps(body), content_type="application/json", **self.auth
+            ).json()
+
+        guide_res = call_mcp("tools/call", {"name": "guide", "arguments": {}})
+        guide_data = json.loads(guide_res["result"]["content"][0]["text"])
+        self.assertIn("design_system", guide_data)
+        self.assertIn("custom_block_html_rules", guide_data)
+
+        save_res = call_mcp("tools/call", {
+            "name": "save_custom_block",
+            "arguments": {
+                "name": "Status-Karte",
+                "description": "Zeigt Status",
+                "settings": [{"key": "titel", "label": "Titel", "type": "text", "default": "OK"}],
+                "html": '<div class="card"><h3>{{ titel }}</h3><script>x()</script></div>',
+            },
+        })
+        saved = json.loads(save_res["result"]["content"][0]["text"])
+        self.assertTrue(saved["saved"])
+        self.assertEqual(saved["type"], "c-status-karte")
+        self.assertTrue(saved["warnings"])
+
+        listed = json.loads(call_mcp("tools/call", {"name": "list_custom_blocks", "arguments": {}})["result"]["content"][0]["text"])
+        self.assertEqual(len(listed["custom_blocks"]), 1)
+
+        deleted = json.loads(call_mcp("tools/call", {"name": "delete_custom_block", "arguments": {"slug": "status-karte"}})["result"]["content"][0]["text"])
+        self.assertTrue(deleted["deleted"])
+
+
+class HomePageEnhancementTests(TestCase):
+    """Startseite: unterschiedliche Designer-Links, Seiten-Meldungen, Fehler-Badge und Widgets."""
+
+    def setUp(self):
+        self.designer = User.objects.create_user("chef", password="x", is_staff=True)
+        self.viewer = User.objects.create_user("leser", password="x")
+        self.app = App.objects.create(name="Werk", slug="werk", created_by=self.designer, published=True)
+        self.entity = Entity.objects.create(app=self.app, name="Geräte", slug="geraete")
+        self.page = Page.objects.create(
+            app=self.app,
+            title="Start",
+            slug="start",
+            layout=[
+                {"id": "bnotice1", "type": "notice", "width": 12, "props": {"title": "Wartung", "text": "Freitag 16 Uhr"}},
+                {"id": "bstat1", "type": "stat", "width": 4, "props": {"label": "Geräte", "entity": "geraete"}},
+            ],
+        )
+
+    def test_hero_links_notices_and_error_badges(self):
+        from .models import Script
+
+        Script.objects.create(app=self.app, name="Kaputt", language=Script.PYTHON, trigger=Script.PAGE, failures=2)
+        self.client.force_login(self.designer)
+        res = self.client.get(reverse("home"))
+        self.assertContains(res, '?neu=app#neu-anlegen"')
+        self.assertContains(res, "Freitag 16 Uhr")
+        self.assertContains(res, "1 Fehler")
+
+        self.client.force_login(self.viewer)
+        res_viewer = self.client.get(reverse("home"))
+        self.assertContains(res_viewer, "Freitag 16 Uhr")
+        self.assertNotContains(res_viewer, "1 Fehler")
+
+    def test_home_widgets_add_render_and_remove(self):
+        from .models import HomeWidget
+
+        self.client.force_login(self.viewer)
+        sheet = self.client.get(reverse("home"))
+        self.assertContains(sheet, 'id="widget-sheet"')
+        self.assertContains(sheet, 'data-widget-app')
+        self.assertContains(sheet, f'value="{self.page.pk}:bstat1"')
+        self.assertNotContains(sheet, "<select name=\"target\"")
+        add_res = self.client.post(reverse("home_widget_add"), {"target": f"{self.page.pk}:bstat1"})
+        self.assertEqual(add_res.status_code, 302)
+        widget = HomeWidget.objects.get(user=self.viewer, page=self.page, block_id="bstat1")
+
+        home_res = self.client.get(reverse("home"))
+        self.assertContains(home_res, reverse("page_block", args=["werk", "start", "bstat1"]))
+
+        rem_res = self.client.post(reverse("home_widget_remove", args=[widget.pk]))
+        self.assertEqual(rem_res.status_code, 302)
+        self.assertFalse(HomeWidget.objects.filter(pk=widget.pk).exists())
