@@ -616,7 +616,7 @@ def custom_block_edit(request, pk=None):
     form = CustomBlockForm(request.POST or None, instance=block)
     if request.method == "POST" and form.is_valid():
         raw_html = request.POST.get("html") or ""
-        _, stripped = sanitize_html_report(raw_html)
+        _clean_html, stripped = sanitize_html_report(raw_html)
         block = form.save(commit=False)
         block.kind = CustomBlock.HTML
         block.created_by = block.created_by or request.user

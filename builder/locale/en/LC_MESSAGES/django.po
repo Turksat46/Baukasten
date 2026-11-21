@@ -5551,3 +5551,15 @@ msgstr "Widgets"
 #: builder/templates/builder/home.html
 msgid "Widgets durchsuchen"
 msgstr "Search widgets"
+
+#: builder/templates/builder/home.html
+msgid "Vorschau wird geladen …"
+msgstr "Loading preview …"
+
+#: builder/templates/builder/home.html
+msgid "Widget hinzufügen"
+msgstr "Add widget"
+
+#: builder/templates/builder/home.html
+msgid "Wähle einen Baustein aus deinen Apps. Er erscheint oben auf der Startseite."
+msgstr "Pick a block from your apps. It will appear at the top of your home page."

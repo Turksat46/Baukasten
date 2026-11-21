@@ -301,3 +301,11 @@ msgstr "Reload page"
 #: builder/static/builder/designer.js
 msgid "Speichern nicht möglich – Konflikt"
 msgstr "Unable to save – conflict"
+
+#: builder/static/builder/home.js
+msgid "Keine Vorschau"
+msgstr "No preview"
+
+#: builder/static/builder/home.js
+msgid "Konnte nicht geladen werden."
+msgstr "Could not be loaded."

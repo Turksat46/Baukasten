@@ -2803,7 +2803,8 @@ class AiDesignerTests(TestCase):
         self.assertEqual(info["serverInfo"]["name"], "baukasten-designer")
         names = {t["name"] for t in self.rpc("tools/list").json()["result"]["tools"]}
         self.assertEqual(names, {"guide", "list_apps", "get_app", "validate_app", "create_app", "update_app",
-                                 "list_versions", "restore_version"})
+                                 "list_versions", "restore_version",
+                                 "list_custom_blocks", "save_custom_block", "delete_custom_block"})
 
     def test_guide_example_is_valid_and_lists_blocks(self):
         error, guide = self.call("guide")
