@@ -390,6 +390,84 @@ def entity_export(request, app, entity):
     return response
 
 
+@login_required
+def entity_import(request, app, entity):
+    """Zweistufiger CSV-Import für eine Tabelle: Datei hochladen, Spalten zuordnen, importieren."""
+    from . import csv_import
+
+    app = get_app(request, app)
+    entity = get_object_or_404(app.entities, slug=entity)
+    if not entity.allow_create:
+        raise PermissionDenied
+    fields = list(entity.fields.all())
+    session_key = f"csv_import:{app.slug}:{entity.slug}"
+    back = safe_next(request, reverse("page", args=[app.slug]))
+    errors = []
+
+    if request.method == "POST":
+        step = request.POST.get("step", "upload")
+        if step == "reset":
+            request.session.pop(session_key, None)
+            return redirect(request.path + (f"?next={request.GET.get('next', '')}" if request.GET.get("next") else ""))
+        if step == "upload":
+            upload = request.FILES.get("file")
+            if not upload:
+                messages.error(request, _("Bitte eine CSV-Datei auswählen."))
+            else:
+                try:
+                    headers, rows = csv_import.parse_csv(upload.read())
+                    request.session[session_key] = {"headers": headers, "rows": rows}
+                except csv_import.CsvImportError as exc:
+                    messages.error(request, str(exc))
+        elif step == "import":
+            staged = request.session.get(session_key)
+            if not staged:
+                messages.error(request, _("Bitte zuerst eine CSV-Datei hochladen."))
+            else:
+                headers, rows = staged["headers"], staged["rows"]
+                mapping = [request.POST.get(f"col_{i}", "") for i in range(len(headers))]
+                skip_errors = bool(request.POST.get("skip_errors"))
+                try:
+                    created, errors = csv_import.run_import(
+                        app, entity, rows, mapping, request.user, skip_errors=skip_errors,
+                    )
+                    if created and not errors:
+                        request.session.pop(session_key, None)
+                        messages.success(request, _("%(n)s Einträge importiert.") % {"n": created})
+                        return redirect(back)
+                    if created and errors:
+                        request.session.pop(session_key, None)
+                        messages.warning(
+                            request,
+                            _("%(n)s Einträge importiert, %(err)s Zeilen übersprungen.") % {"n": created, "err": len(errors)},
+                        )
+                    elif errors:
+                        messages.error(request, _("Import abgebrochen: %(err)s fehlerhafte Zeilen.") % {"err": len(errors)})
+                except csv_import.CsvImportError as exc:
+                    messages.error(request, str(exc))
+
+    staged = request.session.get(session_key)
+    columns = []
+    preview = []
+    if staged:
+        guessed = csv_import.guess_mapping(staged["headers"], fields)
+        columns = [{"index": i, "header": h, "guess": guessed[i]} for i, h in enumerate(staged["headers"])]
+        preview = staged["rows"][:5]
+
+    return render(request, "builder/entity_import.html", {
+        "app": app,
+        "entity": entity,
+        "fields": fields,
+        "staged": staged,
+        "columns": columns,
+        "preview": preview,
+        "row_count": len(staged["rows"]) if staged else 0,
+        "errors": errors[:20],
+        "more_errors": max(len(errors) - 20, 0),
+        "back": back,
+    })
+
+
 
 # ---------- API-Dokumentation ----------
 

@@ -1,0 +1,32 @@
+{% load i18n baukasten %}<section class="card related-block">
+  <div class="card-head">
+    <h3 data-slot="title">{{ p.title|default:entity.name|tr }}</h3>
+    {% if create_url and not missing %}
+      <a class="btn btn-secondary btn-small" href="{{ create_url }}?{{ ref_key }}={{ parent_id }}&amp;next={{ next_url|urlencode }}">+ {% translate "Neu" %}</a>
+    {% endif %}
+  </div>
+  {% if missing %}
+    <p class="muted">{% blocktranslate with param=param %}Wähle einen Haupteintrag über ?{{ param }}=… aus.{% endblocktranslate %}</p>
+  {% elif items %}
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            {% for col in cols %}<th scope="col">{{ col }}</th>{% endfor %}
+            {% if edit %}<th scope="col"></th>{% endif %}
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in items %}
+            <tr>
+              {% for cell in item.cells %}<td>{{ cell }}</td>{% endfor %}
+              {% if edit %}<td class="num"><a class="small" href="{% url 'record_edit' app.slug entity.slug item.id %}?next={{ next_url|urlencode }}">{% translate "Bearbeiten" %}</a></td>{% endif %}
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <p class="muted">{% translate "Noch keine verknüpften Einträge." %}</p>
+  {% endif %}
+</section>

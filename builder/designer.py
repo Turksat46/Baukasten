@@ -8,6 +8,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import Group
 from django.core.exceptions import PermissionDenied
+from django.db import transaction
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -451,16 +452,35 @@ def page_designer(request, app, pk):
     if request.method == "POST":
         try:
             payload = json.loads(request.body)
-            page.layout = clean_layout(payload.get("layout"))
+            if not isinstance(payload, dict):
+                raise ValueError("Payload muss ein JSON-Objekt sein.")
+            cleaned_layout = clean_layout(payload.get("layout"))
         except (ValueError, AttributeError):
             return JsonResponse({"ok": False, "error": _("Ungültige Daten.")}, status=400)
-        title = str(payload.get("title") or "").strip()[:80]
-        if title:
-            page.title = title
-        page.show_in_nav = bool(payload.get("show_in_nav", True))
-        page.public = bool(payload.get("public", page.public))
-        page.save()
-        return JsonResponse({"ok": True, "layout": page.layout})
+        has_version = "version" in payload
+        expected_version = None
+        if has_version:
+            raw_version = payload.get("version")
+            if isinstance(raw_version, bool) or not isinstance(raw_version, int) or raw_version < 1:
+                return JsonResponse({"ok": False, "error": _("Ungültige Daten.")}, status=400)
+            expected_version = raw_version
+        with transaction.atomic():
+            page = get_object_or_404(Page.objects.select_for_update(), pk=pk, app=app)
+            if has_version and expected_version != page.version:
+                return JsonResponse({
+                    "ok": False,
+                    "conflict": True,
+                    "version": page.version,
+                    "error": _("Diese Seite wurde inzwischen von jemand anderem gespeichert. Bitte lade die Seite neu, um keine Änderungen zu überschreiben."),
+                }, status=409)
+            page.layout = cleaned_layout
+            title = str(payload.get("title") or "").strip()[:80]
+            if title:
+                page.title = title
+            page.show_in_nav = bool(payload.get("show_in_nav", True))
+            page.public = bool(payload.get("public", page.public))
+            page.save()
+        return JsonResponse({"ok": True, "layout": page.layout, "version": page.version})
     return render(request, "designer/page.html", {
         "app": app, "page": page, "config": designer_config(app, page),
     })

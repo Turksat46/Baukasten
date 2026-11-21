@@ -13,12 +13,19 @@
     <span data-tour="save-area" class="designer-actions">
       <a class="btn btn-secondary" href="{% url 'page' app.slug page.slug %}" target="_blank" rel="noopener">{% translate "Vorschau" %}</a>
       <a class="btn btn-secondary only-narrow" href="#palette-panel">{% translate "+ Baustein" %}</a>
-      <button id="save" class="btn">{% translate "Speichern" %}</button>
+      <button id="save" class="btn" title="{% translate 'Speichern (Strg+S)' %}" aria-keyshortcuts="Control+S Meta+S">{% translate "Speichern" %}</button>
     </span>
   </div>
   <div class="notice notice-warning" id="public-note"{% if not page.public %} hidden{% endif %} role="note">
     <strong>{% translate "Öffentliche Seite" %}</strong>
     <span>{% translate "Jeder mit dem Link sieht diese Seite, ohne Anmeldung und ohne Rechte an der App. Listen, Karten, Kennzahlen, Diagramme und Abfragen zeigen ihre Daten dann allen. Gäste dürfen nur die Formulare und Skript-Buttons dieser Seite benutzen; Skripte bekommen für sie user = None. Wirkt erst, wenn die App veröffentlicht ist." %}</span>
+  </div>
+  <div class="notice notice-danger" id="conflict-note" hidden role="alert">
+    <strong>{% translate "Speichern blockiert – Bearbeitungskonflikt" %}</strong>
+    <span data-conflict-text></span>
+    <div class="conflict-actions">
+      <button type="button" class="btn btn-secondary btn-small" id="conflict-reload">{% translate "Seite neu laden" %}</button>
+    </div>
   </div>
   <div class="designer-body">
     <aside class="panel" id="palette-panel">
@@ -27,7 +34,15 @@
       <div id="palette"></div>
       <p class="small palette-foot"><a href="{% url 'designer_block_new' %}" target="_blank" rel="noopener">{% translate "Eigenen Baustein anlegen" %}</a></p>
     </aside>
-    <section class="canvas-wrap"><div id="canvas" class="grid"></div></section>
+    <section class="canvas-wrap">
+      <div id="canvas" class="grid"></div>
+      <p class="muted small designer-hints">
+        {% translate "Tastatur:" %}
+        <kbd>Alt+Pfeil</kbd> {% translate "verschieben" %} ·
+        <kbd>Entf</kbd> {% translate "entfernen" %} ·
+        <kbd>Strg+S</kbd> {% translate "speichern" %}
+      </p>
+    </section>
     <aside class="panel" id="props"></aside>
   </div>
 </div>

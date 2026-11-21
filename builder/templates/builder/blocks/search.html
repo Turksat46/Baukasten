@@ -1,0 +1,13 @@
+{% load i18n baukasten %}<section class="card search-block">
+  {% if p.title %}<h3 data-slot="title">{{ p.title }}</h3>{% endif %}
+  <form class="search-form" method="get" action="{{ action_url }}">
+    <label class="search-field">
+      <span class="sr-only">{{ field_label }}</span>
+      <input type="search" name="{{ name }}" value="{{ value }}" placeholder="{{ placeholder }}">
+    </label>
+    <button class="btn btn-primary" type="submit">{% translate "Suchen" %}</button>
+    {% if value and not action_url %}
+      <a class="btn btn-secondary" href="?">{% translate "Zurücksetzen" %}</a>
+    {% endif %}
+  </form>
+</section>

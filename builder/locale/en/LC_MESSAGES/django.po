@@ -5037,3 +5037,427 @@ msgstr "n/j/Y"
 #: planning.py
 msgid "l, j. F"
 msgstr "l, F j"
+
+#: builder/templates/builder/blocks/gantt.html
+msgid "Keine Einträge in diesem Zeitraum."
+msgstr "No entries in this period."
+
+#: builder/templates/builder/blocks/gantt.html
+msgid "Nächster Zeitraum"
+msgstr "Next period"
+
+#: builder/templates/builder/blocks/gantt.html
+msgid "Vorheriger Zeitraum"
+msgstr "Previous period"
+
+#: builder/templates/builder/blocks/gantt.html
+msgid "Zeitraum wählen"
+msgstr "Select period"
+
+#: builder/templates/builder/blocks/pivot.html
+msgid "Gesamt"
+msgstr "Total"
+
+#: builder/templates/builder/blocks/pivot.html
+msgid "Noch keine Daten für diese Kreuztabelle."
+msgstr "No data for this pivot table yet."
+
+#: builder/widgets.py
+msgid "Die Kreuztabelle braucht ein Zeilenfeld."
+msgstr "The pivot table needs a row field."
+
+#: builder/widgets.py
+msgid "Die Zeitstrahl-Ansicht braucht ein Startdatum."
+msgstr "The timeline view needs a start date."
+
+#: builder/widgets.py
+msgid "Einträge als Balken auf einer Zeitleiste (4 Wochen)"
+msgstr "Entries as bars on a timeline (4 weeks)"
+
+#: builder/widgets.py
+msgid "Enddatum (optional)"
+msgstr "End date (optional)"
+
+#: builder/widgets.py
+msgid "Für Summe oder Durchschnitt braucht die Kreuztabelle ein Zahlenfeld."
+msgstr "For sum or average, the pivot table needs a number field."
+
+#: builder/widgets.py
+msgid "Für diese Kreuztabelle ist keine Tabelle ausgewählt."
+msgstr "No table is selected for this pivot table."
+
+#: builder/widgets.py
+msgid "Für diese Zeitstrahl-Ansicht ist keine Tabelle ausgewählt."
+msgstr "No table is selected for this timeline view."
+
+#: builder/widgets.py
+msgid "Gruppierung (optional)"
+msgstr "Grouping (optional)"
+
+#: builder/widgets.py
+msgid "Kreuztabelle"
+msgstr "Pivot table"
+
+#: builder/widgets.py
+msgid "Pivot-Auswertung nach Zeilen- und Spaltenfeld"
+msgstr "Pivot summary by row and column field"
+
+#: builder/widgets.py
+msgid "Spaltenfeld (optional)"
+msgstr "Column field (optional)"
+
+#: builder/widgets.py
+msgid "Startdatum"
+msgstr "Start date"
+
+#: builder/widgets.py
+msgid "Summen anzeigen"
+msgstr "Show totals"
+
+#: builder/widgets.py
+msgid "Wert"
+msgstr "Value"
+
+#: builder/widgets.py
+msgid "Zeilenfeld"
+msgstr "Row field"
+
+#: builder/widgets.py
+msgid "Zeitstrahl"
+msgstr "Timeline"
+
+#: builder/templates/builder/blocks/detail.html builder/templates/builder/blocks/stepper.html
+msgid "Wähle einen Eintrag über ?%(param)s=… aus."
+msgstr "Select an entry via ?%(param)s=…."
+
+#: builder/templates/builder/blocks/related_list.html
+msgid "Noch keine verknüpften Einträge."
+msgstr "No related entries yet."
+
+#: builder/templates/builder/blocks/related_list.html
+msgid "Wähle einen Haupteintrag über ?%(param)s=… aus."
+msgstr "Select a main entry via ?%(param)s=…."
+
+#: builder/widgets.py
+msgid "Bearbeiten-/Löschen-Links anzeigen"
+msgstr "Show edit/delete links"
+
+#: builder/widgets.py
+msgid "Der ausgewählte Eintrag wurde nicht gefunden."
+msgstr "The selected entry was not found."
+
+#: builder/widgets.py
+msgid "Detailansicht"
+msgstr "Detail view"
+
+#: builder/widgets.py
+msgid "Die Status-Leiste braucht ein Auswahlfeld."
+msgstr "The status bar needs a choice field."
+
+#: builder/widgets.py
+msgid "Die Suchbox braucht ein Suchfeld."
+msgstr "The search box needs a search field."
+
+#: builder/widgets.py
+msgid "Die Unterliste braucht ein Verweisfeld."
+msgstr "The related list needs a reference field."
+
+#: builder/widgets.py
+msgid "Fortschritts- und Freigabeschritte eines Datensatzes (?id=…)"
+msgstr "Progress and approval steps of a record (?id=…)"
+
+#: builder/widgets.py
+msgid "Für diese Detailansicht ist keine Tabelle ausgewählt."
+msgstr "No table is selected for this detail view."
+
+#: builder/widgets.py
+msgid "Für diese Status-Leiste ist keine Tabelle ausgewählt."
+msgstr "No table is selected for this status bar."
+
+#: builder/widgets.py
+msgid "Für diese Suchbox ist keine Tabelle ausgewählt."
+msgstr "No table is selected for this search box."
+
+#: builder/widgets.py
+msgid "Für diese Unterliste ist keine Tabelle ausgewählt."
+msgstr "No table is selected for this related list."
+
+#: builder/widgets.py
+msgid "Platzhaltertext"
+msgstr "Placeholder text"
+
+#: builder/widgets.py
+msgid "Schnellsuche über ein Feld (optional mit Sprung auf Zielseite)"
+msgstr "Quick search on a field (optionally jumping to a target page)"
+
+#: builder/widgets.py
+msgid "Status-Auswahlfeld"
+msgstr "Status choice field"
+
+#: builder/widgets.py
+msgid "Status-Leiste"
+msgstr "Status bar"
+
+#: builder/widgets.py
+msgid "Suchbox"
+msgstr "Search box"
+
+#: builder/widgets.py
+msgid "Suchfeld"
+msgstr "Search field"
+
+#: builder/widgets.py
+msgid "URL-Parameter (Standard: id)"
+msgstr "URL parameter (default: id)"
+
+#: builder/widgets.py
+msgid "URL-Parameter der Datensatz-ID (Standard: id)"
+msgstr "URL parameter of the record ID (default: id)"
+
+#: builder/widgets.py
+msgid "URL-Parameter der Haupt-ID (Standard: id)"
+msgstr "URL parameter of the main ID (default: id)"
+
+#: builder/widgets.py
+msgid "Ungültiger Status."
+msgstr "Invalid status."
+
+#: builder/widgets.py
+msgid "Unterliste"
+msgstr "Related list"
+
+#: builder/widgets.py
+msgid "Verknüpfte Einträge zum aktuellen Datensatz (?id=…)"
+msgstr "Related entries for the current record (?id=…)"
+
+#: builder/widgets.py
+msgid "Verweisfeld auf Haupttabelle"
+msgstr "Reference field to main table"
+
+#: builder/widgets.py
+msgid "Zeigt alle Felder eines einzelnen Datensatzes (?id=…)"
+msgstr "Shows all fields of a single record (?id=…)"
+
+#: builder/widgets.py
+msgid "Zielseite (leer: aktuelle Seite)"
+msgstr "Target page (empty: current page)"
+
+#: builder/widgets.py
+msgid "Zieltabelle"
+msgstr "Target table"
+
+#: builder/widgets.py
+msgid "„+ Neu“-Link anzeigen"
+msgstr "Show “+ New” link"
+
+#: builder/csv_import.py
+msgid "%(n)s Einträge"
+msgstr "%(n)s entries"
+
+#: builder/csv_import.py
+msgid "Bitte mindestens eine Spalte einem Tabellenfeld zuordnen."
+msgstr "Please map at least one column to a table field."
+
+#: builder/csv_import.py
+msgid "CSV-Import: %(n)s Einträge angelegt"
+msgstr "CSV import: %(n)s entries created"
+
+#: builder/csv_import.py
+msgid "Die CSV-Datei braucht eine Kopfzeile und mindestens eine Datenzeile."
+msgstr "The CSV file needs a header row and at least one data row."
+
+#: builder/csv_import.py
+msgid "Die CSV-Datei ist größer als 2 MB."
+msgstr "The CSV file is larger than 2 MB."
+
+#: builder/csv_import.py
+msgid "Die Datei ist leer."
+msgstr "The file is empty."
+
+#: builder/csv_import.py
+msgid "Die Datei muss als UTF-8 gespeichert sein."
+msgstr "The file must be saved as UTF-8."
+
+#: builder/csv_import.py
+msgid "Die Kopfzeile der CSV-Datei enthält keine Spaltennamen."
+msgstr "The CSV header row contains no column names."
+
+#: builder/csv_import.py
+msgid "Höchstens %(max)s Zeilen pro Import erlaubt."
+msgstr "At most %(max)s rows allowed per import."
+
+#: builder/csv_import.py
+msgid "Pflichtfeld „%(field)s“ ist leer."
+msgstr "Required field “%(field)s” is empty."
+
+#: builder/csv_import.py
+msgid "Pflichtfelder nicht zugeordnet: %(fields)s"
+msgstr "Required fields not mapped: %(fields)s"
+
+#: builder/csv_import.py
+msgid "Verweis „%(val)s“ in „%(field)s“ nicht gefunden."
+msgstr "Reference “%(val)s” in “%(field)s” not found."
+
+#: builder/csv_import.py
+msgid "Zeile %(line)s: %(msg)s"
+msgstr "Row %(line)s: %(msg)s"
+
+#: builder/csv_import.py
+msgid "„%(val)s“ ist kein Ja/Nein-Wert."
+msgstr "“%(val)s” is not a yes/no value."
+
+#: builder/csv_import.py
+msgid "„%(val)s“ ist kein gültiges Datum (JJJJ-MM-TT oder TT.MM.JJJJ)."
+msgstr "“%(val)s” is not a valid date (YYYY-MM-DD or DD.MM.YYYY)."
+
+#: builder/csv_import.py
+msgid "„%(val)s“ ist keine Zahl."
+msgstr "“%(val)s” is not a number."
+
+#: builder/csv_import.py
+msgid "„%(val)s“ ist keine ganze Zahl."
+msgstr "“%(val)s“ is not a whole number."
+
+#: builder/csv_import.py
+msgid "„%(val)s“ ist keine gültige Auswahl für „%(field)s“."
+msgstr "“%(val)s” is not a valid choice for “%(field)s”."
+
+#: builder/csv_import.py
+msgid "„%(val)s“ ist keine gültige E-Mail-Adresse."
+msgstr "“%(val)s” is not a valid email address."
+
+#: builder/csv_import.py
+msgid "„%(val)s“ ist keine gültige Webadresse."
+msgstr "“%(val)s” is not a valid web address."
+
+#: builder/templates/builder/block.html builder/widgets.py
+msgid "CSV-Datei importieren"
+msgstr "Import CSV file"
+
+#: builder/templates/builder/block.html builder/templates/builder/entity_import.html builder/widgets.py
+msgid "CSV-Import"
+msgstr "CSV import"
+
+#: builder/templates/builder/block.html
+msgid "CSV-Import für diese Tabelle derzeit nicht verfügbar."
+msgstr "CSV import is currently not available for this table."
+
+#: builder/templates/builder/entity_import.html
+msgid "%(n)s Datenzeile erkannt. Ordne die Spalten den Feldern der Tabelle zu."
+msgid_plural "%(n)s Datenzeilen erkannt. Ordne die Spalten den Feldern der Tabelle zu."
+msgstr[0] "%(n)s data row detected. Map the columns to the table fields."
+msgstr[1] "%(n)s data rows detected. Map the columns to the table fields."
+
+#: builder/templates/builder/entity_import.html
+msgid "1. CSV-Datei hochladen"
+msgstr "1. Upload CSV file"
+
+#: builder/templates/builder/entity_import.html
+msgid "2. Spalten zuordnen"
+msgstr "2. Map columns"
+
+#: builder/templates/builder/entity_import.html
+msgid "Andere Datei wählen"
+msgstr "Choose another file"
+
+#: builder/templates/builder/entity_import.html
+msgid "CSV-Spalte"
+msgstr "CSV column"
+
+#: builder/templates/builder/entity_import.html
+msgid "Fehlerhafte Zeilen überspringen (sonst bricht der gesamte Import bei Fehlern ab)"
+msgstr "Skip invalid rows (otherwise the entire import aborts on errors)"
+
+#: builder/templates/builder/entity_import.html
+msgid "Fehlerhafte Zeilen:"
+msgstr "Invalid rows:"
+
+#: builder/templates/builder/entity_import.html
+msgid "Import starten"
+msgstr "Start import"
+
+#: builder/templates/builder/entity_import.html
+msgid "Tabellenfeld"
+msgstr "Table field"
+
+#: builder/templates/builder/entity_import.html
+msgid "UTF-8-kodierte CSV-Datei (Trennzeichen Semikolon oder Komma, höchstens 2 MB und 2.000 Zeilen)."
+msgstr "UTF-8 encoded CSV file (semicolon or comma delimiter, at most 2 MB and 2,000 rows)."
+
+#: builder/templates/builder/entity_import.html
+msgid "Vorschau (erste 5 Zeilen)"
+msgstr "Preview (first 5 rows)"
+
+#: builder/templates/builder/entity_import.html
+msgid "Vorschau laden"
+msgstr "Load preview"
+
+#: builder/templates/builder/entity_import.html
+msgid "— ignorieren —"
+msgstr "— ignore —"
+
+#: builder/templates/builder/entity_import.html
+msgid "… und %(n)s weiterer Fehler"
+msgid_plural "… und %(n)s weitere Fehler"
+msgstr[0] "… and %(n)s more error"
+msgstr[1] "… and %(n)s more errors"
+
+#: builder/views.py
+msgid "%(n)s Einträge importiert, %(err)s Zeilen übersprungen."
+msgstr "%(n)s entries imported, %(err)s rows skipped."
+
+#: builder/views.py
+msgid "%(n)s Einträge importiert."
+msgstr "%(n)s entries imported."
+
+#: builder/views.py
+msgid "Bitte eine CSV-Datei auswählen."
+msgstr "Please select a CSV file."
+
+#: builder/views.py
+msgid "Bitte zuerst eine CSV-Datei hochladen."
+msgstr "Please upload a CSV file first."
+
+#: builder/views.py
+msgid "Import abgebrochen: %(err)s fehlerhafte Zeilen."
+msgstr "Import aborted: %(err)s invalid rows."
+
+#: builder/widgets.py
+msgid "Einträge aus einer CSV-Datei in diese Tabelle laden"
+msgstr "Load entries from a CSV file into this table"
+
+#: builder/widgets.py
+msgid "Für diesen CSV-Import ist keine Tabelle ausgewählt."
+msgstr "No table is selected for this CSV import."
+
+#: builder/designer.py
+msgid "Diese Seite wurde inzwischen von jemand anderem gespeichert. Bitte lade die Seite neu, um keine Änderungen zu überschreiben."
+msgstr "This page has been saved by someone else in the meantime. Please reload the page so you don’t overwrite any changes."
+
+#: builder/templates/designer/page.html
+msgid "Seite neu laden"
+msgstr "Reload page"
+
+#: builder/templates/designer/page.html
+msgid "Speichern (Strg+S)"
+msgstr "Save (Ctrl+S)"
+
+#: builder/templates/designer/page.html
+msgid "Speichern blockiert – Bearbeitungskonflikt"
+msgstr "Saving blocked – edit conflict"
+
+#: builder/templates/designer/page.html
+msgid "Tastatur:"
+msgstr "Keyboard:"
+
+#: builder/templates/designer/page.html
+msgid "entfernen"
+msgstr "remove"
+
+#: builder/templates/designer/page.html
+msgid "speichern"
+msgstr "save"
+
+#: builder/templates/designer/page.html
+msgid "verschieben"
+msgstr "move"

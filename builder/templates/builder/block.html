@@ -48,6 +48,9 @@
           </form>
         {% endif %}
         {% if entity.allow_create %}
+          {% if request.user.is_authenticated %}
+            <a class="btn btn-secondary" href="{% url 'entity_import' app.slug entity.slug %}?next={{ next|urlencode }}">{% translate "CSV-Import" %}</a>
+          {% endif %}
           <a class="btn" href="{% url 'record_create' app.slug entity.slug %}?next={{ next|urlencode }}" data-tour="new-record">{% translate "Neu" %}</a>
         {% endif %}
       </div>
@@ -364,6 +367,34 @@
 
 {% elif type == "kanban" %}
   {% include "builder/blocks/kanban.html" %}
+
+{% elif type == "pivot" %}
+  {% include "builder/blocks/pivot.html" %}
+
+{% elif type == "gantt" %}
+  {% include "builder/blocks/gantt.html" %}
+
+{% elif type == "detail" %}
+  {% include "builder/blocks/detail.html" %}
+
+{% elif type == "related_list" %}
+  {% include "builder/blocks/related_list.html" %}
+
+{% elif type == "search" %}
+  {% include "builder/blocks/search.html" %}
+
+{% elif type == "stepper" %}
+  {% include "builder/blocks/stepper.html" %}
+
+{% elif type == "csv_import" %}
+  <section class="card">
+    {% if href %}
+      {% translate "CSV-Datei importieren" as csv_import_label %}
+      <a class="btn btn-secondary" href="{{ href }}?next={{ next|urlencode }}" data-slot="label">{{ p.label|default:csv_import_label }}</a>
+    {% else %}
+      <p class="muted small">{% translate "CSV-Import für diese Tabelle derzeit nicht verfügbar." %}</p>
+    {% endif %}
+  </section>
 
 {% elif custom_plain is not None %}
   <div class="custom-block">{{ custom_plain }}</div>

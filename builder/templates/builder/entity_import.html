@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% load i18n baukasten %}
+{% block title %}{% translate "CSV-Import" %} – {{ entity.name|tr }}{% endblock %}
+{% block nav %}{% include "builder/_appnav.html" %}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>{% translate "CSV-Import" %}: {{ entity.name|tr }}</h1>
+    <p class="muted">{{ app.name|tr }}</p>
+  </div>
+  <a class="btn btn-secondary" href="{{ back }}">{% translate "Zurück" %}</a>
+</div>
+
+{% if not staged %}
+  <section class="card">
+    <h2>{% translate "1. CSV-Datei hochladen" %}</h2>
+    <p class="muted">{% translate "UTF-8-kodierte CSV-Datei (Trennzeichen Semikolon oder Komma, höchstens 2 MB und 2.000 Zeilen)." %}</p>
+    <form method="post" enctype="multipart/form-data">
+      {% csrf_token %}
+      <input type="hidden" name="step" value="upload">
+      <div class="field">
+        <label for="csv-file">{% translate "CSV-Datei" %}</label>
+        <input id="csv-file" type="file" name="file" accept=".csv,text/csv" required>
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-primary" type="submit">{% translate "Vorschau laden" %}</button>
+      </div>
+    </form>
+  </section>
+{% else %}
+  <section class="card">
+    <div class="card-head">
+      <h2>{% translate "2. Spalten zuordnen" %}</h2>
+      <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="step" value="reset">
+        <button class="btn btn-secondary btn-small" type="submit">{% translate "Andere Datei wählen" %}</button>
+      </form>
+    </div>
+    <p class="muted">{% blocktranslate count n=row_count %}{{ n }} Datenzeile erkannt. Ordne die Spalten den Feldern der Tabelle zu.{% plural %}{{ n }} Datenzeilen erkannt. Ordne die Spalten den Feldern der Tabelle zu.{% endblocktranslate %}</p>
+
+    {% if errors %}
+      <div class="notice notice-warn" role="alert">
+        <strong>{% translate "Fehlerhafte Zeilen:" %}</strong>
+        <ul>
+          {% for err in errors %}<li>{{ err }}</li>{% endfor %}
+          {% if more_errors %}<li class="muted">{% blocktranslate count n=more_errors %}… und {{ n }} weiterer Fehler{% plural %}… und {{ n }} weitere Fehler{% endblocktranslate %}</li>{% endif %}
+        </ul>
+      </div>
+    {% endif %}
+
+    <form method="post">
+      {% csrf_token %}
+      <input type="hidden" name="step" value="import">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>{% translate "CSV-Spalte" %}</th>
+              <th>{% translate "Tabellenfeld" %}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for col in columns %}
+              <tr>
+                <td><strong>{{ col.header }}</strong></td>
+                <td>
+                  <select name="col_{{ col.index }}" aria-label="{{ col.header }}">
+                    <option value="">{% translate "— ignorieren —" %}</option>
+                    {% for f in fields %}
+                      <option value="{{ f.key }}"{% if col.guess == f.key %} selected{% endif %}>{{ f.label|tr }}{% if f.required %} *{% endif %}</option>
+                    {% endfor %}
+                  </select>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <h3>{% translate "Vorschau (erste 5 Zeilen)" %}</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>{% for col in columns %}<th>{{ col.header }}</th>{% endfor %}</tr></thead>
+          <tbody>
+            {% for row in preview %}
+              <tr>{% for cell in row %}<td>{{ cell }}</td>{% endfor %}</tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <label class="field input-check">
+        <div>
+          <span>{% translate "Fehlerhafte Zeilen überspringen (sonst bricht der gesamte Import bei Fehlern ab)" %}</span>
+          <input type="checkbox" name="skip_errors" value="1">
+        </div>
+      </label>
+
+      <div class="form-actions">
+        <button class="btn btn-primary" type="submit">{% translate "Import starten" %}</button>
+        <a class="btn btn-secondary" href="{{ back }}">{% translate "Abbrechen" %}</a>
+      </div>
+    </form>
+  </section>
+{% endif %}
+{% endblock %}

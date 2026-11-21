@@ -1,0 +1,27 @@
+{% load i18n baukasten %}<section class="card stepper-block"{% if editable and not missing %} data-widget="stepper" data-url="{{ action_url }}" data-record="{{ record.pk }}"{% endif %}>
+  <div class="card-head">
+    <h3 data-slot="title">{% if p.title %}{{ p.title }}{% elif field_label %}{{ field_label }}{% endif %}</h3>
+    {% if record %}<span class="muted small">{{ record }}</span>{% endif %}
+  </div>
+  {% if missing %}
+    <p class="muted">{% blocktranslate with param=param %}Wähle einen Eintrag über ?{{ param }}=… aus.{% endblocktranslate %}</p>
+  {% else %}
+    <ol class="stepper">
+      {% for s in steps %}
+        <li class="stepper-step is-{{ s.state }}">
+          {% if editable %}
+            <button type="button" class="stepper-btn" data-step="{{ s.value }}"{% if s.state == "current" %} aria-current="step"{% endif %}>
+              <span class="stepper-num">{{ s.num }}</span>
+              <span class="stepper-label">{{ s.label }}</span>
+            </button>
+          {% else %}
+            <div class="stepper-btn"{% if s.state == "current" %} aria-current="step"{% endif %}>
+              <span class="stepper-num">{{ s.num }}</span>
+              <span class="stepper-label">{{ s.label }}</span>
+            </div>
+          {% endif %}
+        </li>
+      {% endfor %}
+    </ol>
+  {% endif %}
+</section>
