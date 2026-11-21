@@ -26,16 +26,20 @@ class UnicodeJSONEncoder(DjangoJSONEncoder):
         super().__init__(*args, **kwargs)
 
 
-def unique_slug(queryset, base, field="slug", sep="-"):
+RESERVED_APP_SLUGS = {
+    "bausteine", "import", "designer", "admin", "oidc", "api", "mcp",
+    "healthz", "readyz", "metrics", "login", "logout", "profil", "hilfe", "ueber", "offline",
+}  # Adressen, die keine App belegen darf
+RESERVED_RESOURCE_SLUGS = {"neu", "loeschen", "seite", "vorschau", "starten", "stoppen", "export", "import"}
+
+
+def unique_slug(queryset, base, field="slug", sep="-", reserved=RESERVED_RESOURCE_SLUGS):
     base = base or "x"
     slug, i = base, 2
-    while queryset.filter(**{field: slug}).exists():
+    while slug in reserved or queryset.filter(**{field: slug}).exists():
         slug = f"{base}{sep}{i}"
         i += 1
     return slug
-
-
-RESERVED_APP_SLUGS = {"bausteine", "import", "designer"}  # Adressen des Designers, die keine App belegen darf
 
 
 def can_design(user):

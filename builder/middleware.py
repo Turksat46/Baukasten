@@ -26,6 +26,14 @@ class HealthCheckMiddleware:
     def __call__(self, request):
         if request.path == "/healthz":
             return HttpResponse("ok", content_type="text/plain")
+        if request.path == "/readyz":
+            from django.db import connection
+
+            try:
+                connection.ensure_connection()
+            except Exception:
+                return HttpResponse("error", status=503, content_type="text/plain")
+            return HttpResponse("ok", content_type="text/plain")
         if request.path == "/metrics":  # Prometheus fragt Pods direkt ab, ohne bekannten Hostnamen
             from .metrics import response
 

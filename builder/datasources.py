@@ -233,7 +233,16 @@ def _connect(url, timeout):
     scheme = parsed.scheme
     query = {k: v[0] for k, v in parse_qs(parsed.query).items()}
     if scheme == "sqlite":
+        from pathlib import Path
+
         path = unquote(url.split("sqlite:///", 1)[1]) if "sqlite:///" in url else ""
+        default_db = settings.DATABASES.get("default", {}).get("NAME")
+        if path and default_db:
+            try:
+                if Path(path).resolve() == Path(str(default_db)).resolve():
+                    raise QueryError(_("Die interne Datenbank des Baukastens darf nicht als Datenquelle abgefragt werden."))
+            except OSError:
+                pass
         conn = sqlite3.connect(f"file:{path}?mode=ro", uri=True, timeout=5)
         deadline = time.monotonic() + timeout
         conn.set_progress_handler(lambda: 1 if time.monotonic() > deadline else 0, 10000)

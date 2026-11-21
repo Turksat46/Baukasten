@@ -76,11 +76,12 @@ jobs:
       - uses: actions/checkout@v7
       - name: Image bauen
         run: docker build -t baukasten:ci .
-      - name: Image startet und antwortet auf /healthz
+      - name: Image startet und antwortet auf /healthz und /readyz
         run: |
+          docker run --rm -e SECRET_KEY=nur-fuer-ci baukasten:ci python manage.py hintergrund --help
           docker run -d --name baukasten -p 8000:8000 -e SECRET_KEY=nur-fuer-ci baukasten:ci
           for i in $(seq 1 30); do
-            if curl -fsS http://localhost:8000/healthz; then exit 0; fi
+            if curl -fsS http://localhost:8000/healthz && curl -fsS http://localhost:8000/readyz; then exit 0; fi
             sleep 2
           done
           docker logs baukasten

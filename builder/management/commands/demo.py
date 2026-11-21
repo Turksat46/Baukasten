@@ -61,9 +61,14 @@ if not record.get("standort"):
 
 
 def demo_source_file():
+    import tempfile
+
     path = Path(settings.DEMO_DATASOURCE_FILE)
     try:
         return _fill_demo_source(path)
+    except (sqlite3.OperationalError, PermissionError, OSError):
+        fallback = Path(tempfile.gettempdir()) / "demo-datenquelle.sqlite3"
+        return _fill_demo_source(fallback)
     except sqlite3.DatabaseError:
         # Datei beschädigt, z. B. nach einem abgebrochenen Lauf: neu anlegen.
         for leftover in (path, path.with_name(path.name + "-journal")):

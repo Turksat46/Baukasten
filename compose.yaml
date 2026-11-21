@@ -1,0 +1,43 @@
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: baukasten
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-baukasten}
+      POSTGRES_DB: baukasten
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U baukasten"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  web:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      SECRET_KEY: ${SECRET_KEY:-lokal-compose-geheimnis}
+      DATABASE_URL: postgres://baukasten:${POSTGRES_PASSWORD:-baukasten}@db:5432/baukasten
+      ALLOWED_HOSTS: localhost,127.0.0.1
+      COOKIE_SECURE: "0"
+    depends_on:
+      db:
+        condition: service_healthy
+    command: >
+      sh -c "python manage.py migrate --noinput &&
+             gunicorn config.wsgi:application --config gunicorn.conf.py"
+
+  worker:
+    build: .
+    environment:
+      SECRET_KEY: ${SECRET_KEY:-lokal-compose-geheimnis}
+      DATABASE_URL: postgres://baukasten:${POSTGRES_PASSWORD:-baukasten}@db:5432/baukasten
+    depends_on:
+      db:
+        condition: service_healthy
+    command: python manage.py hintergrund --dauerhaft
+
+volumes:
+  pgdata:

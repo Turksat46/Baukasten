@@ -27,17 +27,36 @@ def provider_logout(request):
     return f"{settings.OIDC_OP_LOGOUT_ENDPOINT}?{urlencode(params)}"
 
 
-def claim_names(claims, key):
+def claim_names(claims, key, prefix=""):
     """Liest Gruppen- oder Rollennamen; Keycloak liefert Gruppen oft als Pfad („/Labor“)."""
     values = claims.get(key) or []
     if isinstance(values, str):
         values = [values]
-    return {str(v).rsplit("/", 1)[-1] for v in values if v}
+    names = set()
+    for v in values:
+        if not v:
+            continue
+        cleaned = str(v).strip().strip("/").rsplit("/", 1)[-1].strip()
+        if not cleaned:
+            continue
+        if prefix and not cleaned.startswith(prefix):
+            continue
+        names.add(cleaned)
+    return names
+
+
+def _username_from_claims(claims):
+    """Bestimmt einen eindeutigen Benutzernamen aus preferred_username, email oder sub."""
+    for key in ("preferred_username", "email", "sub"):
+        val = str(claims.get(key) or "").strip()
+        if val:
+            return val[:150]
+    return ""
 
 
 class KeycloakBackend(OIDCAuthenticationBackend):
     def filter_users_by_claims(self, claims):
-        username = claims.get("preferred_username")
+        username = _username_from_claims(claims)
         if not username:
             return self.UserModel.objects.none()
         users = self.UserModel.objects.filter(username__iexact=username)
@@ -47,7 +66,7 @@ class KeycloakBackend(OIDCAuthenticationBackend):
         return users
 
     def create_user(self, claims):
-        user = self.UserModel(username=claims["preferred_username"])
+        user = self.UserModel(username=_username_from_claims(claims))
         user.set_unusable_password()
         return self.update_user(user, claims)
 
@@ -60,12 +79,14 @@ class KeycloakBackend(OIDCAuthenticationBackend):
         return user
 
     def verify_claims(self, claims):
-        return bool(claims.get("preferred_username"))
+        return bool(_username_from_claims(claims))
 
     def sync_groups(self, user, claims):
-        names = claim_names(claims, settings.OIDC_GROUPS_CLAIM)
+        prefix = getattr(settings, "OIDC_GROUP_PREFIX", "")
+        names = claim_names(claims, settings.OIDC_GROUPS_CLAIM, prefix=prefix)
+        all_groups = claim_names(claims, settings.OIDC_GROUPS_CLAIM)
         roles = claim_names(claims, "roles") | claim_names(claims.get("realm_access") or {}, "roles")
-        if settings.OIDC_DESIGNER_ROLE in names | roles:
+        if settings.OIDC_DESIGNER_ROLE in all_groups | roles:
             names.add(DESIGNER_GROUP)
         else:
             names.discard(DESIGNER_GROUP)

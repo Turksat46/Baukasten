@@ -41,7 +41,9 @@ def authenticate(request, app_slug):
     """Schlüssel aus „Authorization: Bearer …“ für diese App, sonst None. Merkt sich die letzte Nutzung."""
     header = request.headers.get("Authorization", "")
     token = header[7:].strip() if header.lower().startswith("bearer ") else ""
-    key = ApiKey.objects.filter(key_hash=ApiKey.hash(token), app__slug=app_slug).select_related("app").first() if token else None
+    key = ApiKey.objects.filter(key_hash=ApiKey.hash(token), app__slug=app_slug).select_related("app", "created_by").first() if token else None
+    if key is not None and key.created_by is not None and not key.created_by.is_active:
+        return None
     if key is not None:
         now = timezone.now()
         if not key.last_used or (now - key.last_used).total_seconds() > 60:
