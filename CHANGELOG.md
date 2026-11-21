@@ -11,6 +11,21 @@ Neue Einträge oben unter „Unveröffentlicht“ sammeln und beim Release zur V
 ## Unveröffentlicht
 
 ### Neu
+- **Data-Science-Visualisierungen & Tableau-Bidirektionalität:**
+  - Neue Bausteine unter „Auswertung“: **Streudiagramm (`scatter`)** (X/Y-Zahlenfelder, Bubble-Größe,
+    Farbgruppen, lineare Regression mit Trendlinie, Pearson-$r$ und $R^2$), **Boxplot & Verteilung (`boxplot`)**
+    (Quantile $Q_1$/Median/$Q_3$, Mittelwert, Whisker und $1{,}5\times\text{IQR}$-Ausreißer, optional gruppiert),
+    **Heatmap & Korrelation (`heatmap`)** (Pearson-Korrelationsmatrix über alle Zahlenfelder oder
+    farbcodierte Kreuztabelle) und **Spec-Chart (`spec_chart`)** (deklarative Vega-Lite-JSON-Spezifikation
+    direkt auf App-Tabelle oder `DataQuery`).
+  - **Liniendiagramm (`line`)** erweitert um optionales **Konfidenzband ($\pm 1\,\sigma$)**,
+    **Schwellenwert-Linie** und automatische **Anomalie-Markierung**.
+  - **Cross-Filtering per Klick:** Klick auf Balken (`chart`), Segmente (`donut`), Heatmap-Zellen,
+    Boxplot-Gruppen oder Scatter-Cluster filtert alle Bausteine derselben Tabelle auf der Seite (`?tabelle.feld=wert`).
+  - **Tableau-Ansicht (`tableau`):** Neue Zuordnung `selection_map` („Tableau-Feld = URL-Parameter“),
+    die bei Klick im Tableau-Dashboard (`markselectionchanged`) die Baukasten-Seite und Write-Back-Formulare filtert.
+  - **Beispiel-App:** `python manage.py beispiel_datascience` legt das „Qualitäts- & Modell-Cockpit“
+    (`/a/datascience/`) mit Drift-Analyse, What-If-Simulator und Write-Back an.
 - **Startseite:** Persönliche Widgets („Meine Widgets“) zum Anpinnen von Kennzahlen, Diagrammen, Hinweisen,
   Abfragen und eigenen Bausteinen mit asynchronem Nachladen (`HomeWidget`); Auswahl über ein
   Widget-Sheet wie unter Android (je App aufklappbar, mit Suche und Live-Vorschau); App-Kacheln zeigen

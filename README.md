@@ -94,6 +94,7 @@ python manage.py createsuperuser
 python manage.py demo             # Beispiel-App „Inventar“; mit --neu wird sie ersetzt
 python manage.py beispiel_einwilligung   # Beispiel-App „Aufnahme-Einwilligung“
 python manage.py beispiel_einsatzplanung # Beispiel-App „Personaleinsatz“ mit Schichtplanung
+python manage.py beispiel_datascience    # Beispiel-App „Qualitäts- & Modell-Cockpit“ (Data Science)
 python manage.py runserver
 ```
 

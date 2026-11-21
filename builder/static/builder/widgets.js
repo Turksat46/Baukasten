@@ -46,4 +46,30 @@
       done: gettext("Status gespeichert.")
     });
   });
+
+  // Bidirektionale Tableau-Anbindung (Embedding API v3):
+  // Klick auf einen Datenpunkt im Dashboard setzt die zugeordneten URL-Parameter auf der Seite.
+  document.querySelectorAll("tableau-viz[data-selection-map]").forEach(function (viz) {
+    var map = {};
+    try { map = JSON.parse(viz.dataset.selectionMap || "{}"); } catch (err) { return; }
+    viz.addEventListener("markselectionchanged", function (e) {
+      if (!e.detail || typeof e.detail.getMarksAsync !== "function") return;
+      e.detail.getMarksAsync().then(function (marks) {
+        var rows = (marks && marks.data && marks.data[0] && marks.data[0].data) || [];
+        var cols = (marks && marks.data && marks.data[0] && marks.data[0].columns) || [];
+        if (!rows.length || !cols.length) return;
+        var first = rows[0];
+        var url = new URL(window.location.href);
+        var changed = false;
+        cols.forEach(function (col, idx) {
+          var param = map[col.fieldName];
+          if (param && first[idx]) {
+            url.searchParams.set(param, String(first[idx].formattedValue || first[idx].value || ""));
+            changed = true;
+          }
+        });
+        if (changed) window.location.assign(url.toString());
+      }).catch(function () {});
+    });
+  });
 })();

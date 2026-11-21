@@ -1,0 +1,32 @@
+{% load i18n %}<section class="card heatmap-block">
+  <div class="card-head">
+    <h3 data-slot="title">{{ p.title }}</h3>
+    <span class="muted small">{% if mode == "correlation" %}{% translate "Pearson r (−1 bis +1)" %}{% else %}{% translate "Klick filtert die Seite" %}{% endif %}</span>
+  </div>
+  {% if empty %}
+    <p class="empty">{% translate "Noch keine Daten." %}</p>
+  {% else %}
+    <div class="table-wrap">
+      <table class="heatmap-table">
+        <thead>
+          <tr>
+            <th></th>
+            {% for col in columns %}<th>{{ col }}</th>{% endfor %}
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in rows %}
+            <tr>
+              <th scope="row">{{ row.label }}</th>
+              {% for cell in row.cells %}
+                <td class="heat-cell {{ cell.css }}" title="{{ cell.title }}">
+                  {% if cell.href %}<a href="{{ cell.href }}" class="heat-link">{{ cell.value }}</a>{% else %}{{ cell.value }}{% endif %}
+                </td>
+              {% endfor %}
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% endif %}
+</section>

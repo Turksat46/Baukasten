@@ -188,8 +188,12 @@ person who built the app. Typical are:
   "Delete" are at the end of each row, if allowed.
 - **Forms:** capture new entries directly on the page. Required fields are
   checked when saving.
-- **Evaluations:** metrics, charts, line charts and timelines. They always
-  calculate with the current data.
+- **Evaluations:** metrics, charts (with click cross-filtering), line charts
+  (optionally with $\pm 1\,\sigma$ confidence band, threshold line and anomaly points),
+  timelines, plus data-science blocks: **scatter / bubble plots** (with trendline,
+  $r$ and $R^2$), **boxplots** (quantiles and outliers), **heatmaps / correlation
+  matrices** and **spec charts** (Vega-Lite JSON on a table or `DataQuery`). They
+  always calculate with the current data.
 - **CSV export:** downloads all entries of a table for Excel.
 - **Tableau dashboards**, if your company uses Tableau.
 

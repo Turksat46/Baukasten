@@ -150,7 +150,7 @@
     <h3 data-slot="label">{{ p.label }}</h3>
     {% for bar in bars %}
       <div class="bar-row">
-        <span class="bar-label">{{ bar.label }}</span>
+        <span class="bar-label">{% if bar.href %}<a href="{{ bar.href }}" class="chart-filter-link">{{ bar.label }}</a>{% else %}{{ bar.label }}{% endif %}</span>
         <span class="bar-track"><span class="bar-fill" style="width: {{ bar.percent }}%"></span></span>
         <span class="bar-count">{{ bar.count }}</span>
         <span class="bar-share">{{ bar.share }} %</span>
@@ -175,7 +175,12 @@
         </svg>
         <ul class="legend">
           {% for segment in segments %}
-            <li><span class="swatch seg-{{ segment.index }}"></span><span class="legend-label">{{ segment.label }}</span><span class="bar-count">{{ segment.count }}</span><span class="bar-share">{{ segment.share }} %</span></li>
+            <li>
+              <span class="swatch seg-{{ segment.index }}"></span>
+              <span class="legend-label">{% if segment.href %}<a href="{{ segment.href }}" class="chart-filter-link">{{ segment.label }}</a>{% else %}{{ segment.label }}{% endif %}</span>
+              <span class="bar-count">{{ segment.count }}</span>
+              <span class="bar-share">{{ segment.share }} %</span>
+            </li>
           {% endfor %}
         </ul>
       </div>
@@ -204,7 +209,7 @@
   <section class="card tableau-card">
     {% if p.label %}<div class="card-head"><h3 data-slot="label">{{ p.label }}</h3></div>{% endif %}
     <script type="module" src="{{ script_url }}"></script>
-    <tableau-viz src="{{ src }}" width="100%" height="{{ height }}" toolbar="{{ toolbar }}"{% if p.hide_tabs %} hide-tabs{% endif %}{% if token %} token="{{ token }}"{% endif %}>
+    <tableau-viz src="{{ src }}" width="100%" height="{{ height }}" toolbar="{{ toolbar }}"{% if p.hide_tabs %} hide-tabs{% endif %}{% if token %} token="{{ token }}"{% endif %}{% if selection_map_json %} data-selection-map="{{ selection_map_json }}"{% endif %}>
       {% for f in filters %}<viz-filter field="{{ f.field }}" value="{{ f.value }}"></viz-filter>{% endfor %}
     </tableau-viz>
     <p class="muted small tableau-hint">{% blocktranslate %}Lädt das Dashboard nicht, prüfe die Anmeldung bei Tableau oder öffne es <a href="{{ src }}" target="_blank" rel="noopener">direkt in Tableau</a>.{% endblocktranslate %}</p>
@@ -222,8 +227,11 @@
         <svg viewBox="0 0 {{ width }} {{ height }}" preserveAspectRatio="none" aria-hidden="true" focusable="false">
           <line x1="0" y1="0" x2="{{ width }}" y2="0" class="line-grid"/>
           <line x1="0" y1="{{ height }}" x2="{{ width }}" y2="{{ height }}" class="line-grid"/>
+          {% if band_area %}<polygon points="{{ band_area }}" class="line-band"/>{% endif %}
+          {% if threshold_y is not None %}<line x1="0" y1="{{ threshold_y }}" x2="{{ width }}" y2="{{ threshold_y }}" class="line-threshold"/>{% endif %}
           {% if area %}<polygon points="{{ area }}" class="line-area"/>{% endif %}
           {% if line %}<polyline points="{{ line }}" class="line-path"/>{% endif %}
+          {% for a in anomalies %}<circle cx="{{ a.cx }}" cy="{{ a.cy }}" r="4.5" class="line-anomaly"><title>{% translate "Anomalie" %}: {{ a.value }}</title></circle>{% endfor %}
         </svg>
         <div class="line-hits">{% for e in entries %}<span title="{{ e.title }}"></span>{% endfor %}</div>
         {% if empty %}<p class="line-empty muted small">{% translate "Im gewählten Zeitraum gibt es noch keine Werte." %}</p>{% endif %}
@@ -385,6 +393,18 @@
 
 {% elif type == "stepper" %}
   {% include "builder/blocks/stepper.html" %}
+
+{% elif type == "scatter" %}
+  {% include "builder/blocks/scatter.html" %}
+
+{% elif type == "boxplot" %}
+  {% include "builder/blocks/boxplot.html" %}
+
+{% elif type == "heatmap" %}
+  {% include "builder/blocks/heatmap.html" %}
+
+{% elif type == "spec_chart" %}
+  {% include "builder/blocks/spec_chart.html" %}
 
 {% elif type == "csv_import" %}
   <section class="card">

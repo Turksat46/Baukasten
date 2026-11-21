@@ -329,6 +329,8 @@ def prep_progress(request, app, block):
 
 
 def prep_chart(request, app, block):
+    from .datascience import _filter_href
+
     entity, f = _entity_and_field(app, block["props"])
     if not f:
         return {"error": gettext("Für dieses Diagramm fehlen Tabelle und Feld.")}
@@ -336,15 +338,19 @@ def prep_chart(request, app, block):
     groups = _groups(entity, f, records=records)
     top = max((count for _, count in groups), default=0)
     total = records.count()
+    param = filter_param(entity, f)
     return {"bars": [
         {"label": label, "count": count,
          "percent": round(100 * count / top) if top else 0,
-         "share": round(100 * count / total) if total else 0}
+         "share": round(100 * count / total) if total else 0,
+         "href": _filter_href(request, param, label)}
         for label, count in groups
     ]}
 
 
 def prep_donut(request, app, block):
+    from .datascience import _filter_href
+
     entity, f = _entity_and_field(app, block["props"])
     if not f:
         return {"error": gettext("Für dieses Kreisdiagramm fehlen Tabelle und Feld.")}
@@ -354,12 +360,14 @@ def prep_donut(request, app, block):
     rest = total - sum(count for _, count in groups)
     if rest > 0:
         groups.append((gettext("Sonstige"), rest))
+    param = filter_param(entity, f)
     segments, done = [], 0.0
     for index, (label, count) in enumerate(groups, start=1):
         share = 100 * count / total if total else 0
         segments.append({
             "label": label, "count": count, "share": round(share), "index": index,
             "dash": f"{share:.2f} {100 - share:.2f}", "offset": f"{125 - done:.2f}",
+            "href": _filter_href(request, param, label) if label != gettext("Sonstige") else "",
         })
         done += share
     return {"segments": segments, "total": _format_number(total)}
@@ -476,13 +484,44 @@ def prep_line(request, app, block):
         else:
             values.append(sums.get(start, 0))
     known = [v for v in values if v is not None]
-    top = max(known, default=0) or 1
+    threshold_val = None
+    if str(props.get("threshold") or "").strip():
+        try:
+            threshold_val = float(props.get("threshold"))
+        except (TypeError, ValueError):
+            threshold_val = None
+    top = max(known + ([threshold_val] if threshold_val is not None else []), default=0) or 1
     width, height = 600, 180
     step = width / len(values)  # jeder Punkt in der Mitte seiner Spalte, wie Beschriftung und Tooltip
     points = [(round((i + .5) * step, 1), round(height - height * v / top, 1))
               for i, v in enumerate(values) if v is not None]
     line = " ".join(f"{x},{y}" for x, y in points)
     area = f"{points[0][0]},{height} {line} {points[-1][0]},{height}" if points else ""
+
+    band_area = ""
+    anomalies = []
+    if props.get("show_band") and len(known) >= 2:
+        import math as _math
+
+        mean = sum(known) / len(known)
+        std = _math.sqrt(sum((v - mean) ** 2 for v in known) / len(known))
+        upper_y = round(max(0.0, min(height, height - height * (mean + std) / top)), 1)
+        lower_y = round(max(0.0, min(height, height - height * max(0.0, mean - std) / top)), 1)
+        if points:
+            x0, x1 = points[0][0], points[-1][0]
+            band_area = f"{x0},{upper_y} {x1},{upper_y} {x1},{lower_y} {x0},{lower_y}"
+        limit_val = threshold_val if threshold_val is not None else (mean + 1.8 * std if std > 0 else None)
+        if limit_val is not None:
+            for i, v in enumerate(values):
+                if v is not None and v > limit_val:
+                    anomalies.append({
+                        "cx": round((i + .5) * step, 1),
+                        "cy": round(height - height * v / top, 1),
+                        "value": _format_number(round(v, 2) if isinstance(v, float) else v),
+                    })
+    threshold_y = (round(max(0.0, min(height, height - height * threshold_val / top)), 1)
+                   if threshold_val is not None else None)
+
     every = max(1, round(len(starts) / 8))  # höchstens etwa 8 Beschriftungen unter der Achse
     unit = props.get("unit") or ""
     entries = []
@@ -494,6 +533,7 @@ def prep_line(request, app, block):
                         "value": shown, "full": full})
     return {
         "line": line, "area": area, "width": width, "height": height, "entries": entries,
+        "band_area": band_area, "threshold_y": threshold_y, "anomalies": anomalies,
         "max": _format_number(round(top, 2) if isinstance(top, float) else top),
         "last": entries[-1]["value"], "basis": date_field.label if date_field else gettext("Erfassungsdatum"),
         "empty": not any(known),
@@ -527,6 +567,11 @@ def prep_tableau(request, app, block):
         value = PARAM_RE.sub(lambda m: request.GET.get(m.group(1), ""), value.strip())
         if value:
             filters.append({"field": field_name.strip()[:200], "value": value[:500]})
+    selection_map = {}
+    for line in str(props.get("selection_map") or "").splitlines()[:20]:
+        t_field, sep, url_param = line.partition("=")
+        if sep and t_field.strip() and url_param.strip():
+            selection_map[t_field.strip()[:120]] = url_param.strip()[:120]
     try:
         height = min(max(int(props.get("height") or 600), 200), 2000)
     except (TypeError, ValueError):
@@ -535,6 +580,7 @@ def prep_tableau(request, app, block):
     return {
         "src": src, "script_url": tableau.script_url(host), "token": tableau.connected_app_token(user),
         "filters": filters, "height": height, "toolbar": toolbar,
+        "selection_map_json": json.dumps(selection_map, ensure_ascii=False) if selection_map else "",
     }
 
 
@@ -843,6 +889,8 @@ register("line", _("Liniendiagramm"), "📉", [
      "options": [["day", _("Tage")], ["week", _("Wochen")], ["month", _("Monate")]]},
     {"key": "count", "label": _("Anzahl Zeitabschnitte"), "type": "number", "default": 12},
     {"key": "unit", "label": _("Einheit (optional)"), "type": "text", "default": ""},
+    {"key": "show_band", "label": _("Konfidenzband (±1σ) und Anomalien anzeigen"), "type": "checkbox", "default": False},
+    {"key": "threshold", "label": _("Schwellenwert-Linie (optional)"), "type": "text", "default": ""},
 ], prep_line, "Auswertung", _("Werte je Tag, Woche oder Monat als Linie"))
 
 # Navigation
@@ -887,6 +935,8 @@ register("tableau", _("Tableau-Ansicht"), "📊", [
     {"key": "hide_tabs", "label": _("Reiter ausblenden"), "type": "checkbox", "default": False},
     {"key": "filters", "label": _("Filter, je Zeile „Feld = Wert“; {name} übernimmt ?name=… aus der Adresse"),
      "type": "textarea", "default": ""},
+    {"key": "selection_map", "label": _("Klick im Dashboard filtert Seite (je Zeile „Tableau-Feld = URL-Parameter“)"),
+     "type": "textarea", "default": ""},
 ], prep_tableau, "Anbindung", _("Dashboard von eurem Tableau-Server oder Tableau Cloud"))
 register("query", _("Datenbank-Abfrage"), "🗄️", [
     {"key": "query", "label": _("Abfrage"), "type": "query"},
@@ -920,6 +970,7 @@ register("input", _("Eingabefeld"), "⌨️", [
 # Planung (Einsatzplanung, Wochenübersicht, Kanban) steht in einer eigenen Datei.
 from . import planning  # noqa: E402,F401  registriert die Planungs-Bausteine
 from . import widgets  # noqa: E402,F401  Filter, Kalender, Checkliste, Schieberegler, Aufklappbereich
+from . import datascience  # noqa: E402,F401  Scatter, Boxplot, Heatmap, Spec-Chart
 
 # ---------- Anzeige, Prüfung, Designer-Konfiguration ----------
 

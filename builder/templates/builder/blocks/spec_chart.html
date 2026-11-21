@@ -1,0 +1,34 @@
+{% load i18n %}<section class="card spec-chart-block">
+  <div class="card-head">
+    <h3 data-slot="title">{{ p.title }}</h3>
+    <span class="muted small">{{ x_label }} · {{ y_label }}</span>
+  </div>
+  {% if empty %}
+    <p class="empty">{% translate "Noch keine Daten für diese Spezifikation." %}</p>
+  {% elif mark == "bar" %}
+    {% for item in items %}
+      <div class="bar-row">
+        <span class="bar-label">{{ item.label }}</span>
+        <span class="bar-track"><span class="bar-fill" style="width: {{ item.percent }}%"></span></span>
+        <span class="bar-count">{{ item.value }}</span>
+      </div>
+    {% endfor %}
+  {% else %}
+    <div class="line-chart">
+      <div class="line-plot">
+        <svg viewBox="0 0 {{ width }} {{ height }}" preserveAspectRatio="none" aria-hidden="true">
+          <line x1="0" y1="0" x2="{{ width }}" y2="0" class="line-grid"/>
+          <line x1="0" y1="{{ height }}" x2="{{ width }}" y2="{{ height }}" class="line-grid"/>
+          {% if mark == "area" and area %}<polygon points="{{ area }}" class="line-area"/>{% endif %}
+          {% if mark != "point" and line %}<polyline points="{{ line }}" class="line-path"/>{% endif %}
+          {% for item in items %}
+            <circle cx="{{ item.cx }}" cy="{{ item.cy }}" r="4.5" class="scatter-dot seg-1">
+              <title>{{ item.label }}: {{ item.value }}</title>
+            </circle>
+          {% endfor %}
+        </svg>
+      </div>
+      <div class="line-labels" aria-hidden="true">{% for item in items %}<span>{{ item.label }}</span>{% endfor %}</div>
+    </div>
+  {% endif %}
+</section>

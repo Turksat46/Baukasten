@@ -1,0 +1,54 @@
+{% load i18n %}<section class="card scatter-block">
+  <div class="card-head">
+    <h3 data-slot="title">{{ p.title }}</h3>
+    {% if not empty %}
+      <span class="muted small">
+        n = {{ count }}{% if trend %} · r = {{ trend.r }} · R² = {{ trend.r2 }}{% endif %}
+      </span>
+    {% endif %}
+  </div>
+  {% if empty %}
+    <p class="empty">{% translate "Noch keine Zahlenpaare vorhanden." %}</p>
+  {% else %}
+    <div class="scatter-wrap">
+      <div class="scatter-axis-y muted small">
+        <span>{{ max_y }}</span>
+        <span>{{ y_label }}</span>
+        <span>{{ min_y }}</span>
+      </div>
+      <div class="scatter-stage">
+        <svg class="scatter-svg" viewBox="0 0 {{ width }} {{ height }}" role="img" aria-label="{{ p.title }}">
+          <line x1="28" y1="28" x2="28" y2="232" class="line-grid"/>
+          <line x1="28" y1="232" x2="572" y2="232" class="line-grid"/>
+          {% if trend %}
+            <line x1="{{ trend.x1 }}" y1="{{ trend.y1 }}" x2="{{ trend.x2 }}" y2="{{ trend.y2 }}" class="scatter-trend"/>
+          {% endif %}
+          {% for pt in points %}
+            <a href="{{ pt.href }}">
+              <circle cx="{{ pt.cx }}" cy="{{ pt.cy }}" r="{{ pt.r }}" class="scatter-dot seg-{{ pt.tone }}">
+                <title>{{ pt.title }}</title>
+              </circle>
+            </a>
+          {% endfor %}
+        </svg>
+        <div class="scatter-axis-x muted small">
+          <span>{{ min_x }}</span>
+          <span>{{ x_label }}</span>
+          <span>{{ max_x }}</span>
+        </div>
+      </div>
+    </div>
+    {% if legend %}
+      <ul class="legend scatter-legend">
+        {% for item in legend %}
+          <li>
+            <a href="{{ item.href }}" class="chart-filter-link">
+              <span class="swatch seg-{{ item.tone }}"></span>
+              <span class="legend-label">{{ item.label }}</span>
+            </a>
+          </li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+  {% endif %}
+</section>

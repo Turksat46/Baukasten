@@ -188,8 +188,12 @@ die die App gebaut hat. Typisch sind:
   und „Löschen“ stehen am Ende jeder Zeile, sofern erlaubt.
 - **Formulare:** neue Einträge direkt auf der Seite erfassen. Pflichtfelder
   werden beim Speichern geprüft.
-- **Auswertungen:** Kennzahlen, Diagramme, Liniendiagramme und Verläufe. Sie
-  rechnen immer mit den aktuellen Daten.
+- **Auswertungen:** Kennzahlen, Diagramme (mit Cross-Filtering per Klick),
+  Liniendiagramme (optional mit $\pm 1\,\sigma$-Konfidenzband, Schwellenwert und
+  Anomalie-Punkten), Verläufe sowie für Data-Science-Auswertungen **Streudiagramme
+  / Bubble-Charts** (mit Regressionslinie, $r$ und $R^2$), **Boxplots** (Quantile
+  und Ausreißer), **Heatmaps / Korrelationsmatrizen** und **Spec-Charts**
+  (Vega-Lite-JSON auf Tabelle oder `DataQuery`). Sie rechnen immer mit den aktuellen Daten.
 - **CSV-Export:** lädt alle Einträge einer Tabelle für Excel herunter.
 - **Tableau-Dashboards**, wenn eure Firma Tableau nutzt.
 

@@ -50,6 +50,10 @@
     calendar: "M4 5h16v15H4zM4 9h16M8 3v4M16 3v4M8 13h3v3H8z",
     checklist: "M4 6l2 2 3-3M4 12l2 2 3-3M4 18l2 2 3-3M12 7h8M12 13h8M12 19h8",
     sliders: "M4 7h16M4 12h16M4 17h16M9 5v4M15 10v4M7 15v4",
+    scatter: "M4 4v16h16M8 15h.01M12 11h.01M16 8h.01M18 14h.01M6 17l13-10",
+    boxplot: "M4 12h3M7 8h10v8H7zM12 8v8M17 12h3",
+    heatmap: "M4 4h16v16H4zM4 9h16M4 15h16M9 4v16M15 4v16",
+    spec_chart: "M4 19h16M6 16l4-6 4 3 4-8",
     custom: "M12 3l2.6 5.6 6 .7-4.4 4.2 1.1 6-5.3-3-5.3 3 1.1-6L3.4 9.3l6-.7z",
   };
   var SVG_NS = "http://www.w3.org/2000/svg";

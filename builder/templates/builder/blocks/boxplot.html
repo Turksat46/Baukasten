@@ -1,0 +1,39 @@
+{% load i18n %}<section class="card boxplot-block">
+  <div class="card-head">
+    <h3 data-slot="title">{{ p.title }}</h3>
+    <span class="muted small">{{ field_label }}</span>
+  </div>
+  {% if empty %}
+    <p class="empty">{% translate "Noch keine Zahlenwerte vorhanden." %}</p>
+  {% else %}
+    <div class="boxplot-scale muted small">
+      <span>{{ min_label }}</span>
+      <span>{% translate "Box: Q1–Median–Q3 · Punkt: Mittelwert" %}</span>
+      <span>{{ max_label }}</span>
+    </div>
+    <div class="boxplot-rows">
+      {% for r in rows %}
+        <div class="boxplot-row">
+          <div class="boxplot-label">
+            {% if r.href %}<a href="{{ r.href }}" class="chart-filter-link">{{ r.label }}</a>{% else %}{{ r.label }}{% endif %}
+            <span class="muted small">(n={{ r.count }})</span>
+          </div>
+          <div class="boxplot-track" title="Min {{ r.min }} · Q1 {{ r.q1 }} · Median {{ r.median }} · Q3 {{ r.q3 }} · Max {{ r.max }} · Ø {{ r.mean }}">
+            <span class="boxplot-whisker" style="left: {{ r.w_low_pct }}%; width: {{ r.whisker_width }}%"></span>
+            <span class="boxplot-cap" style="left: {{ r.w_low_pct }}%"></span>
+            <span class="boxplot-cap" style="left: {{ r.w_high_pct }}%"></span>
+            <span class="boxplot-box seg-{{ r.tone }}" style="left: {{ r.q1_pct }}%; width: {{ r.box_width }}%"></span>
+            <span class="boxplot-median" style="left: {{ r.med_pct }}%"></span>
+            <span class="boxplot-mean" style="left: {{ r.mean_pct }}%"></span>
+            {% for o in r.outliers %}
+              <span class="boxplot-outlier" style="left: {{ o }}%" title="{% translate 'Ausreißer' %}"></span>
+            {% endfor %}
+          </div>
+          <div class="boxplot-stats muted small">
+            Med {{ r.median }} · Ø {{ r.mean }}
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+</section>

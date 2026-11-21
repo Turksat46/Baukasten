@@ -88,6 +88,7 @@ def safe_next(request, fallback):
 PINNABLE_WIDGET_TYPES = {
     "stat", "progress", "chart", "donut", "line", "timeline", "notice",
     "table", "cards", "checklist", "query", "output",
+    "scatter", "boxplot", "heatmap", "spec_chart",
 }
 
 

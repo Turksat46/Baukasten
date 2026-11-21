@@ -4006,3 +4006,60 @@ class ReviewHardeningTests(TestCase):
         self.assertEqual(self.client.get(f"/api/v1/{app.slug}/{entity.slug}/", **auth).status_code, 401)
 
         self.assertEqual(unique_slug(app.entities, "neu"), "neu-2")
+
+
+class DataScienceBlocksTests(TestCase):
+    """Tests für Data-Science-Visualisierungen: Scatter, Boxplot, Heatmap, Spec-Chart, Band/Anomalien, Tableau-Selection & Demo."""
+
+    def setUp(self):
+        self.user = User.objects.create_user("dsuser", password="x", is_staff=True)
+        self.client.force_login(self.user)
+
+    def test_beispiel_datascience_and_all_ds_blocks(self):
+        call_command("beispiel_datascience", verbosity=0)
+        app = App.objects.get(slug="datascience")
+
+        analyse = self.client.get(reverse("page", args=[app.slug, "analyse"]))
+        self.assertEqual(analyse.status_code, 200)
+        self.assertContains(analyse, "scatter-block")
+        self.assertContains(analyse, "R² =")
+        self.assertContains(analyse, "boxplot-block")
+        self.assertContains(analyse, "heatmap-block")
+        self.assertContains(analyse, "line-band")
+        self.assertContains(analyse, "line-threshold")
+        self.assertContains(analyse, "line-anomaly")
+        self.assertContains(analyse, "chargen.werk=Stuttgart")
+
+        sim = self.client.get(reverse("page", args=[app.slug, "simulator"]))
+        self.assertEqual(sim.status_code, 200)
+        self.assertContains(sim, "What-If-Simulator")
+
+    def test_heatmap_crosstab_spec_chart_and_tableau_selection_map(self):
+        from django.test import override_settings
+
+        call_command("beispiel_datascience", verbosity=0)
+        app = App.objects.get(slug="datascience")
+        page = Page.objects.create(app=app, title="Extra", slug="extra", layout=[
+            {"id": "bhm", "type": "heatmap", "width": 6, "props": {
+                "title": "Werk × Status", "entity": "chargen", "mode": "crosstab",
+                "row_field": "werk", "col_field": "status", "agg": "avg", "value_field": "ausschuss",
+            }},
+            {"id": "bsp", "type": "spec_chart", "width": 6, "props": {
+                "title": "Vega-Spec", "entity": "chargen",
+                "spec": json.dumps({"mark": "line", "encoding": {"x": {"field": "werk"}, "y": {"field": "ausschuss", "aggregate": "avg"}}}),
+            }},
+            {"id": "bch", "type": "chart", "width": 6, "props": {
+                "label": "Nach Werk", "entity": "chargen", "field": "werk",
+            }},
+            {"id": "btb", "type": "tableau", "width": 12, "props": {
+                "label": "Tableau", "url": "https://tableau.example.com/views/Werk/Dashboard",
+                "selection_map": "Werk = chargen.werk\nCharge = id",
+            }},
+        ])
+        with override_settings(BAUKASTEN_TABLEAU_HOSTS=["tableau.example.com"]):
+            res = self.client.get(reverse("page", args=[app.slug, page.slug]))
+        self.assertEqual(res.status_code, 200)
+        self.assertContains(res, "heat-cell")
+        self.assertContains(res, "spec-chart-block")
+        self.assertContains(res, "chart-filter-link")
+        self.assertContains(res, "data-selection-map=")

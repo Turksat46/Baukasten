@@ -5567,3 +5567,203 @@ msgstr "Pick a block from your apps. It will appear at the top of your home page
 #: builder/datasources.py
 msgid "Die interne Datenbank des Baukastens darf nicht als Datenquelle abgefragt werden."
 msgstr "The internal Baukasten database must not be queried as a data source."
+
+#: builder/blocks.py
+msgid "Klick im Dashboard filtert Seite (je Zeile „Tableau-Feld = URL-Parameter“)"
+msgstr "Click in dashboard filters page (one per line: \"Tableau field = URL parameter\")"
+
+#: builder/blocks.py
+msgid "Konfidenzband (±1σ) und Anomalien anzeigen"
+msgstr "Show confidence band (±1σ) and anomalies"
+
+#: builder/blocks.py
+msgid "Schwellenwert-Linie (optional)"
+msgstr "Threshold line (optional)"
+
+#: builder/datascience.py
+msgid "Ausreißer (1,5 × IQR) markieren"
+msgstr "Highlight outliers (1.5 × IQR)"
+
+#: builder/datascience.py
+msgid "Berechnung (nur Modus Heatmap)"
+msgstr "Aggregation (heatmap mode only)"
+
+#: builder/datascience.py
+msgid "Beschriftung im Tooltip (optional)"
+msgstr "Tooltip label (optional)"
+
+#: builder/datascience.py
+msgid "Bitte eine Tabelle oder eine Datenbank-Abfrage auswählen."
+msgstr "Please select a table or a database query."
+
+#: builder/datascience.py
+msgid "Boxplot & Verteilung"
+msgstr "Boxplot & distribution"
+
+#: builder/datascience.py
+msgid "Deklaratives Diagramm (JSON-Spec) auf Tabelle oder SQL/Databricks-Abfrage"
+msgstr "Declarative chart (JSON spec) on a table or SQL/Databricks query"
+
+#: builder/datascience.py
+msgid "Die Chart-Spezifikation ist kein gültiges JSON-Objekt."
+msgstr "The chart specification is not a valid JSON object."
+
+#: builder/datascience.py
+msgid "Die gewählte Datenbank-Abfrage gibt es nicht."
+msgstr "The selected database query does not exist."
+
+#: builder/datascience.py
+msgid "Farbe / Cluster nach Feld (optional)"
+msgstr "Color / cluster by field (optional)"
+
+#: builder/datascience.py
+msgid "Für das Streudiagramm werden zwei Zahlenfelder (X und Y) benötigt."
+msgstr "Two numeric fields (X and Y) are required for the scatter plot."
+
+#: builder/datascience.py
+msgid "Für den Boxplot wird ein Zahlenfeld benötigt."
+msgstr "A numeric field is required for the boxplot."
+
+#: builder/datascience.py
+msgid "Für die Heatmap im Modus Kreuztabelle werden Zeilen- und Spaltenfeld benötigt."
+msgstr "Row and column fields are required for the heatmap in crosstab mode."
+
+#: builder/datascience.py
+msgid "Für diese Heatmap ist keine Tabelle ausgewählt."
+msgstr "No table is selected for this heatmap."
+
+#: builder/datascience.py
+msgid "Für diesen Boxplot ist keine Tabelle ausgewählt."
+msgstr "No table is selected for this boxplot."
+
+#: builder/datascience.py
+msgid "Für dieses Streudiagramm ist keine Tabelle ausgewählt."
+msgstr "No table is selected for this scatter plot."
+
+#: builder/datascience.py
+msgid "Für eine Korrelationsmatrix braucht die Tabelle mindestens zwei Zahlenfelder."
+msgstr "A correlation matrix requires at least two numeric fields in the table."
+
+#: builder/datascience.py
+msgid "Gruppieren nach Feld (optional)"
+msgstr "Group by field (optional)"
+
+#: builder/datascience.py
+msgid "Heatmap & Korrelation"
+msgstr "Heatmap & correlation"
+
+#: builder/datascience.py
+msgid "Heatmap zweier Felder (Zeile × Spalte)"
+msgstr "Two-field heatmap (row × column)"
+
+#: builder/datascience.py
+msgid "In der Spezifikation fehlt encoding.x.field."
+msgstr "The specification is missing encoding.x.field."
+
+#: builder/datascience.py
+msgid "Korrelation"
+msgstr "Correlation"
+
+#: builder/datascience.py
+msgid "Korrelationsmatrix"
+msgstr "Correlation matrix"
+
+#: builder/datascience.py
+msgid "Korrelationsmatrix (alle Zahlenfelder)"
+msgstr "Correlation matrix (all numeric fields)"
+
+#: builder/datascience.py
+msgid "Modus"
+msgstr "Mode"
+
+#: builder/datascience.py
+msgid "Oder Datenbank-Abfrage (DataQuery)"
+msgstr "Or database query (DataQuery)"
+
+#: builder/datascience.py
+msgid "Ohne"
+msgstr "None"
+
+#: builder/datascience.py
+msgid "Pearson-Korrelationsmatrix oder farbcodierte Matrix"
+msgstr "Pearson correlation matrix or color-coded matrix"
+
+#: builder/datascience.py
+msgid "Punktgröße nach Zahlenfeld (Bubble-Chart, optional)"
+msgstr "Point size by numeric field (bubble chart, optional)"
+
+#: builder/datascience.py
+msgid "Quantile (Q1, Median, Q3), Mittelwert und Ausreißer"
+msgstr "Quantiles (Q1, median, Q3), mean and outliers"
+
+#: builder/datascience.py
+msgid "Regressionslinie und R² anzeigen"
+msgstr "Show regression line and R²"
+
+#: builder/datascience.py
+msgid "Spaltenfeld (nur Modus Heatmap)"
+msgstr "Column field (heatmap mode only)"
+
+#: builder/datascience.py
+msgid "Spec-Chart (Vega-Lite)"
+msgstr "Spec chart (Vega-Lite)"
+
+#: builder/datascience.py
+msgid "Spezifikation (Vega-Lite JSON)"
+msgstr "Specification (Vega-Lite JSON)"
+
+#: builder/datascience.py
+msgid "Streudiagramm"
+msgstr "Scatter plot"
+
+#: builder/datascience.py
+msgid "X-Achse (Zahlenfeld)"
+msgstr "X axis (numeric field)"
+
+#: builder/datascience.py
+msgid "Y-Achse (Zahlenfeld)"
+msgstr "Y axis (numeric field)"
+
+#: builder/datascience.py
+msgid "Zahlenfeld"
+msgstr "Numeric field"
+
+#: builder/datascience.py
+msgid "Zeilenfeld (nur Modus Heatmap)"
+msgstr "Row field (heatmap mode only)"
+
+#: builder/datascience.py
+msgid "Zwei Zahlenfelder als Punkte oder Bubbles mit Trendlinie und R²"
+msgstr "Two numeric fields as points or bubbles with trendline and R²"
+
+#: builder/templates/builder/block.html
+msgid "Anomalie"
+msgstr "Anomaly"
+
+#: builder/templates/builder/blocks/boxplot.html
+msgid "Ausreißer"
+msgstr "Outlier"
+
+#: builder/templates/builder/blocks/boxplot.html
+msgid "Box: Q1–Median–Q3 · Punkt: Mittelwert"
+msgstr "Box: Q1–median–Q3 · Dot: mean"
+
+#: builder/templates/builder/blocks/boxplot.html
+msgid "Noch keine Zahlenwerte vorhanden."
+msgstr "No numeric values yet."
+
+#: builder/templates/builder/blocks/heatmap.html
+msgid "Klick filtert die Seite"
+msgstr "Click filters the page"
+
+#: builder/templates/builder/blocks/heatmap.html
+msgid "Pearson r (−1 bis +1)"
+msgstr "Pearson r (−1 to +1)"
+
+#: builder/templates/builder/blocks/scatter.html
+msgid "Noch keine Zahlenpaare vorhanden."
+msgstr "No numeric pairs yet."
+
+#: builder/templates/builder/blocks/spec_chart.html
+msgid "Noch keine Daten für diese Spezifikation."
+msgstr "No data for this specification yet."

@@ -31,3 +31,4 @@ class Command(BaseCommand):
         if not options["ohne_beispiele"]:
             call_command("demo", stdout=self.stdout)
             call_command("beispiel_einwilligung", stdout=self.stdout)
+            call_command("beispiel_datascience", stdout=self.stdout)
