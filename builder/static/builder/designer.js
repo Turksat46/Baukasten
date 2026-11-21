@@ -15,6 +15,9 @@
   var navEl = document.getElementById("page-nav");
   var publicEl = document.getElementById("page-public");
   var publicNote = document.getElementById("public-note");
+  var conflictNote = document.getElementById("conflict-note");
+  var conflictText = conflictNote ? conflictNote.querySelector("[data-conflict-text]") : null;
+  var conflictReload = document.getElementById("conflict-reload");
 
   // Symbole der Bausteine (Linienzeichnungen, 24er Raster)
   var ICONS = {
@@ -55,8 +58,10 @@
   var types = {};
   cfg.blocks.forEach(function (b) { types[b.key] = b; });
   var layout = cfg.layout || [];
+  var pageVersion = cfg.version || 1;
   var selectedId = null;
   var dirty = false;
+  var saving = false;
   var previews = {};   // id -> zuletzt gerendertes HTML
   var previewTimer = null;
   var previewRun = 0;
@@ -169,7 +174,11 @@
           el("span", { class: "pal-text" },
             el("span", { class: "pal-label", text: type.label }),
             type.hint ? el("span", { class: "pal-hint", text: type.hint }) : null));
-        item.addEventListener("dragstart", function (e) { e.dataTransfer.setData("text/plain", "new:" + type.key); });
+        item.addEventListener("dragstart", function (e) {
+          dragState = { kind: "new", key: type.key };
+          e.dataTransfer.effectAllowed = "copy";
+          e.dataTransfer.setData("text/plain", "new:" + type.key);
+        });
         item.addEventListener("click", function () { addBlock(type.key); });
         palette.appendChild(item);
       });
@@ -186,7 +195,11 @@
         el("span", { class: "pal-text" },
           el("span", { class: "pal-label", text: preset.name }),
           preset.hint ? el("span", { class: "pal-hint", text: preset.hint }) : null));
-      item.addEventListener("dragstart", function (e) { e.dataTransfer.setData("text/plain", "preset:" + preset.id); });
+      item.addEventListener("dragstart", function (e) {
+        dragState = { kind: "preset", id: preset.id };
+        e.dataTransfer.effectAllowed = "copy";
+        e.dataTransfer.setData("text/plain", "preset:" + preset.id);
+      });
       item.addEventListener("click", function () { addPreset(preset); });
       palette.appendChild(item);
     });
@@ -195,11 +208,50 @@
   search.addEventListener("input", renderPalette);
 
   // ---------- Arbeitsfläche ----------
+  var dragState = null;
+
+  function clearDropIndicators() {
+    canvas.classList.remove("over");
+    canvas.querySelectorAll(".drop-before, .drop-after").forEach(function (el) {
+      el.classList.remove("drop-before", "drop-after");
+    });
+  }
+
+  function clearDragState() {
+    clearDropIndicators();
+    canvas.querySelectorAll(".is-drag-source").forEach(function (el) {
+      el.classList.remove("is-drag-source");
+    });
+    dragState = null;
+  }
+
+  function isDropAfter(e, node, block) {
+    var rect = node.getBoundingClientRect();
+    if (block.width < 12) return e.clientX > rect.left + rect.width / 2;
+    return e.clientY > rect.top + rect.height / 2;
+  }
+
+  function autoScroll(e) {
+    var margin = 72;
+    if (e.clientY < margin) window.scrollBy(0, -14);
+    else if (e.clientY > window.innerHeight - margin) window.scrollBy(0, 14);
+  }
+
+  function focusBlock(id) {
+    var node = canvas.querySelector('.dblock[data-id="' + id + '"]');
+    if (node) node.focus();
+  }
+
+  function focusBlockAt(index) {
+    if (index < 0 || index >= layout.length) return;
+    focusBlock(layout[index].id);
+  }
+
   function handleDrop(e, index) {
     e.preventDefault();
     e.stopPropagation();
-    canvas.classList.remove("over");
     var data = e.dataTransfer.getData("text/plain") || "";
+    clearDragState();
     if (data.indexOf("new:") === 0 && types[data.slice(4)]) {
       addBlock(data.slice(4), index);
     } else if (data.indexOf("preset:") === 0) {
@@ -208,9 +260,10 @@
     } else if (data.indexOf("move:") === 0) {
       var from = layout.indexOf(find(data.slice(5)));
       if (from < 0) return;
+      var to = from < index ? index - 1 : index;
+      if (to === from) return;
       var block = layout.splice(from, 1)[0];
-      if (from < index) index--;
-      layout.splice(index, 0, block);
+      layout.splice(to, 0, block);
       markDirty();
       render();
     }
@@ -237,23 +290,77 @@
           block.name ? el("code", { class: "key", text: block.name }) : null,
           block.refresh ? el("span", { class: "dblock-refresh", text: "↻ " + block.refresh + " s" }) : null),
         body);
-      node.addEventListener("dragstart", function (e) { e.dataTransfer.setData("text/plain", "move:" + block.id); });
-      node.addEventListener("dragover", function (e) { e.preventDefault(); node.classList.add("drop-before"); });
-      node.addEventListener("dragleave", function () { node.classList.remove("drop-before"); });
-      node.addEventListener("drop", function (e) { handleDrop(e, index); });
+      node.addEventListener("dragstart", function (e) {
+        dragState = { kind: "move", id: block.id };
+        e.dataTransfer.effectAllowed = "move";
+        e.dataTransfer.setData("text/plain", "move:" + block.id);
+        window.requestAnimationFrame(function () {
+          if (dragState && dragState.id === block.id) node.classList.add("is-drag-source");
+        });
+      });
+      node.addEventListener("dragover", function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        e.dataTransfer.dropEffect = dragState && dragState.kind === "move" ? "move" : "copy";
+        autoScroll(e);
+        clearDropIndicators();
+        if (dragState && dragState.kind === "move" && dragState.id === block.id) return;
+        node.classList.add(isDropAfter(e, node, block) ? "drop-after" : "drop-before");
+      });
+      node.addEventListener("dragleave", function (e) {
+        if (!e.relatedTarget || !node.contains(e.relatedTarget)) {
+          node.classList.remove("drop-before", "drop-after");
+        }
+      });
+      node.addEventListener("drop", function (e) {
+        var targetIndex = isDropAfter(e, node, block) ? index + 1 : index;
+        handleDrop(e, targetIndex);
+      });
       node.addEventListener("click", function () { select(block.id); });
-      node.addEventListener("keydown", function (e) { if (e.key === "Enter") select(block.id); });
+      node.addEventListener("keydown", function (e) {
+        if (e.target !== node) return;
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          select(block.id, true);
+        } else if (e.key === "ArrowUp" || e.key === "ArrowLeft") {
+          e.preventDefault();
+          if (e.altKey || e.ctrlKey || e.metaKey) move(block, -1, true);
+          else focusBlockAt(index - 1);
+        } else if (e.key === "ArrowDown" || e.key === "ArrowRight") {
+          e.preventDefault();
+          if (e.altKey || e.ctrlKey || e.metaKey) move(block, 1, true);
+          else focusBlockAt(index + 1);
+        } else if (e.key === "Delete" || e.key === "Backspace") {
+          e.preventDefault();
+          removeBlock(block, true);
+        } else if (e.key === "Escape" && selectedId) {
+          e.preventDefault();
+          selectedId = null;
+          render();
+          focusBlock(block.id);
+        }
+      });
       canvas.appendChild(node);
     });
   }
 
-  canvas.addEventListener("dragover", function (e) { e.preventDefault(); canvas.classList.add("over"); });
-  canvas.addEventListener("dragleave", function () { canvas.classList.remove("over"); });
+  canvas.addEventListener("dragover", function (e) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = dragState && dragState.kind === "move" ? "move" : "copy";
+    autoScroll(e);
+    clearDropIndicators();
+    canvas.classList.add("over");
+  });
+  canvas.addEventListener("dragleave", function (e) {
+    if (!e.relatedTarget || !canvas.contains(e.relatedTarget)) canvas.classList.remove("over");
+  });
   canvas.addEventListener("drop", function (e) { handleDrop(e, layout.length); });
+  document.addEventListener("dragend", clearDragState);
 
-  function select(id) {
+  function select(id, keepFocus) {
     selectedId = id;
     render();
+    if (keepFocus) focusBlock(id);
     if (narrow.matches) {
       var panel = document.getElementById("props");
       if (panel && panel.scrollIntoView) panel.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -266,7 +373,12 @@
       method: "POST",
       headers: { "Content-Type": "application/json", "X-CSRFToken": root.dataset.csrf },
       body: JSON.stringify(payload),
-    }).then(function (response) { return response.json(); });
+    }).then(function (response) {
+      return response.json().catch(function () { return { error: response.statusText }; }).then(function (data) {
+        data.status = response.status;
+        return data;
+      });
+    });
   }
 
   function loadPreview() {
@@ -364,7 +476,7 @@
     return button;
   }
 
-  function move(block, delta) {
+  function move(block, delta, keepFocus) {
     var from = layout.indexOf(block);
     var to = from + delta;
     if (to < 0 || to >= layout.length) return;
@@ -372,6 +484,20 @@
     layout.splice(to, 0, block);
     markDirty();
     render();
+    if (keepFocus) focusBlock(block.id);
+  }
+
+  function removeBlock(block, keepFocus) {
+    var index = layout.indexOf(block);
+    if (index < 0) return;
+    layout.splice(index, 1);
+    if (selectedId === block.id) selectedId = null;
+    markDirty();
+    render();
+    if (keepFocus) {
+      var next = layout[index] || layout[index - 1];
+      if (next) focusBlock(next.id);
+    }
   }
 
   function renderProps() {
@@ -431,12 +557,7 @@
         markDirty();
         render();
       }),
-      actionButton(gettext("Entfernen"), function () {
-        layout.splice(layout.indexOf(block), 1);
-        selectedId = null;
-        markDirty();
-        render();
-      }, " danger")));
+      actionButton(gettext("Entfernen"), function () { removeBlock(block, false); }, " danger")));
 
     // Als Vorlage speichern: der Baustein mit seinen jetzigen Einstellungen wird wiederverwendbar.
     var nameInput = el("input", { type: "text", id: "preset-name", maxlength: "80", placeholder: gettext("Name der Vorlage") });
@@ -461,19 +582,69 @@
 
   // ---------- Speichern ----------
   function save() {
+    if (saving) return;
+    saving = true;
     statusEl.textContent = gettext("Speichere …");
-    post(window.location.href, { title: titleEl.value, show_in_nav: navEl.checked, public: publicEl ? publicEl.checked : false, layout: layout })
+    post(window.location.href, {
+      title: titleEl.value,
+      show_in_nav: navEl.checked,
+      public: publicEl ? publicEl.checked : false,
+      layout: layout,
+      version: pageVersion,
+    })
       .then(function (data) {
-        if (!data.ok) throw new Error(data.error || "error");
-        layout = data.layout;
-        dirty = false;
-        statusEl.textContent = gettext("Gespeichert");
-        render();
+        saving = false;
+        if (data.status >= 200 && data.status < 300 && data.ok) {
+          layout = data.layout;
+          if (typeof data.version === "number") pageVersion = data.version;
+          dirty = false;
+          if (conflictNote) conflictNote.hidden = true;
+          statusEl.textContent = gettext("Gespeichert");
+          render();
+          return;
+        }
+        if (data.status === 409 || data.conflict) {
+          var message = data.error || gettext("Diese Seite wurde inzwischen von jemand anderem gespeichert. Bitte lade die Seite neu, um keine Änderungen zu überschreiben.");
+          statusEl.textContent = gettext("Konflikt – nicht gespeichert");
+          if (conflictText) conflictText.textContent = message;
+          if (conflictNote) conflictNote.hidden = false;
+          if (window.BaukastenDialog && typeof window.BaukastenDialog.confirm === "function") {
+            window.BaukastenDialog.confirm({
+              title: gettext("Speichern nicht möglich – Konflikt"),
+              text: message,
+              ok: gettext("Seite neu laden"),
+              cancel: gettext("Auf der Seite bleiben"),
+              tone: "warning",
+            }).then(function (reloadNow) {
+              if (reloadNow) {
+                dirty = false;
+                window.location.reload();
+              }
+            });
+          }
+          return;
+        }
+        statusEl.textContent = data.error || gettext("Speichern fehlgeschlagen. Bitte erneut versuchen.");
       })
-      .catch(function () { statusEl.textContent = gettext("Speichern fehlgeschlagen. Bitte erneut versuchen."); });
+      .catch(function () {
+        saving = false;
+        statusEl.textContent = gettext("Speichern fehlgeschlagen. Bitte erneut versuchen.");
+      });
   }
 
   document.getElementById("save").addEventListener("click", save);
+  if (conflictReload) {
+    conflictReload.addEventListener("click", function () {
+      dirty = false;
+      window.location.reload();
+    });
+  }
+  document.addEventListener("keydown", function (e) {
+    if ((e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey && e.key && e.key.toLowerCase() === "s") {
+      e.preventDefault();
+      save();
+    }
+  });
   titleEl.addEventListener("input", function () { dirty = true; statusEl.textContent = gettext("Nicht gespeichert"); });
   navEl.addEventListener("change", function () { dirty = true; statusEl.textContent = gettext("Nicht gespeichert"); });
   if (publicEl) {

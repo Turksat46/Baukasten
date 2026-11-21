@@ -56,7 +56,7 @@
     </div>
   {% endif %}
   <main id="inhalt" class="{% block main_class %}container{% endblock %}">{% block content %}{% endblock %}</main>
-  {% if user.is_authenticated %}
+  {% if user.is_authenticated and request.resolver_match.url_name|slice:":9" != "designer_" %}
     <footer class="site-footer">
       <a href="{% url 'about' %}" data-news="{{ latest_release }}">{% blocktranslate with version=baukasten_version %}Baukasten {{ version }}{% endblocktranslate %} · {% translate "Was ist neu?" %}<span class="news-dot" aria-hidden="true"></span></a>
       <button type="button" class="link install-app" data-install hidden>{% translate "Als App installieren" %}</button>

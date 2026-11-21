@@ -5429,3 +5429,35 @@ msgstr "Load entries from a CSV file into this table"
 #: builder/widgets.py
 msgid "Für diesen CSV-Import ist keine Tabelle ausgewählt."
 msgstr "No table is selected for this CSV import."
+
+#: builder/designer.py
+msgid "Diese Seite wurde inzwischen von jemand anderem gespeichert. Bitte lade die Seite neu, um keine Änderungen zu überschreiben."
+msgstr "This page has been saved by someone else in the meantime. Please reload the page so you don’t overwrite any changes."
+
+#: builder/templates/designer/page.html
+msgid "Seite neu laden"
+msgstr "Reload page"
+
+#: builder/templates/designer/page.html
+msgid "Speichern (Strg+S)"
+msgstr "Save (Ctrl+S)"
+
+#: builder/templates/designer/page.html
+msgid "Speichern blockiert – Bearbeitungskonflikt"
+msgstr "Saving blocked – edit conflict"
+
+#: builder/templates/designer/page.html
+msgid "Tastatur:"
+msgstr "Keyboard:"
+
+#: builder/templates/designer/page.html
+msgid "entfernen"
+msgstr "remove"
+
+#: builder/templates/designer/page.html
+msgid "speichern"
+msgstr "save"
+
+#: builder/templates/designer/page.html
+msgid "verschieben"
+msgstr "move"

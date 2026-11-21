@@ -334,6 +334,88 @@ class DesignerTests(Base):
         self.assertNotEqual(page.layout[0]["id"], page.layout[1]["id"])
         self.assertEqual(self.client.post(url, "kaputt", content_type="application/json").status_code, 400)
 
+    def test_page_designer_optimistic_locking_and_conflict(self):
+        import re
+
+        self.client.force_login(self.designer)
+        page = self.app.pages.get(slug="gerate")
+        url = reverse("designer_page", args=["inventar", page.pk])
+        html = self.client.get(url).content.decode()
+        match = re.search(r'<script id="designer-config" type="application/json">(.*?)</script>', html)
+        self.assertIsNotNone(match)
+        cfg = json.loads(match.group(1))
+        v1 = cfg["version"]
+        self.assertEqual(v1, page.version)
+
+        layout_1 = [{"id": "b1", "type": "heading", "width": 12, "props": {"text": "Erste Fassung", "level": "2"}}]
+        res1 = self.client.post(
+            url,
+            json.dumps({"title": "Geräte v2", "show_in_nav": True, "public": False, "layout": layout_1, "version": v1}),
+            content_type="application/json",
+        )
+        self.assertEqual(res1.status_code, 200)
+        data1 = res1.json()
+        self.assertTrue(data1["ok"])
+        self.assertEqual(data1["version"], v1 + 1)
+        page.refresh_from_db()
+        self.assertEqual((page.title, page.version), ("Geräte v2", v1 + 1))
+
+        # Zweiter Tab speichert mit veralteter Version v1 -> 409 Conflict, ohne zu überschreiben
+        layout_2 = [{"id": "b2", "type": "heading", "width": 12, "props": {"text": "Veraltet", "level": "2"}}]
+        res2 = self.client.post(
+            url,
+            json.dumps({"title": "Überschrieben", "show_in_nav": False, "public": True, "layout": layout_2, "version": v1}),
+            content_type="application/json",
+        )
+        self.assertEqual(res2.status_code, 409)
+        data2 = res2.json()
+        self.assertFalse(data2["ok"])
+        self.assertTrue(data2["conflict"])
+        self.assertEqual(data2["version"], v1 + 1)
+        self.assertTrue(data2["error"])
+        page.refresh_from_db()
+        self.assertEqual(page.title, "Geräte v2")
+        self.assertEqual(page.show_in_nav, True)
+        self.assertEqual(page.public, False)
+        self.assertEqual(page.layout, data1["layout"])
+        self.assertEqual(page.version, v1 + 1)
+
+        # Erneutes Speichern mit aktueller Version v1 + 1 funktioniert und erhöht weiter
+        res3 = self.client.post(
+            url,
+            json.dumps({"title": "Geräte v3", "show_in_nav": True, "public": False, "layout": layout_1, "version": v1 + 1}),
+            content_type="application/json",
+        )
+        self.assertEqual(res3.status_code, 200)
+        self.assertEqual(res3.json()["version"], v1 + 2)
+
+        # Ungültige Versionsangaben werden mit 400 abgewiesen
+        for bad_version in (None, True, "1", 0):
+            bad_res = self.client.post(
+                url,
+                json.dumps({"title": "Ungültig", "layout": layout_1, "version": bad_version}),
+                content_type="application/json",
+            )
+            self.assertEqual(bad_res.status_code, 400)
+
+    def test_page_designer_keyboard_hint_and_save_shortcut(self):
+        self.client.force_login(self.designer)
+        page = self.app.pages.get(slug="gerate")
+        response = self.client.get(reverse("designer_page", args=["inventar", page.pk]))
+        self.assertEqual(response.status_code, 200)
+        html = response.content.decode()
+        self.assertIn('id="conflict-note"', html)
+        self.assertIn('aria-keyshortcuts="Control+S Meta+S"', html)
+        self.assertIn("Alt+Pfeil", html)
+        self.assertIn("Entf", html)
+        self.assertIn("Strg+S", html)
+
+        js = (Path(__file__).resolve().parent / "static" / "builder" / "designer.js").read_text(encoding="utf-8")
+        self.assertIn("e.ctrlKey || e.metaKey", js)
+        self.assertIn('e.key.toLowerCase() === "s"', js)
+        self.assertIn("e.preventDefault()", js)
+        self.assertIn("save()", js)
+
     def test_live_preview_renders_unsaved_layout(self):
         self.client.force_login(self.designer)
         page = self.app.pages.get(slug="gerate")
@@ -3594,6 +3676,22 @@ class WidgetTests(TestCase):
         self.a.refresh_from_db()
         self.assertEqual(self.a.data["status"], "Zu")
         self.assertEqual(self.post("stepper", op="step", record=self.a.pk, value="Ungueltig").status_code, 400)
+
+    def test_stepper_missing_param_uses_field_label_and_title_override(self):
+        Page.objects.filter(pk=self.page.pk).update(layout=clean_layout([
+            make_block("stepper", entity="aufgaben", field="status"),
+        ]))
+        html = self.get()
+        self.assertIn('<h3 data-slot="title">Status</h3>', html)
+        self.assertIn("Wähle einen Eintrag über ?id=… aus.", html)
+        self.assertNotIn('data-widget="stepper"', html)
+
+        Page.objects.filter(pk=self.page.pk).update(layout=clean_layout([
+            make_block("stepper", entity="aufgaben", field="status", title="Mein Fortschritt"),
+        ]))
+        html_titled = self.get()
+        self.assertIn('<h3 data-slot="title">Mein Fortschritt</h3>', html_titled)
+        self.assertIn("Wähle einen Eintrag über ?id=… aus.", html_titled)
 
 
 class CsvImportTests(TestCase):

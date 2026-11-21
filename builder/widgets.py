@@ -595,7 +595,13 @@ def prep_stepper(request, app, block):
     param = (props.get("param") or "id").strip() or "id"
     record, has_param = _target_record(request, entity, param)
     if not has_param:
-        return {"entity": entity, "missing": True, "param": param}
+        return {
+            "entity": entity,
+            "record": None,
+            "missing": True,
+            "param": param,
+            "field_label": app_i18n.t(field.label),
+        }
     if not record:
         return {"error": gettext("Der ausgewählte Eintrag wurde nicht gefunden.")}
     choices = field.choice_list()

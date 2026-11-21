@@ -283,6 +283,7 @@ class Page(models.Model):
     )
     order = models.PositiveIntegerField(default=0)
     layout = models.JSONField(default=list, encoder=UnicodeJSONEncoder)
+    version = models.PositiveIntegerField(default=1, editable=False)
 
     class Meta:
         verbose_name = _("Seite")
@@ -299,6 +300,13 @@ class Page(models.Model):
         if not self.pk and not self.order:
             last = self.app.pages.order_by("-order").first()
             self.order = (last.order + 1) if last else 1
+        if self.pk and not self._state.adding:
+            self.version = (self.version or 1) + 1
+            if kwargs.get("update_fields") is not None:
+                fields = list(kwargs["update_fields"])
+                if "version" not in fields:
+                    fields.append("version")
+                kwargs["update_fields"] = fields
         super().save(*args, **kwargs)
 
 

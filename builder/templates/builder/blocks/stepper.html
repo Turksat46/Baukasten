@@ -1,6 +1,6 @@
 {% load i18n baukasten %}<section class="card stepper-block"{% if editable and not missing %} data-widget="stepper" data-url="{{ action_url }}" data-record="{{ record.pk }}"{% endif %}>
   <div class="card-head">
-    <h3 data-slot="title">{{ p.title|default:field_label }}</h3>
+    <h3 data-slot="title">{% if p.title %}{{ p.title }}{% elif field_label %}{{ field_label }}{% endif %}</h3>
     {% if record %}<span class="muted small">{{ record }}</span>{% endif %}
   </div>
   {% if missing %}

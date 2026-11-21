@@ -1039,4 +1039,5 @@ def designer_config(app, page):
             if c.preset.get("type") in all_types()
         ],
         "layout": page.layout,
+        "version": page.version,
     }
