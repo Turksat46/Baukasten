@@ -9,7 +9,7 @@ from django.db import transaction
 from django.utils.translation import gettext
 
 from . import audit
-from .models import Field, Record
+from .models import Field, Record, apply_formulas
 
 MAX_FILE_BYTES = 2 * 1024 * 1024
 MAX_ROWS = 2000
@@ -38,8 +38,10 @@ def parse_csv(raw_bytes):
     try:
         dialect = csv.Sniffer().sniff(lines[0], delimiters=";,\t")
     except csv.Error:
-        dialect = csv.excel
-        dialect.delimiter = ";"
+        # Eigene Ableitung statt csv.excel zu ändern: das wäre eine globale Vorgabe des
+        # ganzen Prozesses und träfe jedes andere CSV, das danach gelesen oder geschrieben wird.
+        class dialect(csv.excel):
+            delimiter = ";"
 
     reader = list(csv.reader(io.StringIO("\n".join(lines)), dialect))
     headers = [h.strip() for h in reader[0]]
@@ -167,7 +169,8 @@ def run_import(app, entity, rows, mapping, user, skip_errors=False):
     mapping ist eine Liste von Feld-Keys (oder "" für ignorieren) je Spaltenindex.
     Gibt (created_count, errors) zurück.
     """
-    fields_by_key = {f.key: f for f in entity.fields.all()}
+    all_fields = list(entity.fields.all())
+    fields_by_key = {f.key: f for f in all_fields}
     mapped = [(idx, fields_by_key[key]) for idx, key in enumerate(mapping) if key in fields_by_key]
     if not mapped:
         raise CsvImportError(gettext("Bitte mindestens eine Spalte einem Tabellenfeld zuordnen."))
@@ -192,6 +195,8 @@ def run_import(app, entity, rows, mapping, user, skip_errors=False):
         if row_errors:
             errors.append(gettext("Zeile %(line)s: %(msg)s") % {"line": line_no, "msg": "; ".join(row_errors)})
         else:
+            # bulk_create umgeht Record.save(): Formelfelder deshalb hier berechnen.
+            apply_formulas(entity, data, all_fields)
             prepared.append(Record(entity=entity, data=data, created_by=user if user and user.is_authenticated else None))
 
     if errors and not skip_errors:

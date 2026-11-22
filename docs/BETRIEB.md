@@ -158,6 +158,7 @@ Einrichtbar ohne Neustart unter `/admin/` → **Einstellungen** oder über Umgeb
 | `ALERT_CHANNEL` | `off` (Standard), `teams` (Microsoft-Teams-MessageCard-Webhook), `email` (komma-/semikolongetrennte Empfänger) oder `api` (HTTP-POST mit JSON-Payload `event: "baukasten.failure"`) |
 | `ALERT_TARGET` | Teams-Webhook-URL, E-Mail-Adresse(n) oder API-Endpunkt-URL |
 | `ALERT_AUTH_HEADER` | optionaler `Authorization`-Header für `ALERT_CHANNEL=api` (z. B. `Bearer <Token>`) |
+| `ALERT_REPEAT_MINUTES` | derselbe Fehler (Quelle, Titel, App) höchstens einmal in dieser Zeit; Standard `60`, `0` = jedes Mal |
 
 **Kennzahlen:** `METRICS_TOKEN` im Secret setzen, dann liefert `/metrics` Werte im Format
 von Prometheus (Abruf mit `Authorization: Bearer <METRICS_TOKEN>`):

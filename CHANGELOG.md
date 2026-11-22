@@ -10,6 +10,19 @@ Neue Einträge oben unter „Unveröffentlicht“ sammeln und beim Release zur V
 
 ## Unveröffentlicht
 
+### Behoben
+- Sicherheit: Der CSV-Export gespeicherter Abfragen (`/a/<app>/q/<abfrage>/export.csv`) war ohne
+  Anmeldung erreichbar; er verlangt jetzt eine Anmeldung und nimmt nur Parameter aus dem SQL an.
+- Abfrage-Export schrieb in jede Zeile die Spaltennamen statt der Werte.
+- Data-Science-Bausteine mit Datenbank-Abfrage als Quelle stürzten ab (`KeyError`); sie lesen die
+  Zeilen jetzt richtig und laden wie der Abfrage-Baustein nach, statt die Seite aufzuhalten.
+  Startseiten-Widgets fragen bei „wird geladen“ selbst nach.
+- Formeln mit unendlichem Ergebnis (z. B. sehr großen Werten) brachen das Speichern ab; Formeln
+  dürfen jetzt auch weiter hinten stehende Formelfelder nutzen.
+- CSV-Import: berechnet Formelfelder und verändert nicht mehr das globale CSV-Format des Prozesses.
+- Unterliste: zeigte bei Tabellen mit mehr als 500 Einträgen nicht alle Untereinträge.
+- Alarme: derselbe Fehler höchstens einmal je `ALERT_REPEAT_MINUTES` (Standard 60).
+
 ### Neu
 - **Data-Science-Visualisierungen (Stufe 1 & 2) & Tableau-Bidirektionalität:**
   - Neue Bausteine unter „Auswertung“: **Streudiagramm (`scatter`)** (X/Y-Zahlenfelder, Bubble-Größe,

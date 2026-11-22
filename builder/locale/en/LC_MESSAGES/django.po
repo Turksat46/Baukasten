@@ -5965,3 +5965,7 @@ msgstr "− Script “%(name)s” will be removed"
 #: builder/versions.py
 msgid "− Tabelle „%(name)s“ (erst nach dieser Version angelegt; Daten bleiben erhalten)"
 msgstr "− Table “%(name)s” (created after this version; data is preserved)"
+
+#: builder/templates/builder/blocks/related_list.html
+msgid "Es werden die ersten %(n)s verknüpften Einträge gezeigt."
+msgstr "Showing the first %(n)s linked entries."

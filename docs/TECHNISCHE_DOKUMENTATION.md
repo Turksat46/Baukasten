@@ -866,6 +866,7 @@ Datenbankverbindungen ≈ `Pods × GUNICORN_WORKERS × GUNICORN_THREADS` plus Wo
 | `HTTP_ALLOWED_HOSTS`, `HTTP_TIMEOUT` | –, `10` | ausgehende HTTP-Aufrufe |
 | `TABLEAU_HOSTS`, `TABLEAU_CONNECTED_APP_*`, `TABLEAU_USER_ATTRIBUTE` | – | Tableau |
 | `ALERT_CHANNEL`, `ALERT_TARGET`, `ALERT_AUTH_HEADER` | `off`, –, – | Fehler-Alarmierung (`teams`, `email`, `api`) |
+| `ALERT_REPEAT_MINUTES` | `60` | derselbe Fehler höchstens einmal je Zeitraum (0 = jedes Mal) |
 | `GUNICORN_WORKERS`, `GUNICORN_THREADS`, `GUNICORN_TIMEOUT` | `3`, `4`, `60` | Webserver |
 | `REDIS_PASSWORD` | – | Passwort für Redis aus `k8s/redis.yaml` |
 | `COOKIE_SECURE`, `LOG_LEVEL` | `true`, `INFO` | Sonstiges |

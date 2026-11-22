@@ -5,6 +5,7 @@ Datensätze (Record) liegen als JSON in einer gemeinsamen Tabelle. Dadurch brauc
 eine im Designer geänderte Tabelle keine Datenbank-Migration.
 """
 import hashlib
+import math
 import secrets
 
 from django.conf import settings
@@ -325,19 +326,32 @@ def evaluate_formula(expr, data):
     try:
         tree = ast.parse(text, mode="eval")
         val = _eval(tree)
-        return round(val, 4)
     except Exception:
         return None
+    # Unendlich oder „keine Zahl“ (z. B. 1e308 * 10) lässt sich weder runden noch als JSON speichern.
+    if not math.isfinite(val):
+        return None
+    return round(val, 4)
 
 
-def apply_formulas(entity, data):
-    """Berechnet alle Formel-Felder einer Tabelle und trägt das Ergebnis in data ein."""
-    for f in entity.fields.all():
-        if not f.formula:
-            continue
-        val = evaluate_formula(f.formula, data)
-        if val is not None:
-            data[f.key] = int(round(val)) if f.type == Field.NUMBER else val
+def apply_formulas(entity, data, fields=None):
+    """Berechnet alle Formel-Felder einer Tabelle und trägt das Ergebnis in data ein.
+
+    Formeln dürfen andere Formelfelder nutzen, auch weiter hinten stehende: Es wird so oft
+    gerechnet, bis sich nichts mehr ändert (höchstens so oft, wie es Formelfelder gibt)."""
+    formulas = [f for f in (entity.fields.all() if fields is None else fields) if f.formula]
+    for _round in range(max(len(formulas), 1)):
+        changed = False
+        for f in formulas:
+            val = evaluate_formula(f.formula, data)
+            if val is None:
+                continue
+            val = int(round(val)) if f.type == Field.NUMBER else val
+            if data.get(f.key) != val:
+                data[f.key] = val
+                changed = True
+        if not changed:
+            break
 
 
 class Page(models.Model):

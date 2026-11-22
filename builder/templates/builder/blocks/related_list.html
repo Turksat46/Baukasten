@@ -26,6 +26,7 @@
         </tbody>
       </table>
     </div>
+    {% if more %}<p class="muted small">{% blocktranslate with n=max_items %}Es werden die ersten {{ n }} verknüpften Einträge gezeigt.{% endblocktranslate %}</p>{% endif %}
   {% else %}
     <p class="muted">{% translate "Noch keine verknüpften Einträge." %}</p>
   {% endif %}

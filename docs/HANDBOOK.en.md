@@ -1494,6 +1494,7 @@ Everything environment-specific comes from environment variables.
 | `ALERT_CHANNEL` | alerting on background failures: `off` (default), `teams` (Microsoft Teams webhook), `email` or `api` (HTTP POST); also editable under `/admin/` → Settings |
 | `ALERT_TARGET` | alert destination: Teams webhook URL, email address(es) or API URL |
 | `ALERT_AUTH_HEADER` | optional `Authorization` header for `ALERT_CHANNEL=api` (e.g. `Bearer …`) |
+| `ALERT_REPEAT_MINUTES` | the same failure at most once in this time (minutes, default 60, 0 = every time) |
 | `LOG_LEVEL` | default `INFO` |
 | `DEBUG` | `1` only locally |
 

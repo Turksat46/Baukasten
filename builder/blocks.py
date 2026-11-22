@@ -39,6 +39,12 @@ NAME_RE = re.compile(r"^[a-z][a-z0-9_]{0,39}$")
 TONES = {"info", "success", "warning", "danger"}
 # Was Skripte an einem Baustein setzen dürfen (Python: ui.set, JavaScript: ui.set)
 TEXT_OVERRIDES = {"text", "subtitle", "title", "label", "unit", "tone", "submit_label"}
+# Bausteine, die auf externe Datenquellen warten. Mit lazy=True kommt die Seite sofort,
+# diese Bausteine lädt der Browser danach einzeln nach (siehe runtime.js).
+LAZY_TYPES = {"query"}
+# Bausteine, die wahlweise eine gespeicherte Abfrage als Quelle haben (props.query):
+# Sie laden nur dann nach, wenn diese Abfrage gewählt ist (z. B. Data-Science-Diagramme).
+LAZY_WITH_QUERY = set()
 
 
 @dataclass
@@ -998,14 +1004,16 @@ def render_block(request, app, block, types=None, overrides=None):
     )
 
 
-# Bausteine, die auf externe Datenquellen warten. Mit lazy=True kommt die Seite sofort,
-# diese Bausteine lädt der Browser danach einzeln nach (siehe runtime.js).
-LAZY_TYPES = {"query"}
+
+
+def is_lazy(block):
+    btype = block.get("type")
+    return btype in LAZY_TYPES or (btype in LAZY_WITH_QUERY and bool((block.get("props") or {}).get("query")))
 
 
 def render_placeholder(request, app, block):
     props = dict(block["props"])
-    query = app.queries.filter(slug=props.get("query")).first() if block.get("type") == "query" else None
+    query = app.queries.filter(slug=props.get("query")).first() if props.get("query") else None
     return render_to_string(
         "builder/block.html",
         {"loading": True, "type": block["type"], "p": props, "bid": block["id"], "app": app,
@@ -1018,7 +1026,7 @@ def render_layout(request, app, page, layout=None, overrides=None, lazy=False):
     types = all_types()
     rendered = []
     for block in (page.layout if layout is None else layout):
-        deferred = lazy and block.get("type") in LAZY_TYPES
+        deferred = lazy and is_lazy(block)
         html = render_placeholder(request, app, block) if deferred else render_block(request, app, block, types, overrides)
         if html is None:
             continue

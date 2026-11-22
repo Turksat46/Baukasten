@@ -4090,11 +4090,12 @@ class DataScienceBlocksTests(TestCase):
 
         # 1a & 1d. Live-DataQuery direkt in Scatter/Boxplot/Histogramm + CSV-Export für Query & gefilterte Tabelle
         q = DataQuery.objects.create(app=app, name="Live-Chargen", slug="live-chargen", source="dwh", sql="SELECT * FROM c")
+        # Wie datasources.run_saved wirklich liefert: Zeilen als Dictionaries {Spalte: Wert}.
         fake_rows = [
-            (180.0, 1.5, "Stuttgart"),
-            (185.0, 2.1, "Stuttgart"),
-            (195.0, 3.8, "München"),
-            (200.0, 4.4, "München"),
+            {"temp": 180.0, "scrap": 1.5, "plant": "Stuttgart"},
+            {"temp": 185.0, "scrap": 2.1, "plant": "Stuttgart"},
+            {"temp": 195.0, "scrap": 3.8, "plant": "München"},
+            {"temp": 200.0, "scrap": 4.4, "plant": "München"},
         ]
         q_page = Page.objects.create(app=app, title="Live-DS", slug="live-ds", layout=[
             {"id": "bqsc", "type": "scatter", "width": 6, "props": {
@@ -4233,3 +4234,162 @@ class ComfortAndAlertingTests(TestCase):
             self.assertEqual(mock_post.call_args.kwargs["json"]["event"], "baukasten.failure")
             self.assertEqual(mock_post.call_args.kwargs["json"]["app"], "produktion")
 
+
+
+class ReviewFindingsTests(TestCase):
+    """Befunde aus dem Code-Review: jeder Test schlägt mit dem alten Code fehl."""
+
+    ROWS = [  # so liefert datasources.run_saved die Zeilen: Dictionaries {Spalte: Wert}
+        {"temp": 180.0, "scrap": 1.5, "plant": "Stuttgart"},
+        {"temp": 185.0, "scrap": 2.1, "plant": "Stuttgart"},
+        {"temp": 195.0, "scrap": 3.8, "plant": "München"},
+        {"temp": 200.0, "scrap": 4.4, "plant": "München"},
+    ]
+
+    def setUp(self):
+        from .models import DataQuery
+
+        self.app = App.objects.create(name="Review", slug="review", published=True)
+        self.query = DataQuery.objects.create(app=self.app, name="Chargen", slug="chargen", source="dwh",
+                                              sql="SELECT * FROM c WHERE werk = :werk")
+        self.user = User.objects.create_user("pruefer", password="x")
+
+    def result(self):
+        return {"columns": ["temp", "scrap", "plant"], "rows": [dict(r) for r in self.ROWS],
+                "fetched_at": "2026-11-22T10:00:00+00:00", "truncated": False}
+
+    def test_query_export_requires_login_and_writes_values(self):
+        from unittest.mock import patch
+
+        url = reverse("query_export", args=[self.app.slug, self.query.slug])
+        with patch("builder.datasources.run_saved", return_value=self.result()) as run:
+            self.assertEqual(self.client.get(url).status_code, 302)  # ohne Anmeldung: zur Anmeldung
+            run.assert_not_called()
+            self.client.force_login(self.user)
+            body = b"".join(self.client.get(url + "?werk=S&fremd=1").streaming_content).decode("utf-8")
+        self.assertIn("180.0;1.5;Stuttgart", body)
+        self.assertNotIn("temp;scrap;plant\r\ntemp", body)
+        self.assertEqual(run.call_args.args[1], {"werk": "S"})  # nur Parameter aus dem SQL
+
+    def test_datascience_blocks_read_query_rows(self):
+        from unittest.mock import patch
+
+        from .blocks import render_block
+        from django.test import RequestFactory
+
+        request = RequestFactory().get("/")
+        request.user = self.user
+        blocks = [
+            {"id": "s", "type": "scatter", "props": {"query": "chargen", "x_field": "temp", "y_field": "scrap"}},
+            {"id": "b", "type": "boxplot", "props": {"query": "chargen", "field": "scrap", "group_field": "plant"}},
+            {"id": "h", "type": "histogram", "props": {"query": "chargen", "field": "temp", "bins": 4}},
+            {"id": "m", "type": "heatmap", "props": {"query": "chargen", "mode": "correlation"}},
+            {"id": "c", "type": "spec_chart", "props": {"query": "chargen", "spec": json.dumps(
+                {"mark": "bar", "encoding": {"x": {"field": "plant"}, "y": {"field": "scrap", "aggregate": "sum"}}})}},
+        ]
+        with patch("builder.datasources.run_saved", return_value=self.result()):
+            for block in blocks:
+                html = render_block(request, self.app, block)
+                self.assertNotIn("block-error", html, block["type"])
+        with patch("builder.datasources.run_saved", return_value=self.result()):
+            scatter = render_block(request, self.app, blocks[0])
+            boxplot = render_block(request, self.app, blocks[1])
+        self.assertEqual(scatter.count("<circle"), 4)  # vier Messpunkte
+        self.assertIn("Stuttgart", boxplot)
+        self.assertIn("München", boxplot)
+
+    def test_datascience_block_with_query_loads_later(self):
+        from unittest.mock import patch
+
+        from . import datasources
+
+        page = Page.objects.create(app=self.app, title="DS", slug="ds", layout=[
+            {"id": "s", "type": "scatter", "props": {"title": "Live", "query": "chargen", "x_field": "temp", "y_field": "scrap"}},
+        ])
+        self.client.force_login(self.user)
+        with self.settings(BAUKASTEN_LAZY_QUERIES=True), \
+                patch("builder.datasources.run_saved", side_effect=datasources.QueryBusy("läuft")) as run:
+            html = self.client.get(reverse("page", args=[self.app.slug, page.slug])).content.decode()
+            run.assert_not_called()  # die Seite wartet nicht auf die Abfrage
+            self.assertIn("data-lazy", html)
+            block = self.client.get(reverse("page_block", args=[self.app.slug, page.slug, "s"])).content.decode()
+        self.assertIn('data-pending="2"', block)
+
+    def test_formula_overflow_does_not_break_saving(self):
+        from .models import evaluate_formula
+
+        entity = Entity.objects.create(app=self.app, name="Posten", slug="posten")
+        Field.objects.create(entity=entity, label="Preis", key="preis", type=Field.DECIMAL)
+        Field.objects.create(entity=entity, label="Riesig", key="riesig", type=Field.NUMBER, formula="preis * 1e308 * 10")
+        self.assertIsNone(evaluate_formula("preis * 1e308 * 10", {"preis": 5}))
+        record = Record.objects.create(entity=entity, data={"preis": 5})  # früher: OverflowError
+        self.assertNotIn("riesig", record.data)
+
+    def test_formula_may_use_later_formula_fields(self):
+        entity = Entity.objects.create(app=self.app, name="Posten", slug="posten")
+        Field.objects.create(entity=entity, label="Brutto", key="brutto", type=Field.DECIMAL, formula="netto * 1.19")
+        Field.objects.create(entity=entity, label="Menge", key="menge", type=Field.NUMBER)
+        Field.objects.create(entity=entity, label="Preis", key="preis", type=Field.DECIMAL)
+        Field.objects.create(entity=entity, label="Netto", key="netto", type=Field.DECIMAL, formula="menge * preis")
+        record = Record.objects.create(entity=entity, data={"menge": 2, "preis": 10})
+        self.assertEqual(record.data["netto"], 20)
+        self.assertEqual(record.data["brutto"], 23.8)
+
+    def test_csv_import_keeps_global_dialect_and_computes_formulas(self):
+        import csv
+
+        from . import csv_import
+
+        before = csv.excel.delimiter
+        headers, rows = csv_import.parse_csv("kopf\nwert\n".encode())  # Sniffer scheitert bei einer Spalte
+        self.assertEqual(csv.excel.delimiter, before)
+
+        entity = Entity.objects.create(app=self.app, name="Posten", slug="posten")
+        Field.objects.create(entity=entity, label="Menge", key="menge", type=Field.NUMBER)
+        Field.objects.create(entity=entity, label="Preis", key="preis", type=Field.DECIMAL)
+        Field.objects.create(entity=entity, label="Summe", key="summe", type=Field.DECIMAL, formula="menge * preis",
+                             show_in_form=False)
+        headers, rows = csv_import.parse_csv("menge;preis\n3;2,5\n".encode())
+        created, errors = csv_import.run_import(self.app, entity, rows, ["menge", "preis"], self.user)
+        self.assertEqual((created, errors), (1, []))
+        self.assertEqual(entity.records.get().data["summe"], 7.5)
+
+    def test_related_list_finds_children_beyond_500_entries(self):
+        from django.test import RequestFactory
+
+        from .blocks import render_block
+
+        parent_entity = Entity.objects.create(app=self.app, name="Aufträge", slug="auftraege")
+        Field.objects.create(entity=parent_entity, label="Name", key="name")
+        child_entity = Entity.objects.create(app=self.app, name="Positionen", slug="positionen")
+        Field.objects.create(entity=child_entity, label="Text", key="text")
+        Field.objects.create(entity=child_entity, label="Auftrag", key="auftrag", type=Field.REFERENCE,
+                             reference=parent_entity)
+        parent = Record.objects.create(entity=parent_entity, data={"name": "A"})
+        other = Record.objects.create(entity=parent_entity, data={"name": "B"})
+        Record.objects.bulk_create([Record(entity=child_entity, data={"text": f"x{i}", "auftrag": other.pk})
+                                    for i in range(520)])
+        Record.objects.create(entity=child_entity, data={"text": "Gesuchte Position", "auftrag": parent.pk})
+        request = RequestFactory().get(f"/?id={parent.pk}")
+        request.user = self.user
+        html = render_block(request, self.app, {"id": "r", "type": "related_list",
+                                                "props": {"entity": "positionen", "ref_field": "auftrag"}})
+        self.assertIn("Gesuchte Position", html)
+        self.assertNotIn("x0<", html)
+
+    def test_alerts_are_throttled(self):
+        from unittest.mock import patch
+
+        from django.core.cache import cache
+
+        from . import alerts
+
+        cache.clear()
+        with patch("builder.platform.value", side_effect=lambda key: {
+                "alert_channel": "api", "alert_target": "https://alarm.example.com/hook",
+                "alert_auth_header": ""}.get(key)), \
+                patch("builder.alerts.requests.post") as post, self.settings(BAUKASTEN_ALERT_REPEAT_MINUTES=60):
+            self.assertTrue(alerts.notify_failure("schedule_script", "Skript X fehlgeschlagen", "Fehler", app=self.app))
+            self.assertFalse(alerts.notify_failure("schedule_script", "Skript X fehlgeschlagen", "Fehler", app=self.app))
+            self.assertTrue(alerts.notify_failure("schedule_script", "Skript Y fehlgeschlagen", "Fehler", app=self.app))
+        self.assertEqual(post.call_count, 2)

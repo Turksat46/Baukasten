@@ -501,20 +501,27 @@ def entity_export(request, app, entity):
     return response
 
 
+@login_required
 def query_export(request, app, query):
+    """CSV einer gespeicherten Abfrage. Nur f\u00fcr Personen, die die App benutzen d\u00fcrfen."""
     app = get_app(request, app)
     dq = get_object_or_404(app.queries, slug=query)
-    params = {k: v for k, v in request.GET.items()}
+    # Nur Parameter, die im SQL vorkommen: andere Adress-Parameter w\u00fcrden je Aufruf
+    # einen neuen Cache-Eintrag und damit eine neue Abfrage an die Datenbank erzeugen.
+    used = datasources.param_names(dq.sql)
+    params = {k: v for k, v in request.GET.items() if k in used}
     try:
         res = datasources.run_saved(dq, params)
     except datasources.QueryError as exc:
         return HttpResponse(str(exc), status=400, content_type="text/plain; charset=utf-8")
     writer = csv.writer(_Echo(), delimiter=";")
+    columns = res["columns"]
 
     def rows():
-        yield "\ufeff" + writer.writerow(res["columns"])
-        for row in res["rows"]:
-            yield writer.writerow([_csv_cell("" if c is None else str(c)) for c in row])
+        yield "\ufeff" + writer.writerow(columns)
+        for row in res["rows"]:  # Zeilen sind Dictionaries {Spalte: Wert}
+            values = [row.get(c) for c in columns] if isinstance(row, dict) else list(row)
+            yield writer.writerow([_csv_cell("" if c is None else str(c)) for c in values])
 
     response = StreamingHttpResponse(rows(), content_type="text/csv; charset=utf-8")
     response["Content-Disposition"] = f'attachment; filename="{dq.slug}.csv"'

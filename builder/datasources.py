@@ -197,6 +197,11 @@ def check_read_only(sql):
                          % {"word": found.group(0).upper()})
 
 
+def param_names(sql):
+    """Namen der :name-Parameter einer Abfrage (ohne Treffer in Zeichenketten und Kommentaren)."""
+    return {text for kind, text in _tokens(sql or "") if kind == "param"}
+
+
 def convert_params(sql, params, paramstyle):
     """Setzt :name-Parameter in die Schreibweise des Treibers um."""
     params = params or {}

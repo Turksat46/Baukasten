@@ -18,12 +18,17 @@
     });
   }
 
-  function load(box, url) {
-    fetch(url)
+  function load(box, url, attempt) {
+    fetch(url, {credentials: "same-origin"})
       .then(function (r) { if (!r.ok) throw new Error(r.status); return r.text(); })
       .then(function (html) {
         if (html.trim()) box.innerHTML = html;  // vom Server erzeugt und maskiert
         else note(box, gettext("Keine Vorschau"));
+        // Läuft die Abfrage des Bausteins noch, meldet der Server „wird geladen“ (data-pending):
+        // nach ein paar Sekunden erneut fragen, höchstens 20-mal.
+        var pending = box.querySelector("[data-pending]");
+        var wait = pending ? parseInt(pending.getAttribute("data-pending"), 10) || 2 : 0;
+        if (wait && (attempt || 0) < 20) setTimeout(function () { load(box, url, (attempt || 0) + 1); }, wait * 1000);
       })
       .catch(function () { note(box, gettext("Konnte nicht geladen werden.")); });
   }

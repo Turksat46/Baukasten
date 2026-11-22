@@ -1,12 +1,14 @@
 """Data-Science-Visualisierungen: Streudiagramm, Boxplot, Heatmap, Histogramm/Drift und Spec-Chart."""
+import functools
 import json
 import math
 from urllib.parse import urlencode
 
+from django.conf import settings
 from django.utils.translation import gettext, gettext_lazy as _
 
 from . import app_i18n, datasources
-from .blocks import ENTITY, _entity, _format_number, filter_param, filtered, register
+from .blocks import ENTITY, LAZY_WITH_QUERY, _entity, _format_number, filter_param, filtered, register
 from .models import DataQuery, Field
 
 FIELD = {"type": "field"}
@@ -50,13 +52,22 @@ def _load_source_rows(request, app, props, max_rows=1000):
         dq = DataQuery.objects.filter(app=app, slug=props.get("query")).first()
         if not dq:
             return None, None, {}, gettext("Die gewählte Datenbank-Abfrage gibt es nicht.")
+        # Nicht im Server warten (das hielte einen Thread fest): Läuft die Abfrage noch,
+        # kommt QueryBusy, und der Baustein zeigt „wird geladen“ (siehe with_loading).
+        wait = 0 if getattr(settings, "BAUKASTEN_LAZY_QUERIES", True) else None
         try:
-            res = datasources.run_saved(dq, {})
+            res = datasources.run_saved(dq, {}, wait=wait)
+        except datasources.QueryBusy:
+            raise
         except datasources.QueryError as exc:
             return None, None, {}, str(exc)
-        cols = res["columns"]
-        rows = [{"_pk": idx + 1, "data": dict(zip(cols, r)), "label": str(r[0]) if r else f"#{idx + 1}"}
-                for idx, r in enumerate(res["rows"][:max_rows])]
+        cols = list(res["columns"])
+        rows = []
+        for idx, raw in enumerate(res["rows"][:max_rows]):
+            # Abfragen liefern Zeilen als Dictionaries {Spalte: Wert}; Listen nur der Vollständigkeit halber.
+            data = dict(raw) if isinstance(raw, dict) else dict(zip(cols, raw))
+            first = data.get(cols[0]) if cols else None
+            rows.append({"_pk": idx + 1, "data": data, "label": str(first) if first not in (None, "") else f"#{idx + 1}"})
         return rows, None, {c: c for c in cols}, None
     entity = _entity(app, props.get("entity"))
     if not entity:
@@ -562,6 +573,20 @@ def prep_spec_chart(request, app, block):
 
 # ---------- Registrierung ----------
 
+def with_loading(prepare):
+    """Zeigt „wird geladen“, solange die gewählte Abfrage noch läuft; der Browser fragt dann nach."""
+    @functools.wraps(prepare)
+    def wrapper(request, app, block):
+        try:
+            return prepare(request, app, block)
+        except datasources.QueryBusy as exc:
+            props = block.get("props") or {}
+            return {"loading": True, "loading_title": props.get("title") or "", "loading_text": str(exc), "retry": 2}
+    return wrapper
+
+
+LAZY_WITH_QUERY.update({"scatter", "boxplot", "heatmap", "histogram", "spec_chart"})
+
 register("scatter", _("Streudiagramm"), "🫧", [
     {"key": "title", "label": _("Titel (optional)"), "type": "text", "default": _("Korrelation")},
     ENTITY, QUERY_OPT,
@@ -571,7 +596,7 @@ register("scatter", _("Streudiagramm"), "🫧", [
     {"key": "size_field", "label": _("Punktgröße nach Zahlenfeld (Bubble-Chart, optional)"), **FIELD},
     {"key": "label_field", "label": _("Beschriftung im Tooltip (optional)"), **FIELD},
     {"key": "trendline", "label": _("Regressionslinie und R² anzeigen"), "type": "checkbox", "default": True},
-], prep_scatter, "Auswertung", _("Zwei Zahlenfelder als Punkte oder Bubbles mit Trendlinie und R²"))
+], with_loading(prep_scatter), "Auswertung", _("Zwei Zahlenfelder als Punkte oder Bubbles mit Trendlinie und R²"))
 
 register("boxplot", _("Boxplot & Verteilung"), "📦", [
     {"key": "title", "label": _("Titel (optional)"), "type": "text", "default": _("Verteilung")},
@@ -579,7 +604,7 @@ register("boxplot", _("Boxplot & Verteilung"), "📦", [
     {"key": "field", "label": _("Zahlenfeld"), **FIELD},
     {"key": "group_field", "label": _("Gruppieren nach Feld (optional)"), **FIELD},
     {"key": "show_outliers", "label": _("Ausreißer (1,5 × IQR) markieren"), "type": "checkbox", "default": True},
-], prep_boxplot, "Auswertung", _("Quantile (Q1, Median, Q3), Mittelwert und Ausreißer"))
+], with_loading(prep_boxplot), "Auswertung", _("Quantile (Q1, Median, Q3), Mittelwert und Ausreißer"))
 
 register("heatmap", _("Heatmap & Korrelation"), "🌡️", [
     {"key": "title", "label": _("Titel (optional)"), "type": "text", "default": _("Korrelationsmatrix")},
@@ -592,7 +617,7 @@ register("heatmap", _("Heatmap & Korrelation"), "🌡️", [
     {"key": "agg", "label": _("Berechnung (nur Modus Heatmap)"), "type": "select", "default": "count",
      "options": [["count", _("Anzahl")], ["sum", _("Summe")], ["avg", _("Durchschnitt")]]},
     {"key": "value_field", "label": _("Zahlenfeld (für Summe/Durchschnitt)"), **FIELD},
-], prep_heatmap, "Auswertung", _("Pearson-Korrelationsmatrix oder farbcodierte Matrix"))
+], with_loading(prep_heatmap), "Auswertung", _("Pearson-Korrelationsmatrix oder farbcodierte Matrix"))
 
 register("histogram", _("Histogramm & Drift"), "📶", [
     {"key": "title", "label": _("Titel (optional)"), "type": "text", "default": _("Häufigkeitsverteilung")},
@@ -600,11 +625,11 @@ register("histogram", _("Histogramm & Drift"), "📶", [
     {"key": "field", "label": _("Zahlenfeld"), **FIELD},
     {"key": "bins", "label": _("Anzahl Intervalle (Bins, 3–20)"), "type": "number", "default": 8},
     {"key": "group_field", "label": _("Drift-Vergleich nach Feld (optional, berechnet PSI)"), **FIELD},
-], prep_histogram, "Auswertung", _("Häufigkeitsverteilung in Intervallen mit optionalem Data-Drift-Index (PSI)"))
+], with_loading(prep_histogram), "Auswertung", _("Häufigkeitsverteilung in Intervallen mit optionalem Data-Drift-Index (PSI)"))
 
 register("spec_chart", _("Spec-Chart (Vega-Lite)"), "📐", [
     {"key": "title", "label": _("Titel (optional)"), "type": "text", "default": _("Auswertung")},
     ENTITY, QUERY_OPT,
     {"key": "spec", "label": _("Spezifikation (Vega-Lite JSON)"), "type": "textarea",
      "default": '{\n  "mark": "bar",\n  "encoding": {\n    "x": {"field": "kategorie"},\n    "y": {"aggregate": "count"}\n  }\n}'},
-], prep_spec_chart, "Auswertung", _("Deklaratives Diagramm (JSON-Spec) auf Tabelle oder SQL/Databricks-Abfrage"))
+], with_loading(prep_spec_chart), "Auswertung", _("Deklaratives Diagramm (JSON-Spec) auf Tabelle oder SQL/Databricks-Abfrage"))
