@@ -88,7 +88,7 @@ def safe_next(request, fallback):
 PINNABLE_WIDGET_TYPES = {
     "stat", "progress", "chart", "donut", "line", "timeline", "notice",
     "table", "cards", "checklist", "query", "output",
-    "scatter", "boxplot", "heatmap", "spec_chart",
+    "scatter", "boxplot", "heatmap", "histogram", "spec_chart",
 }
 
 
@@ -473,15 +473,18 @@ def _csv_cell(value):
 
 @login_required
 def entity_export(request, app, entity):
+    from .blocks import filtered
+
     app = get_app(request, app)
     entity = get_object_or_404(app.entities, slug=entity)
     fields = list(entity.fields.all())
     writer = csv.writer(_Echo(), delimiter=";")
+    qs = filtered(request, entity).order_by("id")
 
     def rows():
         yield "\ufeff" + writer.writerow([f.label for f in fields])
         batch = []
-        for record in entity.records.order_by("id").iterator(chunk_size=500):
+        for record in qs.iterator(chunk_size=500):
             batch.append(record)
             if len(batch) == 500:
                 yield from write(batch)
@@ -495,6 +498,26 @@ def entity_export(request, app, entity):
 
     response = StreamingHttpResponse(rows(), content_type="text/csv; charset=utf-8")
     response["Content-Disposition"] = f'attachment; filename="{entity.slug}.csv"'
+    return response
+
+
+def query_export(request, app, query):
+    app = get_app(request, app)
+    dq = get_object_or_404(app.queries, slug=query)
+    params = {k: v for k, v in request.GET.items()}
+    try:
+        res = datasources.run_saved(dq, params)
+    except datasources.QueryError as exc:
+        return HttpResponse(str(exc), status=400, content_type="text/plain; charset=utf-8")
+    writer = csv.writer(_Echo(), delimiter=";")
+
+    def rows():
+        yield "\ufeff" + writer.writerow(res["columns"])
+        for row in res["rows"]:
+            yield writer.writerow([_csv_cell("" if c is None else str(c)) for c in row])
+
+    response = StreamingHttpResponse(rows(), content_type="text/csv; charset=utf-8")
+    response["Content-Disposition"] = f'attachment; filename="{dq.slug}.csv"'
     return response
 
 

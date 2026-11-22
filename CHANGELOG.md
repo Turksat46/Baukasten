@@ -11,13 +11,21 @@ Neue Einträge oben unter „Unveröffentlicht“ sammeln und beim Release zur V
 ## Unveröffentlicht
 
 ### Neu
-- **Data-Science-Visualisierungen & Tableau-Bidirektionalität:**
+- **Data-Science-Visualisierungen (Stufe 1 & 2) & Tableau-Bidirektionalität:**
   - Neue Bausteine unter „Auswertung“: **Streudiagramm (`scatter`)** (X/Y-Zahlenfelder, Bubble-Größe,
     Farbgruppen, lineare Regression mit Trendlinie, Pearson-$r$ und $R^2$), **Boxplot & Verteilung (`boxplot`)**
     (Quantile $Q_1$/Median/$Q_3$, Mittelwert, Whisker und $1{,}5\times\text{IQR}$-Ausreißer, optional gruppiert),
     **Heatmap & Korrelation (`heatmap`)** (Pearson-Korrelationsmatrix über alle Zahlenfelder oder
-    farbcodierte Kreuztabelle) und **Spec-Chart (`spec_chart`)** (deklarative Vega-Lite-JSON-Spezifikation
-    direkt auf App-Tabelle oder `DataQuery`).
+    farbcodierte Kreuztabelle), **Histogramm & Drift (`histogram`)** (Häufigkeitsverteilung in 3–20 Intervallen
+    mit automatischer Berechnung des **Population Stability Index / PSI** zum Erkennen von Data Drift) und
+    **Spec-Chart (`spec_chart`)** (deklarative Vega-Lite-JSON-Spezifikation).
+  - **Live-Datenquellen in allen Data-Science-Bausteinen:** `scatter`, `boxplot`, `heatmap`, `histogram` und
+    `spec_chart` arbeiten wahlweise auf einer Baukasten-Tabelle oder direkt auf einer Live-`DataQuery` (SQL / Databricks).
+  - **Berechnete Felder (`Field.formula`):** Zahlenfelder berechnen ihren Wert beim Speichern automatisch per
+    sicherem arithmetischem Ausdruck aus anderen Feldern des Datensatzes (z. B. `preis * menge`,
+    `round(ausschuss - prognose, 2)`).
+  - **CSV-Export für Abfragen & aktive Filter:** Der Baustein „Datenbank-Abfrage“ hat einen „CSV“-Button
+    (`/a/<app>/q/<query>/export.csv`); der Tabellen-CSV-Export berücksichtigt aktive Seitenfilter (`?tabelle.feld=wert`).
   - **Liniendiagramm (`line`)** erweitert um optionales **Konfidenzband ($\pm 1\,\sigma$)**,
     **Schwellenwert-Linie** und automatische **Anomalie-Markierung**.
   - **Cross-Filtering per Klick:** Klick auf Balken (`chart`), Segmente (`donut`), Heatmap-Zellen,
@@ -25,7 +33,18 @@ Neue Einträge oben unter „Unveröffentlicht“ sammeln und beim Release zur V
   - **Tableau-Ansicht (`tableau`):** Neue Zuordnung `selection_map` („Tableau-Feld = URL-Parameter“),
     die bei Klick im Tableau-Dashboard (`markselectionchanged`) die Baukasten-Seite und Write-Back-Formulare filtert.
   - **Beispiel-App:** `python manage.py beispiel_datascience` legt das „Qualitäts- & Modell-Cockpit“
-    (`/a/datascience/`) mit Drift-Analyse, What-If-Simulator und Write-Back an.
+    (`/a/datascience/`) mit Drift-Analyse, Histogramm/PSI, Formelspalte, What-If-Simulator und Write-Back an.
+- **Designer- & Betriebskomfort + Fehler-Alarmierung:**
+  - **Versions-Diff im Designer:** Jede gespeicherte `AppVersion` zeigt vor dem Wiederherstellen aufklappbar alle
+    Unterschiede zum aktuellen Stand (hinzugefügte/entfernte/geänderte Tabellen, Seiten, Skripte und Abfragen).
+  - **App duplizieren (`app_clone`):** Apps und Automatisierungen lassen sich im Designer per Klick samt Tabellen,
+    Feldern, Formeln, Seiten, Skripten und Abfragen als neuer Entwurf (`„<Name> (Kopie)“`) klonen.
+  - **Überschreib-Schutz für Skripte (`409 Conflict`):** Verhindert im Skript-Editor (Apps & Automatisierungen)
+    stilles Überschreiben, wenn zwei Personen dasselbe Skript gleichzeitig bearbeiten.
+  - **Fehler-Alarmierung (Microsoft Teams, E-Mail oder API-Call):** Schlägt im Hintergrunddienst eine Automatisierung,
+    ein zeitgesteuertes Skript oder ein Datenquellen-Abgleich fehl, sendet der Baukasten auf Wunsch einen Alarm per
+    **Microsoft Teams (MessageCard-Webhook)**, **E-Mail** oder **API-Call (HTTP POST mit optionalem Authorization-Header)**
+    — einstellbar ohne Neustart unter `/admin/` → Einstellungen oder über `ALERT_CHANNEL`, `ALERT_TARGET` und `ALERT_AUTH_HEADER`.
 - **Startseite:** Persönliche Widgets („Meine Widgets“) zum Anpinnen von Kennzahlen, Diagrammen, Hinweisen,
   Abfragen und eigenen Bausteinen mit asynchronem Nachladen (`HomeWidget`); Auswahl über ein
   Widget-Sheet wie unter Android (je App aufklappbar, mit Suche und Live-Vorschau); App-Kacheln zeigen

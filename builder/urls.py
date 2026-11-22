@@ -34,6 +34,7 @@ urlpatterns = [
     path("a/<slug:app>/p/<slug:page>/b/<str:block>/aktion/", views.block_action, name="block_action"),
     path("skript-sandbox/", views.script_sandbox, name="script_sandbox"),
     path("a/<slug:app>/t/<slug:entity>/export.csv", views.entity_export, name="entity_export"),
+    path("a/<slug:app>/q/<slug:query>/export.csv", views.query_export, name="query_export"),
     path("a/<slug:app>/t/<slug:entity>/import/", views.entity_import, name="entity_import"),
     # MCP-Server je App (für KI-Agenten und n8n), Schlüssel wie bei der API
     path("mcp/designer/", mcp_designer.endpoint, name="mcp_designer"),
@@ -58,6 +59,7 @@ urlpatterns = [
     path("designer/bausteine/<int:pk>/loeschen/", designer.custom_block_delete, name="designer_block_delete"),
     # Designer: Apps
     path("designer/<slug:app>/", designer.app_detail, name="designer_app"),
+    path("designer/<slug:app>/duplizieren/", designer.app_clone, name="designer_app_clone"),
     path("designer/<slug:app>/loeschen/", designer.app_delete, name="designer_app_delete"),
     path("designer/<slug:app>/uebersetzungen/", designer.translations, name="designer_translations"),
     path("designer/<slug:app>/protokoll/", designer.audit_log, name="designer_audit"),

@@ -1,4 +1,4 @@
-﻿# Baukasten im lokalen Kubernetes von Docker Desktop installieren oder aktualisieren.
+# Baukasten im lokalen Kubernetes von Docker Desktop installieren oder aktualisieren.
 #
 # Voraussetzung: Docker Desktop mit eingeschaltetem Kubernetes (Einstellungen > Kubernetes).
 # Aufruf im Baukasten-Ordner:
@@ -99,8 +99,9 @@ try {
                 Where-Object { $_.IPAddress -notlike "169.254.*" } | Select-Object -First 1).IPAddress
         }
         if (-not $netzAdresse) { throw "Keine Adresse im lokalen Netz gefunden (ist der PC mit WLAN oder LAN verbunden?)." }
-        $hosts = "localhost,127.0.0.1,host.docker.internal,$netzAdresse"
-        $origins = "http://localhost:8080,http://127.0.0.1:8080,http://${netzAdresse}:8080"
+        $hosts = "localhost,127.0.0.1,host.docker.internal,$netzAdresse,.sslip.io,.nip.io,*"
+        $dashIp = $netzAdresse.Replace(".", "-")
+        $origins = "http://localhost:8080,http://127.0.0.1:8080,http://${netzAdresse}:8080,http://${dashIp}.sslip.io:8080,http://*.sslip.io:8080,http://*.nip.io:8080"
         # Über eine Datei: PowerShell 5.1 verschluckt Anführungszeichen in JSON-Argumenten.
         $patch = Join-Path $env:TEMP "baukasten-netz.json"
         $json = '{"data":{"ALLOWED_HOSTS":"' + $hosts + '","CSRF_TRUSTED_ORIGINS":"' + $origins + '"}}'

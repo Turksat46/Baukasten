@@ -515,11 +515,11 @@ def prep_line(request, app, block):
             for i, v in enumerate(values):
                 if v is not None and v > limit_val:
                     anomalies.append({
-                        "cx": round((i + .5) * step, 1),
-                        "cy": round(height - height * v / top, 1),
+                        "cx": f"{round((i + .5) * step, 1)}",
+                        "cy": f"{round(height - height * v / top, 1)}",
                         "value": _format_number(round(v, 2) if isinstance(v, float) else v),
                     })
-    threshold_y = (round(max(0.0, min(height, height - height * threshold_val / top)), 1)
+    threshold_y = (f"{round(max(0.0, min(height, height - height * threshold_val / top)), 1)}"
                    if threshold_val is not None else None)
 
     every = max(1, round(len(starts) / 8))  # höchstens etwa 8 Beschriftungen unter der Achse
@@ -628,7 +628,9 @@ def prep_export(request, app, block):
     entity = _entity(app, block["props"].get("entity"))
     if not entity:
         return {"error": gettext("Für diesen Export ist keine Tabelle ausgewählt.")}
-    return {"entity": entity, "href": reverse("entity_export", args=[app.slug, entity.slug])}
+    href = reverse("entity_export", args=[app.slug, entity.slug])
+    query = request.GET.urlencode() if hasattr(request, "GET") else ""
+    return {"entity": entity, "href": f"{href}?{query}" if query else href}
 
 
 def prep_button(request, app, block):

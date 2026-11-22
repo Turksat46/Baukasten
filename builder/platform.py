@@ -21,6 +21,9 @@ FALLBACK = {
     "script_timeout": "BAUKASTEN_SCRIPT_TIMEOUT",
     "script_max_calls": "BAUKASTEN_SCRIPT_MAX_CALLS",
     "automation_max_timeout_minutes": "BAUKASTEN_AUTOMATION_MAX_TIMEOUT_MINUTES",
+    "alert_channel": "BAUKASTEN_ALERT_CHANNEL",
+    "alert_target": "BAUKASTEN_ALERT_TARGET",
+    "alert_auth_header": "BAUKASTEN_ALERT_AUTH_HEADER",
 }
 
 
@@ -31,7 +34,7 @@ def _overrides():
         from .models import PlatformSettings
 
         row = PlatformSettings.objects.filter(pk=1).values(*FALLBACK).first() or {}
-        values = {k: v for k, v in row.items() if v is not None}
+        values = {k: v for k, v in row.items() if v is not None and v != ""}
         cache.set(CACHE_KEY, values, CACHE_SECONDS)
     return values
 

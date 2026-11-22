@@ -344,6 +344,14 @@ Formular** erscheint. Felder, die ein Skript füllt (zum Beispiel ein erzeugter
 Link), schaltest du im Formular ab; ihr Wert bleibt beim Bearbeiten erhalten.
 Felder vom Typ „Link“ sind in Listen anklickbar.
 
+**Berechnete Felder (Formel):** Bei Zahlenfeldern („Ganze Zahl“ und „Kommazahl“)
+kannst du unter **„Formel (optional)“** einen arithmetischen Ausdruck hinterlegen,
+z. B. `preis * menge`, `round(ausschuss - prognose, 2)`, `abs(ist - soll)` oder
+`max(0, bestand - mindestbestand)`. Erlaubt sind `+`, `-`, `*`, `/` sowie die
+Funktionen `round`, `abs`, `min` und `max` mit den Kurznamen (`key`) anderer Felder
+derselben Tabelle. Der Wert wird bei jedem Speichern eines Eintrags (Formular, API,
+CSV-Import, Skript) sicher über den Syntaxbaum (AST, ohne `eval`) berechnet.
+
 Pro Tabelle lässt sich abschalten, ob Einträge angelegt, bearbeitet oder
 gelöscht werden dürfen. Das gilt für die Oberfläche und für die API.
 
@@ -435,7 +443,12 @@ prüfen.
 | | Balkendiagramm | Einträge je Wert eines Feldes, als Rangliste |
 | | Kreisdiagramm | Anteile der fünf häufigsten Werte, Rest als „Sonstige“ |
 | | Verlauf | Einträge pro Monat, nach einem Datumsfeld oder dem Erfassungsdatum |
-| | Liniendiagramm | Anzahl, Summe oder Durchschnitt je Tag, Woche oder Monat als Linie, nach einem Datumsfeld oder dem Erfassungsdatum; Werte beim Überfahren |
+| | Liniendiagramm | Anzahl, Summe oder Durchschnitt je Tag, Woche oder Monat als Linie, optional mit Konfidenzband ($\pm 1\,\sigma$), Schwellenwert und Anomalie-Markierung |
+| | Streudiagramm | X/Y-Zahlenfelder (oder Live-Abfrage) mit Bubble-Größe, Farbgruppen, Trendlinie, Pearson-$r$ und Bestimmtheitsmaß $R^2$ |
+| | Boxplot & Verteilung | Median, Quartile ($Q_1$, $Q_3$), Mittelwert, Whisker und $1{,}5\times\text{IQR}$-Ausreißer, optional gruppiert |
+| | Heatmap & Korrelation | Pearson-Korrelationsmatrix über alle Zahlenfelder oder farbcodierte Kreuztabelle |
+| | Histogramm & Drift | Häufigkeitsverteilung in 3–20 Intervallen (Bins) mit optionalem Gruppenvergleich und **Population Stability Index (PSI)** zur Drift-Erkennung |
+| | Spec-Chart (Vega-Lite) | deklarative JSON-Spezifikation (`mark`, `encoding`) auf Tabelle oder Live-Abfrage |
 | Navigation | Button | öffnet eine Seite oder einen Link, oder führt ein Skript oder eine Python-Aktion aus |
 | | Seitenkacheln | Kacheln zu allen Seiten der App |
 | Layout | Trennlinie, Abstand | gliedern die Seite |
@@ -613,6 +626,10 @@ Seiten und Übersetzungen. Die erfassten Daten gehören nicht dazu.
 
 - **Speichern:** In der App unter „Versionen“ optional eine Notiz eintragen und
   „Version speichern“ klicken. Versionen werden fortlaufend nummeriert.
+- **Unterschiede prüfen (Versions-Diff):** Unter jeder gespeicherten Version
+  zeigt „Unterschiede zum aktuellen Stand“ aufklappbar alle Abweichungen an
+  (`+` wird wiederhergestellt, `−` entfällt, `~` geändert – für Tabellen, Felder,
+  Seiten, Skripte und Abfragen).
 - **Wiederherstellen:** bringt Einstellungen, Felder und Seiten auf den
   gespeicherten Stand. Vorher wird der aktuelle Stand automatisch als neue
   Version gesichert, das Zurückgehen lässt sich also selbst zurücknehmen.
@@ -667,7 +684,12 @@ unter `/admin/` → Änderungsprotokoll. Ändern oder löschen lässt es sich do
 Einträge werden nach `AUDIT_RETENTION_DAYS` Tagen gelöscht (Standard 365, `0` = nie).
 Die Frist mit dem Datenschutz abstimmen.
 
-### App löschen
+### App duplizieren und löschen
+
+Oben rechts im Designer einer App (oder Automatisierung) legt **„App duplizieren“**
+sofort eine vollständige Kopie des Aufbaus (Tabellen, Felder, Formeln, Seiten,
+Skripte, Abfragen und Übersetzungen – ohne Datensätze) als neuen Entwurf
+`„<Name> (Kopie)“` an.
 
 Eine App löschst du in der App-Liste des Designers („Löschen“) oder in der App
 ganz unten („App löschen“). Das dürfen nur Eigentümerin und Verwalter. Gelöscht werden Tabellen, Daten, Seiten, Versionen
@@ -729,7 +751,12 @@ Es gibt zwei Arten, die Daten zu nutzen:
 | Gut für | aktuelle Stände, kleine Ergebnisse (bis 2.000 Zeilen) | Auswertungen, größere Datenmengen (bis 50.000 Zeilen) |
 
 **Live anzeigen.** Im Seiten-Designer den Baustein „Datenbank-Abfrage“ einfügen
-und die Abfrage wählen. Unter „Automatisch aktualisieren“ (gilt für jeden
+und die Abfrage wählen; oben rechts im Baustein lädt **„CSV“** das aktuelle
+Abfrageergebnis direkt als CSV-Datei herunter (`/a/<app>/q/<abfrage>/export.csv`).
+Außerdem können die Data-Science-Bausteine (**Streudiagramm**, **Boxplot**,
+**Heatmap**, **Histogramm & Drift** und **Spec-Chart**) unter „Oder Datenbank-Abfrage
+(DataQuery)“ direkt auf einer Live-Abfrage statt auf einer Tabelle arbeiten.
+Unter „Automatisch aktualisieren“ (gilt für jeden
 Baustein) lädt sich der Baustein im Browser regelmäßig neu, ohne dass die Seite
 neu lädt. „Ergebnis zwischenspeichern“ an der Abfrage legt fest, wie lange ein
 Ergebnis wiederverwendet wird; so fragen 50 offene Browser die Datenbank nicht
@@ -1474,6 +1501,9 @@ Alles Umgebungsabhängige kommt aus Umgebungsvariablen.
 | `QUERY_PARALLEL_<NAME>` | dasselbe für eine einzelne Quelle, z. B. `QUERY_PARALLEL_DWH=2` |
 | `QUERY_WAIT` | Sekunden, die eine Anfrage auf einen freien Platz wartet, Standard 2 |
 | `LAZY_QUERIES` | `false` lädt Abfrage-Bausteine direkt mit der Seite statt danach |
+| `ALERT_CHANNEL` | Alarmierung bei Hintergrund-Fehlern: `off` (Standard), `teams` (Microsoft-Teams-Webhook), `email` oder `api` (HTTP POST); auch unter `/admin/` → Einstellungen änderbar |
+| `ALERT_TARGET` | Ziel der Alarmierung: Teams-Webhook-URL, E-Mail-Adresse(n) oder API-URL |
+| `ALERT_AUTH_HEADER` | optionaler `Authorization`-Header für `ALERT_CHANNEL=api` (z. B. `Bearer …`) |
 | `LOG_LEVEL` | Standard `INFO` |
 | `DEBUG` | nur lokal auf `1` |
 
@@ -1776,7 +1806,10 @@ Eingaben geprüft und Seiten bleiben stimmig. Die Verwaltung ist für den
 **Einstellungen** (nur Superuser): Unter `/admin/` → Einstellungen lassen sich
 einige fachliche Werte ohne Neustart ändern: Anfragen von Gästen je Minute,
 Änderungen je KI-Zugang, Aufbewahrung des Änderungsprotokolls, Zeitlimit und
-Zugriffe von Skripten normaler Apps, längstes Zeitlimit für Automatisierungen.
+Zugriffe von Skripten normaler Apps, längstes Zeitlimit für Automatisierungen
+sowie die **Fehler-Alarmierung bei Hintergrundarbeiten** (Aus, Microsoft-Teams-Webhook,
+E-Mail oder API-Call per HTTP POST samt Zieladresse und optionalem
+`Authorization`-Header).
 Ein leeres Feld heißt: Es gilt der Wert aus der Umgebung (er steht beim Feld).
 Änderungen wirken nach höchstens 30 Sekunden in allen Pods und stehen im
 Änderungsprotokoll. Zugangsdaten und Technisches (Datenbank, Hosts, Keycloak)

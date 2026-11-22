@@ -44,19 +44,23 @@ class Command(BaseCommand):
             )
 
             chargen = Entity.objects.create(app=app, name="Chargen", slug="chargen", api_enabled=True)
-            for idx, (label, key, ftype, choices) in enumerate([
-                ("Charge", "charge", Field.TEXT, ""),
-                ("Werk", "werk", Field.CHOICE, "Stuttgart\nMünchen\nHamburg"),
-                ("Datum", "datum", Field.DATE, ""),
-                ("Temperatur (°C)", "temperatur", Field.DECIMAL, ""),
-                ("Druck (bar)", "druck", Field.DECIMAL, ""),
-                ("Durchsatz", "durchsatz", Field.NUMBER, ""),
-                ("Prognose Ausschuss (%)", "prognose", Field.DECIMAL, ""),
-                ("Ist Ausschuss (%)", "ausschuss", Field.DECIMAL, ""),
-                ("Status", "status", Field.CHOICE, "OK\nDrift-Warnung\nAnomalie"),
-                ("Kommentar (Write-Back)", "kommentar", Field.TEXT, ""),
+            for idx, (label, key, ftype, choices, formula) in enumerate([
+                ("Charge", "charge", Field.TEXT, "", ""),
+                ("Werk", "werk", Field.CHOICE, "Stuttgart\nMünchen\nHamburg", ""),
+                ("Datum", "datum", Field.DATE, "", ""),
+                ("Temperatur (°C)", "temperatur", Field.DECIMAL, "", ""),
+                ("Druck (bar)", "druck", Field.DECIMAL, "", ""),
+                ("Durchsatz", "durchsatz", Field.NUMBER, "", ""),
+                ("Prognose Ausschuss (%)", "prognose", Field.DECIMAL, "", ""),
+                ("Ist Ausschuss (%)", "ausschuss", Field.DECIMAL, "", ""),
+                ("Prognose-Abweichung (%)", "abweichung", Field.DECIMAL, "", "round(ausschuss - prognose, 2)"),
+                ("Status", "status", Field.CHOICE, "OK\nDrift-Warnung\nAnomalie", ""),
+                ("Kommentar (Write-Back)", "kommentar", Field.TEXT, "", ""),
             ], start=1):
-                Field.objects.create(entity=chargen, label=label, key=key, type=ftype, choices=choices, order=idx)
+                Field.objects.create(
+                    entity=chargen, label=label, key=key, type=ftype,
+                    choices=choices, formula=formula, show_in_form=not bool(formula), order=idx,
+                )
 
             today = timezone.localdate()
             sample = [
@@ -94,7 +98,9 @@ class Command(BaseCommand):
                            entity="chargen", field="ausschuss", group_field="werk", show_outliers=True),
                 make_block("heatmap", width=6, title="Feature-Korrelationsmatrix (Pearson r)",
                            entity="chargen", mode="correlation"),
-                make_block("line", width=6, label="Ausschuss-Verlauf mit ±1σ-Band & Anomalien",
+                make_block("histogram", width=6, title="Temperatur-Verteilung & Drift (PSI nach Werk)",
+                           entity="chargen", field="temperatur", group_field="werk", bins=6),
+                make_block("line", width=12, label="Ausschuss-Verlauf mit ±1σ-Band & Anomalien",
                            entity="chargen", date_field="datum", aggregate="avg", field="ausschuss",
                            period="day", count=14, unit="%", show_band=True, threshold="4.0"),
             ])

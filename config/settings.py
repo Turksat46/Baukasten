@@ -248,6 +248,12 @@ BAUKASTEN_TABLEAU_HOSTS = env_list("TABLEAU_HOSTS")
 BAUKASTEN_TABLEAU_CLIENT_ID = os.environ.get("TABLEAU_CONNECTED_APP_CLIENT_ID", "")
 BAUKASTEN_TABLEAU_SECRET_ID = os.environ.get("TABLEAU_CONNECTED_APP_SECRET_ID", "")
 BAUKASTEN_TABLEAU_SECRET_VALUE = os.environ.get("TABLEAU_CONNECTED_APP_SECRET_VALUE", "")
+
+# Fehler-Alarmierung bei Hintergrundarbeiten (Automatisierungen, Zeitplan-Skripte, Datenquellen-Abgleich):
+# ALERT_CHANNEL: off | teams | email | api
+BAUKASTEN_ALERT_CHANNEL = os.environ.get("ALERT_CHANNEL", "off").strip().lower() or "off"
+BAUKASTEN_ALERT_TARGET = os.environ.get("ALERT_TARGET", "").strip()
+BAUKASTEN_ALERT_AUTH_HEADER = os.environ.get("ALERT_AUTH_HEADER", "").strip()
 BAUKASTEN_TABLEAU_USER_ATTRIBUTE = os.environ.get("TABLEAU_USER_ATTRIBUTE", "email")
 BAUKASTEN_HTTP_TIMEOUT = float(os.environ.get("HTTP_TIMEOUT", "10"))
 

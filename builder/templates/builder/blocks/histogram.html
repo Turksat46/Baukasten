@@ -1,0 +1,40 @@
+{% load i18n %}<section class="card histogram-block">
+  <div class="card-head">
+    <h3 data-slot="title">{{ p.title }}</h3>
+    {% if not empty %}
+      <span class="muted small">
+        {{ field_label }} · n = {{ count }}
+        {% if psi is not None %}
+          · <span class="badge{% if drift_tone == 'warn' %} badge-warn{% elif drift_tone == 'ok' %} badge-ok{% endif %}">PSI {{ psi }} ({{ drift_label }})</span>
+        {% endif %}
+      </span>
+    {% endif %}
+  </div>
+  {% if empty %}
+    <p class="empty">{% translate "Noch keine Zahlenwerte vorhanden." %}</p>
+  {% else %}
+    {% if compare %}
+      <p class="muted small histogram-legend">
+        <span class="swatch seg-1"></span> {{ group_a }}
+        <span class="swatch seg-2"></span> {{ group_b }}
+      </p>
+    {% endif %}
+    <div class="histogram-bars">
+      {% for b in bins %}
+        <div class="bar-row histogram-row" title="{{ b.range }}: {{ b.count }}{% if compare %} ({{ group_a }}: {{ b.count_a }}, {{ group_b }}: {{ b.count_b }}){% endif %}">
+          <span class="bar-label muted small">{{ b.range }}</span>
+          <span class="bar-track histogram-track">
+            {% if compare %}
+              <span class="bar-fill seg-1" style="width: {{ b.pct_a }}%"></span>
+              <span class="bar-fill seg-2 histogram-fill-b" style="width: {{ b.pct_b }}%"></span>
+            {% else %}
+              <span class="bar-fill" style="width: {{ b.percent }}%"></span>
+            {% endif %}
+          </span>
+          <span class="bar-count">{{ b.count }}</span>
+          <span class="bar-share">{{ b.share }} %</span>
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+</section>

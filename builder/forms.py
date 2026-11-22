@@ -109,7 +109,7 @@ class EntityForm(forms.ModelForm):
 class FieldForm(forms.ModelForm):
     class Meta:
         model = Field
-        fields = ["label", "type", "required", "show_in_list", "show_in_form", "choices", "reference"]
+        fields = ["label", "type", "required", "show_in_list", "show_in_form", "formula", "choices", "reference"]
         widgets = {"choices": forms.Textarea(attrs={"rows": 3})}
 
     def __init__(self, *args, app, **kwargs):

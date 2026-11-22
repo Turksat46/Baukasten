@@ -333,7 +333,10 @@
   <section class="card">
     <div class="card-head">
       <h3 data-slot="title">{{ p.title|default:query.name }}</h3>
-      {% if fetched %}<span class="muted small">{% blocktranslate %}Stand {{ fetched }}{% endblocktranslate %}</span>{% endif %}
+      <div class="card-tools">
+        {% if fetched %}<span class="muted small">{% blocktranslate %}Stand {{ fetched }}{% endblocktranslate %}</span>{% endif %}
+        {% if query %}<a class="btn btn-secondary btn-small" href="{% url 'query_export' app.slug query.slug %}">{% translate "CSV" %}</a>{% endif %}
+      </div>
     </div>
     {% if q_stale %}<p class="notice notice-warning small">{% translate "Die Datenquelle antwortet gerade nicht. Angezeigt wird der letzte Stand." %}</p>{% endif %}
     {% if q_rows %}
@@ -402,6 +405,9 @@
 
 {% elif type == "heatmap" %}
   {% include "builder/blocks/heatmap.html" %}
+
+{% elif type == "histogram" %}
+  {% include "builder/blocks/histogram.html" %}
 
 {% elif type == "spec_chart" %}
   {% include "builder/blocks/spec_chart.html" %}

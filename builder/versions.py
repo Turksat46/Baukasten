@@ -38,7 +38,8 @@ def snapshot(app):
                 "fields": [
                     {"key": f.key, "label": f.label, "type": f.type, "required": f.required,
                      "choices": f.choices, "reference": f.reference.slug if f.reference else None,
-                     "show_in_list": f.show_in_list, "show_in_form": f.show_in_form, "order": f.order}
+                     "show_in_list": f.show_in_list, "show_in_form": f.show_in_form,
+                     "formula": f.formula, "order": f.order}
                     for f in e.fields.select_related("reference")
                 ],
             }
@@ -205,6 +206,7 @@ def _apply_snapshot(app, data):
                 field.reference = target[0] if item.get("reference") else None
                 field.show_in_list = bool(item.get("show_in_list", True))
                 field.show_in_form = bool(item.get("show_in_form", True))
+                field.formula = _text(item.get("formula"), 200)
                 field.order = int(item.get("order") or position)
                 field.save()
                 keep.add(key)
@@ -271,11 +273,13 @@ def restore(version, user=None):
 
 
 @transaction.atomic
-def import_app(data, user=None):
+def import_app(data, user=None, name_override=None):
     """Legt aus einer exportierten Datei eine neue App an (als Entwurf)."""
     from .models import can_automate
 
     data, notes = upgrade(data)
+    if name_override:
+        data["app"]["name"] = _text(name_override, 80)
     kind = App.AUTOMATION if data["app"].get("kind") == App.AUTOMATION else App.APP
     if kind == App.AUTOMATION and not (user and can_automate(user)):
         raise AutomationNotAllowed(_("Die Datei enthält eine Automatisierung. Importieren dürfen das nur Mitglieder der Gruppe „Automatisierer“."))
@@ -291,6 +295,97 @@ def import_app(data, user=None):
               note=f"{app.entities.count()} Tabellen, {app.pages.count()} Seiten")
     app.import_notes = notes
     return app
+
+
+def diff(current, target):
+    """Vergleicht den aktuellen Stand (current) mit einer gespeicherten Version (target).
+
+    Gibt eine Liste menschenlesbarer Unterschiede aus Sicht von „Was ändert sich beim Wiederherstellen auf target?“ zurück.
+    """
+    if not isinstance(current, dict) or not isinstance(target, dict):
+        return []
+    changes = []
+
+    c_app, t_app = current.get("app") or {}, target.get("app") or {}
+    if (c_app.get("name"), c_app.get("description"), c_app.get("icon")) != (
+        t_app.get("name"), t_app.get("description"), t_app.get("icon")
+    ):
+        changes.append(_("~ App-Einstellungen (Name, Symbol oder Beschreibung) geändert"))
+
+    def _compare_items(key, label_field, noun_added, noun_removed, noun_changed, detail_fn=None):
+        c_map = {str(item.get("slug")): item for item in (current.get(key) or []) if isinstance(item, dict) and item.get("slug")}
+        t_map = {str(item.get("slug")): item for item in (target.get(key) or []) if isinstance(item, dict) and item.get("slug")}
+        for slug, item in t_map.items():
+            name = item.get(label_field) or slug
+            if slug not in c_map:
+                changes.append(noun_added % {"name": name})
+            else:
+                c_item = c_map[slug]
+                if detail_fn:
+                    diff_note = detail_fn(c_item, item)
+                else:
+                    diff_note = c_item != item
+                if diff_note:
+                    changes.append(noun_changed % {"name": name})
+        for slug, item in c_map.items():
+            if slug not in t_map:
+                name = item.get(label_field) or slug
+                changes.append(noun_removed % {"name": name})
+
+    def _entity_changed(c_ent, t_ent):
+        c_fields = [(f.get("key"), f.get("label"), f.get("type"), f.get("required"), f.get("formula", ""))
+                    for f in (c_ent.get("fields") or [])]
+        t_fields = [(f.get("key"), f.get("label"), f.get("type"), f.get("required"), f.get("formula", ""))
+                    for f in (t_ent.get("fields") or [])]
+        return c_ent.get("name") != t_ent.get("name") or c_fields != t_fields
+
+    def _page_changed(c_pg, t_pg):
+        return (c_pg.get("title") != t_pg.get("title")
+                or c_pg.get("layout") != t_pg.get("layout")
+                or bool(c_pg.get("public")) != bool(t_pg.get("public")))
+
+    def _script_changed(c_sc, t_sc):
+        return (c_sc.get("name") != t_sc.get("name")
+                or c_sc.get("code") != t_sc.get("code")
+                or c_sc.get("trigger") != t_sc.get("trigger")
+                or bool(c_sc.get("enabled", True)) != bool(t_sc.get("enabled", True)))
+
+    def _query_changed(c_q, t_q):
+        return (c_q.get("name") != t_q.get("name")
+                or c_q.get("sql") != t_q.get("sql")
+                or c_q.get("source") != t_q.get("source"))
+
+    _compare_items(
+        "entities", "name",
+        _("+ Tabelle „%(name)s“ (in Version enthalten)"),
+        _("− Tabelle „%(name)s“ (erst nach dieser Version angelegt; Daten bleiben erhalten)"),
+        _("~ Tabelle „%(name)s“ (Felder oder Einstellungen weichen ab)"),
+        _entity_changed,
+    )
+    _compare_items(
+        "pages", "title",
+        _("+ Seite „%(name)s“ wird wiederhergestellt"),
+        _("− Seite „%(name)s“ entfällt"),
+        _("~ Seite „%(name)s“ (Bausteine oder Titel geändert)"),
+        _page_changed,
+    )
+    if "scripts" in target or "scripts" in current:
+        _compare_items(
+            "scripts", "name",
+            _("+ Skript „%(name)s“ wird wiederhergestellt"),
+            _("− Skript „%(name)s“ entfällt"),
+            _("~ Skript „%(name)s“ (Code oder Auslöser geändert)"),
+            _script_changed,
+        )
+    if "queries" in target or "queries" in current:
+        _compare_items(
+            "queries", "name",
+            _("+ Abfrage „%(name)s“ wird wiederhergestellt"),
+            _("− Abfrage „%(name)s“ entfällt"),
+            _("~ Abfrage „%(name)s“ (SQL oder Quelle geändert)"),
+            _query_changed,
+        )
+    return changes
 
 
 def restore_from_file(app, data, user=None, filename=""):

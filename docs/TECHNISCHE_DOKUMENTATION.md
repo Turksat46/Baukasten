@@ -121,9 +121,11 @@ baukasten/
 ├── builder/                die eigentliche Anwendung
 │   ├── models.py           Datenmodell
 │   ├── urls.py             alle Routen
-│   ├── views.py            Laufzeit: Seiten, Formulare, Export, Skript-Aufrufe
-│   ├── designer.py         Designer-Oberfläche (Apps, Tabellen, Seiten, Skripte …)
+│   ├── views.py            Laufzeit: Seiten, Formulare, Export, Skript-Aufrufe, Startseiten-Widgets
+│   ├── designer.py         Designer-Oberfläche (Apps, Klonen, Tabellen, Seiten, Skripte …)
 │   ├── blocks.py           Registry und Rendering der Seiten-Bausteine
+│   ├── datascience.py      Data-Science-Bausteine (Scatter, Boxplot, Heatmap, Histogramm/PSI, Spec-Chart)
+│   ├── alerts.py           Fehler-Alarmierung für Hintergrundarbeiten (Teams, E-Mail, API-Call)
 │   ├── forms.py            Formulare, auch dynamisch aus Feld-Definitionen
 │   ├── api.py, openapi.py  REST-API und OpenAPI-Spezifikation
 │   ├── mcp.py              MCP-Protokoll und Server je App
@@ -268,6 +270,7 @@ erDiagram
         string type "text, number, date, choice, reference …"
         bool required
         text choices
+        string formula "optionaler AST-Formelausdruck"
         int order
     }
     RECORD {
@@ -279,6 +282,7 @@ erDiagram
         string title
         slug slug "eindeutig je App"
         bool public
+        int version "Optimistic Locking (409)"
         json layout "Liste von Bausteinen"
     }
 ```
@@ -861,6 +865,7 @@ Datenbankverbindungen ≈ `Pods × GUNICORN_WORKERS × GUNICORN_THREADS` plus Wo
 | `LAZY_QUERIES` | `true` | Abfrage-Bausteine nachladen |
 | `HTTP_ALLOWED_HOSTS`, `HTTP_TIMEOUT` | –, `10` | ausgehende HTTP-Aufrufe |
 | `TABLEAU_HOSTS`, `TABLEAU_CONNECTED_APP_*`, `TABLEAU_USER_ATTRIBUTE` | – | Tableau |
+| `ALERT_CHANNEL`, `ALERT_TARGET`, `ALERT_AUTH_HEADER` | `off`, –, – | Fehler-Alarmierung (`teams`, `email`, `api`) |
 | `GUNICORN_WORKERS`, `GUNICORN_THREADS`, `GUNICORN_TIMEOUT` | `3`, `4`, `60` | Webserver |
 | `REDIS_PASSWORD` | – | Passwort für Redis aus `k8s/redis.yaml` |
 | `COOKIE_SECURE`, `LOG_LEVEL` | `true`, `INFO` | Sonstiges |

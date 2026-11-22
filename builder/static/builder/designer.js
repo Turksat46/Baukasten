@@ -53,6 +53,7 @@
     scatter: "M4 4v16h16M8 15h.01M12 11h.01M16 8h.01M18 14h.01M6 17l13-10",
     boxplot: "M4 12h3M7 8h10v8H7zM12 8v8M17 12h3",
     heatmap: "M4 4h16v16H4zM4 9h16M4 15h16M9 4v16M15 4v16",
+    histogram: "M4 19h16M6 19v-6h3v6M11 19V8h3v11M16 19v-9h3v9",
     spec_chart: "M4 19h16M6 16l4-6 4 3 4-8",
     custom: "M12 3l2.6 5.6 6 .7-4.4 4.2 1.1 6-5.3-3-5.3 3 1.1-6L3.4 9.3l6-.7z",
   };

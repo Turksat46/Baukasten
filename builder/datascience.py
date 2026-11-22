@@ -1,4 +1,4 @@
-"""Data-Science-Visualisierungen: Streudiagramm (Scatter/Bubble), Boxplot, Heatmap/Korrelation und Spec-Chart."""
+"""Data-Science-Visualisierungen: Streudiagramm, Boxplot, Heatmap, Histogramm/Drift und Spec-Chart."""
 import json
 import math
 from urllib.parse import urlencode
@@ -10,6 +10,7 @@ from .blocks import ENTITY, _entity, _format_number, filter_param, filtered, reg
 from .models import DataQuery, Field
 
 FIELD = {"type": "field"}
+QUERY_OPT = {"key": "query", "label": _("Oder Datenbank-Abfrage (DataQuery)"), "type": "query"}
 
 
 def _num_fields(entity):
@@ -27,6 +28,8 @@ def _to_float(val):
 
 
 def _filter_href(request, param, value):
+    if not param:
+        return ""
     query = request.GET.copy() if hasattr(request, "GET") else {}
     str_val = str(value)
     if query.get(param) == str_val:
@@ -36,6 +39,44 @@ def _filter_href(request, param, value):
     encoded = urlencode(query, doseq=True)
     path = getattr(request, "path", "") or ""
     return f"{path}?{encoded}" if encoded else path
+
+
+def _load_source_rows(request, app, props, max_rows=1000):
+    """Lädt Zeilen wahlweise aus einer DataQuery (SQL/Databricks) oder einer App-Tabelle (Entity).
+
+    Gibt (rows_als_dicts_mit_optionaler_pk, entity_oder_None, spalten_labels_dict, fehlertext) zurück.
+    """
+    if props.get("query"):
+        dq = DataQuery.objects.filter(app=app, slug=props.get("query")).first()
+        if not dq:
+            return None, None, {}, gettext("Die gewählte Datenbank-Abfrage gibt es nicht.")
+        try:
+            res = datasources.run_saved(dq, {})
+        except datasources.QueryError as exc:
+            return None, None, {}, str(exc)
+        cols = res["columns"]
+        rows = [{"_pk": idx + 1, "data": dict(zip(cols, r)), "label": str(r[0]) if r else f"#{idx + 1}"}
+                for idx, r in enumerate(res["rows"][:max_rows])]
+        return rows, None, {c: c for c in cols}, None
+    entity = _entity(app, props.get("entity"))
+    if not entity:
+        return None, None, {}, None
+    labels = {f.key: app_i18n.t(f.label) for f in entity.fields.all()}
+    rows = [{"_pk": r.pk, "data": r.data, "label": str(r)} for r in filtered(request, entity)[:max_rows]]
+    return rows, entity, labels, None
+
+
+def _resolve_field_key(entity, labels, key, numeric=False):
+    key = str(key or "").strip()
+    if not key:
+        return None, ""
+    if entity is not None:
+        qs = entity.fields.filter(key=key)
+        if numeric:
+            qs = qs.filter(type__in=[Field.NUMBER, Field.DECIMAL])
+        f = qs.first()
+        return (f.key, app_i18n.t(f.label)) if f else (None, "")
+    return (key, labels.get(key, key)) if key in labels else (key, key)
 
 
 def _pearson(xs, ys):
@@ -70,37 +111,37 @@ def _quantile(sorted_vals, q):
 
 def prep_scatter(request, app, block):
     props = block["props"]
-    entity = _entity(app, props.get("entity"))
-    if not entity:
+    rows, entity, labels, err = _load_source_rows(request, app, props, max_rows=500)
+    if err:
+        return {"error": err}
+    if rows is None:
         return {"error": gettext("Für dieses Streudiagramm ist keine Tabelle ausgewählt.")}
-    x_field = entity.fields.filter(key=props.get("x_field"), type__in=[Field.NUMBER, Field.DECIMAL]).first()
-    y_field = entity.fields.filter(key=props.get("y_field"), type__in=[Field.NUMBER, Field.DECIMAL]).first()
-    if not x_field or not y_field:
+    x_key, x_label = _resolve_field_key(entity, labels, props.get("x_field"), numeric=True)
+    y_key, y_label = _resolve_field_key(entity, labels, props.get("y_field"), numeric=True)
+    if not x_key or not y_key:
         return {"error": gettext("Für das Streudiagramm werden zwei Zahlenfelder (X und Y) benötigt.")}
-    color_field = entity.fields.filter(key=props.get("color_field")).first() if props.get("color_field") else None
-    size_field = (entity.fields.filter(key=props.get("size_field"), type__in=[Field.NUMBER, Field.DECIMAL]).first()
-                  if props.get("size_field") else None)
-    label_field = entity.fields.filter(key=props.get("label_field")).first() if props.get("label_field") else None
+    color_key, _ = _resolve_field_key(entity, labels, props.get("color_field"))
+    size_key, _ = _resolve_field_key(entity, labels, props.get("size_field"), numeric=True)
+    label_key, _ = _resolve_field_key(entity, labels, props.get("label_field"))
 
-    records = list(filtered(request, entity)[:500])
-    raw_points = []
-    groups = {}
-    for rec in records:
-        x = _to_float(rec.data.get(x_field.key))
-        y = _to_float(rec.data.get(y_field.key))
+    raw_points, groups = [], {}
+    for row in rows:
+        data = row["data"]
+        x = _to_float(data.get(x_key))
+        y = _to_float(data.get(y_key))
         if x is None or y is None:
             continue
-        grp = str(rec.data.get(color_field.key) or gettext("Ohne")) if color_field else ""
+        grp = str(data.get(color_key) or gettext("Ohne")) if color_key else ""
         if grp and grp not in groups:
             groups[grp] = (len(groups) % 5) + 1
-        sz = _to_float(rec.data.get(size_field.key)) if size_field else None
-        lbl = str(rec.data.get(label_field.key) or rec) if label_field else str(rec)
-        raw_points.append({"pk": rec.pk, "x": x, "y": y, "group": grp, "tone": groups.get(grp, 1), "size": sz, "label": lbl})
+        sz = _to_float(data.get(size_key)) if size_key else None
+        lbl = str(data.get(label_key) or row["label"]) if label_key else row["label"]
+        raw_points.append({"pk": row["_pk"], "x": x, "y": y, "group": grp, "tone": groups.get(grp, 1), "size": sz, "label": lbl})
 
-    width, height, pad = 600, 260, 28
+    width, height, pad_x, pad_y = 480, 240, 24, 20
     if not raw_points:
         return {
-            "entity": entity, "x_label": app_i18n.t(x_field.label), "y_label": app_i18n.t(y_field.label),
+            "entity": entity, "x_label": x_label, "y_label": y_label,
             "points": [], "width": width, "height": height, "empty": True,
         }
 
@@ -115,24 +156,25 @@ def prep_scatter(request, app, block):
     span_s = (max_s - min_s) or 1.0
 
     def sx(val):
-        return round(pad + (val - min_x) / span_x * (width - 2 * pad), 1)
+        return round(pad_x + (val - min_x) / span_x * (width - 2 * pad_x), 1)
 
     def sy(val):
-        return round(height - pad - (val - min_y) / span_y * (height - 2 * pad), 1)
+        return round(height - pad_y - (val - min_y) / span_y * (height - 2 * pad_y), 1)
 
+    color_field = entity.fields.filter(key=color_key).first() if (entity and color_key) else None
     color_param = filter_param(entity, color_field) if color_field else ""
     points = []
     for p in raw_points:
-        r = 6.0
-        if size_field and p["size"] is not None:
-            r = round(4.5 + ((p["size"] - min_s) / span_s) * 8.5, 1)
-        tooltip = f"{p['label']}: {app_i18n.t(x_field.label)}={_format_number(round(p['x'], 2))}, {app_i18n.t(y_field.label)}={_format_number(round(p['y'], 2))}"
+        r = 7.0
+        if size_key and p["size"] is not None:
+            r = round(5.5 + ((p["size"] - min_s) / span_s) * 9.0, 1)
+        tooltip = f"{p['label']}: {x_label}={_format_number(round(p['x'], 2))}, {y_label}={_format_number(round(p['y'], 2))}"
         if p["group"]:
             tooltip += f" ({p['group']})"
         points.append({
-            "cx": sx(p["x"]), "cy": sy(p["y"]), "r": r, "tone": p["tone"],
+            "cx": f"{sx(p['x'])}", "cy": f"{sy(p['y'])}", "r": f"{r}", "tone": p["tone"],
             "title": tooltip, "group": p["group"],
-            "href": _filter_href(request, color_param, p["group"]) if color_field else f"?id={p['pk']}",
+            "href": _filter_href(request, color_param, p["group"]) if color_param else (f"?id={p['pk']}" if entity else "#"),
         })
 
     trend = None
@@ -142,8 +184,8 @@ def prep_scatter(request, app, block):
             y1 = slope * min_x + intercept
             y2 = slope * max_x + intercept
             trend = {
-                "x1": sx(min_x), "y1": max(pad, min(height - pad, sy(y1))),
-                "x2": sx(max_x), "y2": max(pad, min(height - pad, sy(y2))),
+                "x1": f"{sx(min_x)}", "y1": f"{max(pad_y, min(height - pad_y, sy(y1)))}",
+                "x2": f"{sx(max_x)}", "y2": f"{max(pad_y, min(height - pad_y, sy(y2)))}",
                 "r": _format_number(round(r_val, 3)),
                 "r2": _format_number(round(r_val ** 2, 3)),
             }
@@ -154,8 +196,8 @@ def prep_scatter(request, app, block):
     ]
     return {
         "entity": entity,
-        "x_label": app_i18n.t(x_field.label),
-        "y_label": app_i18n.t(y_field.label),
+        "x_label": x_label,
+        "y_label": y_label,
         "min_x": _format_number(round(min_x, 2)), "max_x": _format_number(round(max_x, 2)),
         "min_y": _format_number(round(min_y, 2)), "max_y": _format_number(round(max_y, 2)),
         "points": points, "trend": trend, "legend": legend,
@@ -167,24 +209,26 @@ def prep_scatter(request, app, block):
 
 def prep_boxplot(request, app, block):
     props = block["props"]
-    entity = _entity(app, props.get("entity"))
-    if not entity:
+    rows, entity, labels, err = _load_source_rows(request, app, props, max_rows=1000)
+    if err:
+        return {"error": err}
+    if rows is None:
         return {"error": gettext("Für diesen Boxplot ist keine Tabelle ausgewählt.")}
-    field = entity.fields.filter(key=props.get("field"), type__in=[Field.NUMBER, Field.DECIMAL]).first()
-    if not field:
+    f_key, f_label = _resolve_field_key(entity, labels, props.get("field"), numeric=True)
+    if not f_key:
         return {"error": gettext("Für den Boxplot wird ein Zahlenfeld benötigt.")}
-    group_field = entity.fields.filter(key=props.get("group_field")).first() if props.get("group_field") else None
+    g_key, _ = _resolve_field_key(entity, labels, props.get("group_field"))
 
     buckets = {}
-    for rec in filtered(request, entity)[:1000]:
-        val = _to_float(rec.data.get(field.key))
+    for row in rows:
+        val = _to_float(row["data"].get(f_key))
         if val is None:
             continue
-        grp = str(rec.data.get(group_field.key) or gettext("Ohne")) if group_field else app_i18n.t(field.label)
+        grp = str(row["data"].get(g_key) or gettext("Ohne")) if g_key else f_label
         buckets.setdefault(grp, []).append(val)
 
     if not buckets:
-        return {"entity": entity, "field_label": app_i18n.t(field.label), "rows": [], "empty": True}
+        return {"entity": entity, "field_label": f_label, "rows": [], "empty": True}
 
     all_vals = [v for vals in buckets.values() for v in vals]
     g_min, g_max = min(all_vals), max(all_vals)
@@ -193,9 +237,10 @@ def prep_boxplot(request, app, block):
     def pct(v):
         return round(max(0.0, min(100.0, (v - g_min) / span * 100.0)), 2)
 
+    group_field = entity.fields.filter(key=g_key).first() if (entity and g_key) else None
     group_param = filter_param(entity, group_field) if group_field else ""
     show_outliers = bool(props.get("show_outliers", True))
-    rows = []
+    out_rows = []
     for index, (grp, vals) in enumerate(sorted(buckets.items(), key=lambda item: item[0])[:15], start=1):
         s = sorted(vals)
         n = len(s)
@@ -207,16 +252,16 @@ def prep_boxplot(request, app, block):
         high_fence = q3 + 1.5 * iqr
         non_outliers = [v for v in s if low_fence <= v <= high_fence] or s
         w_low, w_high = min(non_outliers), max(non_outliers)
-        outliers = [pct(v) for v in s if v < low_fence or v > high_fence] if show_outliers else []
+        outliers = [f"{pct(v)}" for v in s if v < low_fence or v > high_fence] if show_outliers else []
         mean = sum(s) / n
-        rows.append({
+        out_rows.append({
             "label": grp, "count": n, "tone": (index - 1) % 5 + 1,
-            "href": _filter_href(request, group_param, grp) if group_field else "",
-            "q1_pct": pct(q1), "med_pct": pct(med), "q3_pct": pct(q3),
-            "box_width": round(max(1.5, pct(q3) - pct(q1)), 2),
-            "w_low_pct": pct(w_low), "w_high_pct": pct(w_high),
-            "whisker_width": round(max(0.0, pct(w_high) - pct(w_low)), 2),
-            "mean_pct": pct(mean),
+            "href": _filter_href(request, group_param, grp) if group_param else "",
+            "q1_pct": f"{pct(q1)}", "med_pct": f"{pct(med)}", "q3_pct": f"{pct(q3)}",
+            "box_width": f"{round(max(1.5, pct(q3) - pct(q1)), 2)}",
+            "w_low_pct": f"{pct(w_low)}", "w_high_pct": f"{pct(w_high)}",
+            "whisker_width": f"{round(max(0.0, pct(w_high) - pct(w_low)), 2)}",
+            "mean_pct": f"{pct(mean)}",
             "outliers": outliers[:30],
             "min": _format_number(round(s[0], 2)),
             "q1": _format_number(round(q1, 2)),
@@ -227,9 +272,9 @@ def prep_boxplot(request, app, block):
         })
 
     return {
-        "entity": entity, "field_label": app_i18n.t(field.label),
+        "entity": entity, "field_label": f_label,
         "min_label": _format_number(round(g_min, 2)), "max_label": _format_number(round(g_max, 2)),
-        "rows": rows, "empty": False,
+        "rows": out_rows, "empty": False,
     }
 
 
@@ -245,61 +290,66 @@ def _heat_class(ratio, negative=False):
 
 def prep_heatmap(request, app, block):
     props = block["props"]
-    entity = _entity(app, props.get("entity"))
-    if not entity:
+    rows, entity, labels, err = _load_source_rows(request, app, props, max_rows=1000)
+    if err:
+        return {"error": err}
+    if rows is None:
         return {"error": gettext("Für diese Heatmap ist keine Tabelle ausgewählt.")}
     mode = props.get("mode") or "correlation"
-    records = list(filtered(request, entity)[:1000])
 
     if mode == "correlation":
-        fields = _num_fields(entity)[:10]
-        if len(fields) < 2:
+        if entity is not None:
+            num_keys = [(f.key, app_i18n.t(f.label)) for f in _num_fields(entity)[:10]]
+        else:
+            num_keys = []
+            for k, lbl in labels.items():
+                if any(_to_float(r["data"].get(k)) is not None for r in rows[:20]):
+                    num_keys.append((k, lbl))
+            num_keys = num_keys[:10]
+        if len(num_keys) < 2:
             return {"error": gettext("Für eine Korrelationsmatrix braucht die Tabelle mindestens zwei Zahlenfelder.")}
-        labels = [app_i18n.t(f.label) for f in fields]
+        col_labels = [lbl for _, lbl in num_keys]
         matrix_rows = []
-        for f1 in fields:
+        for k1, l1 in num_keys:
             cells = []
-            for f2 in fields:
-                if f1.pk == f2.pk:
+            for k2, l2 in num_keys:
+                if k1 == k2:
                     r_val = 1.0
                 else:
-                    pairs = [
-                        (_to_float(rec.data.get(f1.key)), _to_float(rec.data.get(f2.key)))
-                        for rec in records
-                    ]
+                    pairs = [(_to_float(r["data"].get(k1)), _to_float(r["data"].get(k2))) for r in rows]
                     valid = [(x, y) for x, y in pairs if x is not None and y is not None]
                     r_val = _pearson([x for x, _ in valid], [y for _, y in valid])[0] if len(valid) >= 2 else 0.0
                     r_val = r_val or 0.0
                 cells.append({
                     "value": _format_number(round(r_val, 2)),
                     "css": _heat_class(r_val, negative=r_val < 0),
-                    "title": f"{app_i18n.t(f1.label)} × {app_i18n.t(f2.label)}: r = {_format_number(round(r_val, 3))}",
+                    "title": f"{l1} × {l2}: r = {_format_number(round(r_val, 3))}",
                 })
-            matrix_rows.append({"label": app_i18n.t(f1.label), "cells": cells})
-        return {"mode": "correlation", "columns": labels, "rows": matrix_rows, "empty": not records}
+            matrix_rows.append({"label": l1, "cells": cells})
+        return {"mode": "correlation", "columns": col_labels, "rows": matrix_rows, "empty": not rows}
 
-    row_field = entity.fields.filter(key=props.get("row_field")).first()
-    col_field = entity.fields.filter(key=props.get("col_field")).first()
-    if not row_field or not col_field:
+    row_key, _ = _resolve_field_key(entity, labels, props.get("row_field"))
+    col_key, _ = _resolve_field_key(entity, labels, props.get("col_field"))
+    if not row_key or not col_key:
         return {"error": gettext("Für die Heatmap im Modus Kreuztabelle werden Zeilen- und Spaltenfeld benötigt.")}
     agg = props.get("agg") if props.get("agg") in ("count", "sum", "avg") else "count"
-    val_field = (entity.fields.filter(key=props.get("value_field"), type__in=[Field.NUMBER, Field.DECIMAL]).first()
-                 if agg != "count" else None)
-    if agg != "count" and not val_field:
+    val_key, _ = (_resolve_field_key(entity, labels, props.get("value_field"), numeric=True)
+                  if agg != "count" else ("", ""))
+    if agg != "count" and not val_key:
         return {"error": gettext("Summe und Durchschnitt brauchen ein Zahlenfeld.")}
 
     row_keys, col_keys = [], []
     sums, counts = {}, {}
-    for rec in records:
-        rk = str(rec.data.get(row_field.key) or "–")
-        ck = str(rec.data.get(col_field.key) or "–")
+    for r in rows:
+        rk = str(r["data"].get(row_key) or "–")
+        ck = str(r["data"].get(col_key) or "–")
         if rk not in row_keys and len(row_keys) < 15:
             row_keys.append(rk)
         if ck not in col_keys and len(col_keys) < 12:
             col_keys.append(ck)
         if rk not in row_keys or ck not in col_keys:
             continue
-        num = _to_float(rec.data.get(val_field.key)) if val_field else 1.0
+        num = _to_float(r["data"].get(val_key)) if val_key else 1.0
         if num is None:
             continue
         sums[(rk, ck)] = sums.get((rk, ck), 0.0) + num
@@ -313,7 +363,8 @@ def prep_heatmap(request, app, block):
             computed[(rk, ck)] = (s / c if c else 0.0) if agg == "avg" else (s if agg == "sum" else c)
 
     max_v = max(computed.values(), default=0.0) or 1.0
-    r_param = filter_param(entity, row_field)
+    row_field = entity.fields.filter(key=row_key).first() if entity else None
+    r_param = filter_param(entity, row_field) if row_field else ""
     row_list = []
     for rk in row_keys:
         cells = []
@@ -330,24 +381,109 @@ def prep_heatmap(request, app, block):
     return {"mode": "crosstab", "columns": col_keys, "rows": row_list, "empty": not row_list}
 
 
-# ---------- 4. Spec-Chart (Vega-Lite-kompatible JSON-Spezifikation auf Tabelle oder DataQuery) ----------
+# ---------- 4. Histogramm & Data-Drift (PSI) ----------
 
-def _load_spec_rows(request, app, props):
-    if props.get("query"):
-        dq = DataQuery.objects.filter(app=app, slug=props.get("query")).first()
-        if not dq:
-            return None, gettext("Die gewählte Datenbank-Abfrage gibt es nicht.")
-        try:
-            res = datasources.run_saved(dq, {})
-        except datasources.QueryError as exc:
-            return None, str(exc)
-        cols = res["columns"]
-        return [dict(zip(cols, r)) for r in res["rows"][:500]], None
-    entity = _entity(app, props.get("entity"))
-    if not entity:
-        return None, gettext("Bitte eine Tabelle oder eine Datenbank-Abfrage auswählen.")
-    return [r.data for r in filtered(request, entity)[:500]], None
+def prep_histogram(request, app, block):
+    props = block["props"]
+    rows, entity, labels, err = _load_source_rows(request, app, props, max_rows=1000)
+    if err:
+        return {"error": err}
+    if rows is None:
+        return {"error": gettext("Für dieses Histogramm ist keine Tabelle ausgewählt.")}
+    f_key, f_label = _resolve_field_key(entity, labels, props.get("field"), numeric=True)
+    if not f_key:
+        return {"error": gettext("Für das Histogramm wird ein Zahlenfeld benötigt.")}
+    g_key, _ = _resolve_field_key(entity, labels, props.get("group_field"))
+    try:
+        num_bins = min(max(int(props.get("bins") or 8), 3), 20)
+    except (TypeError, ValueError):
+        num_bins = 8
 
+    items = []
+    group_counts = {}
+    for r in rows:
+        v = _to_float(r["data"].get(f_key))
+        if v is None:
+            continue
+        grp = str(r["data"].get(g_key) or gettext("Ohne")) if g_key else ""
+        if grp:
+            group_counts[grp] = group_counts.get(grp, 0) + 1
+        items.append((v, grp))
+
+    if not items:
+        return {"field_label": f_label, "bins": [], "empty": True}
+
+    vals = [v for v, _ in items]
+    low, high = min(vals), max(vals)
+    span = (high - low) or 1.0
+    step = span / num_bins
+
+    top_groups = [g for g, _ in sorted(group_counts.items(), key=lambda x: -x[1])[:2]]
+    compare = len(top_groups) == 2
+    g_a, g_b = (top_groups[0], top_groups[1]) if compare else ("", "")
+
+    bin_totals = [0] * num_bins
+    bin_a = [0] * num_bins
+    bin_b = [0] * num_bins
+    for v, grp in items:
+        idx = min(num_bins - 1, max(0, int((v - low) / step)))
+        bin_totals[idx] += 1
+        if compare:
+            if grp == g_a:
+                bin_a[idx] += 1
+            elif grp == g_b:
+                bin_b[idx] += 1
+
+    max_bin = max(bin_totals, default=1) or 1
+    total_n = len(items)
+    total_a = sum(bin_a) or 1
+    total_b = sum(bin_b) or 1
+
+    psi_val = None
+    drift_label = ""
+    drift_tone = "ok"
+    if compare and sum(bin_a) >= 2 and sum(bin_b) >= 2:
+        psi_sum = 0.0
+        for ca, cb in zip(bin_a, bin_b):
+            pa = max(0.001, ca / total_a)
+            pb = max(0.001, cb / total_b)
+            psi_sum += (pa - pb) * math.log(pa / pb)
+        psi_val = _format_number(round(psi_sum, 3))
+        if psi_sum >= 0.25:
+            drift_label = gettext("Starker Drift")
+            drift_tone = "warn"
+        elif psi_sum >= 0.1:
+            drift_label = gettext("Moderater Drift")
+            drift_tone = "warn"
+        else:
+            drift_label = gettext("Stabil")
+            drift_tone = "ok"
+
+    bins_out = []
+    for i in range(num_bins):
+        b_start = low + i * step
+        b_end = low + (i + 1) * step
+        c = bin_totals[i]
+        bins_out.append({
+            "range": f"{_format_number(round(b_start, 1))}–{_format_number(round(b_end, 1))}",
+            "count": c,
+            "percent": round(100 * c / max_bin),
+            "share": round(100 * c / total_n),
+            "count_a": bin_a[i],
+            "count_b": bin_b[i],
+            "pct_a": round(100 * bin_a[i] / max_bin),
+            "pct_b": round(100 * bin_b[i] / max_bin),
+        })
+
+    return {
+        "field_label": f_label, "count": total_n, "bins": bins_out,
+        "compare": compare, "group_a": g_a, "group_b": g_b,
+        "psi": psi_val, "drift_label": drift_label, "drift_tone": drift_tone,
+        "empty": False,
+    }
+
+
+# ---------- 5. Spec-Chart (Vega-Lite-kompatible JSON-Spezifikation auf Tabelle oder DataQuery) ----------
 
 def prep_spec_chart(request, app, block):
     props = block["props"]
@@ -358,9 +494,12 @@ def prep_spec_chart(request, app, block):
     except ValueError:
         return {"error": gettext("Die Chart-Spezifikation ist kein gültiges JSON-Objekt.")}
 
-    rows, err = _load_spec_rows(request, app, props)
+    rows_meta, _entity_obj, _labels, err = _load_source_rows(request, app, props, max_rows=500)
     if err:
         return {"error": err}
+    if rows_meta is None:
+        return {"error": gettext("Bitte eine Tabelle oder eine Datenbank-Abfrage auswählen.")}
+    rows = [r["data"] for r in rows_meta]
 
     mark = spec.get("mark")
     if isinstance(mark, dict):
@@ -409,7 +548,7 @@ def prep_spec_chart(request, app, block):
         {
             "label": k, "value": _format_number(round(v, 2) if isinstance(v, float) else v),
             "percent": round(max(0.0, v) / top * 100),
-            "cx": pts[i][0], "cy": pts[i][1],
+            "cx": f"{pts[i][0]}", "cy": f"{pts[i][1]}",
         }
         for i, (k, v) in enumerate(series)
     ]
@@ -425,7 +564,7 @@ def prep_spec_chart(request, app, block):
 
 register("scatter", _("Streudiagramm"), "🫧", [
     {"key": "title", "label": _("Titel (optional)"), "type": "text", "default": _("Korrelation")},
-    ENTITY,
+    ENTITY, QUERY_OPT,
     {"key": "x_field", "label": _("X-Achse (Zahlenfeld)"), **FIELD},
     {"key": "y_field", "label": _("Y-Achse (Zahlenfeld)"), **FIELD},
     {"key": "color_field", "label": _("Farbe / Cluster nach Feld (optional)"), **FIELD},
@@ -436,7 +575,7 @@ register("scatter", _("Streudiagramm"), "🫧", [
 
 register("boxplot", _("Boxplot & Verteilung"), "📦", [
     {"key": "title", "label": _("Titel (optional)"), "type": "text", "default": _("Verteilung")},
-    ENTITY,
+    ENTITY, QUERY_OPT,
     {"key": "field", "label": _("Zahlenfeld"), **FIELD},
     {"key": "group_field", "label": _("Gruppieren nach Feld (optional)"), **FIELD},
     {"key": "show_outliers", "label": _("Ausreißer (1,5 × IQR) markieren"), "type": "checkbox", "default": True},
@@ -444,7 +583,7 @@ register("boxplot", _("Boxplot & Verteilung"), "📦", [
 
 register("heatmap", _("Heatmap & Korrelation"), "🌡️", [
     {"key": "title", "label": _("Titel (optional)"), "type": "text", "default": _("Korrelationsmatrix")},
-    ENTITY,
+    ENTITY, QUERY_OPT,
     {"key": "mode", "label": _("Modus"), "type": "select", "default": "correlation",
      "options": [["correlation", _("Korrelationsmatrix (alle Zahlenfelder)")],
                  ["crosstab", _("Heatmap zweier Felder (Zeile × Spalte)")]]},
@@ -455,10 +594,17 @@ register("heatmap", _("Heatmap & Korrelation"), "🌡️", [
     {"key": "value_field", "label": _("Zahlenfeld (für Summe/Durchschnitt)"), **FIELD},
 ], prep_heatmap, "Auswertung", _("Pearson-Korrelationsmatrix oder farbcodierte Matrix"))
 
+register("histogram", _("Histogramm & Drift"), "📶", [
+    {"key": "title", "label": _("Titel (optional)"), "type": "text", "default": _("Häufigkeitsverteilung")},
+    ENTITY, QUERY_OPT,
+    {"key": "field", "label": _("Zahlenfeld"), **FIELD},
+    {"key": "bins", "label": _("Anzahl Intervalle (Bins, 3–20)"), "type": "number", "default": 8},
+    {"key": "group_field", "label": _("Drift-Vergleich nach Feld (optional, berechnet PSI)"), **FIELD},
+], prep_histogram, "Auswertung", _("Häufigkeitsverteilung in Intervallen mit optionalem Data-Drift-Index (PSI)"))
+
 register("spec_chart", _("Spec-Chart (Vega-Lite)"), "📐", [
     {"key": "title", "label": _("Titel (optional)"), "type": "text", "default": _("Auswertung")},
-    ENTITY,
-    {"key": "query", "label": _("Oder Datenbank-Abfrage (DataQuery)"), "type": "query"},
+    ENTITY, QUERY_OPT,
     {"key": "spec", "label": _("Spezifikation (Vega-Lite JSON)"), "type": "textarea",
      "default": '{\n  "mark": "bar",\n  "encoding": {\n    "x": {"field": "kategorie"},\n    "y": {"aggregate": "count"}\n  }\n}'},
 ], prep_spec_chart, "Auswertung", _("Deklaratives Diagramm (JSON-Spec) auf Tabelle oder SQL/Databricks-Abfrage"))

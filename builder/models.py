@@ -232,6 +232,10 @@ class Field(models.Model):
         _("Im Formular anzeigen"), default=True,
         help_text=_("Aus für Felder, die ein Skript füllt (z. B. ein erzeugter Link). Der Wert bleibt beim Bearbeiten erhalten."),
     )
+    formula = models.CharField(
+        _("Formel (optional)"), max_length=200, blank=True,
+        help_text=_("Berechnet den Wert beim Speichern automatisch aus anderen Zahlenfeldern, z. B. preis * menge oder ausschuss - prognose."),
+    )
     order = models.PositiveIntegerField(default=0)
 
     class Meta:
@@ -274,6 +278,66 @@ class Record(models.Model):
         first = self.entity.fields.first()
         value = self.data.get(first.key) if first else None
         return str(value) if value not in (None, "") else f"#{self.pk}"
+
+    def save(self, *args, **kwargs):
+        if isinstance(self.data, dict) and self.entity_id:
+            apply_formulas(self.entity, self.data)
+        super().save(*args, **kwargs)
+
+
+def evaluate_formula(expr, data):
+    """Wertet eine arithmetische Formel sicher über AST aus (ohne eval). Gibt Zahl oder None zurück."""
+    import ast
+    import operator
+
+    OPS = {
+        ast.Add: operator.add, ast.Sub: operator.sub,
+        ast.Mult: operator.mul, ast.Div: operator.truediv,
+    }
+    UNARY = {ast.UAdd: operator.pos, ast.USub: operator.neg}
+    FUNCS = {"round": round, "abs": abs, "min": min, "max": max}
+
+    def _eval(node):
+        if isinstance(node, ast.Expression):
+            return _eval(node.body)
+        if isinstance(node, ast.Constant) and isinstance(node.value, (int, float)) and not isinstance(node.value, bool):
+            return float(node.value)
+        if isinstance(node, ast.Name):
+            raw = (data or {}).get(node.id)
+            if raw is None or raw == "" or isinstance(raw, bool):
+                raise ValueError
+            return float(raw)
+        if isinstance(node, ast.BinOp) and type(node.op) in OPS:
+            left, right = _eval(node.left), _eval(node.right)
+            return OPS[type(node.op)](left, right)
+        if isinstance(node, ast.UnaryOp) and type(node.op) in UNARY:
+            return UNARY[type(node.op)](_eval(node.operand))
+        if isinstance(node, ast.Call) and isinstance(node.func, ast.Name) and node.func.id in FUNCS:
+            args = [_eval(a) for a in node.args]
+            if node.func.id == "round" and len(args) == 2:
+                return float(round(args[0], int(args[1])))
+            return float(FUNCS[node.func.id](*args))
+        raise ValueError
+
+    text = str(expr or "").strip()
+    if not text:
+        return None
+    try:
+        tree = ast.parse(text, mode="eval")
+        val = _eval(tree)
+        return round(val, 4)
+    except Exception:
+        return None
+
+
+def apply_formulas(entity, data):
+    """Berechnet alle Formel-Felder einer Tabelle und trägt das Ergebnis in data ein."""
+    for f in entity.fields.all():
+        if not f.formula:
+            continue
+        val = evaluate_formula(f.formula, data)
+        if val is not None:
+            data[f.key] = int(round(val)) if f.type == Field.NUMBER else val
 
 
 class Page(models.Model):
@@ -725,6 +789,24 @@ class PlatformSettings(models.Model):
     automation_max_timeout_minutes = models.PositiveIntegerField(
         _("Längstes Zeitlimit für Automatisierungen (Minuten)"), null=True, blank=True,
         validators=[MinValueValidator(1), MaxValueValidator(1440)])
+    alert_channel = models.CharField(
+        _("Alarmierung bei Hintergrund-Fehlern"), max_length=16, blank=True, default="",
+        choices=[
+            ("", _("Standard aus der Umgebung")),
+            ("off", _("Aus")),
+            ("teams", _("Microsoft Teams (Webhook)")),
+            ("email", _("E-Mail")),
+            ("api", _("API-Call (HTTP POST)")),
+        ],
+        help_text=_("Sendet eine Benachrichtigung, wenn eine Automatisierung, ein geplantes Skript oder ein Datenquellen-Abgleich fehlschlägt."),
+    )
+    alert_target = models.CharField(
+        _("Alarm-Ziel (Teams-Webhook-URL, E-Mail oder API-URL)"), max_length=500, blank=True, default="",
+    )
+    alert_auth_header = models.CharField(
+        _("Alarm-Authorization-Header (optional, für API-Call)"), max_length=300, blank=True, default="",
+        help_text=_("Z. B. Bearer <Token>, wird beim API-Call als Authorization-Header mitgesendet."),
+    )
     updated_at = models.DateTimeField(_("Zuletzt geändert"), auto_now=True)
     updated_by = models.ForeignKey(settings_module.AUTH_USER_MODEL, null=True, blank=True,
                                    on_delete=models.SET_NULL, related_name="+", editable=False,

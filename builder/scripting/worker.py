@@ -96,6 +96,14 @@ def background_once(out=None):
         if not sync_and_record(query):
             failed += 1
             log.warning("Abgleich %s/%s: %s", query.app.slug, query.slug, query.last_sync_message)
+            from .. import alerts
+
+            alerts.notify_failure(
+                source="datasource_sync",
+                title=_("Datenquellen-Abgleich „%(name)s“ fehlgeschlagen") % {"name": query.name},
+                details=query.last_sync_message,
+                app=query.app,
+            )
     return scripts, syncs, failed
 
 
@@ -156,6 +164,14 @@ def execute(script, trigger, event, control):
         ScriptRun.objects.filter(pk__in=old).delete()
     if not outcome.ok and outcome.status != ScriptRun.STOPPED:
         log.warning("Automatisierung %s/%s: %s %s", script.app.slug, script.slug, outcome.status, error)
+        from .. import alerts
+
+        alerts.notify_failure(
+            source="automation",
+            title=_("Automatisierung „%(name)s“ fehlgeschlagen") % {"name": script.name},
+            details=error or outcome.status,
+            app=script.app,
+        )
     return outcome
 
 

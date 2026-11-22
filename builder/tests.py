@@ -4023,6 +4023,8 @@ class DataScienceBlocksTests(TestCase):
         analyse = self.client.get(reverse("page", args=[app.slug, "analyse"]))
         self.assertEqual(analyse.status_code, 200)
         self.assertContains(analyse, "scatter-block")
+        self.assertContains(analyse, 'cx="24.0"')
+        self.assertNotContains(analyse, 'cx="24,0"')
         self.assertContains(analyse, "R² =")
         self.assertContains(analyse, "boxplot-block")
         self.assertContains(analyse, "heatmap-block")
@@ -4064,3 +4066,170 @@ class DataScienceBlocksTests(TestCase):
         self.assertContains(res, "spec-chart-block")
         self.assertContains(res, "chart-filter-link")
         self.assertContains(res, "data-selection-map=")
+
+    def test_histogram_psi_formula_query_visuals_and_exports(self):
+        from unittest.mock import patch
+        from .models import DataQuery, Record
+
+        call_command("beispiel_datascience", verbosity=0)
+        app = App.objects.get(slug="datascience")
+        chargen = app.entities.get(slug="chargen")
+
+        # 1c. Formelspalte wird beim Speichern automatisch berechnet
+        rec = Record.objects.create(entity=chargen, data={
+            "charge": "CH-999", "werk": "Stuttgart", "temperatur": 190.0,
+            "druck": 40.0, "durchsatz": 100, "prognose": 2.0, "ausschuss": 3.25, "status": "OK",
+        })
+        self.assertEqual(rec.data.get("abweichung"), 1.25)
+
+        # 1b. Histogramm & PSI-Drift auf der Analyse-Seite
+        analyse = self.client.get(reverse("page", args=[app.slug, "analyse"]))
+        self.assertEqual(analyse.status_code, 200)
+        self.assertContains(analyse, "histogram-block")
+        self.assertContains(analyse, "PSI ")
+
+        # 1a & 1d. Live-DataQuery direkt in Scatter/Boxplot/Histogramm + CSV-Export für Query & gefilterte Tabelle
+        q = DataQuery.objects.create(app=app, name="Live-Chargen", slug="live-chargen", source="dwh", sql="SELECT * FROM c")
+        fake_rows = [
+            (180.0, 1.5, "Stuttgart"),
+            (185.0, 2.1, "Stuttgart"),
+            (195.0, 3.8, "München"),
+            (200.0, 4.4, "München"),
+        ]
+        q_page = Page.objects.create(app=app, title="Live-DS", slug="live-ds", layout=[
+            {"id": "bqsc", "type": "scatter", "width": 6, "props": {
+                "title": "Live-Scatter", "query": "live-chargen", "x_field": "temp", "y_field": "scrap", "trendline": True,
+            }},
+            {"id": "bqbx", "type": "boxplot", "width": 6, "props": {
+                "title": "Live-Boxplot", "query": "live-chargen", "field": "scrap", "group_field": "plant",
+            }},
+            {"id": "bqhi", "type": "histogram", "width": 6, "props": {
+                "title": "Live-Histogramm", "query": "live-chargen", "field": "temp", "group_field": "plant", "bins": 4,
+            }},
+        ])
+        with patch("builder.datasources.run_saved", return_value={"columns": ["temp", "scrap", "plant"], "rows": fake_rows}):
+            res_q = self.client.get(reverse("page", args=[app.slug, q_page.slug]))
+            self.assertEqual(res_q.status_code, 200)
+            self.assertContains(res_q, "Live-Scatter")
+            self.assertContains(res_q, "Live-Boxplot")
+            self.assertContains(res_q, "Live-Histogramm")
+
+            csv_q = self.client.get(reverse("query_export", args=[app.slug, q.slug]))
+            self.assertEqual(csv_q.status_code, 200)
+            self.assertIn("Stuttgart", b"".join(csv_q.streaming_content).decode("utf-8"))
+
+        # Gefilterter Tabellen-CSV-Export
+        csv_all = b"".join(self.client.get(reverse("entity_export", args=[app.slug, "chargen"])).streaming_content).decode("utf-8")
+        csv_stuttgart = b"".join(self.client.get(
+            reverse("entity_export", args=[app.slug, "chargen"]) + "?chargen.werk=Stuttgart"
+        ).streaming_content).decode("utf-8")
+        self.assertIn("München", csv_all)
+        self.assertNotIn("München", csv_stuttgart)
+        self.assertIn("Stuttgart", csv_stuttgart)
+
+
+class ComfortAndAlertingTests(TestCase):
+    """Tests für Punkt 3: Versions-Diff, Optimistic Locking für Skripte, App-Klonen und Fehler-Alarmierung."""
+
+    def setUp(self):
+        self.user = User.objects.create_user("opsuser", password="x", is_staff=True)
+        self.client.force_login(self.user)
+        self.app = App.objects.create(name="Produktion", slug="produktion", created_by=self.user, published=True)
+        self.entity = Entity.objects.create(app=self.app, name="Aufträge", slug="auftraege")
+        Field.objects.create(entity=self.entity, label="Nummer", key="nummer", type=Field.TEXT)
+        self.page = Page.objects.create(app=self.app, title="Übersicht", slug="uebersicht")
+
+    def test_version_diff_and_app_clone(self):
+        from . import versions
+
+        v1 = versions.create_version(self.app, self.user, "Basis")
+        Field.objects.create(entity=self.entity, label="Betrag", key="betrag", type=Field.DECIMAL, formula="preis * 2")
+        Page.objects.create(app=self.app, title="Neu", slug="neu-seite")
+
+        changes = versions.diff(versions.snapshot(self.app), v1.snapshot)
+        self.assertTrue(any("Aufträge" in c for c in changes))
+        self.assertTrue(any("Neu" in c for c in changes))
+
+        detail = self.client.get(reverse("designer_app", args=[self.app.slug]))
+        self.assertContains(detail, "Unterschiede zum aktuellen Stand")
+
+        clone_res = self.client.post(reverse("designer_app_clone", args=[self.app.slug]))
+        self.assertEqual(clone_res.status_code, 302)
+        cloned = App.objects.exclude(pk=self.app.pk).get()
+        self.assertIn("(Kopie)", cloned.name)
+        self.assertFalse(cloned.published)
+        self.assertEqual(cloned.entities.count(), 1)
+        self.assertEqual(cloned.entities.first().fields.get(key="betrag").formula, "preis * 2")
+
+    def test_script_optimistic_locking_409(self):
+        from .models import Script
+
+        sc = Script.objects.create(
+            app=self.app, name="Rechner", slug="rechner",
+            language=Script.PYTHON, trigger=Script.PAGE, code="print(1)",
+        )
+        stale_token = "2020-01-01T00:00:00+00:00"
+        conflict = self.client.post(reverse("designer_script", args=[self.app.slug, sc.pk]), {
+            "name": "Rechner", "language": Script.PYTHON, "trigger": Script.PAGE,
+            "interval_minutes": 60, "enabled": "on", "code": "print(2)",
+            "expected_version": stale_token, "action": "save",
+        })
+        self.assertEqual(conflict.status_code, 409)
+        sc.refresh_from_db()
+        self.assertEqual(sc.code, "print(1)")
+
+        ok = self.client.post(reverse("designer_script", args=[self.app.slug, sc.pk]), {
+            "name": "Rechner", "language": Script.PYTHON, "trigger": Script.PAGE,
+            "interval_minutes": 60, "enabled": "on", "code": "print(2)",
+            "expected_version": sc.updated_at.isoformat(), "action": "save",
+        })
+        self.assertEqual(ok.status_code, 302)
+        sc.refresh_from_db()
+        self.assertEqual(sc.code, "print(2)")
+
+    def test_alert_channels_teams_email_and_api(self):
+        from unittest.mock import MagicMock, patch
+        from django.core import mail
+        from . import alerts, platform
+        from .models import PlatformSettings
+
+        settings_row, _ = PlatformSettings.objects.get_or_create(pk=1)
+
+        # 1. Teams Webhook
+        settings_row.alert_channel = "teams"
+        settings_row.alert_target = "https://outlook.office.com/webhook/test"
+        settings_row.save()
+        platform.forget()
+        with patch("builder.alerts.requests.post") as mock_post:
+            mock_post.return_value = MagicMock(status_code=200)
+            self.assertTrue(alerts.notify_failure("automation", "Job X kaputt", "ZeroDivisionError", app=self.app))
+            self.assertEqual(mock_post.call_count, 1)
+            payload = mock_post.call_args.kwargs["json"]
+            self.assertEqual(payload["@type"], "MessageCard")
+            self.assertIn("Job X kaputt", payload["title"])
+
+        # 2. E-Mail
+        settings_row.alert_channel = "email"
+        settings_row.alert_target = "ops@example.com, team@example.com"
+        settings_row.save()
+        platform.forget()
+        mail.outbox.clear()
+        self.assertTrue(alerts.notify_failure("datasource_sync", "DWH Timeout", "Timeout nach 300s", app=self.app))
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertIn("DWH Timeout", mail.outbox[0].subject)
+        self.assertEqual(mail.outbox[0].to, ["ops@example.com", "team@example.com"])
+
+        # 3. API-Call mit Authorization-Header
+        settings_row.alert_channel = "api"
+        settings_row.alert_target = "https://monitoring.example.com/events"
+        settings_row.alert_auth_header = "Bearer geheim-123"
+        settings_row.save()
+        platform.forget()
+        with patch("builder.alerts.requests.post") as mock_post:
+            mock_post.return_value = MagicMock(status_code=200)
+            self.assertTrue(alerts.notify_failure("schedule_script", "Skript Y", "Fehler in Zeile 3", app=self.app))
+            self.assertEqual(mock_post.call_count, 1)
+            self.assertEqual(mock_post.call_args.kwargs["headers"]["Authorization"], "Bearer geheim-123")
+            self.assertEqual(mock_post.call_args.kwargs["json"]["event"], "baukasten.failure")
+            self.assertEqual(mock_post.call_args.kwargs["json"]["app"], "produktion")
+

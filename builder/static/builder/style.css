@@ -497,21 +497,28 @@ html.sheet-open { overflow: hidden; }
 .line-band { fill: var(--accent-soft); opacity: .55; }
 .line-threshold { stroke: var(--danger); stroke-width: 1.5; stroke-dasharray: 4 3; }
 .line-anomaly { fill: var(--danger); stroke: var(--surface); stroke-width: 1.5; }
-.scatter-wrap { display: grid; grid-template-columns: auto 1fr; gap: .4rem; align-items: stretch; }
-.scatter-axis-y { display: flex; flex-direction: column; justify-content: space-between; text-align: right; padding: .4rem 0 1.6rem; }
+.scatter-meta { display: flex; flex-wrap: wrap; justify-content: space-between; gap: .25rem .75rem; margin-bottom: .4rem; }
+.scatter-wrap { display: grid; grid-template-columns: auto 1fr; gap: .35rem; align-items: stretch; }
+.scatter-axis-y { display: flex; flex-direction: column; justify-content: space-between; text-align: right; padding: .2rem 0 1.45rem; font-variant-numeric: tabular-nums; }
 .scatter-stage { min-width: 0; }
-.scatter-svg { width: 100%; height: 220px; background: var(--bg); border-radius: var(--radius); display: block; }
-.scatter-trend { stroke: var(--accent-strong); stroke-width: 2; stroke-dasharray: 5 4; opacity: .75; }
-.scatter-dot { fill: var(--c1); stroke: var(--surface); stroke-width: 1.5; opacity: .88; cursor: pointer; transition: r .12s; }
+.scatter-svg { width: 100%; height: auto; aspect-ratio: 2 / 1; background: var(--bg); border: 1px solid var(--line); border-radius: var(--radius); display: block; }
+.scatter-trend { stroke: var(--accent-strong); stroke-width: 2.2; stroke-dasharray: 6 4; opacity: .8; }
+.scatter-dot { fill: var(--c1); stroke: var(--surface); stroke-width: 1.5; opacity: .9; cursor: pointer; transition: r .12s; }
 .scatter-dot.seg-2 { fill: var(--c2); }
 .scatter-dot.seg-3 { fill: var(--c3); }
 .scatter-dot.seg-4 { fill: var(--c4); }
 .scatter-dot.seg-5 { fill: var(--c5); }
-.scatter-Axis-x, .scatter-axis-x { display: flex; justify-content: space-between; padding: .25rem .4rem 0; }
-.scatter-legend { display: flex; flex-wrap: wrap; gap: .75rem; margin-top: .5rem; }
-.boxplot-scale { display: flex; justify-content: space-between; margin-bottom: .35rem; }
-.boxplot-rows { display: flex; flex-direction: column; gap: .55rem; }
-.boxplot-row { display: grid; grid-template-columns: minmax(90px, 150px) 1fr auto; gap: .65rem; align-items: center; }
+.scatter-axis-x { display: flex; justify-content: space-between; gap: .5rem; padding: .25rem .2rem 0; font-variant-numeric: tabular-nums; }
+.scatter-axis-x span:nth-child(2) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.scatter-legend { display: flex; flex-wrap: wrap; gap: .6rem .9rem; margin-top: .55rem; }
+.boxplot-scale { display: flex; justify-content: space-between; gap: .5rem; margin-bottom: .4rem; }
+.boxplot-rows { display: flex; flex-direction: column; gap: .65rem; }
+.boxplot-row { display: grid; grid-template-columns: minmax(90px, 140px) 1fr auto; gap: .55rem; align-items: center; }
+@media (max-width: 640px) {
+  .scatter-block .card-head, .boxplot-block .card-head, .heatmap-block .card-head { flex-wrap: wrap; gap: .2rem .6rem; }
+  .boxplot-row { grid-template-columns: 1fr auto; gap: .25rem .5rem; }
+  .boxplot-track { grid-column: 1 / -1; order: 3; }
+}
 .boxplot-track { position: relative; height: 26px; background: var(--bg); border-radius: 6px; border: 1px solid var(--line); }
 .boxplot-whisker { position: absolute; top: 12px; height: 2px; background: var(--muted); }
 .boxplot-cap { position: absolute; top: 7px; width: 2px; height: 12px; background: var(--muted); transform: translateX(-1px); }
@@ -1165,3 +1172,14 @@ button.stepper-btn:hover { border-color: var(--accent); }
 .stepper-step.is-current .stepper-btn { background: var(--accent-soft); border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
 .stepper-step.is-current .stepper-num { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
 .stepper-block.is-busy .stepper { opacity: .6; pointer-events: none; }
+
+/* ---------- Histogramm & Drift ---------- */
+.histogram-legend { display: flex; flex-wrap: wrap; gap: .75rem 1.25rem; align-items: center; margin-bottom: .65rem; font-size: .82rem; }
+.histogram-swatch { display: inline-block; width: .75rem; height: .75rem; border-radius: 3px; background: var(--accent); margin-right: .3rem; vertical-align: middle; }
+.histogram-swatch-b { background: var(--c2, #d97706); }
+.histogram-track { display: flex; flex-direction: column; gap: 3px; justify-content: center; }
+.histogram-fill-b { background: var(--c2, #d97706); opacity: .85; }
+.version-diff { margin-top: .3rem; }
+.version-diff summary { cursor: pointer; color: var(--accent-strong); font-weight: 500; }
+.version-diff ul { margin: .25rem 0 0 1rem; padding: 0; }
+
