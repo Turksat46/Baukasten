@@ -2,4 +2,4 @@
 # Automatisierungen importieren (zusätzlich zu allem aus requirements.txt, z. B. requests).
 # Neue Bibliothek: hier eintragen, Image neu bauen, ausrollen. Bitte mit Versionsgrenze.
 openpyxl>=3.1,<4
-python-dateutil>=2.9,<3
+python-dateutil>=2.9,<5
