@@ -321,6 +321,14 @@ def _groups(entity, f, limit=12, records=None):
             label = gettext("Ja") if str(raw).lower() in ("1", "true") else gettext("Nein")
         elif f.type == Field.REFERENCE and str(raw).isdigit():
             label = str(Record.objects.filter(pk=int(raw)).first() or f"#{raw}")
+        elif f.type in (Field.NUMBER, Field.DECIMAL) and isinstance(raw, str):
+            # PostgreSQL liefert den JSON-Wert hier als Text („1234.5“), SQLite als Zahl.
+            try:
+                number = float(raw)
+            except ValueError:
+                label = raw
+            else:
+                label = display_value(f, int(number) if f.type == Field.NUMBER and number.is_integer() else number)
         else:
             label = display_value(f, raw)
         result.append((label, row["c"], filter_value(f, raw)))
