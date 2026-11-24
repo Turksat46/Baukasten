@@ -1,7 +1,7 @@
 Django>=5.2,<6.0
 gunicorn>=22,<24
 whitenoise>=6,<7
-dj-database-url>=2,<3
+dj-database-url>=2,<4
 psycopg[binary]>=3.1,<4
 requests>=2.31,<3
 mozilla-django-oidc>=4,<5
