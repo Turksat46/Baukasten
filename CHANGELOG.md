@@ -10,6 +10,38 @@ Neue Einträge oben unter „Unveröffentlicht“ sammeln und beim Release zur V
 
 ## Unveröffentlicht
 
+### Behoben
+- Sicherheit: Der CSV-Export gespeicherter Abfragen (`/a/<app>/q/<abfrage>/export.csv`) war ohne
+  Anmeldung erreichbar; er verlangt jetzt eine Anmeldung und nimmt nur Parameter aus dem SQL an.
+- Abfrage-Export schrieb in jede Zeile die Spaltennamen statt der Werte.
+- Data-Science-Bausteine mit Datenbank-Abfrage als Quelle stürzten ab (`KeyError`); sie lesen die
+  Zeilen jetzt richtig und laden wie der Abfrage-Baustein nach, statt die Seite aufzuhalten.
+  Startseiten-Widgets fragen bei „wird geladen“ selbst nach.
+- Formeln mit unendlichem Ergebnis (z. B. sehr großen Werten) brachen das Speichern ab; Formeln
+  dürfen jetzt auch weiter hinten stehende Formelfelder nutzen.
+- CSV-Import: berechnet Formelfelder und verändert nicht mehr das globale CSV-Format des Prozesses.
+- Unterliste: zeigte bei Tabellen mit mehr als 500 Einträgen nicht alle Untereinträge.
+- Alarme: derselbe Fehler höchstens einmal je `ALERT_REPEAT_MINUTES` (Standard 60).
+- Klick-Filter in Diagramm und Kreisdiagramm filterten nach dem angezeigten Text statt nach dem
+  gespeicherten Wert: „Ja“ zeigte die Nein-Einträge, Verweise, Kommazahlen und übersetzte
+  Auswahlwerte filterten gar nicht.
+- Abfragen mit Parametern und `%` in Zeichenketten (`LIKE 'A%'`) scheiterten auf PostgreSQL und MySQL.
+- Sicherheit: Die Nur-Lese-Prüfung von Abfragen ließ sich mit Backslash-maskierten Anführungszeichen
+  (`'a\''`, MySQL bzw. PostgreSQL `E'…'`) umgehen.
+- Formelfelder behielten den alten Wert, wenn ein Eingangsfeld geleert wurde oder durch 0 geteilt
+  wurde; sie stehen nicht mehr als Eingabefeld im Formular. Der Designer prüft Formeln beim Speichern
+  (unbekannte Felder, nicht erlaubte Zeichen, nur für Zahlenfelder).
+- Spec-Chart: die Vega-Lite-Berechnungen `mean`, `average`, `median`, `min` und `max` wurden still
+  als Summe gerechnet; unbekannte Berechnungen melden jetzt einen Fehler.
+- Data-Science-Bausteine fassten den Wert 0 mit leeren Werten zu „Ohne“ bzw. „–“ zusammen.
+- CSV-Export: negative Zahlen bekamen ein Apostroph vorangestellt.
+- Im Designer neu angelegte Tabellen hatten „Anlegen/Bearbeiten/Löschen erlaubt“ ausgeschaltet,
+  Nutzer konnten dort also nichts erfassen.
+- Kommazahlen wurden auf zwei Stellen abgeschnitten statt gerundet (2,999 → 2,99; jetzt 3,00).
+- Spec-Chart zeigt Werte wie in Listen („Ja/Nein“ statt „True/False“, Namen statt Nummern).
+- CSV-Import bietet Formelfelder nicht mehr als Ziel an (ihr Wert wird ohnehin berechnet).
+- Konsole: abgebrochene Seitenübergänge erzeugten „Uncaught (in promise)“-Fehler.
+
 ### Neu
 - **Data-Science-Visualisierungen (Stufe 1 & 2) & Tableau-Bidirektionalität:**
   - Neue Bausteine unter „Auswertung“: **Streudiagramm (`scatter`)** (X/Y-Zahlenfelder, Bubble-Größe,

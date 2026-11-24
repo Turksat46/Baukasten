@@ -24,7 +24,7 @@ from .blocks import (BUILTIN_PLACEHOLDERS, all_types, clean_layout, designer_con
 from .sanitize import sanitize_html_report
 from . import datasources
 from .forms import (ApiKeyForm, AppForm, AutomationForm, AutomationScriptForm, CustomBlockForm, EntityForm,
-                    FieldForm, NewAppForm, NewPageForm, QueryForm, ScriptForm)
+                    FieldForm, NewAppForm, NewEntityForm, NewPageForm, QueryForm, ScriptForm)
 from . import versions
 from .models import (ApiKey, App, AppVersion, CustomBlock, DataQuery, Entity, Field, Page, Script, ScriptRun,
                      can_automate, can_design)
@@ -210,7 +210,7 @@ def app_detail(request, app):
     app = get_object_or_404(App, slug=app)
     SettingsForm = AutomationForm if app.is_automation else AppForm
     form = SettingsForm(instance=app, prefix="app")
-    entity_form = EntityForm(prefix="entity")
+    entity_form = NewEntityForm(prefix="entity")
     page_form = NewPageForm(prefix="page")
     key_form = ApiKeyForm(prefix="key")
     new_key = None
@@ -229,7 +229,7 @@ def app_detail(request, app):
                 messages.success(request, _("Einstellungen gespeichert."))
                 return redirect("designer_app", app.slug)
         elif kind == "entity":
-            entity_form = EntityForm(request.POST, prefix="entity")
+            entity_form = NewEntityForm(request.POST, prefix="entity")
             if entity_form.is_valid():
                 entity = entity_form.save(commit=False)
                 entity.app = app
@@ -394,7 +394,7 @@ def entity_detail(request, app, pk):
     app = get_object_or_404(App, slug=app)
     entity = get_object_or_404(Entity, pk=pk, app=app)
     form = EntityForm(instance=entity, prefix="entity")
-    field_form = FieldForm(app=app, prefix="field")
+    field_form = FieldForm(app=app, entity=entity, prefix="field")
     if request.method == "POST":
         if request.POST.get("kind") == "entity":
             form = EntityForm(request.POST, instance=entity, prefix="entity")
@@ -403,7 +403,7 @@ def entity_detail(request, app, pk):
                 messages.success(request, _("Tabelle gespeichert."))
                 return redirect("designer_entity", app.slug, entity.pk)
         else:
-            field_form = FieldForm(request.POST, app=app, prefix="field")
+            field_form = FieldForm(request.POST, app=app, entity=entity, prefix="field")
             if field_form.is_valid():
                 field = field_form.save(commit=False)
                 field.entity = entity

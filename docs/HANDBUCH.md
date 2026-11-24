@@ -1504,6 +1504,7 @@ Alles Umgebungsabhängige kommt aus Umgebungsvariablen.
 | `ALERT_CHANNEL` | Alarmierung bei Hintergrund-Fehlern: `off` (Standard), `teams` (Microsoft-Teams-Webhook), `email` oder `api` (HTTP POST); auch unter `/admin/` → Einstellungen änderbar |
 | `ALERT_TARGET` | Ziel der Alarmierung: Teams-Webhook-URL, E-Mail-Adresse(n) oder API-URL |
 | `ALERT_AUTH_HEADER` | optionaler `Authorization`-Header für `ALERT_CHANNEL=api` (z. B. `Bearer …`) |
+| `ALERT_REPEAT_MINUTES` | derselbe Fehler höchstens einmal in dieser Zeit (Minuten, Standard 60, 0 = jedes Mal) |
 | `LOG_LEVEL` | Standard `INFO` |
 | `DEBUG` | nur lokal auf `1` |
 

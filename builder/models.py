@@ -5,6 +5,7 @@ Datensätze (Record) liegen als JSON in einer gemeinsamen Tabelle. Dadurch brauc
 eine im Designer geänderte Tabelle keine Datenbank-Migration.
 """
 import hashlib
+import math
 import secrets
 
 from django.conf import settings
@@ -285,6 +286,31 @@ class Record(models.Model):
         super().save(*args, **kwargs)
 
 
+FORMULA_FUNCS = {"round": round, "abs": abs, "min": min, "max": max}
+
+
+def formula_problem(expr, allowed_keys):
+    """Prüft eine Formel beim Anlegen des Feldes. Gibt einen Fehlertext oder None zurück."""
+    import ast
+
+    from django.utils.translation import gettext
+
+    try:
+        tree = ast.parse(str(expr or "").strip(), mode="eval")
+    except SyntaxError:
+        return gettext("Die Formel ist kein gültiger Rechenausdruck.")
+    names = {n.id for n in ast.walk(tree) if isinstance(n, ast.Name)}
+    calls = {n.func.id for n in ast.walk(tree) if isinstance(n, ast.Call) and isinstance(n.func, ast.Name)}
+    unknown = sorted(names - set(allowed_keys) - calls)
+    if unknown:
+        return gettext("Diese Zahlenfelder gibt es in der Tabelle nicht: %(names)s") % {"names": ", ".join(unknown)}
+    # Probelauf mit verschiedenen Werten (gleiche Werte ergäben bei a / (a - b) eine Division durch 0):
+    # findet nicht erlaubte Zeichen wie ** oder Funktionen außer round/abs/min/max.
+    if evaluate_formula(expr, {key: 2.5 + 1.25 * i for i, key in enumerate(allowed_keys)}) is None:
+        return gettext("Erlaubt sind Zahlen, Zahlenfelder, + - * / und round, abs, min, max.")
+    return None
+
+
 def evaluate_formula(expr, data):
     """Wertet eine arithmetische Formel sicher über AST aus (ohne eval). Gibt Zahl oder None zurück."""
     import ast
@@ -295,7 +321,7 @@ def evaluate_formula(expr, data):
         ast.Mult: operator.mul, ast.Div: operator.truediv,
     }
     UNARY = {ast.UAdd: operator.pos, ast.USub: operator.neg}
-    FUNCS = {"round": round, "abs": abs, "min": min, "max": max}
+    FUNCS = FORMULA_FUNCS
 
     def _eval(node):
         if isinstance(node, ast.Expression):
@@ -325,19 +351,34 @@ def evaluate_formula(expr, data):
     try:
         tree = ast.parse(text, mode="eval")
         val = _eval(tree)
-        return round(val, 4)
     except Exception:
         return None
+    # Unendlich oder „keine Zahl“ (z. B. 1e308 * 10) lässt sich weder runden noch als JSON speichern.
+    if not math.isfinite(val):
+        return None
+    return round(val, 4)
 
 
-def apply_formulas(entity, data):
-    """Berechnet alle Formel-Felder einer Tabelle und trägt das Ergebnis in data ein."""
-    for f in entity.fields.all():
-        if not f.formula:
-            continue
-        val = evaluate_formula(f.formula, data)
-        if val is not None:
-            data[f.key] = int(round(val)) if f.type == Field.NUMBER else val
+def apply_formulas(entity, data, fields=None):
+    """Berechnet alle Formel-Felder einer Tabelle und trägt das Ergebnis in data ein.
+
+    Formeln dürfen andere Formelfelder nutzen, auch weiter hinten stehende: Es wird so oft
+    gerechnet, bis sich nichts mehr ändert (höchstens so oft, wie es Formelfelder gibt)."""
+    formulas = [f for f in (entity.fields.all() if fields is None else fields) if f.formula]
+    for _round in range(max(len(formulas), 1)):
+        changed = False
+        for f in formulas:
+            val = evaluate_formula(f.formula, data)
+            if val is not None and f.type == Field.NUMBER:
+                val = int(round(val))
+            if val is None and f.key not in data:
+                continue
+            # Lässt sich nicht rechnen (Feld geleert, Division durch 0): Wert leeren statt den alten stehen lassen.
+            if data.get(f.key) != val:
+                data[f.key] = val
+                changed = True
+        if not changed:
+            break
 
 
 class Page(models.Model):

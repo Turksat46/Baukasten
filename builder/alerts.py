@@ -4,11 +4,14 @@ Konfigurierbar ohne Neustart über PlatformSettings (/admin/) oder über die Umg
   ALERT_CHANNEL=off | teams | email | api
   ALERT_TARGET=<Teams-Webhook-URL, E-Mail-Adresse oder API-Endpunkt>
   ALERT_AUTH_HEADER=<optionaler Authorization-Header für API-Call>
+  ALERT_REPEAT_MINUTES=<derselbe Fehler höchstens einmal in dieser Zeit, Standard 60, 0 = immer>
 """
+import hashlib
 import logging
 
 import requests
 from django.conf import settings
+from django.core.cache import cache
 from django.core.mail import send_mail
 from django.utils import timezone
 from django.utils.translation import gettext as _
@@ -32,6 +35,14 @@ def notify_failure(source, title, details, app=None):
 
     app_name = app.name if app else ""
     app_slug = app.slug if app else ""
+
+    # Derselbe Fehler (Quelle, Titel, App) nur einmal je Zeitraum: Ein minütlich laufendes Skript,
+    # das dauerhaft scheitert, würde sonst jede Minute eine Nachricht schicken.
+    repeat = int(getattr(settings, "BAUKASTEN_ALERT_REPEAT_MINUTES", 60) or 0)
+    if repeat > 0:
+        digest = hashlib.sha256(f"{source}|{title}|{app_slug}".encode()).hexdigest()[:32]
+        if not cache.add(f"baukasten-alarm-{digest}", 1, timeout=repeat * 60):
+            return False
     full_title = f"[{app_name}] {title}" if app_name else title
 
     try:
