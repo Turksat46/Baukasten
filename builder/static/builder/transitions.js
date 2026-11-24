@@ -37,7 +37,13 @@
   }
 
   window.addEventListener("pagereveal", function (event) {
-    if (!event.viewTransition || !window.navigation || !navigation.activation) return;
+    if (!event.viewTransition) return;
+    // Bricht der Browser den Übergang ab (schnell weitergeklickt, Seite schon sichtbar), lehnt er
+    // diese Promises ab. Ohne Abfänger stünde das als „Uncaught (in promise)“ in der Konsole.
+    var ignore = function () {};
+    event.viewTransition.ready.catch(ignore);
+    event.viewTransition.finished.catch(ignore);
+    if (!window.navigation || !navigation.activation) return;
     var activation = navigation.activation;
     var kind = direction(activation.from && activation.from.url, activation.entry.url, activation.navigationType);
     // Neu laden: kein Übergang, die Seite soll einfach stehen bleiben.

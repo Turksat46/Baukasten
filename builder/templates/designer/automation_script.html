@@ -23,6 +23,7 @@
     <section class="card">
       <form method="post" class="form script-form" id="script-form">
         {% csrf_token %}
+        {% if script %}<input type="hidden" name="expected_version" value="{{ script.updated_at.isoformat }}">{% endif %}
         {{ form.non_field_errors }}
         <div class="form-row">
           <div>{{ form.name.errors }}{{ form.name.label_tag }}{{ form.name }}</div>

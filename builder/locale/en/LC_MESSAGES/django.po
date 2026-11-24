@@ -5767,3 +5767,229 @@ msgstr "No numeric pairs yet."
 #: builder/templates/builder/blocks/spec_chart.html
 msgid "Noch keine Daten für diese Spezifikation."
 msgstr "No data for this specification yet."
+
+#: builder/alerts.py
+msgid "Baukasten-Alarm: %(title)s"
+msgstr "Baukasten alert: %(title)s"
+
+#: builder/alerts.py
+msgid "Quelle"
+msgstr "Source"
+
+#: builder/alerts.py
+msgid "Zeitpunkt"
+msgstr "Timestamp"
+
+#: builder/datascience.py
+msgid "Anzahl Intervalle (Bins, 3–20)"
+msgstr "Number of intervals (bins, 3–20)"
+
+#: builder/datascience.py
+msgid "Drift-Vergleich nach Feld (optional, berechnet PSI)"
+msgstr "Drift comparison by field (optional, calculates PSI)"
+
+#: builder/datascience.py
+msgid "Für das Histogramm wird ein Zahlenfeld benötigt."
+msgstr "A numeric field is required for the histogram."
+
+#: builder/datascience.py
+msgid "Für dieses Histogramm ist keine Tabelle ausgewählt."
+msgstr "No table is selected for this histogram."
+
+#: builder/datascience.py
+msgid "Histogramm & Drift"
+msgstr "Histogram & drift"
+
+#: builder/datascience.py
+msgid "Häufigkeitsverteilung"
+msgstr "Frequency distribution"
+
+#: builder/datascience.py
+msgid "Häufigkeitsverteilung in Intervallen mit optionalem Data-Drift-Index (PSI)"
+msgstr "Frequency distribution in intervals with optional data drift index (PSI)"
+
+#: builder/datascience.py
+msgid "Moderater Drift"
+msgstr "Moderate drift"
+
+#: builder/datascience.py
+msgid "Stabil"
+msgstr "Stable"
+
+#: builder/datascience.py
+msgid "Starker Drift"
+msgstr "Strong drift"
+
+#: builder/designer.py
+msgid "%(name)s (Kopie)"
+msgstr "%(name)s (Copy)"
+
+#: builder/designer.py
+msgid "App „%(name)s“ wurde als Entwurf dupliziert (ohne Datensätze)."
+msgstr "App “%(name)s” was duplicated as a draft (without records)."
+
+#: builder/designer.py
+msgid "Konflikt: Dieses Skript wurde zwischenzeitlich von jemand anderem gespeichert. Bitte lade die Seite neu, um keine Änderungen zu überschreiben."
+msgstr "Conflict: This script was saved by someone else in the meantime. Please reload the page to avoid overwriting changes."
+
+#: builder/models.py
+msgid "API-Call (HTTP POST)"
+msgstr "API call (HTTP POST)"
+
+#: builder/models.py
+msgid "Alarm-Authorization-Header (optional, für API-Call)"
+msgstr "Alert Authorization header (optional, for API call)"
+
+#: builder/models.py
+msgid "Alarm-Ziel (Teams-Webhook-URL, E-Mail oder API-URL)"
+msgstr "Alert target (Teams webhook URL, email or API URL)"
+
+#: builder/models.py
+msgid "Alarmierung bei Hintergrund-Fehlern"
+msgstr "Alerting on background failures"
+
+#: builder/models.py
+msgid "Berechnet den Wert beim Speichern automatisch aus anderen Zahlenfeldern, z. B. preis * menge oder ausschuss - prognose."
+msgstr "Automatically calculates the value on save from other numeric fields, e.g. price * quantity or scrap - forecast."
+
+#: builder/models.py
+msgid "Formel (optional)"
+msgstr "Formula (optional)"
+
+#: builder/models.py
+msgid "Microsoft Teams (Webhook)"
+msgstr "Microsoft Teams (webhook)"
+
+#: builder/models.py
+msgid "Sendet eine Benachrichtigung, wenn eine Automatisierung, ein geplantes Skript oder ein Datenquellen-Abgleich fehlschlägt."
+msgstr "Sends a notification when an automation, a scheduled script or a data source sync fails."
+
+#: builder/models.py
+msgid "Standard aus der Umgebung"
+msgstr "Default from environment"
+
+#: builder/models.py
+msgid "Z. B. Bearer <Token>, wird beim API-Call als Authorization-Header mitgesendet."
+msgstr "E.g. Bearer <Token>, sent as the Authorization header on API calls."
+
+#: builder/scripting/triggers.py
+msgid "Zeitgesteuertes Skript „%(name)s“ fehlgeschlagen"
+msgstr "Scheduled script “%(name)s” failed"
+
+#: builder/scripting/worker.py
+msgid "Automatisierung „%(name)s“ fehlgeschlagen"
+msgstr "Automation “%(name)s” failed"
+
+#: builder/scripting/worker.py
+msgid "Datenquellen-Abgleich „%(name)s“ fehlgeschlagen"
+msgstr "Data source sync “%(name)s” failed"
+
+#: builder/templates/builder/block.html
+msgid "CSV"
+msgstr "CSV"
+
+#: builder/templates/designer/_versions.html
+msgid "%(n)s Unterschied zum aktuellen Stand"
+msgid_plural "%(n)s Unterschiede zum aktuellen Stand"
+msgstr[0] "%(n)s difference to the current state"
+msgstr[1] "%(n)s differences to the current state"
+
+#: builder/templates/designer/_versions.html
+msgid "Entspricht dem aktuellen Stand"
+msgstr "Matches the current state"
+
+#: builder/templates/designer/app.html
+msgid "App duplizieren"
+msgstr "Duplicate app"
+
+#: builder/templates/designer/app.html
+msgid "App „%(name)s“ als neuen Entwurf duplizieren (Aufbau ohne Datensätze)?"
+msgstr "Duplicate app “%(name)s” as a new draft (structure without records)?"
+
+#: builder/templates/designer/automation.html
+msgid "Automatisierung „%(name)s“ duplizieren?"
+msgstr "Duplicate automation “%(name)s”?"
+
+#: builder/templates/designer/automation.html
+msgid "Duplizieren"
+msgstr "Duplicate"
+
+#: builder/versions.py
+msgid "+ Abfrage „%(name)s“ wird wiederhergestellt"
+msgstr "+ Query “%(name)s” will be restored"
+
+#: builder/versions.py
+msgid "+ Seite „%(name)s“ wird wiederhergestellt"
+msgstr "+ Page “%(name)s” will be restored"
+
+#: builder/versions.py
+msgid "+ Skript „%(name)s“ wird wiederhergestellt"
+msgstr "+ Script “%(name)s” will be restored"
+
+#: builder/versions.py
+msgid "+ Tabelle „%(name)s“ (in Version enthalten)"
+msgstr "+ Table “%(name)s” (included in version)"
+
+#: builder/versions.py
+msgid "~ Abfrage „%(name)s“ (SQL oder Quelle geändert)"
+msgstr "~ Query “%(name)s” (SQL or source changed)"
+
+#: builder/versions.py
+msgid "~ App-Einstellungen (Name, Symbol oder Beschreibung) geändert"
+msgstr "~ App settings (name, icon or description) changed"
+
+#: builder/versions.py
+msgid "~ Seite „%(name)s“ (Bausteine oder Titel geändert)"
+msgstr "~ Page “%(name)s” (blocks or title changed)"
+
+#: builder/versions.py
+msgid "~ Skript „%(name)s“ (Code oder Auslöser geändert)"
+msgstr "~ Script “%(name)s” (code or trigger changed)"
+
+#: builder/versions.py
+msgid "~ Tabelle „%(name)s“ (Felder oder Einstellungen weichen ab)"
+msgstr "~ Table “%(name)s” (fields or settings differ)"
+
+#: builder/versions.py
+msgid "− Abfrage „%(name)s“ entfällt"
+msgstr "− Query “%(name)s” will be removed"
+
+#: builder/versions.py
+msgid "− Seite „%(name)s“ entfällt"
+msgstr "− Page “%(name)s” will be removed"
+
+#: builder/versions.py
+msgid "− Skript „%(name)s“ entfällt"
+msgstr "− Script “%(name)s” will be removed"
+
+#: builder/versions.py
+msgid "− Tabelle „%(name)s“ (erst nach dieser Version angelegt; Daten bleiben erhalten)"
+msgstr "− Table “%(name)s” (created after this version; data is preserved)"
+
+#: builder/templates/builder/blocks/related_list.html
+msgid "Es werden die ersten %(n)s verknüpften Einträge gezeigt."
+msgstr "Showing the first %(n)s linked entries."
+
+#: builder/datascience.py
+msgid "Die Berechnung „%(agg)s“ wird nicht unterstützt (erlaubt: %(allowed)s)."
+msgstr "The aggregate “%(agg)s” is not supported (allowed: %(allowed)s)."
+
+#: builder/datascience.py
+msgid "Für diese Berechnung fehlt encoding.y.field."
+msgstr "This aggregate needs encoding.y.field."
+
+#: builder/forms.py
+msgid "Formeln gibt es nur für die Typen „Ganze Zahl“ und „Kommazahl“."
+msgstr "Formulas are only available for the types “Whole number” and “Decimal number”."
+
+#: builder/models.py
+msgid "Die Formel ist kein gültiger Rechenausdruck."
+msgstr "The formula is not a valid arithmetic expression."
+
+#: builder/models.py
+msgid "Diese Zahlenfelder gibt es in der Tabelle nicht: %(names)s"
+msgstr "These number fields do not exist in the table: %(names)s"
+
+#: builder/models.py
+msgid "Erlaubt sind Zahlen, Zahlenfelder, + - * / und round, abs, min, max."
+msgstr "Allowed are numbers, number fields, + - * / and round, abs, min, max."

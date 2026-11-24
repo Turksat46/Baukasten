@@ -8,6 +8,7 @@ Tabelle auf der Seite beachten sie (blocks.filtered). Checkliste und Schieberegl
 import calendar as pycalendar
 from datetime import date, timedelta
 
+from django.db.models import Q
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.formats import date_format
@@ -539,8 +540,15 @@ def prep_related_list(request, app, block):
     if not raw.isdigit():
         return {"entity": entity, "missing": True, "param": param}
     parent_id = int(raw)
-    all_records = list(entity.records.order_by("id")[:500])
-    records = [r for r in all_records if str(r.data.get(ref_field.key)) == str(parent_id)][:MAX_ITEMS]
+    # In der Datenbank filtern: vorher wurden nur die ersten 500 Einträge der ganzen Tabelle
+    # geladen, bei größeren Tabellen fehlten Untereinträge ohne Hinweis.
+    # Verweise stehen als Zahl im JSON; ältere Daten können sie als Text enthalten.
+    matching = filtered(request, entity).filter(
+        Q(**{f"data__{ref_field.key}": parent_id}) | Q(**{f"data__{ref_field.key}": str(parent_id)})
+    ).order_by("id")
+    records = list(matching[:MAX_ITEMS + 1])
+    more = len(records) > MAX_ITEMS
+    records = records[:MAX_ITEMS]
     cols = [f for f in entity.fields.all() if f.show_in_list and f.key != ref_field.key] or list(entity.fields.all()[:4])
     refs = reference_labels(cols, records)
     items = [{
@@ -557,6 +565,8 @@ def prep_related_list(request, app, block):
         "create_url": create_url,
         "ref_key": ref_field.key,
         "parent_id": parent_id,
+        "more": more,
+        "max_items": MAX_ITEMS,
         "next_url": _next(request),
     }
 

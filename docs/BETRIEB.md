@@ -144,8 +144,21 @@ _Zuletzt geübt: 2026-11-17, lokal, bestanden._
 
 ## 5. Überwachung und Alarme
 
-**Health-Check:** `/healthz` antwortet `ok`, solange der Web-Prozess läuft (Probes in
-`k8s/app.yaml`). Der Worker hat eine eigene `livenessProbe` über eine Lebenszeichen-Datei.
+**Health- & Readiness-Check:** `/healthz` antwortet `ok`, solange der Web-Prozess läuft;
+`/readyz` prüft zusätzlich die Datenbankverbindung (Probes in `k8s/app.yaml`). Der Worker
+hat eine eigene `livenessProbe` über eine Lebenszeichen-Datei.
+
+**Direkte Fehler-Alarmierung (Teams, E-Mail oder API-Call):** Schlägt im Hintergrunddienst
+(`baukasten-worker`) eine Automatisierung, ein zeitgesteuertes Skript oder ein
+Datenquellen-Abgleich fehl, kann der Baukasten sofort selbst alarmieren (`builder/alerts.py`).
+Einrichtbar ohne Neustart unter `/admin/` → **Einstellungen** oder über Umgebungsvariablen:
+
+| Einstellung / Variable | Werte |
+|---|---|
+| `ALERT_CHANNEL` | `off` (Standard), `teams` (Microsoft-Teams-MessageCard-Webhook), `email` (komma-/semikolongetrennte Empfänger) oder `api` (HTTP-POST mit JSON-Payload `event: "baukasten.failure"`) |
+| `ALERT_TARGET` | Teams-Webhook-URL, E-Mail-Adresse(n) oder API-Endpunkt-URL |
+| `ALERT_AUTH_HEADER` | optionaler `Authorization`-Header für `ALERT_CHANNEL=api` (z. B. `Bearer <Token>`) |
+| `ALERT_REPEAT_MINUTES` | derselbe Fehler (Quelle, Titel, App) höchstens einmal in dieser Zeit; Standard `60`, `0` = jedes Mal |
 
 **Kennzahlen:** `METRICS_TOKEN` im Secret setzen, dann liefert `/metrics` Werte im Format
 von Prometheus (Abruf mit `Authorization: Bearer <METRICS_TOKEN>`):

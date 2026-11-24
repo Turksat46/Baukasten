@@ -342,6 +342,14 @@ the form**. Fields that a script fills (for example a generated link) are
 switched off in the form; their value is kept when editing. Fields of type
 "Link" are clickable in lists.
 
+**Calculated fields (formula):** For numeric fields ("Whole number" and "Decimal
+number") you can enter an arithmetic expression under **"Formula (optional)"**,
+e.g. `preis * menge`, `round(ausschuss - prognose, 2)`, `abs(ist - soll)` or
+`max(0, bestand - mindestbestand)`. Allowed are `+`, `-`, `*`, `/` and the
+functions `round`, `abs`, `min` and `max` referencing the short names (`key`) of
+other fields in the same table. The value is evaluated safely via the abstract
+syntax tree (AST, without `eval`) whenever a record is saved.
+
 Per table you can switch off whether entries may be created, edited or deleted.
 This applies to the interface and to the API.
 
@@ -430,7 +438,12 @@ on the entry, append it to the link as `?code=…` and check it on the page with
 | | Bar chart | entries per value of a field, as a ranking |
 | | Donut chart | shares of the five most frequent values, the rest as "Other" |
 | | Timeline | entries per month, by a date field or the creation date |
-| | Line chart | count, sum or average per day, week or month as a line, by a date field or the creation date; values on hover |
+| | Line chart | count, sum or average per day, week or month as a line, optionally with confidence band ($\pm 1\,\sigma$), threshold and anomaly markers |
+| | Scatter plot | X/Y numeric fields (or live query) with bubble size, colour groups, trendline, Pearson $r$ and $R^2$ |
+| | Boxplot & distribution | median, quartiles ($Q_1$, $Q_3$), mean, whiskers and $1.5\times\text{IQR}$ outliers, optionally grouped |
+| | Heatmap & correlation | Pearson correlation matrix across all numeric fields or colour-coded crosstab |
+| | Histogram & drift | frequency distribution in 3–20 intervals (bins) with optional group comparison and **Population Stability Index (PSI)** for data drift detection |
+| | Spec chart (Vega-Lite) | declarative JSON specification (`mark`, `encoding`) on a table or live query |
 | Navigation | Button | opens a page or a link, or runs a script or Python action |
 | | Page tiles | tiles for all pages of the app |
 | Layout | Divider, Spacer | structure the page |
@@ -623,6 +636,9 @@ and translations. The entered data is not part of it.
 
 - **Save:** in the app under "Versions", optionally enter a note and click
   "Save version". Versions are numbered consecutively.
+- **Inspect differences (version diff):** below each saved version, "differences
+  to the current state" expands to list all changes (`+` restored, `−` removed,
+  `~` modified — for tables, fields, pages, scripts and queries).
 - **Restore:** brings settings, fields and pages back to the saved state.
   Before that, the current state is automatically saved as a new version, so
   going back can itself be undone.
@@ -674,7 +690,11 @@ app. Administrators find the log of all apps, including deleted ones, under `/ad
 after `AUDIT_RETENTION_DAYS` days (default 365, `0` = never). Agree on the period with your
 data protection officer.
 
-### Deleting an app
+### Duplicating and deleting an app
+
+At the top right of an app's (or automation's) Designer page, **"Duplicate app"**
+clones the entire structure (tables, fields, formulas, pages, scripts, queries and
+translations — without records) into a new draft `"<Name> (Copy)"`.
 
 You delete an app in the Designer's app list ("Delete") or at the very bottom of
 the app ("Delete app"). Only the owner and administrators can do this. Tables,
@@ -734,7 +754,11 @@ There are two ways to use the data:
 | Good for | current states, small results (up to 2,000 rows) | evaluations, larger amounts of data (up to 50,000 rows) |
 
 **Show live.** In the page designer insert the block "Database query" and pick
-the query. Under "Refresh automatically" (available for every block), the block
+the query; at the top right of the block, **"CSV"** downloads the current query
+result as a CSV file (`/a/<app>/q/<query>/export.csv`). In addition, all data
+science blocks (**Scatter plot**, **Boxplot**, **Heatmap**, **Histogram & drift**
+and **Spec chart**) can run directly on a live `DataQuery` instead of an app table.
+Under "Refresh automatically" (available for every block), the block
 reloads regularly in the browser without reloading the page. "Cache result" on
 the query decides how long a result is reused; this way 50 open browsers do not
 query the database 50 times.
@@ -1467,6 +1491,10 @@ Everything environment-specific comes from environment variables.
 | `QUERY_PARALLEL_<NAME>` | the same for a single source, e.g. `QUERY_PARALLEL_DWH=2` |
 | `QUERY_WAIT` | seconds a request waits for a free slot, default 2 |
 | `LAZY_QUERIES` | `false` loads query blocks directly with the page instead of afterwards |
+| `ALERT_CHANNEL` | alerting on background failures: `off` (default), `teams` (Microsoft Teams webhook), `email` or `api` (HTTP POST); also editable under `/admin/` → Settings |
+| `ALERT_TARGET` | alert destination: Teams webhook URL, email address(es) or API URL |
+| `ALERT_AUTH_HEADER` | optional `Authorization` header for `ALERT_CHANNEL=api` (e.g. `Bearer …`) |
+| `ALERT_REPEAT_MINUTES` | the same failure at most once in this time (minutes, default 60, 0 = every time) |
 | `LOG_LEVEL` | default `INFO` |
 | `DEBUG` | `1` only locally |
 
@@ -1743,7 +1771,9 @@ The administration is organised by app:
 **Settings** (superusers only): under `/admin/` → Einstellungen a few business
 values can be changed without a restart: guest requests per minute, changes per
 AI access, audit log retention, time limit and calls of scripts in normal apps,
-longest time limit for automations. An empty field means the value from the
+longest time limit for automations, and **failure alerting for background jobs**
+(Off, Microsoft Teams webhook, Email, or API call via HTTP POST with target address
+and optional `Authorization` header). An empty field means the value from the
 environment applies (shown next to the field). Changes take effect in all pods
 within 30 seconds and appear in the audit log. Credentials and technical values
 (database, hosts, Keycloak) are deliberately not here; they stay in environment

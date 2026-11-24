@@ -10,16 +10,20 @@
   {% if empty %}
     <p class="empty">{% translate "Noch keine Zahlenpaare vorhanden." %}</p>
   {% else %}
+    <div class="scatter-meta muted small">
+      <span>↑ {{ y_label }} ({{ min_y }} – {{ max_y }})</span>
+      <span>→ {{ x_label }} ({{ min_x }} – {{ max_x }})</span>
+    </div>
     <div class="scatter-wrap">
-      <div class="scatter-axis-y muted small">
+      <div class="scatter-axis-y muted small" aria-hidden="true">
         <span>{{ max_y }}</span>
-        <span>{{ y_label }}</span>
         <span>{{ min_y }}</span>
       </div>
       <div class="scatter-stage">
         <svg class="scatter-svg" viewBox="0 0 {{ width }} {{ height }}" role="img" aria-label="{{ p.title }}">
-          <line x1="28" y1="28" x2="28" y2="232" class="line-grid"/>
-          <line x1="28" y1="232" x2="572" y2="232" class="line-grid"/>
+          <line x1="24" y1="20" x2="24" y2="220" class="line-grid"/>
+          <line x1="24" y1="120" x2="456" y2="120" class="line-grid"/>
+          <line x1="24" y1="220" x2="456" y2="220" class="line-grid"/>
           {% if trend %}
             <line x1="{{ trend.x1 }}" y1="{{ trend.y1 }}" x2="{{ trend.x2 }}" y2="{{ trend.y2 }}" class="scatter-trend"/>
           {% endif %}
@@ -31,7 +35,7 @@
             </a>
           {% endfor %}
         </svg>
-        <div class="scatter-axis-x muted small">
+        <div class="scatter-axis-x muted small" aria-hidden="true">
           <span>{{ min_x }}</span>
           <span>{{ x_label }}</span>
           <span>{{ max_x }}</span>

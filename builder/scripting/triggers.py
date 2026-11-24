@@ -128,6 +128,16 @@ def run_due(now=None):
     for script in scripts:
         if script.last_run_at and script.last_run_at + timedelta(minutes=max(script.interval_minutes, 1)) > now:
             continue
-        execute(script, Script.SCHEDULE, event={"time": now.isoformat()})
+        result = execute(script, Script.SCHEDULE, event={"time": now.isoformat()})
+        if not result.ok:
+            from .. import alerts
+            from django.utils.translation import gettext as _
+
+            alerts.notify_failure(
+                source="schedule_script",
+                title=_("Zeitgesteuertes Skript „%(name)s“ fehlgeschlagen") % {"name": script.name},
+                details=result.error_text(),
+                app=script.app,
+            )
         count += 1
     return count

@@ -1,6 +1,7 @@
 """Laufzeit: das, was Nutzer einer fertigen App sehen."""
 import csv
 import json
+import re
 import secrets
 import time
 
@@ -88,7 +89,7 @@ def safe_next(request, fallback):
 PINNABLE_WIDGET_TYPES = {
     "stat", "progress", "chart", "donut", "line", "timeline", "notice",
     "table", "cards", "checklist", "query", "output",
-    "scatter", "boxplot", "heatmap", "spec_chart",
+    "scatter", "boxplot", "heatmap", "histogram", "spec_chart",
 }
 
 
@@ -465,23 +466,31 @@ class _Echo:
         return value
 
 
+_NEGATIVE_NUMBER = re.compile(r"-\d[\d.,\s]*")
+
+
 def _csv_cell(value):
-    """Verhindert, dass Excel einen Zellinhalt als Formel ausführt."""
+    """Verhindert, dass Excel einen Zellinhalt als Formel ausführt. Negative Zahlen bleiben Zahlen."""
     text = str(value)
-    return "'" + text if text[:1] in ("=", "+", "-", "@") else text
+    if text[:1] in ("=", "+", "@", "\t", "\r") or (text[:1] == "-" and not _NEGATIVE_NUMBER.fullmatch(text)):
+        return "'" + text
+    return text
 
 
 @login_required
 def entity_export(request, app, entity):
+    from .blocks import filtered
+
     app = get_app(request, app)
     entity = get_object_or_404(app.entities, slug=entity)
     fields = list(entity.fields.all())
     writer = csv.writer(_Echo(), delimiter=";")
+    qs = filtered(request, entity).order_by("id")
 
     def rows():
         yield "\ufeff" + writer.writerow([f.label for f in fields])
         batch = []
-        for record in entity.records.order_by("id").iterator(chunk_size=500):
+        for record in qs.iterator(chunk_size=500):
             batch.append(record)
             if len(batch) == 500:
                 yield from write(batch)
@@ -499,6 +508,33 @@ def entity_export(request, app, entity):
 
 
 @login_required
+def query_export(request, app, query):
+    """CSV einer gespeicherten Abfrage. Nur f\u00fcr Personen, die die App benutzen d\u00fcrfen."""
+    app = get_app(request, app)
+    dq = get_object_or_404(app.queries, slug=query)
+    # Nur Parameter, die im SQL vorkommen: andere Adress-Parameter w\u00fcrden je Aufruf
+    # einen neuen Cache-Eintrag und damit eine neue Abfrage an die Datenbank erzeugen.
+    used = datasources.param_names(dq.sql)
+    params = {k: v for k, v in request.GET.items() if k in used}
+    try:
+        res = datasources.run_saved(dq, params)
+    except datasources.QueryError as exc:
+        return HttpResponse(str(exc), status=400, content_type="text/plain; charset=utf-8")
+    writer = csv.writer(_Echo(), delimiter=";")
+    columns = res["columns"]
+
+    def rows():
+        yield "\ufeff" + writer.writerow(columns)
+        for row in res["rows"]:  # Zeilen sind Dictionaries {Spalte: Wert}
+            values = [row.get(c) for c in columns] if isinstance(row, dict) else list(row)
+            yield writer.writerow([_csv_cell("" if c is None else str(c)) for c in values])
+
+    response = StreamingHttpResponse(rows(), content_type="text/csv; charset=utf-8")
+    response["Content-Disposition"] = f'attachment; filename="{dq.slug}.csv"'
+    return response
+
+
+@login_required
 def entity_import(request, app, entity):
     """Zweistufiger CSV-Import für eine Tabelle: Datei hochladen, Spalten zuordnen, importieren."""
     from . import csv_import
@@ -507,7 +543,8 @@ def entity_import(request, app, entity):
     entity = get_object_or_404(app.entities, slug=entity)
     if not entity.allow_create:
         raise PermissionDenied
-    fields = list(entity.fields.all())
+    # Formelfelder werden beim Speichern berechnet; eine Spalte dorthin würde nur überschrieben.
+    fields = [f for f in entity.fields.all() if not f.formula]
     session_key = f"csv_import:{app.slug}:{entity.slug}"
     back = safe_next(request, reverse("page", args=[app.slug]))
     errors = []

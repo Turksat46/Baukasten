@@ -23,7 +23,7 @@
               <td><a href="{% url 'designer_field' app.slug field.pk %}">{{ field.label }}</a> <code class="key">{{ field.key }}</code></td>
               <td>{{ field.get_type_display }}{% if field.reference %} → {{ field.reference.name }}{% endif %}</td>
               <td>{% if field.required %}{% translate "Ja" %}{% else %}–{% endif %}</td>
-              <td>{% if field.show_in_list %}{% translate "Ja" %}{% else %}–{% endif %}{% if not field.show_in_form %} <span class="badge" title="{% translate 'Nicht im Formular, wird von einem Skript gefüllt' %}">{% translate "Skript" %}</span>{% endif %}</td>
+              <td>{% if field.show_in_list %}{% translate "Ja" %}{% else %}–{% endif %}{% if field.formula %} <span class="badge" title="{{ field.formula }}">= {{ field.formula }}</span>{% elif not field.show_in_form %} <span class="badge" title="{% translate 'Nicht im Formular, wird von einem Skript gefüllt' %}">{% translate "Skript" %}</span>{% endif %}</td>
               <td class="row-actions">
                 <form method="post" action="{% url 'designer_field_move' app.slug field.pk 'auf' %}">{% csrf_token %}<button class="link" aria-label="{% translate 'Nach oben' %}">↑</button></form>
                 <form method="post" action="{% url 'designer_field_move' app.slug field.pk 'ab' %}">{% csrf_token %}<button class="link" aria-label="{% translate 'Nach unten' %}">↓</button></form>

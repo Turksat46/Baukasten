@@ -15,12 +15,13 @@ Kubernetes.
 
 ## Was er kann
 
-- **Daten → fertige App:** Tabellen und Felder festlegen, daraus entsteht per
+- **Daten → fertige App:** Tabellen und Felder festlegen (inklusive **berechneter Formelspalten** wie `preis * menge`), daraus entsteht per
   Klick eine Seite mit Liste, Suche, Anlegen, Bearbeiten und Löschen.
-- **Seiten-Designer:** 32 Bausteine per Drag-and-drop, mit Vorschau auf echten
-  Daten (Listen, Karten, Formulare, Kennzahlen, Diagramme, Liniendiagramme, Verlauf, Export,
-  Eingabefelder mit Schiebereglern, Filterleiste, Kalender, Checkliste, Einsatzplanung per
+- **Seiten-Designer:** 42 Bausteine per Drag-and-drop, Tastatursteuerung und Überschreib-Schutz (`409 Conflict`), mit Vorschau auf echten
+  Daten (Listen, Karten, Formulare, Kennzahlen, Diagramme, Liniendiagramme mit $\pm 1\,\sigma$-Band & Anomalien, **Streudiagramm mit Trendlinie & $R^2$**, **Boxplot & Ausreißer**, **Heatmap & Korrelationsmatrix**, **Histogramm & Data-Drift/PSI**, **Vega-Lite Spec-Chart**, Verlauf, Export,
+  Eingabefelder mit Schiebereglern, Filterleiste, Cross-Filtering per Klick, Kalender, Checkliste, Einsatzplanung per
   Drag-and-drop, Wochenübersicht, Kanban …).
+- **Startseite mit persönlichen Widgets:** Kennzahlen, Diagramme, Abfragen und eigene Bausteine aus beliebigen Apps auf der eigenen Startseite anpinnen („Meine Widgets“).
 - **Öffentliche Seiten:** einzelne Seiten „ohne Anmeldung erreichbar“ machen, etwa
   für Anmeldeformulare oder Einwilligungen von Externen. Gäste dürfen nur
   Formulare und Skript-Buttons dieser Seite benutzen; mit Anfragebegrenzung.
@@ -42,23 +43,22 @@ Kubernetes.
   Aufbewahrungsfrist.
 - **Mitbearbeiter:** Wer eine App anlegt, ist Eigentümer/in und lädt weitere
   Designer oder Gruppen ein. Andere Designer sehen fremde Apps im Designer nicht.
-- **Versionen:** Stand einer App speichern, wiederherstellen, als Datei
-  exportieren und in einer anderen Umgebung importieren.
+- **Versionen & App-Klonen:** Stand einer App speichern, **Unterschiede zum aktuellen Stand (Versions-Diff)** vor dem Wiederherstellen prüfen, als Datei
+  exportieren, importieren oder eine bestehende App per Klick als neuen Entwurf **duplizieren**.
 - **Skripte in Python und JavaScript:** Bausteine füllen, rechnen, Einträge
-  prüfen, zeitgesteuert im Hintergrund arbeiten. Python läuft abgeschottet auf
+  prüfen, zeitgesteuert im Hintergrund arbeiten (mit Überschreib-Schutz bei gleichzeitiger Bearbeitung). Python läuft abgeschottet auf
   dem Server, JavaScript in einer Sandbox im Browser. Python-Skripte haben
   außerdem `session` (Merkzettel je Besucher, auch ohne Konto) und `token()`
   für geheime Links.
-- **Automatisierungen** als zweite App-Art: keine Seiten, nur Python-Skripte im
+- **Automatisierungen & Fehler-Alarmierung:** Zweite App-Art ohne Seiten, nur Python-Skripte im
   Hintergrund, mit echtem Python und allen Bibliotheken einer gemeinsamen
   Umgebung. Zeitgesteuert, täglich, ständig laufend (mit Neustart) oder per
   Webhook/MCP; nie zwei Läufe eines Skripts gleichzeitig, Zeitlimit bis 4 Stunden,
-  Live-Protokoll und Stoppen im Designer, Geheimnisse über `secret("NAME")`. Nur
-  für die Gruppe „Automatisierer“.
-- **Tableau:** Dashboards von Tableau Server oder Tableau Cloud einbetten, mit
-  Filtern aus der Seite und optionaler Anmeldung über eine Connected App.
-- **Datenbanken und Databricks:** lesende Abfragen live anzeigen (mit
-  automatischer Aktualisierung) oder regelmäßig in eine Tabelle spiegeln.
+  Live-Protokoll und Stoppen im Designer, Geheimnisse über `secret("NAME")`. Bei Fehlern in Automatisierungen, Zeitplan-Skripten oder Datenquellen-Abgleichen optionale **Alarmierung über Microsoft Teams (Webhook), E-Mail oder API-Call (HTTP POST)**.
+- **Tableau (bidirektional):** Dashboards von Tableau Server oder Tableau Cloud einbetten, mit
+  Filtern aus der Seite, Rückfilterung aus Tableau-Auswahlen (`selection_map` → Baukasten-Seite/Write-Back) und optionaler Anmeldung über eine Connected App.
+- **Datenbanken und Databricks:** lesende Abfragen live in Tabellen oder direkt in Data-Science-Diagrammen anzeigen (mit
+  automatischer Aktualisierung und CSV-Export) oder regelmäßig in eine Tabelle spiegeln.
 - **Python-Bibliothek** `baukasten-client` für die API, mit denselben Befehlen
   wie in Skripten (`clients/python/`).
 - **Python-Erweiterungen:** Aktionen, Hooks, Bausteine und Endpunkte im Ordner
@@ -136,7 +136,7 @@ an. Einzelheiten im Handbuch unter „Lokal mit Kubernetes“.
 
 ## Stand
 
-Version 1.0.0 (siehe `CHANGELOG.md`). 249 automatische Tests laufen bei jeder Änderung
+Version 1.0.0 (siehe `CHANGELOG.md`). 282 automatische Tests laufen bei jeder Änderung
 in GitHub Actions gegen SQLite und PostgreSQL, dazu Durchläufe im Browser. Docker-Build und die lokalen Manifeste laufen auf Kubernetes in Docker
 Desktop mit PostgreSQL 16. Nicht getestet: ein echter Produktions-Cluster (Ingress,
 TLS), der vollständige Login gegen einen echten Keycloak und Verbindungen zu

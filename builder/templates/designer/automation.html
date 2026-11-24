@@ -5,7 +5,12 @@
 <p class="crumbs"><a href="{% url 'designer_home' %}">{% translate "Designer" %}</a> / {{ app.name }}</p>
 <div class="head-row">
   <h1>{{ app.icon }} {{ app.name }} <span class="badge badge-auto">{% translate "Automatisierung" %}</span></h1>
-  <a class="btn" href="{% url 'designer_script_new' app.slug %}">{% translate "Neues Skript" %}</a>
+  <div class="actions">
+    <form method="post" action="{% url 'designer_app_clone' app.slug %}" data-confirm="{% blocktranslate with name=app.name %}Automatisierung „{{ name }}“ duplizieren?{% endblocktranslate %}">
+      {% csrf_token %}<button class="btn btn-secondary">{% translate "Duplizieren" %}</button>
+    </form>
+    <a class="btn" href="{% url 'designer_script_new' app.slug %}">{% translate "Neues Skript" %}</a>
+  </div>
 </div>
 {% if app.description %}<p class="subtitle">{{ app.description }}</p>{% endif %}
 

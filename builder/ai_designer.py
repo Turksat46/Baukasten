@@ -57,6 +57,8 @@ def export(app):
                 f.pop("choices", None)
             if f["type"] != Field.REFERENCE:
                 f.pop("reference", None)
+            if not f.get("formula"):
+                f.pop("formula", None)
     return {"slug": app.slug, **meta, "published": app.published, **data}
 
 
@@ -174,7 +176,8 @@ def _entities(raw, errors, warnings):
             fields.append({"key": key, "label": label[:80] or key, "type": ftype, "required": bool(f.get("required")),
                            "choices": choices[:5000], "reference": str(reference)[:50] if reference else None,
                            "show_in_list": _bool(f.get("show_in_list"), True),
-                           "show_in_form": _bool(f.get("show_in_form"), True), "order": j + 1})
+                           "show_in_form": _bool(f.get("show_in_form"), True),
+                           "formula": str(f.get("formula") or "").strip()[:200], "order": j + 1})
         result.append({"slug": slug, "name": name[:80] or slug,
                        "allow_create": _bool(item.get("allow_create"), True),
                        "allow_edit": _bool(item.get("allow_edit"), True),

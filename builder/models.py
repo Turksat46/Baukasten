@@ -5,6 +5,7 @@ Datensätze (Record) liegen als JSON in einer gemeinsamen Tabelle. Dadurch brauc
 eine im Designer geänderte Tabelle keine Datenbank-Migration.
 """
 import hashlib
+import math
 import secrets
 
 from django.conf import settings
@@ -232,6 +233,10 @@ class Field(models.Model):
         _("Im Formular anzeigen"), default=True,
         help_text=_("Aus für Felder, die ein Skript füllt (z. B. ein erzeugter Link). Der Wert bleibt beim Bearbeiten erhalten."),
     )
+    formula = models.CharField(
+        _("Formel (optional)"), max_length=200, blank=True,
+        help_text=_("Berechnet den Wert beim Speichern automatisch aus anderen Zahlenfeldern, z. B. preis * menge oder ausschuss - prognose."),
+    )
     order = models.PositiveIntegerField(default=0)
 
     class Meta:
@@ -274,6 +279,106 @@ class Record(models.Model):
         first = self.entity.fields.first()
         value = self.data.get(first.key) if first else None
         return str(value) if value not in (None, "") else f"#{self.pk}"
+
+    def save(self, *args, **kwargs):
+        if isinstance(self.data, dict) and self.entity_id:
+            apply_formulas(self.entity, self.data)
+        super().save(*args, **kwargs)
+
+
+FORMULA_FUNCS = {"round": round, "abs": abs, "min": min, "max": max}
+
+
+def formula_problem(expr, allowed_keys):
+    """Prüft eine Formel beim Anlegen des Feldes. Gibt einen Fehlertext oder None zurück."""
+    import ast
+
+    from django.utils.translation import gettext
+
+    try:
+        tree = ast.parse(str(expr or "").strip(), mode="eval")
+    except SyntaxError:
+        return gettext("Die Formel ist kein gültiger Rechenausdruck.")
+    names = {n.id for n in ast.walk(tree) if isinstance(n, ast.Name)}
+    calls = {n.func.id for n in ast.walk(tree) if isinstance(n, ast.Call) and isinstance(n.func, ast.Name)}
+    unknown = sorted(names - set(allowed_keys) - calls)
+    if unknown:
+        return gettext("Diese Zahlenfelder gibt es in der Tabelle nicht: %(names)s") % {"names": ", ".join(unknown)}
+    # Probelauf mit verschiedenen Werten (gleiche Werte ergäben bei a / (a - b) eine Division durch 0):
+    # findet nicht erlaubte Zeichen wie ** oder Funktionen außer round/abs/min/max.
+    if evaluate_formula(expr, {key: 2.5 + 1.25 * i for i, key in enumerate(allowed_keys)}) is None:
+        return gettext("Erlaubt sind Zahlen, Zahlenfelder, + - * / und round, abs, min, max.")
+    return None
+
+
+def evaluate_formula(expr, data):
+    """Wertet eine arithmetische Formel sicher über AST aus (ohne eval). Gibt Zahl oder None zurück."""
+    import ast
+    import operator
+
+    OPS = {
+        ast.Add: operator.add, ast.Sub: operator.sub,
+        ast.Mult: operator.mul, ast.Div: operator.truediv,
+    }
+    UNARY = {ast.UAdd: operator.pos, ast.USub: operator.neg}
+    FUNCS = FORMULA_FUNCS
+
+    def _eval(node):
+        if isinstance(node, ast.Expression):
+            return _eval(node.body)
+        if isinstance(node, ast.Constant) and isinstance(node.value, (int, float)) and not isinstance(node.value, bool):
+            return float(node.value)
+        if isinstance(node, ast.Name):
+            raw = (data or {}).get(node.id)
+            if raw is None or raw == "" or isinstance(raw, bool):
+                raise ValueError
+            return float(raw)
+        if isinstance(node, ast.BinOp) and type(node.op) in OPS:
+            left, right = _eval(node.left), _eval(node.right)
+            return OPS[type(node.op)](left, right)
+        if isinstance(node, ast.UnaryOp) and type(node.op) in UNARY:
+            return UNARY[type(node.op)](_eval(node.operand))
+        if isinstance(node, ast.Call) and isinstance(node.func, ast.Name) and node.func.id in FUNCS:
+            args = [_eval(a) for a in node.args]
+            if node.func.id == "round" and len(args) == 2:
+                return float(round(args[0], int(args[1])))
+            return float(FUNCS[node.func.id](*args))
+        raise ValueError
+
+    text = str(expr or "").strip()
+    if not text:
+        return None
+    try:
+        tree = ast.parse(text, mode="eval")
+        val = _eval(tree)
+    except Exception:
+        return None
+    # Unendlich oder „keine Zahl“ (z. B. 1e308 * 10) lässt sich weder runden noch als JSON speichern.
+    if not math.isfinite(val):
+        return None
+    return round(val, 4)
+
+
+def apply_formulas(entity, data, fields=None):
+    """Berechnet alle Formel-Felder einer Tabelle und trägt das Ergebnis in data ein.
+
+    Formeln dürfen andere Formelfelder nutzen, auch weiter hinten stehende: Es wird so oft
+    gerechnet, bis sich nichts mehr ändert (höchstens so oft, wie es Formelfelder gibt)."""
+    formulas = [f for f in (entity.fields.all() if fields is None else fields) if f.formula]
+    for _round in range(max(len(formulas), 1)):
+        changed = False
+        for f in formulas:
+            val = evaluate_formula(f.formula, data)
+            if val is not None and f.type == Field.NUMBER:
+                val = int(round(val))
+            if val is None and f.key not in data:
+                continue
+            # Lässt sich nicht rechnen (Feld geleert, Division durch 0): Wert leeren statt den alten stehen lassen.
+            if data.get(f.key) != val:
+                data[f.key] = val
+                changed = True
+        if not changed:
+            break
 
 
 class Page(models.Model):
@@ -725,6 +830,24 @@ class PlatformSettings(models.Model):
     automation_max_timeout_minutes = models.PositiveIntegerField(
         _("Längstes Zeitlimit für Automatisierungen (Minuten)"), null=True, blank=True,
         validators=[MinValueValidator(1), MaxValueValidator(1440)])
+    alert_channel = models.CharField(
+        _("Alarmierung bei Hintergrund-Fehlern"), max_length=16, blank=True, default="",
+        choices=[
+            ("", _("Standard aus der Umgebung")),
+            ("off", _("Aus")),
+            ("teams", _("Microsoft Teams (Webhook)")),
+            ("email", _("E-Mail")),
+            ("api", _("API-Call (HTTP POST)")),
+        ],
+        help_text=_("Sendet eine Benachrichtigung, wenn eine Automatisierung, ein geplantes Skript oder ein Datenquellen-Abgleich fehlschlägt."),
+    )
+    alert_target = models.CharField(
+        _("Alarm-Ziel (Teams-Webhook-URL, E-Mail oder API-URL)"), max_length=500, blank=True, default="",
+    )
+    alert_auth_header = models.CharField(
+        _("Alarm-Authorization-Header (optional, für API-Call)"), max_length=300, blank=True, default="",
+        help_text=_("Z. B. Bearer <Token>, wird beim API-Call als Authorization-Header mitgesendet."),
+    )
     updated_at = models.DateTimeField(_("Zuletzt geändert"), auto_now=True)
     updated_by = models.ForeignKey(settings_module.AUTH_USER_MODEL, null=True, blank=True,
                                    on_delete=models.SET_NULL, related_name="+", editable=False,

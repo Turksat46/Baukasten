@@ -16,6 +16,14 @@
                 <td>
                   {{ version.note|default:_("Ohne Notiz") }}
                   <span class="muted small version-meta">{{ version.created_at|date:"SHORT_DATETIME_FORMAT" }}{% if version.created_by %}, {{ version.created_by.get_username }}{% endif %}</span>
+                  {% if version.changes %}
+                    <details class="small muted version-diff">
+                      <summary>{% blocktranslate count n=version.changes|length %}{{ n }} Unterschied zum aktuellen Stand{% plural %}{{ n }} Unterschiede zum aktuellen Stand{% endblocktranslate %}</summary>
+                      <ul class="plain">{% for change in version.changes %}<li>{{ change }}</li>{% endfor %}</ul>
+                    </details>
+                  {% else %}
+                    <span class="muted small block">{% translate "Entspricht dem aktuellen Stand" %}</span>
+                  {% endif %}
                 </td>
                 <td class="row-actions">
                   <a href="{% url 'designer_version_download' app.slug version.pk %}">{% translate "Herunterladen" %}</a>

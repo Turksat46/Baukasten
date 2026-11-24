@@ -10,14 +10,54 @@ Neue Einträge oben unter „Unveröffentlicht“ sammeln und beim Release zur V
 
 ## Unveröffentlicht
 
+### Behoben
+- Sicherheit: Der CSV-Export gespeicherter Abfragen (`/a/<app>/q/<abfrage>/export.csv`) war ohne
+  Anmeldung erreichbar; er verlangt jetzt eine Anmeldung und nimmt nur Parameter aus dem SQL an.
+- Abfrage-Export schrieb in jede Zeile die Spaltennamen statt der Werte.
+- Data-Science-Bausteine mit Datenbank-Abfrage als Quelle stürzten ab (`KeyError`); sie lesen die
+  Zeilen jetzt richtig und laden wie der Abfrage-Baustein nach, statt die Seite aufzuhalten.
+  Startseiten-Widgets fragen bei „wird geladen“ selbst nach.
+- Formeln mit unendlichem Ergebnis (z. B. sehr großen Werten) brachen das Speichern ab; Formeln
+  dürfen jetzt auch weiter hinten stehende Formelfelder nutzen.
+- CSV-Import: berechnet Formelfelder und verändert nicht mehr das globale CSV-Format des Prozesses.
+- Unterliste: zeigte bei Tabellen mit mehr als 500 Einträgen nicht alle Untereinträge.
+- Alarme: derselbe Fehler höchstens einmal je `ALERT_REPEAT_MINUTES` (Standard 60).
+- Klick-Filter in Diagramm und Kreisdiagramm filterten nach dem angezeigten Text statt nach dem
+  gespeicherten Wert: „Ja“ zeigte die Nein-Einträge, Verweise, Kommazahlen und übersetzte
+  Auswahlwerte filterten gar nicht.
+- Abfragen mit Parametern und `%` in Zeichenketten (`LIKE 'A%'`) scheiterten auf PostgreSQL und MySQL.
+- Sicherheit: Die Nur-Lese-Prüfung von Abfragen ließ sich mit Backslash-maskierten Anführungszeichen
+  (`'a\''`, MySQL bzw. PostgreSQL `E'…'`) umgehen.
+- Formelfelder behielten den alten Wert, wenn ein Eingangsfeld geleert wurde oder durch 0 geteilt
+  wurde; sie stehen nicht mehr als Eingabefeld im Formular. Der Designer prüft Formeln beim Speichern
+  (unbekannte Felder, nicht erlaubte Zeichen, nur für Zahlenfelder).
+- Spec-Chart: die Vega-Lite-Berechnungen `mean`, `average`, `median`, `min` und `max` wurden still
+  als Summe gerechnet; unbekannte Berechnungen melden jetzt einen Fehler.
+- Data-Science-Bausteine fassten den Wert 0 mit leeren Werten zu „Ohne“ bzw. „–“ zusammen.
+- CSV-Export: negative Zahlen bekamen ein Apostroph vorangestellt.
+- Im Designer neu angelegte Tabellen hatten „Anlegen/Bearbeiten/Löschen erlaubt“ ausgeschaltet,
+  Nutzer konnten dort also nichts erfassen.
+- Kommazahlen wurden auf zwei Stellen abgeschnitten statt gerundet (2,999 → 2,99; jetzt 3,00).
+- Spec-Chart zeigt Werte wie in Listen („Ja/Nein“ statt „True/False“, Namen statt Nummern).
+- CSV-Import bietet Formelfelder nicht mehr als Ziel an (ihr Wert wird ohnehin berechnet).
+- Konsole: abgebrochene Seitenübergänge erzeugten „Uncaught (in promise)“-Fehler.
+
 ### Neu
-- **Data-Science-Visualisierungen & Tableau-Bidirektionalität:**
+- **Data-Science-Visualisierungen (Stufe 1 & 2) & Tableau-Bidirektionalität:**
   - Neue Bausteine unter „Auswertung“: **Streudiagramm (`scatter`)** (X/Y-Zahlenfelder, Bubble-Größe,
     Farbgruppen, lineare Regression mit Trendlinie, Pearson-$r$ und $R^2$), **Boxplot & Verteilung (`boxplot`)**
     (Quantile $Q_1$/Median/$Q_3$, Mittelwert, Whisker und $1{,}5\times\text{IQR}$-Ausreißer, optional gruppiert),
     **Heatmap & Korrelation (`heatmap`)** (Pearson-Korrelationsmatrix über alle Zahlenfelder oder
-    farbcodierte Kreuztabelle) und **Spec-Chart (`spec_chart`)** (deklarative Vega-Lite-JSON-Spezifikation
-    direkt auf App-Tabelle oder `DataQuery`).
+    farbcodierte Kreuztabelle), **Histogramm & Drift (`histogram`)** (Häufigkeitsverteilung in 3–20 Intervallen
+    mit automatischer Berechnung des **Population Stability Index / PSI** zum Erkennen von Data Drift) und
+    **Spec-Chart (`spec_chart`)** (deklarative Vega-Lite-JSON-Spezifikation).
+  - **Live-Datenquellen in allen Data-Science-Bausteinen:** `scatter`, `boxplot`, `heatmap`, `histogram` und
+    `spec_chart` arbeiten wahlweise auf einer Baukasten-Tabelle oder direkt auf einer Live-`DataQuery` (SQL / Databricks).
+  - **Berechnete Felder (`Field.formula`):** Zahlenfelder berechnen ihren Wert beim Speichern automatisch per
+    sicherem arithmetischem Ausdruck aus anderen Feldern des Datensatzes (z. B. `preis * menge`,
+    `round(ausschuss - prognose, 2)`).
+  - **CSV-Export für Abfragen & aktive Filter:** Der Baustein „Datenbank-Abfrage“ hat einen „CSV“-Button
+    (`/a/<app>/q/<query>/export.csv`); der Tabellen-CSV-Export berücksichtigt aktive Seitenfilter (`?tabelle.feld=wert`).
   - **Liniendiagramm (`line`)** erweitert um optionales **Konfidenzband ($\pm 1\,\sigma$)**,
     **Schwellenwert-Linie** und automatische **Anomalie-Markierung**.
   - **Cross-Filtering per Klick:** Klick auf Balken (`chart`), Segmente (`donut`), Heatmap-Zellen,
@@ -25,7 +65,18 @@ Neue Einträge oben unter „Unveröffentlicht“ sammeln und beim Release zur V
   - **Tableau-Ansicht (`tableau`):** Neue Zuordnung `selection_map` („Tableau-Feld = URL-Parameter“),
     die bei Klick im Tableau-Dashboard (`markselectionchanged`) die Baukasten-Seite und Write-Back-Formulare filtert.
   - **Beispiel-App:** `python manage.py beispiel_datascience` legt das „Qualitäts- & Modell-Cockpit“
-    (`/a/datascience/`) mit Drift-Analyse, What-If-Simulator und Write-Back an.
+    (`/a/datascience/`) mit Drift-Analyse, Histogramm/PSI, Formelspalte, What-If-Simulator und Write-Back an.
+- **Designer- & Betriebskomfort + Fehler-Alarmierung:**
+  - **Versions-Diff im Designer:** Jede gespeicherte `AppVersion` zeigt vor dem Wiederherstellen aufklappbar alle
+    Unterschiede zum aktuellen Stand (hinzugefügte/entfernte/geänderte Tabellen, Seiten, Skripte und Abfragen).
+  - **App duplizieren (`app_clone`):** Apps und Automatisierungen lassen sich im Designer per Klick samt Tabellen,
+    Feldern, Formeln, Seiten, Skripten und Abfragen als neuer Entwurf (`„<Name> (Kopie)“`) klonen.
+  - **Überschreib-Schutz für Skripte (`409 Conflict`):** Verhindert im Skript-Editor (Apps & Automatisierungen)
+    stilles Überschreiben, wenn zwei Personen dasselbe Skript gleichzeitig bearbeiten.
+  - **Fehler-Alarmierung (Microsoft Teams, E-Mail oder API-Call):** Schlägt im Hintergrunddienst eine Automatisierung,
+    ein zeitgesteuertes Skript oder ein Datenquellen-Abgleich fehl, sendet der Baukasten auf Wunsch einen Alarm per
+    **Microsoft Teams (MessageCard-Webhook)**, **E-Mail** oder **API-Call (HTTP POST mit optionalem Authorization-Header)**
+    — einstellbar ohne Neustart unter `/admin/` → Einstellungen oder über `ALERT_CHANNEL`, `ALERT_TARGET` und `ALERT_AUTH_HEADER`.
 - **Startseite:** Persönliche Widgets („Meine Widgets“) zum Anpinnen von Kennzahlen, Diagrammen, Hinweisen,
   Abfragen und eigenen Bausteinen mit asynchronem Nachladen (`HomeWidget`); Auswahl über ein
   Widget-Sheet wie unter Android (je App aufklappbar, mit Suche und Live-Vorschau); App-Kacheln zeigen

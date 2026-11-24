@@ -52,7 +52,8 @@ def guide():
             "kind": "app (Standard) oder automation (nur Python-Skripte im Hintergrund, keine Seiten)",
             "entities": "Tabellen: [{name, slug?, allow_create?, allow_edit?, allow_delete?, fields: [...]}]",
             "fields": "Felder: [{label, key?, type, required?, choices? (Liste, nur choice), "
-                      "reference? (slug der Zieltabelle, nur reference), show_in_list?, show_in_form?}]",
+                      "reference? (slug der Zieltabelle, nur reference), formula? (arithmetischer Ausdruck, z. B. preis * menge), "
+                      "show_in_list?, show_in_form?}]",
             "pages": "Seiten: [{title, slug?, show_in_nav?, layout: [Bausteine]}]",
             "block": "Baustein: {type, width? (3, 4, 6, 8 oder 12 von 12 Spalten), name? (für Skripte), "
                      "props: {Einstellungen}}",

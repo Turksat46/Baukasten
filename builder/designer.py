@@ -24,7 +24,7 @@ from .blocks import (BUILTIN_PLACEHOLDERS, all_types, clean_layout, designer_con
 from .sanitize import sanitize_html_report
 from . import datasources
 from .forms import (ApiKeyForm, AppForm, AutomationForm, AutomationScriptForm, CustomBlockForm, EntityForm,
-                    FieldForm, NewAppForm, NewPageForm, QueryForm, ScriptForm)
+                    FieldForm, NewAppForm, NewEntityForm, NewPageForm, QueryForm, ScriptForm)
 from . import versions
 from .models import (ApiKey, App, AppVersion, CustomBlock, DataQuery, Entity, Field, Page, Script, ScriptRun,
                      can_automate, can_design)
@@ -210,7 +210,7 @@ def app_detail(request, app):
     app = get_object_or_404(App, slug=app)
     SettingsForm = AutomationForm if app.is_automation else AppForm
     form = SettingsForm(instance=app, prefix="app")
-    entity_form = EntityForm(prefix="entity")
+    entity_form = NewEntityForm(prefix="entity")
     page_form = NewPageForm(prefix="page")
     key_form = ApiKeyForm(prefix="key")
     new_key = None
@@ -229,7 +229,7 @@ def app_detail(request, app):
                 messages.success(request, _("Einstellungen gespeichert."))
                 return redirect("designer_app", app.slug)
         elif kind == "entity":
-            entity_form = EntityForm(request.POST, prefix="entity")
+            entity_form = NewEntityForm(request.POST, prefix="entity")
             if entity_form.is_valid():
                 entity = entity_form.save(commit=False)
                 entity.app = app
@@ -272,6 +272,11 @@ def app_detail(request, app):
     if app.is_automation:
         extra = {"automations": [_automation_row(sc) for sc in app.scripts.all()],
                  "webhook_base": request.build_absolute_uri(reverse("api_describe", args=[app.slug])) + "ausloesen/"}
+    version_list = list(app.versions.select_related("created_by")[:30])
+    if version_list:
+        current_snap = versions.snapshot(app)
+        for v in version_list:
+            v.changes = versions.diff(current_snap, v.snapshot)
     return render(request, "designer/automation.html" if app.is_automation else "designer/app.html", {
         **extra,
         "audit_recent": recent_audit(app),
@@ -281,7 +286,7 @@ def app_detail(request, app):
         "api_base": request.build_absolute_uri(reverse("api_describe", args=[app.slug])),
         "api_example": request.build_absolute_uri(reverse("api_collection", args=[app.slug, api_entity.slug])) if api_entity else "",
         "api_endpoints": sorted(hooks.API_ENDPOINTS),
-        "versions": app.versions.select_related("created_by")[:30],
+        "versions": version_list,
         "scripts": app.scripts.select_related("page", "entity"),
         "queries": app.queries.select_related("sync_entity"),
         "sources": datasources.describe_sources(),
@@ -350,6 +355,23 @@ def version_download(request, app, pk):
 
 @designer_required
 @require_POST
+def app_clone(request, app):
+    """Dupliziert den Aufbau einer App (Tabellen, Felder, Seiten, Skripte, Abfragen) als neuen Entwurf."""
+    source = get_object_or_404(App, slug=app)
+    if source.is_automation and not can_automate(request.user):
+        raise PermissionDenied
+    snap = versions.snapshot(source)
+    copy_name = _("%(name)s (Kopie)") % {"name": source.name}
+    cloned = versions.import_app(snap, request.user, name_override=copy_name)
+    messages.success(
+        request,
+        _("App „%(name)s“ wurde als Entwurf dupliziert (ohne Datensätze).") % {"name": cloned.name},
+    )
+    return redirect("designer_app", cloned.slug)
+
+
+@designer_required
+@require_POST
 def app_delete(request, app):
     app = get_object_or_404(App, slug=app)
     if not app.user_can_manage(request.user):
@@ -372,7 +394,7 @@ def entity_detail(request, app, pk):
     app = get_object_or_404(App, slug=app)
     entity = get_object_or_404(Entity, pk=pk, app=app)
     form = EntityForm(instance=entity, prefix="entity")
-    field_form = FieldForm(app=app, prefix="field")
+    field_form = FieldForm(app=app, entity=entity, prefix="field")
     if request.method == "POST":
         if request.POST.get("kind") == "entity":
             form = EntityForm(request.POST, instance=entity, prefix="entity")
@@ -381,7 +403,7 @@ def entity_detail(request, app, pk):
                 messages.success(request, _("Tabelle gespeichert."))
                 return redirect("designer_entity", app.slug, entity.pk)
         else:
-            field_form = FieldForm(request.POST, app=app, prefix="field")
+            field_form = FieldForm(request.POST, app=app, entity=entity, prefix="field")
             if field_form.is_valid():
                 field = field_form.save(commit=False)
                 field.entity = entity
@@ -738,17 +760,26 @@ def script_edit(request, app, pk=None):
     initial = {} if script else {"language": language, "code": _example(app, language), "trigger": Script.PAGE}
     form = ScriptForm(request.POST or None, instance=script, app=app, initial=initial)
     result = None
-    if request.method == "POST" and form.is_valid():
-        script = form.save(commit=False)
-        script.app = app
-        script.created_by = script.created_by or request.user
-        script.save()
-        if request.POST.get("action") == "test" and script.language == Script.PYTHON:
-            result = _test_run(request, script)
-            form = ScriptForm(instance=script, app=app)
-        else:
-            messages.success(request, _("Skript gespeichert."))
-            return redirect("designer_script", app.slug, script.pk)
+    status_code = 200
+    if request.method == "POST":
+        expected_version = request.POST.get("expected_version", "").strip()
+        if script and expected_version and expected_version != script.updated_at.isoformat():
+            form.add_error(
+                None,
+                _("Konflikt: Dieses Skript wurde zwischenzeitlich von jemand anderem gespeichert. Bitte lade die Seite neu, um keine Änderungen zu überschreiben."),
+            )
+            status_code = 409
+        elif form.is_valid():
+            script = form.save(commit=False)
+            script.app = app
+            script.created_by = script.created_by or request.user
+            script.save()
+            if request.POST.get("action") == "test" and script.language == Script.PYTHON:
+                result = _test_run(request, script)
+                form = ScriptForm(instance=script, app=app)
+            else:
+                messages.success(request, _("Skript gespeichert."))
+                return redirect("designer_script", app.slug, script.pk)
     runtime = None
     if script and script.language == Script.JAVASCRIPT:
         from django.conf import settings
@@ -763,7 +794,7 @@ def script_edit(request, app, pk=None):
         "result_ui_json": json.dumps(result.ui, ensure_ascii=False, indent=2, default=str) if result else "",
         "runs": script.runs.all()[:10] if script else [], "runtime": runtime,
         "language": script.language if script else language,
-    })
+    }, status=status_code)
 
 
 @designer_required
@@ -955,36 +986,45 @@ def automation_script_edit(request, app, script):
                                  "trigger": Script.SCHEDULE, "interval_minutes": 15, "timeout_minutes": 30}
     before = tuple(getattr(script, f) for f in PLAN_FIELDS) if script else None
     form = AutomationScriptForm(request.POST or None, instance=script, initial=initial)
-    if request.method == "POST" and form.is_valid():
-        new = script is None
-        script = form.save(commit=False)
-        script.app = app
-        script.language = Script.PYTHON
-        script.created_by = script.created_by or request.user
-        changed = new or tuple(getattr(script, f) for f in PLAN_FIELDS) != before
-        if changed:
-            script.next_run_at = (schedule.first_run(script) if script.enabled and script.trigger in schedule.TIMED
-                                  else None)
-            script.failures = 0
-        if new:
-            script.save()
-        else:
-            # Nur die Felder des Formulars schreiben: Zustand des Hintergrunddienstes nicht überschreiben.
-            script.save(update_fields=[*form.Meta.fields, "language", "next_run_at", "failures", "updated_at"])
-        if request.POST.get("action") == "run":
-            script.refresh_from_db()
-            ok, text = start_script(script, request.user)
-            (messages.success if ok else messages.warning)(request, text)
-        else:
-            messages.success(request, _("Skript gespeichert."))
-        return redirect("designer_script", app.slug, script.pk)
+    status_code = 200
+    if request.method == "POST":
+        expected_version = request.POST.get("expected_version", "").strip()
+        if script and expected_version and expected_version != script.updated_at.isoformat():
+            form.add_error(
+                None,
+                _("Konflikt: Dieses Skript wurde zwischenzeitlich von jemand anderem gespeichert. Bitte lade die Seite neu, um keine Änderungen zu überschreiben."),
+            )
+            status_code = 409
+        elif form.is_valid():
+            new = script is None
+            script = form.save(commit=False)
+            script.app = app
+            script.language = Script.PYTHON
+            script.created_by = script.created_by or request.user
+            changed = new or tuple(getattr(script, f) for f in PLAN_FIELDS) != before
+            if changed:
+                script.next_run_at = (schedule.first_run(script) if script.enabled and script.trigger in schedule.TIMED
+                                      else None)
+                script.failures = 0
+            if new:
+                script.save()
+            else:
+                # Nur die Felder des Formulars schreiben: Zustand des Hintergrunddienstes nicht überschreiben.
+                script.save(update_fields=[*form.Meta.fields, "language", "next_run_at", "failures", "updated_at"])
+            if request.POST.get("action") == "run":
+                script.refresh_from_db()
+                ok, text = start_script(script, request.user)
+                (messages.success if ok else messages.warning)(request, text)
+            else:
+                messages.success(request, _("Skript gespeichert."))
+            return redirect("designer_script", app.slug, script.pk)
     if script:
         _automation_row(script)
     return render(request, "designer/automation_script.html", {
         "app": app, "script": script, "form": form,
         "runs": script.runs.all()[:15] if script else [],
         "max_timeout": form.limit,
-    })
+    }, status=status_code)
 
 
 # ---------- Änderungsprotokoll ----------

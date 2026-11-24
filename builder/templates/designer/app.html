@@ -5,7 +5,12 @@
 <p class="crumbs"><a href="{% url 'designer_home' %}">{% translate "Designer" %}</a> / {{ app.name }}</p>
 <div class="head-row">
   <h1>{{ app.icon }} {{ app.name }} {% if app.published %}<span class="badge badge-ok">{% translate "Veröffentlicht" %}</span>{% else %}<span class="badge">{% translate "Entwurf" %}</span>{% endif %}</h1>
-  <a class="btn btn-secondary" href="{% url 'page' app.slug %}" data-tour="open-app">{% translate "App öffnen" %}</a>
+  <div class="actions">
+    <form method="post" action="{% url 'designer_app_clone' app.slug %}" data-confirm="{% blocktranslate with name=app.name %}App „{{ name }}“ als neuen Entwurf duplizieren (Aufbau ohne Datensätze)?{% endblocktranslate %}">
+      {% csrf_token %}<button class="btn btn-secondary">{% translate "App duplizieren" %}</button>
+    </form>
+    <a class="btn btn-secondary" href="{% url 'page' app.slug %}" data-tour="open-app">{% translate "App öffnen" %}</a>
+  </div>
 </div>
 
 {% if new_key %}
