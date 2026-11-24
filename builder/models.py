@@ -286,6 +286,31 @@ class Record(models.Model):
         super().save(*args, **kwargs)
 
 
+FORMULA_FUNCS = {"round": round, "abs": abs, "min": min, "max": max}
+
+
+def formula_problem(expr, allowed_keys):
+    """Prüft eine Formel beim Anlegen des Feldes. Gibt einen Fehlertext oder None zurück."""
+    import ast
+
+    from django.utils.translation import gettext
+
+    try:
+        tree = ast.parse(str(expr or "").strip(), mode="eval")
+    except SyntaxError:
+        return gettext("Die Formel ist kein gültiger Rechenausdruck.")
+    names = {n.id for n in ast.walk(tree) if isinstance(n, ast.Name)}
+    calls = {n.func.id for n in ast.walk(tree) if isinstance(n, ast.Call) and isinstance(n.func, ast.Name)}
+    unknown = sorted(names - set(allowed_keys) - calls)
+    if unknown:
+        return gettext("Diese Zahlenfelder gibt es in der Tabelle nicht: %(names)s") % {"names": ", ".join(unknown)}
+    # Probelauf mit verschiedenen Werten (gleiche Werte ergäben bei a / (a - b) eine Division durch 0):
+    # findet nicht erlaubte Zeichen wie ** oder Funktionen außer round/abs/min/max.
+    if evaluate_formula(expr, {key: 2.5 + 1.25 * i for i, key in enumerate(allowed_keys)}) is None:
+        return gettext("Erlaubt sind Zahlen, Zahlenfelder, + - * / und round, abs, min, max.")
+    return None
+
+
 def evaluate_formula(expr, data):
     """Wertet eine arithmetische Formel sicher über AST aus (ohne eval). Gibt Zahl oder None zurück."""
     import ast
@@ -296,7 +321,7 @@ def evaluate_formula(expr, data):
         ast.Mult: operator.mul, ast.Div: operator.truediv,
     }
     UNARY = {ast.UAdd: operator.pos, ast.USub: operator.neg}
-    FUNCS = {"round": round, "abs": abs, "min": min, "max": max}
+    FUNCS = FORMULA_FUNCS
 
     def _eval(node):
         if isinstance(node, ast.Expression):
@@ -344,9 +369,11 @@ def apply_formulas(entity, data, fields=None):
         changed = False
         for f in formulas:
             val = evaluate_formula(f.formula, data)
-            if val is None:
+            if val is not None and f.type == Field.NUMBER:
+                val = int(round(val))
+            if val is None and f.key not in data:
                 continue
-            val = int(round(val)) if f.type == Field.NUMBER else val
+            # Lässt sich nicht rechnen (Feld geleert, Division durch 0): Wert leeren statt den alten stehen lassen.
             if data.get(f.key) != val:
                 data[f.key] = val
                 changed = True

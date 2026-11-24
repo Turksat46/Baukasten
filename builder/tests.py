@@ -942,7 +942,8 @@ class DataSourceTests(DataSourceBase):
                          ("SELECT * FROM t WHERE a = ? AND b::text = ':nicht' AND c LIKE '%x' -- :kommentar\nAND d = ?", [1, 2]))
         converted, params = convert_params(sql, {"a": 1, "d": 2}, "pyformat")
         self.assertIn("a = %(a)s", converted)
-        self.assertIn("LIKE '%x'", converted)          # in Zeichenketten unverändert
+        self.assertIn("LIKE '%%x'", converted)         # der Treiber liest % auch in Zeichenketten
+        self.assertIn("LIKE '%x'", converted % {"a": 1, "d": 2})
         self.assertNotIn("%%(", converted)
         self.assertEqual(convert_params("SELECT :a", {"a": 1}, "named"), ("SELECT :a", {"a": 1}))
 
@@ -4393,3 +4394,207 @@ class ReviewFindingsTests(TestCase):
             self.assertFalse(alerts.notify_failure("schedule_script", "Skript X fehlgeschlagen", "Fehler", app=self.app))
             self.assertTrue(alerts.notify_failure("schedule_script", "Skript Y fehlgeschlagen", "Fehler", app=self.app))
         self.assertEqual(post.call_count, 2)
+
+
+class BugHuntTests(TestCase):
+    """Befunde aus dem Bug-Test vom 24.11.2026: jeder Test schlägt mit dem alten Code fehl."""
+
+    def setUp(self):
+        self.app = App.objects.create(name="Fehlersuche", slug="fehlersuche", published=True)
+        self.user = User.objects.create_user("suchende", password="x")
+        self.entity = Entity.objects.create(app=self.app, name="Posten", slug="posten")
+
+    def request(self, path="/"):
+        from django.test import RequestFactory
+
+        request = RequestFactory().get(path)
+        request.user = self.user
+        return request
+
+    def test_chart_click_filters_by_stored_value(self):
+        from django.utils import translation
+
+        from .blocks import filtered, prep_chart, prep_donut
+
+        Field.objects.create(entity=self.entity, label="Aktiv", key="aktiv", type=Field.BOOL)
+        Field.objects.create(entity=self.entity, label="Preis", key="preis", type=Field.DECIMAL)
+        for aktiv, preis in ((True, 1234.5), (True, 1234.5), (False, 7.0)):
+            Record.objects.create(entity=self.entity, data={"aktiv": aktiv, "preis": preis})
+        for prep in (prep_chart, prep_donut):
+            for key, expected in (("aktiv", {"Ja": [True, True], "Nein": [False]}),
+                                  ("preis", {"1.234,50": [1234.5, 1234.5], "7,00": [7.0]})):
+                with translation.override("de"):
+                    result = prep(self.request(), self.app, {"id": "b", "props": {"entity": "posten", "field": key}})
+                items = result.get("bars") or result.get("segments")
+                self.assertEqual({i["label"] for i in items}, set(expected))
+                for item in items:
+                    values = [r.data[key] for r in filtered(self.request(item["href"]), self.entity)]
+                    self.assertEqual(sorted(values), sorted(expected[item["label"]]), (prep.__name__, item))
+
+    def test_reference_chart_click_filters(self):
+        from .blocks import filtered, prep_chart
+
+        other = Entity.objects.create(app=self.app, name="Kunden", slug="kunden")
+        Field.objects.create(entity=other, label="Name", key="name")
+        kunde = Record.objects.create(entity=other, data={"name": "Müller"})
+        andere = Record.objects.create(entity=other, data={"name": "Schmidt"})
+        Field.objects.create(entity=self.entity, label="Kunde", key="kunde", type=Field.REFERENCE, reference=other)
+        Record.objects.create(entity=self.entity, data={"kunde": kunde.pk})
+        Record.objects.create(entity=self.entity, data={"kunde": andere.pk})
+        bars = prep_chart(self.request(), self.app, {"id": "b", "props": {"entity": "posten", "field": "kunde"}})["bars"]
+        bar = next(b for b in bars if b["label"] == "Müller")
+        self.assertEqual([r.data["kunde"] for r in filtered(self.request(bar["href"]), self.entity)], [kunde.pk])
+
+    def test_sql_percent_in_strings_survives_parameters(self):
+        from . import datasources
+
+        sql, params = datasources.convert_params("SELECT * FROM t WHERE n LIKE 'A%' AND id = :id -- 5%", {"id": 1},
+                                                 "pyformat")
+        self.assertEqual(sql, "SELECT * FROM t WHERE n LIKE 'A%%' AND id = %(id)s -- 5%%")
+        self.assertEqual(sql % {"id": 1}, "SELECT * FROM t WHERE n LIKE 'A%' AND id = 1 -- 5%")
+
+    def test_read_only_check_handles_backslash_escapes(self):
+        from . import datasources
+
+        for sql in (r"SELECT 'a\'' AS x, 1; DELETE FROM t; SELECT ''",
+                    r"SELECT E'\'' AS x, (DELETE FROM t) AS y --'",
+                    r"SELECT 'C:\' AS p, 1; DELETE FROM t; SELECT ''"):
+            with self.assertRaises(datasources.QueryError, msg=sql):
+                datasources.check_read_only(sql)
+        for sql in (r"SELECT 'C:\' AS p FROM t WHERE x = 'it''s'", r"SELECT E'\'' AS x", "SELECT 'a;b' AS x"):
+            datasources.check_read_only(sql)
+
+    def test_formula_clears_value_when_inputs_are_missing(self):
+        Field.objects.create(entity=self.entity, label="Menge", key="menge", type=Field.NUMBER)
+        Field.objects.create(entity=self.entity, label="Preis", key="preis", type=Field.DECIMAL)
+        Field.objects.create(entity=self.entity, label="Summe", key="summe", type=Field.DECIMAL, formula="menge * preis")
+        Field.objects.create(entity=self.entity, label="Je Stück", key="stueck", type=Field.DECIMAL,
+                             formula="preis / menge")
+        record = Record.objects.create(entity=self.entity, data={"menge": 2, "preis": 10})
+        self.assertEqual((record.data["summe"], record.data["stueck"]), (20, 5))
+        record.data["menge"] = 0
+        record.save()
+        self.assertEqual((record.data["summe"], record.data["stueck"]), (0, None))  # Division durch 0
+        record.data["menge"] = None
+        record.save()
+        self.assertIsNone(record.data["summe"])
+
+    def test_formula_fields_are_not_form_inputs(self):
+        from .forms import RecordForm
+
+        Field.objects.create(entity=self.entity, label="Menge", key="menge", type=Field.NUMBER)
+        Field.objects.create(entity=self.entity, label="Doppelt", key="doppelt", type=Field.NUMBER,
+                             formula="menge * 2", required=True)
+        form = RecordForm(self.entity, {"menge": "3"})
+        self.assertNotIn("doppelt", form.fields)
+        self.assertTrue(form.is_valid(), form.errors)
+        self.assertEqual(form.save(self.user).data["doppelt"], 6)
+
+    def test_field_form_checks_formulas(self):
+        from .forms import FieldForm
+
+        Field.objects.create(entity=self.entity, label="Menge", key="menge", type=Field.NUMBER)
+        Field.objects.create(entity=self.entity, label="Notiz", key="notiz", type=Field.TEXT)
+
+        def errors(formula, type_=Field.DECIMAL):
+            form = FieldForm({"label": "Summe", "type": type_, "formula": formula}, app=self.app, entity=self.entity)
+            form.is_valid()
+            return form.errors.get("formula")
+
+        self.assertIsNone(errors("round(menge * 1.19, 2)"))
+        self.assertIn("mange", errors("mange * 2")[0])
+        self.assertIn("notiz", errors("notiz * 2")[0])  # Textfelder rechnen nicht
+        self.assertTrue(errors("menge ** 2"))
+        self.assertTrue(errors("menge *"))
+        self.assertTrue(errors("menge * 2", type_=Field.TEXT))
+
+    def test_spec_chart_understands_vega_lite_aggregates(self):
+        from django.utils import translation
+
+        from .datascience import prep_spec_chart
+
+        Field.objects.create(entity=self.entity, label="Werk", key="werk")
+        Field.objects.create(entity=self.entity, label="Wert", key="wert", type=Field.DECIMAL)
+        for wert in (1, 2, 9):
+            Record.objects.create(entity=self.entity, data={"werk": "A", "wert": wert})
+        expected = {"mean": "4", "average": "4", "median": "2", "min": "1", "max": "9", "sum": "12", "count": "3"}
+        for agg, value in expected.items():
+            spec = {"mark": "bar", "encoding": {"x": {"field": "werk"}, "y": {"field": "wert", "aggregate": agg}}}
+            with translation.override("de"):
+                result = prep_spec_chart(self.request(), self.app, {"id": "s", "props": {
+                    "entity": "posten", "spec": json.dumps(spec)}})
+            self.assertEqual(result["items"][0]["value"].split(",")[0], value, agg)
+        spec = {"mark": "bar", "encoding": {"x": {"field": "werk"}, "y": {"field": "wert", "aggregate": "stdev"}}}
+        result = prep_spec_chart(self.request(), self.app, {"id": "s", "props": {"entity": "posten",
+                                                                                "spec": json.dumps(spec)}})
+        self.assertIn("error", result)
+
+    def test_zero_is_its_own_group(self):
+        from django.utils import translation
+
+        from .datascience import prep_boxplot
+
+        Field.objects.create(entity=self.entity, label="Stufe", key="stufe", type=Field.NUMBER)
+        Field.objects.create(entity=self.entity, label="Wert", key="wert", type=Field.DECIMAL)
+        for stufe, wert in ((0, 1), (0, 2), (None, 3), (1, 4)):
+            Record.objects.create(entity=self.entity, data={"stufe": stufe, "wert": wert})
+        with translation.override("de"):
+            rows = prep_boxplot(self.request(), self.app, {"id": "x", "props": {
+                "entity": "posten", "field": "wert", "group_field": "stufe"}})["rows"]
+        self.assertEqual({r["label"]: r["count"] for r in rows}, {"0": 2, "1": 1, "Ohne": 1})
+
+    def test_csv_export_keeps_negative_numbers(self):
+        from .views import _csv_cell
+
+        self.assertEqual(_csv_cell("-5"), "-5")
+        self.assertEqual(_csv_cell("-1.234,50"), "-1.234,50")
+        self.assertEqual(_csv_cell("-1+2"), "'-1+2")
+        self.assertEqual(_csv_cell("=HYPERLINK(1)"), "'=HYPERLINK(1)")
+        self.assertEqual(_csv_cell("@SUM(A1)"), "'@SUM(A1)")
+        self.assertEqual(_csv_cell("\tx"), "'\tx")
+
+    def test_designer_new_table_keeps_permissions(self):
+        """Das Formular „Tabelle anlegen“ schickt nur den Namen; die Schalter dürfen nicht „aus“ werden."""
+        self.client.force_login(User.objects.create_superuser("chefin", password="x"))
+        self.client.post(reverse("designer_app", args=["fehlersuche"]), {"kind": "entity", "entity-name": "Anträge"})
+        entity = self.app.entities.get(name="Anträge")
+        self.assertEqual((entity.allow_create, entity.allow_edit, entity.allow_delete), (True, True, True))
+
+    def test_decimals_are_rounded_not_cut(self):
+        from django.utils import translation
+
+        from .blocks import _format_number, display_value
+
+        field = Field(key="x", type=Field.DECIMAL)
+        with translation.override("de"):
+            self.assertEqual(display_value(field, -4.1667), "-4,17")
+            self.assertEqual(display_value(field, 2.999), "3,00")
+            self.assertEqual(display_value(field, 19.995), "20,00")
+            self.assertEqual(_format_number(0.625), "0,63")
+            self.assertEqual(_format_number(1234), "1.234")
+
+    def test_spec_chart_shows_display_values(self):
+        from django.utils import translation
+
+        from .datascience import prep_spec_chart
+
+        Field.objects.create(entity=self.entity, label="Aktiv", key="aktiv", type=Field.BOOL)
+        Record.objects.create(entity=self.entity, data={"aktiv": True})
+        Record.objects.create(entity=self.entity, data={"aktiv": False})
+        spec = {"mark": "bar", "encoding": {"x": {"field": "aktiv"}, "y": {"aggregate": "count"}}}
+        with translation.override("de"):
+            result = prep_spec_chart(self.request(), self.app, {"id": "s", "props": {
+                "entity": "posten", "spec": json.dumps(spec)}})
+        self.assertEqual(sorted(i["label"] for i in result["items"]), ["Ja", "Nein"])
+
+    def test_csv_import_does_not_offer_formula_fields(self):
+        Field.objects.create(entity=self.entity, label="Menge", key="menge", type=Field.NUMBER)
+        Field.objects.create(entity=self.entity, label="Doppelt", key="doppelt", type=Field.NUMBER, formula="menge * 2")
+        self.client.force_login(User.objects.create_superuser("importeur", password="x"))
+        url = reverse("entity_import", args=["fehlersuche", "posten"])
+        from django.core.files.uploadedfile import SimpleUploadedFile
+
+        response = self.client.post(url, {"step": "upload", "file": SimpleUploadedFile("p.csv", "menge;doppelt\n3;99\n".encode())})
+        self.assertNotContains(response, 'value="doppelt"')
+        self.client.post(url, {"step": "import", "col_0": "menge", "col_1": ""})
+        self.assertEqual(self.entity.records.get().data["doppelt"], 6)

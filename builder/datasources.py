@@ -125,8 +125,11 @@ def describe_sources():
 
 # ---------- SQL prüfen und Parameter umsetzen ----------
 
-def _tokens(sql):
-    """Zerlegt SQL in (art, text): Zeichenketten, Kommentare, Parameter (:name) und übrigen Text."""
+def _tokens(sql, backslash=False):
+    """Zerlegt SQL in (art, text): Zeichenketten, Kommentare, Parameter (:name) und übrigen Text.
+
+    backslash=True: Backslash maskiert in Zeichenketten das nächste Zeichen (MySQL, PostgreSQL E'…').
+    Standard-SQL kennt das nicht; welche Lesart gilt, hängt von der Datenbank ab."""
     i, n = 0, len(sql)
     plain = []
     while i < n:
@@ -137,6 +140,9 @@ def _tokens(sql):
                 plain = []
             j = i + 1
             while j < n:
+                if backslash and ch != "`" and sql[j] == "\\":
+                    j += 2
+                    continue
                 if sql[j] == ch:
                     if j + 1 < n and sql[j + 1] == ch:  # verdoppeltes Anführungszeichen
                         j += 2
@@ -181,9 +187,17 @@ def _tokens(sql):
 
 
 def check_read_only(sql):
-    """Lässt nur eine einzelne lesende Abfrage zu. Ersetzt keinen Nur-Lese-Benutzer in der Datenbank."""
+    """Lässt nur eine einzelne lesende Abfrage zu. Ersetzt keinen Nur-Lese-Benutzer in der Datenbank.
+
+    Geprüft wird in beiden Lesarten von Zeichenketten (mit und ohne Backslash-Maskierung): Sonst
+    ließe sich mit 'a\'' ein Befehl als vermeintliche Zeichenkette an der Prüfung vorbeischleusen."""
+    for backslash in (False, True):
+        _check_code(sql, backslash)
+
+
+def _check_code(sql, backslash):
     code = "".join(text if kind == "sql" else " ? " if kind == "param" else " ''" if kind == "string" else " "
-                   for kind, text in _tokens(sql)).strip()
+                   for kind, text in _tokens(sql, backslash)).strip()
     code = code.rstrip(";").strip()
     if not code:
         raise QueryError(_("Die Abfrage ist leer."))
@@ -220,7 +234,8 @@ def convert_params(sql, params, paramstyle):
                 values.append(params[text])
             else:  # pyformat
                 out.append(f"%({text})s")
-        elif kind == "sql" and paramstyle == "pyformat" and params:
+        elif paramstyle == "pyformat" and params:
+            # Mit Parametern liest der Treiber jedes %, auch in Zeichenketten und Kommentaren (LIKE 'A%').
             out.append(text.replace("%", "%%"))
         else:
             out.append(text)

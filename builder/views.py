@@ -1,6 +1,7 @@
 """Laufzeit: das, was Nutzer einer fertigen App sehen."""
 import csv
 import json
+import re
 import secrets
 import time
 
@@ -465,10 +466,15 @@ class _Echo:
         return value
 
 
+_NEGATIVE_NUMBER = re.compile(r"-\d[\d.,\s]*")
+
+
 def _csv_cell(value):
-    """Verhindert, dass Excel einen Zellinhalt als Formel ausführt."""
+    """Verhindert, dass Excel einen Zellinhalt als Formel ausführt. Negative Zahlen bleiben Zahlen."""
     text = str(value)
-    return "'" + text if text[:1] in ("=", "+", "-", "@") else text
+    if text[:1] in ("=", "+", "@", "\t", "\r") or (text[:1] == "-" and not _NEGATIVE_NUMBER.fullmatch(text)):
+        return "'" + text
+    return text
 
 
 @login_required
@@ -537,7 +543,8 @@ def entity_import(request, app, entity):
     entity = get_object_or_404(app.entities, slug=entity)
     if not entity.allow_create:
         raise PermissionDenied
-    fields = list(entity.fields.all())
+    # Formelfelder werden beim Speichern berechnet; eine Spalte dorthin würde nur überschrieben.
+    fields = [f for f in entity.fields.all() if not f.formula]
     session_key = f"csv_import:{app.slug}:{entity.slug}"
     back = safe_next(request, reverse("page", args=[app.slug]))
     errors = []

@@ -40,8 +40,9 @@ class RecordForm(forms.Form):
     def __init__(self, entity, *args, record=None, **kwargs):
         self.entity = entity
         self.record = record
-        # Felder, die ein Skript füllt (show_in_form aus), erscheinen nicht im Formular.
-        self.entity_fields = [f for f in entity.fields.all() if f.show_in_form]
+        # Felder, die ein Skript füllt (show_in_form aus), erscheinen nicht im Formular,
+        # Formelfelder auch nicht: Ihr Wert wird beim Speichern berechnet.
+        self.entity_fields = [f for f in entity.fields.all() if f.show_in_form and not f.formula]
         if record is not None and "initial" not in kwargs:
             kwargs["initial"] = self._initial(record)
         super().__init__(*args, **kwargs)
@@ -106,19 +107,40 @@ class EntityForm(forms.ModelForm):
         fields = ["name", "allow_create", "allow_edit", "allow_delete"]
 
 
+class NewEntityForm(forms.ModelForm):
+    """Neue Tabelle nur mit Namen: Die Schalter fehlen im Formular und dürfen nicht als „aus“ gelten."""
+
+    class Meta:
+        model = Entity
+        fields = ["name"]
+
+
 class FieldForm(forms.ModelForm):
     class Meta:
         model = Field
         fields = ["label", "type", "required", "show_in_list", "show_in_form", "formula", "choices", "reference"]
         widgets = {"choices": forms.Textarea(attrs={"rows": 3})}
 
-    def __init__(self, *args, app, **kwargs):
+    def __init__(self, *args, app, entity=None, **kwargs):
         super().__init__(*args, **kwargs)
+        self.entity = entity or (self.instance.entity if self.instance.entity_id else None)
         self.fields["reference"].queryset = app.entities.all()
         self.fields["reference"].empty_label = "–"
 
     def clean(self):
+        from .models import formula_problem
+
         cleaned = super().clean()
+        formula = (cleaned.get("formula") or "").strip()
+        if formula:
+            if cleaned.get("type") not in (Field.NUMBER, Field.DECIMAL):
+                self.add_error("formula", _("Formeln gibt es nur für die Typen „Ganze Zahl“ und „Kommazahl“."))
+            elif self.entity is not None:
+                keys = [f.key for f in self.entity.fields.filter(type__in=[Field.NUMBER, Field.DECIMAL])
+                        if f.pk != self.instance.pk]
+                problem = formula_problem(formula, keys)
+                if problem:
+                    self.add_error("formula", problem)
         if cleaned.get("type") == Field.CHOICE and not cleaned.get("choices", "").strip():
             self.add_error("choices", _("Bitte mindestens einen Auswahlwert eintragen."))
         if cleaned.get("type") == Field.REFERENCE and not cleaned.get("reference"):

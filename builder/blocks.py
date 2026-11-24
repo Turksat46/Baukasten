@@ -10,6 +10,7 @@ import re
 import secrets
 from dataclasses import dataclass, field
 from datetime import date, datetime, timedelta
+from decimal import ROUND_HALF_UP, Decimal, InvalidOperation
 
 from django.conf import settings
 from django.core.cache import cache
@@ -164,8 +165,8 @@ def display_value(f, value, refs=None):
             return date_format(date.fromisoformat(value), "SHORT_DATE_FORMAT")
         except (TypeError, ValueError):
             return str(value)
-    if f.type == Field.DECIMAL and isinstance(value, (int, float)):
-        return number_format(value, decimal_pos=2, use_l10n=True, force_grouping=True)
+    if f.type == Field.DECIMAL and isinstance(value, (int, float)) and not isinstance(value, bool):
+        return _decimal2(value)
     if f.type == Field.REFERENCE:
         return (refs or {}).get(value, f"#{value}")
     if f.type == Field.CHOICE:
@@ -178,6 +179,18 @@ def display_value(f, value, refs=None):
 def filter_param(entity, f, suffix=""):
     """Name des Adress-Parameters, z. B. geraete.kategorie oder ausleihen.von.bis."""
     return f"{entity.slug}.{f.key}{suffix}"
+
+
+def filter_value(f, raw):
+    """Wert für den Adress-Parameter von filter_param, so wie filtered() ihn versteht.
+
+    Der angezeigte Text taugt dafür nicht (übersetzte Auswahl, „Ja“, Name statt Nummer eines
+    Verweises, 1.234,50). None: nach diesem Wert lässt sich nicht filtern (leer, Datum)."""
+    if raw is None or raw == "" or f.type == Field.DATE:
+        return None
+    if f.type == Field.BOOL:
+        return "1" if raw is True or str(raw).lower() in ("1", "true") else "0"
+    return str(raw)
 
 
 def filtered(request, entity, records=None):
@@ -203,7 +216,7 @@ def filtered(request, entity, records=None):
         if value in (None, ""):
             continue
         if f.type == Field.BOOL:
-            records = (records.filter(**{f"data__{f.key}": True}) if value in ("1", "true", "ja")
+            records = (records.filter(**{f"data__{f.key}": True}) if value.strip().lower() in ("1", "true", "ja", "yes")
                        else records.exclude(**{f"data__{f.key}": True}))
         elif f.type in (Field.TEXT, Field.LONGTEXT, Field.EMAIL, Field.URL):
             records = (records.annotate(**{f"_f_{f.key}": KeyTextTransform(f.key, "data")})
@@ -274,14 +287,26 @@ def _number(entity, props, records=None):
     return records.aggregate(v=func(expr))["v"] or 0, None
 
 
-def _format_number(value):
-    if isinstance(value, int):
-        return number_format(value, force_grouping=True, use_l10n=True)
+def _decimal2(value):
+    """Zahl mit zwei Nachkommastellen, kaufmännisch gerundet. Djangos number_format schneidet
+    nur ab (2,999 → 2,99); über str() rundet 19,995 auch wirklich auf 20,00."""
+    try:
+        value = Decimal(str(value)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+    except (InvalidOperation, ValueError):
+        pass  # unendlich oder keine Zahl: unverändert ausgeben
     return number_format(value, decimal_pos=2, use_l10n=True, force_grouping=True)
 
 
+def _format_number(value):
+    if isinstance(value, int):
+        return number_format(value, force_grouping=True, use_l10n=True)
+    return _decimal2(value)
+
+
 def _groups(entity, f, limit=12, records=None):
-    """Zählt Einträge je Wert eines Feldes: Liste von (Beschriftung, Anzahl), häufigste zuerst."""
+    """Zählt Einträge je Wert eines Feldes: Liste von (Beschriftung, Anzahl, Filterwert), häufigste zuerst.
+
+    Der Filterwert (siehe filter_value) ist None, wenn sich nach dem Wert nicht filtern lässt."""
     records = entity.records.all() if records is None else records
     rows = (
         records.annotate(v=KeyTextTransform(f.key, "data"))
@@ -298,7 +323,7 @@ def _groups(entity, f, limit=12, records=None):
             label = str(Record.objects.filter(pk=int(raw)).first() or f"#{raw}")
         else:
             label = display_value(f, raw)
-        result.append((label, row["c"]))
+        result.append((label, row["c"], filter_value(f, raw)))
     return result
 
 
@@ -342,15 +367,15 @@ def prep_chart(request, app, block):
         return {"error": gettext("Für dieses Diagramm fehlen Tabelle und Feld.")}
     records = filtered(request, entity)
     groups = _groups(entity, f, records=records)
-    top = max((count for _, count in groups), default=0)
+    top = max((count for _, count, _v in groups), default=0)
     total = records.count()
     param = filter_param(entity, f)
     return {"bars": [
         {"label": label, "count": count,
          "percent": round(100 * count / top) if top else 0,
          "share": round(100 * count / total) if total else 0,
-         "href": _filter_href(request, param, label)}
-        for label, count in groups
+         "href": _filter_href(request, param, value) if value is not None else ""}
+        for label, count, value in groups
     ]}
 
 
@@ -363,17 +388,17 @@ def prep_donut(request, app, block):
     records = filtered(request, entity)
     total = records.count()
     groups = _groups(entity, f, limit=5, records=records)
-    rest = total - sum(count for _, count in groups)
+    rest = total - sum(count for _, count, _v in groups)
     if rest > 0:
-        groups.append((gettext("Sonstige"), rest))
+        groups.append((gettext("Sonstige"), rest, None))
     param = filter_param(entity, f)
     segments, done = [], 0.0
-    for index, (label, count) in enumerate(groups, start=1):
+    for index, (label, count, value) in enumerate(groups, start=1):
         share = 100 * count / total if total else 0
         segments.append({
             "label": label, "count": count, "share": round(share), "index": index,
             "dash": f"{share:.2f} {100 - share:.2f}", "offset": f"{125 - done:.2f}",
-            "href": _filter_href(request, param, label) if label != gettext("Sonstige") else "",
+            "href": _filter_href(request, param, value) if value is not None else "",
         })
         done += share
     return {"segments": segments, "total": _format_number(total)}

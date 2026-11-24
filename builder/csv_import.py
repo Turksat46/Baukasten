@@ -176,7 +176,7 @@ def run_import(app, entity, rows, mapping, user, skip_errors=False):
         raise CsvImportError(gettext("Bitte mindestens eine Spalte einem Tabellenfeld zuordnen."))
 
     mapped_keys = {f.key for _, f in mapped}
-    missing_required = [f.label for f in fields_by_key.values() if f.required and f.show_in_form and f.key not in mapped_keys]
+    missing_required = [f.label for f in fields_by_key.values() if f.required and f.show_in_form and not f.formula and f.key not in mapped_keys]
     if missing_required:
         raise CsvImportError(gettext("Pflichtfelder nicht zugeordnet: %(fields)s") % {"fields": ", ".join(missing_required)})
 

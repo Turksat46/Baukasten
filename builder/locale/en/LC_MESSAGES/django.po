@@ -5969,3 +5969,27 @@ msgstr "− Table “%(name)s” (created after this version; data is preserved)
 #: builder/templates/builder/blocks/related_list.html
 msgid "Es werden die ersten %(n)s verknüpften Einträge gezeigt."
 msgstr "Showing the first %(n)s linked entries."
+
+#: builder/datascience.py
+msgid "Die Berechnung „%(agg)s“ wird nicht unterstützt (erlaubt: %(allowed)s)."
+msgstr "The aggregate “%(agg)s” is not supported (allowed: %(allowed)s)."
+
+#: builder/datascience.py
+msgid "Für diese Berechnung fehlt encoding.y.field."
+msgstr "This aggregate needs encoding.y.field."
+
+#: builder/forms.py
+msgid "Formeln gibt es nur für die Typen „Ganze Zahl“ und „Kommazahl“."
+msgstr "Formulas are only available for the types “Whole number” and “Decimal number”."
+
+#: builder/models.py
+msgid "Die Formel ist kein gültiger Rechenausdruck."
+msgstr "The formula is not a valid arithmetic expression."
+
+#: builder/models.py
+msgid "Diese Zahlenfelder gibt es in der Tabelle nicht: %(names)s"
+msgstr "These number fields do not exist in the table: %(names)s"
+
+#: builder/models.py
+msgid "Erlaubt sind Zahlen, Zahlenfelder, + - * / und round, abs, min, max."
+msgstr "Allowed are numbers, number fields, + - * / and round, abs, min, max."
