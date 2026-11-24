@@ -12,6 +12,7 @@ Schlüssel der App im Kopf „Authorization: Bearer <Schlüssel>“.
     DELETE /api/v1/<app>/<tabelle>/<id>/      Eintrag löschen
     *      /api/v1/<app>/x/<name>/            eigener Endpunkt aus extensions (hooks.api)
     POST   /api/v1/<app>/ausloesen/<skript>/  Skript einer Automatisierung starten (Webhook)
+    POST   /api/v1/<app>/<tabelle>/eingang/   Bericht ablegen (HTML, Markdown, Teams-Formate; siehe rich.py)
 """
 import json
 import logging
@@ -77,8 +78,40 @@ def find_records(entity, fields, params):
     }
 
 
-def api_view(view):
-    """Prüft App und Schlüssel und liest den JSON-Inhalt. Die Ansicht bekommt (request, app, key, payload, …)."""
+MAX_INBOX_BYTES = 10 * 1024 * 1024
+
+
+def _raw_payload(request):
+    """Inhalt für den Berichte-Eingang: JSON-Objekt oder HTML/Text als {"text": …}. (payload, Fehler)"""
+    try:
+        length = int(request.META.get("CONTENT_LENGTH") or 0)
+    except ValueError:
+        length = 0
+    if length > MAX_INBOX_BYTES:
+        return None, error(413, _("Der Inhalt ist zu groß (höchstens 10 MB)."))
+    body = request.read(MAX_INBOX_BYTES + 1)
+    if len(body) > MAX_INBOX_BYTES:
+        return None, error(413, _("Der Inhalt ist zu groß (höchstens 10 MB)."))
+    text = body.decode(request.encoding or "utf-8", errors="replace")
+    if request.content_type in ("text/html", "text/plain", "text/markdown"):
+        return {"text": text, **request.GET.dict()}, None
+    if not text.strip():
+        return {**request.GET.dict()}, None
+    try:
+        payload = json.loads(text)
+    except ValueError:
+        return None, error(400, _("Der Inhalt der Anfrage ist kein gültiges JSON."))
+    if not isinstance(payload, dict):
+        return None, error(400, _("Erwartet wird ein JSON-Objekt."))
+    return {**request.GET.dict(), **payload}, None
+
+
+def api_view(view=None, *, raw=False):
+    """Prüft App und Schlüssel und liest den JSON-Inhalt. Die Ansicht bekommt (request, app, key, payload, …).
+
+    raw=True (Berichte-Eingang): nimmt auch HTML und Text an, bis 10 MB."""
+    if view is None:
+        return lambda fn: api_view(fn, raw=raw)
 
     @csrf_exempt
     @wraps(view)
@@ -87,7 +120,11 @@ def api_view(view):
         if key is None:
             return unauthorized()
         payload = {}
-        if request.method in ("POST", "PUT", "PATCH") and request.body:
+        if raw and request.method == "POST":
+            payload, failure = _raw_payload(request)
+            if failure:
+                return failure
+        elif request.method in ("POST", "PUT", "PATCH") and request.body:
             try:
                 payload = json.loads(request.body)
             except ValueError:
@@ -184,6 +221,46 @@ def item(request, app, key, payload, entity, pk):
         record.delete()
         return HttpResponse(status=204)
     return error(405, _("Methode nicht erlaubt."))
+
+
+@api_view(raw=True)
+def inbox(request, app, key, payload, entity):
+    """Berichte-Eingang für n8n, Teams-Workflows, Power Automate und Copilot.
+
+    Nimmt dieselbe Nachricht an, die sonst an Teams geht, und legt sie als Eintrag ab:
+    Inhalt ins erste Feld vom Typ „Formatierter Text“, Überschrift in ein Feld titel/title
+    (sonst ins erste Textfeld). Weitere Angaben mit dem Schlüssel eines Feldes (z. B. "agent")
+    werden übernommen, auch aus der Adresse (?agent=Wochenbericht)."""
+    from .rich import split_report
+
+    if request.method != "POST":
+        return error(405, _("Methode nicht erlaubt."))
+    entity = get_entity(app, entity)
+    if entity is None:
+        return error(404, _("Diese Tabelle gibt es nicht oder sie ist nicht für die API freigeschaltet."))
+    if not entity.allow_create:
+        return error(403, _("In dieser Tabelle ist das Anlegen nicht erlaubt."))
+    fields = list(entity.fields.all())
+    content_field = next((f for f in fields if f.type == Field.HTML and not f.formula), None)
+    if content_field is None:
+        return error(400, _("Die Tabelle braucht ein Feld vom Typ „Formatierter Text (HTML)“ für den Inhalt."))
+    texts = [f for f in fields if f.type == Field.TEXT and not f.formula]
+    title_field = next((f for f in texts if f.key in ("titel", "title", "betreff", "ueberschrift")), None) or         next(iter(texts), None)
+    title, html = split_report(payload)
+    if not html.strip():
+        return error(400, _("Die Nachricht hat keinen Inhalt."))
+    data = {f.key: payload[f.key] for f in fields
+            if f.key in payload and f not in (content_field, title_field) and not f.formula}
+    data[content_field.key] = html
+    if title_field is not None:
+        data[title_field.key] = title
+    record, failure = save(entity, data, request.user)
+    if failure:
+        return failure
+    return JsonResponse({
+        "id": record.pk,
+        "url": request.build_absolute_uri(reverse("api_item", args=[app.slug, entity.slug, record.pk])),
+    }, status=201)
 
 
 @api_view

@@ -63,6 +63,7 @@ Am Ende stehen [Häufige Fragen](#häufige-fragen),
 | Inventar | Tabellen, Formulare, Kennzahlen, Diagramme, Datenquelle, Python- und JavaScript-Skripte | `python manage.py demo` |
 | Aufnahme-Einwilligung | Ablauf über mehrere Personen: Veranstaltung anlegen, Link verschicken, zustimmen oder ablehnen, Auswertung | `python manage.py beispiel_einwilligung` |
 | Personaleinsatz | Schichten per Drag-and-drop planen, Linien mit Priorität, Rückfragen bei Überplanung, Wochenübersicht, Kanban-Board | `python manage.py beispiel_einsatzplanung` |
+| Agenten-Berichte | Berichte von n8n-Agenten, Teams-Workflows und Copilot mit Text, Emojis, Tabellen und Diagrammen im Berichte-Feed, siehe [Berichte aus n8n, Teams und Copilot](#berichte-aus-n8n-teams-und-copilot) | `python manage.py beispiel_berichte` |
 
 **Aufnahme-Einwilligung** im Einzelnen:
 
@@ -327,6 +328,7 @@ Eintrag. Das erste Feld dient als Name des Eintrags, etwa in Verweisen.
 |---|---|---|
 | Text | einzeilig | bis 500 Zeichen |
 | Langer Text | mehrzeilig | |
+| Formatierter Text (HTML) | HTML oder Markdown | fett, Listen, Tabellen, Links, Bilder; wird beim Speichern bereinigt, eingebettete Bilder speichert der Baukasten selbst. Listen zeigen den Anfang als Text, Detailansicht und Berichte-Feed formatiert |
 | Ganze Zahl | Zahl ohne Komma | für Summe und Durchschnitt nutzbar |
 | Kommazahl | Zahl mit Komma | für Summe und Durchschnitt nutzbar |
 | Datum | Datumsauswahl | für „Verlauf“ und „Liniendiagramm“ nutzbar |
@@ -433,6 +435,7 @@ prüfen.
 | | CSV-Export | alle Einträge einer Tabelle herunterladen |
 | | Filterleiste | bis zu vier Felder zum Filtern; gilt für alle Bausteine derselben Tabelle auf der Seite, siehe [Filtern](#filtern) |
 | | Schieberegler | ein Regler je Eintrag, der ein Zahlenfeld direkt ändert (z. B. Fortschritt in %), mit Bereich und Schrittweite |
+| | Berichte-Feed | Einträge mit formatiertem Text als Zeitleiste, neueste zuerst, mit Schnellfilter nach Quelle (z. B. Agent), siehe [Berichte aus n8n, Teams und Copilot](#berichte-aus-n8n-teams-und-copilot) |
 | Planung | Einsatzplanung | Einträge (z. B. Mitarbeitende) per Drag-and-drop Zielen (z. B. Schichten) zuordnen, je Tag; mit Kapazität, Gruppen mit Priorität und Rückfragen, siehe [Planen mit Drag-and-drop](#planen-mit-drag-and-drop) |
 | | Wochenübersicht | Belegung und Kapazität je Ziel und Tag einer Woche, farbig nach offen, voll, überplant; Klick öffnet die Tagesplanung |
 | | Kanban-Board | Einträge per Drag-and-drop zwischen den Werten eines Auswahlfelds (z. B. Status) verschieben, optional mit Höchstzahl je Spalte |
@@ -716,6 +719,73 @@ entsteht automatisch aus den Tabellen und ist daher immer aktuell.
 Im selben Abschnitt steht auch die Adresse des [MCP-Servers](#mcp-server-ki-agenten-n8n)
 der App für KI-Agenten. Wie die API im Einzelnen funktioniert, steht in
 [Teil 3](#api).
+
+### Berichte aus n8n, Teams und Copilot
+
+Agenten in n8n, Teams-Workflows (Power Automate) oder Copilot schreiben Berichte oft
+nur in einen Teams-Kanal. Der Baukasten nimmt **dieselbe Nachricht** zusätzlich an und
+zeigt sie im Baustein **Berichte-Feed**: durchsuchbar, filterbar nach Agent und mit
+Diagrammen, Tabellen und Emojis wie in Teams.
+
+**Schnell ausprobieren:** `python manage.py beispiel_berichte --schluessel` legt die App
+„Agenten-Berichte“ mit Beispielberichten an und gibt einen API-Schlüssel mit
+Schreibrecht aus (nur dieses eine Mal).
+
+**Selbst einrichten:**
+
+1. Eine Tabelle anlegen, z. B. „Berichte“, mit den Feldern **Titel** (Text),
+   **Agent** (Text, optional) und **Inhalt** (Formatierter Text (HTML)).
+2. Die Tabelle unter „Schnittstelle (API)“ freischalten und einen Schlüssel mit
+   „Darf schreiben“ erzeugen.
+3. Auf einer Seite den Baustein **Berichte-Feed** einfügen und als „Quelle“ das Feld
+   „Agent“ wählen. Dann erscheint je Agent ein Schnellfilter.
+
+**Eingang:** `POST /api/v1/<app>/<tabelle>/eingang/` mit dem Schlüssel im Kopf
+`Authorization: Bearer bk_…`. Der Inhalt landet im ersten Feld vom Typ „Formatierter
+Text“, die Überschrift in einem Feld mit dem Kurznamen `titel` oder `title` (sonst im
+ersten Textfeld). Schickt der Absender keine Überschrift mit, wird die erste
+Überschrift des Inhalts zum Titel, sonst der Anfang des Textes. Andere Felder füllst
+du über ihren Kurznamen, als JSON-Schlüssel oder in der Adresse
+(`…/eingang/?agent=Vertrieb`).
+
+| Absender schickt | Beispiel | wird zu |
+|---|---|---|
+| HTML (`Content-Type: text/html`) | `<h2>Wochenbericht 📈</h2><p><b>71</b> Aufträge</p>` | HTML, bereinigt |
+| Text oder Markdown (`text/plain`) | `**71** Aufträge ✅` | HTML |
+| Teams-Webhook (JSON) | `{"title": "…", "text": "<b>…</b>"}` | HTML; Text ohne HTML gilt als Markdown |
+| Adaptive Card (Teams-Workflows) | `{"type": "message", "attachments": [{"contentType": "application/vnd.microsoft.card.adaptive", "content": {…}}]}` | Textblöcke, Überschriften, Fakten als Tabelle, Bilder, Tabellen, Links |
+| MessageCard (alte Connectoren) | `{"@type": "MessageCard", "sections": [{"facts": […]}]}` | Abschnitte, Fakten, Bilder, Links |
+| Graph-Nachricht (Teams-Kanal) | `{"body": {"contentType": "html", "content": "…"}, "hostedContents": […]}` | HTML mit den mitgeschickten Bildern |
+
+**In n8n:** Neben den Teams-Knoten einen Knoten „HTTP Request“ setzen: Methode `POST`,
+die Eingangs-Adresse, unter „Headers“ `Authorization` mit `Bearer bk_…`, als Body
+dasselbe HTML oder JSON wie für Teams. Wer schon einen Webhook-Aufruf an Teams hat,
+kopiert ihn und ändert nur Adresse und Kopfzeile.
+
+**Bilder und Diagramme:** Am besten **eingebettet** schicken, als
+`<img src="data:image/png;base64,…">` (in n8n z. B. aus dem Binärfeld eines
+Diagramm-Knotens). Der Baukasten speichert solche Bilder in der Datenbank und zeigt
+sie unter `/a/<app>/bild/…` nur Personen, die die App benutzen dürfen (bei Apps mit
+öffentlichen Seiten auch Gästen). Erlaubt sind PNG, JPEG, GIF und WebP bis 5 MB je
+Bild; SVG wird aus Sicherheitsgründen nicht übernommen. Bilder mit `https://`-Adresse
+bleiben Links. Sie müssen für alle Betrachter erreichbar sein; Bildadressen aus Teams
+selbst brauchen eine Anmeldung bei Microsoft und erscheinen deshalb oft nicht.
+Eine Nachricht darf höchstens 10 MB groß sein.
+
+**Sicherheit:** Formatierter Text wird beim Speichern und bei der Anzeige bereinigt:
+Skripte, Ereignis-Attribute (`onclick` …), eingebettete Fremdinhalte und unsichere
+Adressen fallen weg, wie bei [eigenen Bausteinen](#eigene-bausteine).
+
+**Copilot:**
+
+- **Copilot Studio** kann den [MCP-Server](#mcp-server-ki-agenten-n8n) der App als
+  Werkzeug einbinden. Das Tool `create_<tabelle>` legt einen Bericht an; HTML oder
+  Markdown im Inhaltsfeld wird wie beim Eingang umgewandelt. Mit `list_<tabelle>`
+  liest Copilot vorhandene Berichte, z. B. für „Fass die Berichte dieser Woche
+  zusammen“. Ein Schlüssel ohne Schreibrecht erlaubt nur das Lesen.
+- **Microsoft 365 Copilot** (deklarativer Agent mit API-Plugin) und eigene Connectoren
+  nutzen die OpenAPI-Beschreibung der App (`/api/v1/<app>/openapi.json`); der Eingang
+  steht dort als `<tabelle>_bericht_ablegen`.
 
 ### Daten aus Datenbanken und Databricks
 

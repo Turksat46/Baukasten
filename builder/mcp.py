@@ -53,6 +53,9 @@ def _field_schema(field, for_filter=False):
         description += f" (Nummer eines Eintrags aus „{field.reference.name}“)"
     if field.type == Field.DATE:
         description += " (Format JJJJ-MM-TT)"
+    if field.type == Field.HTML and not for_filter:
+        description += (" (HTML oder Markdown; Bilder als <img src=\"data:image/png;base64,…\"> werden gespeichert,"
+                        " Skripte entfernt)")
     if for_filter:
         description = f"Nur Einträge, bei denen „{field.label}“ genau diesen Wert hat"
     elif field.required:

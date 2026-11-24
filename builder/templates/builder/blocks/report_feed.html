@@ -1,0 +1,37 @@
+{% load i18n baukasten %}<section class="card report-feed">
+  <div class="card-head">
+    <h3 data-slot="title">{{ p.title|default:entity.name|tr }}</h3>
+    {% if page_obj.paginator.count %}<span class="muted small">{% blocktranslate count n=page_obj.paginator.count %}{{ n }} Bericht{% plural %}{{ n }} Berichte{% endblocktranslate %}</span>{% endif %}
+  </div>
+  {% if chips %}
+    <nav class="report-chips" aria-label="{% blocktranslate with name=source_label %}Nach {{ name }} filtern{% endblocktranslate %}">
+      {% for chip in chips %}<a class="report-chip{% if chip.active %} active{% endif %}" href="{{ chip.href }}"{% if chip.active %} aria-current="true"{% endif %}>{{ chip.label }}{% if chip.count %} <span>{{ chip.count }}</span>{% endif %}</a>{% endfor %}
+    </nav>
+  {% endif %}
+  {% if reports %}
+    <ol class="report-list">
+      {% for r in reports %}
+        <li class="report-item">
+          <article>
+            <header class="report-head">
+              {% if r.source %}<span class="report-source">{{ r.source }}</span>{% endif %}
+              <time datetime="{{ r.iso }}" class="muted small">{{ r.when }}</time>
+              {% if edit %}<a class="report-edit small" href="{% url 'record_edit' app.slug entity.slug r.record.pk %}?next={{ next|urlencode }}">{% translate "Bearbeiten" %}</a>{% endif %}
+            </header>
+            {% if r.title %}<h4 class="report-title">{{ r.title }}</h4>{% endif %}
+            <div class="report-body">{{ r.body }}</div>
+          </article>
+        </li>
+      {% endfor %}
+    </ol>
+    {% if page_obj.has_other_pages %}
+      <div class="pager">
+        {% if page_obj.has_previous %}<a href="{{ newer_href }}">{% translate "Neuere" %}</a>{% endif %}
+        <span class="muted">{% blocktranslate with number=page_obj.number total=page_obj.paginator.num_pages %}Seite {{ number }} von {{ total }}{% endblocktranslate %}</span>
+        {% if page_obj.has_next %}<a href="{{ older_href }}">{% translate "Ältere" %}</a>{% endif %}
+      </div>
+    {% endif %}
+  {% else %}
+    <p class="empty">{% translate "Noch keine Berichte." %}{% if inbox_url %} {% translate "Neue kommen über den Eingang:" %} <code>POST {{ inbox_url }}</code>{% endif %}</p>
+  {% endif %}
+</section>

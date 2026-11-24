@@ -36,6 +36,7 @@ urlpatterns = [
     path("a/<slug:app>/t/<slug:entity>/export.csv", views.entity_export, name="entity_export"),
     path("a/<slug:app>/q/<slug:query>/export.csv", views.query_export, name="query_export"),
     path("a/<slug:app>/t/<slug:entity>/import/", views.entity_import, name="entity_import"),
+    path("a/<slug:app>/bild/<str:name>", views.attachment, name="attachment"),
     # MCP-Server je App (für KI-Agenten und n8n), Schlüssel wie bei der API
     path("mcp/designer/", mcp_designer.endpoint, name="mcp_designer"),
     path("mcp/<slug:app>/", mcp.endpoint, name="mcp"),
@@ -44,6 +45,7 @@ urlpatterns = [
     path("api/v1/<slug:app>/openapi.json", api.openapi_spec, name="api_openapi"),
     path("api/v1/<slug:app>/x/<str:name>/", api.custom, name="api_custom"),
     path("api/v1/<slug:app>/ausloesen/<slug:script>/", api.trigger, name="api_trigger"),
+    path("api/v1/<slug:app>/<slug:entity>/eingang/", api.inbox, name="api_inbox"),
     path("api/v1/<slug:app>/<slug:entity>/", api.collection, name="api_collection"),
     path("api/v1/<slug:app>/<slug:entity>/<int:pk>/", api.item, name="api_item"),
     # Designer: eigene Bausteine (vor den App-Adressen, damit „bausteine“ nicht als App gilt)
