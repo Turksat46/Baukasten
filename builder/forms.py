@@ -9,12 +9,35 @@ from .models import ApiKey, App, CustomBlock, DataQuery, Entity, Field, Page, Re
 from .sanitize import sanitize_html
 
 
+class HtmlFormField(forms.CharField):
+    """Formatierter Text: wird beim Prüfen bereinigt, eingebettete Bilder werden gespeichert."""
+
+    def __init__(self, app=None, **kwargs):
+        self.app = app
+        kwargs.setdefault("widget", forms.Textarea(attrs={"rows": 8, "class": "html-source"}))
+        kwargs.setdefault("help_text", _("HTML oder Markdown (z. B. **fett**), mit Listen, Tabellen und Bildern. Skripte werden entfernt."))
+        super().__init__(strip=False, **kwargs)
+
+    def clean(self, value):
+        from .rich import html_to_text, prepare_html, to_html
+
+        value = super().clean(value)
+        if not value:
+            return value
+        html = prepare_html(to_html(value), self.app)  # Text ohne HTML gilt als Markdown
+        if self.required and not html_to_text(html) and "<img" not in html:
+            raise forms.ValidationError(self.error_messages["required"], code="required")
+        return html
+
+
 def _form_field(field):
     # Beschriftungen in der Sprache der Person; die Werte (z. B. Auswahlwerte) bleiben in der Quellsprache.
     kw = {"label": app_i18n.t(field.label), "required": field.required}
     t = field.type
     if t == Field.LONGTEXT:
         return forms.CharField(widget=forms.Textarea(attrs={"rows": 4}), **kw)
+    if t == Field.HTML:
+        return HtmlFormField(app=field.entity.app, **kw)
     if t == Field.NUMBER:
         return forms.IntegerField(**kw)
     if t == Field.DECIMAL:

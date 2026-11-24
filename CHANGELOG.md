@@ -10,6 +10,18 @@ Neue Einträge oben unter „Unveröffentlicht“ sammeln und beim Release zur V
 
 ## Unveröffentlicht
 
+### Neu
+- **Berichte aus n8n, Teams und Copilot:** Eingang `POST /api/v1/<app>/<tabelle>/eingang/` nimmt
+  dieselbe Nachricht an, die sonst an Teams geht (HTML, Text/Markdown, Teams-Webhook-JSON,
+  Adaptive Card, MessageCard, Graph-Nachricht mit Bildern), und legt sie als Eintrag ab.
+- Neuer Feldtyp **Formatierter Text (HTML)**: wird beim Speichern bereinigt, Markdown wird
+  umgewandelt, eingebettete Bilder (PNG, JPEG, GIF, WebP) speichert der Baukasten in der Datenbank
+  und liefert sie nur an Berechtigte aus. Detailansicht zeigt ihn formatiert, Listen als Text.
+- Neuer Baustein **Berichte-Feed**: Zeitleiste der Berichte, neueste zuerst, mit Schnellfilter
+  nach Quelle (z. B. Agent). Beispiel-App: `python manage.py beispiel_berichte`.
+- OpenAPI und MCP-Server beschreiben das neue Feld; der Eingang steht in der OpenAPI-Datei
+  (für Copilot-Connectoren und API-Plugins).
+
 ### Behoben
 - Beispiel-App „Qualitäts- & Modell-Cockpit“: Die Filterleiste zeigte nur den Hinweis
   „Wähle mindestens ein Feld …“, weil `beispiel_datascience` die Felder falsch übergab.
