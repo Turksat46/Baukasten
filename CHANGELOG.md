@@ -11,6 +11,8 @@ Neue Einträge oben unter „Unveröffentlicht“ sammeln und beim Release zur V
 ## Unveröffentlicht
 
 ### Behoben
+- Beispiel-App „Qualitäts- & Modell-Cockpit“: Die Filterleiste zeigte nur den Hinweis
+  „Wähle mindestens ein Feld …“, weil `beispiel_datascience` die Felder falsch übergab.
 - Sicherheit: Der CSV-Export gespeicherter Abfragen (`/a/<app>/q/<abfrage>/export.csv`) war ohne
   Anmeldung erreichbar; er verlangt jetzt eine Anmeldung und nimmt nur Parameter aus dem SQL an.
 - Abfrage-Export schrieb in jede Zeile die Spaltennamen statt der Werte.
