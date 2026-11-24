@@ -4033,8 +4033,11 @@ class DataScienceBlocksTests(TestCase):
         self.assertContains(analyse, "line-threshold")
         self.assertContains(analyse, "line-anomaly")
         self.assertContains(analyse, "chargen.werk=Stuttgart")
+        # Die Filterleiste der Beispiel-App ist richtig eingestellt (kein Hinweis statt Filter).
+        self.assertNotContains(analyse, "Wähle mindestens ein Feld")
+        self.assertContains(analyse, 'name="chargen.werk"')
 
-        sim = self.client.get(reverse("page", args=[app.slug, "simulator"]))
+        sim =self.client.get(reverse("page", args=[app.slug, "simulator"]))
         self.assertEqual(sim.status_code, 200)
         self.assertContains(sim, "What-If-Simulator")
 

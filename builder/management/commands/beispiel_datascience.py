@@ -90,7 +90,7 @@ class Command(BaseCommand):
 
             Page.objects.create(app=app, title="Analyse & Drift", slug="analyse", order=1, layout=[
                 make_block("heading", text="Qualitäts- & Modell-Cockpit", subtitle="Klick auf Werk oder Status filtert alle Diagramme", level="1"),
-                make_block("filter", entity="chargen", fields="werk\nstatus"),
+                make_block("filter", entity="chargen", field="werk", field2="status"),
                 make_block("scatter", width=6, title="Temperatur vs. Ist-Ausschuss (mit Trend & R²)",
                            entity="chargen", x_field="temperatur", y_field="ausschuss",
                            color_field="werk", size_field="durchsatz", label_field="charge", trendline=True),
