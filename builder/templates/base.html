@@ -14,12 +14,14 @@
   <meta name="apple-mobile-web-app-title" content="Baukasten">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <script src="{% asset 'builder/theme.js' %}"></script>
+  <script src="{% asset 'builder/splash.js' %}"></script>
   <link rel="stylesheet" href="{% asset 'builder/theme.css' %}">
   <link rel="stylesheet" href="{% asset 'builder/style.css' %}">
   <script src="{% asset 'builder/transitions.js' %}"></script>
   <script src="{% asset 'builder/menu.js' %}" defer></script>
 </head>
 <body data-user="{{ user.get_username }}">
+{% include "builder/_splash.html" %}
 {% block body %}
   <a class="skip-link" href="#inhalt">{% translate "Zum Inhalt springen" %}</a>
   <header class="topbar">
@@ -74,6 +76,7 @@
   <script src="{% url 'javascript-catalog' %}"></script>
   <script src="{% asset 'builder/modal.js' %}"></script>
   <script src="{% asset 'builder/confirm.js' %}"></script>
+  <script src="{% asset 'builder/progress.js' %}"></script>
   <script src="{% asset 'builder/tour.js' %}"></script>
   <script src="{% asset 'builder/pwa.js' %}" defer></script>
   {% block scripts %}{% endblock %}
