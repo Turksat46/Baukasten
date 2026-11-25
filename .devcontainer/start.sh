@@ -29,7 +29,18 @@ if not U.objects.filter(username='demo').exists():
   touch .devcontainer/.eingerichtet
 fi
 
-# Server und Hintergrund-Worker im Hintergrund, damit der Start-Befehl zurückkehrt.
-nohup python manage.py runserver 0.0.0.0:8000 > /tmp/baukasten.log 2>&1 &
-nohup python manage.py hintergrund --dauerhaft > /tmp/baukasten-hintergrund.log 2>&1 &
+# Server und Hintergrund-Worker in eigener Sitzung (setsid) starten: Codespaces beendet
+# sonst Prozesse, die der Start-Befehl im Hintergrund hinterlässt.
+if ! pgrep -f "manage.py runserver" > /dev/null; then
+  setsid nohup python manage.py runserver 0.0.0.0:8000 > /tmp/baukasten.log 2>&1 < /dev/null &
+fi
+if ! pgrep -f "manage.py hintergrund" > /dev/null; then
+  setsid nohup python manage.py hintergrund --dauerhaft > /tmp/baukasten-hintergrund.log 2>&1 < /dev/null &
+fi
+sleep 3
+if ! pgrep -f "manage.py runserver" > /dev/null; then
+  echo "Baukasten konnte nicht starten:" >&2
+  tail -20 /tmp/baukasten.log >&2
+  exit 1
+fi
 echo "Baukasten läuft auf Port 8000 (Anmeldung: demo / demo). Log: /tmp/baukasten.log"
