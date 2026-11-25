@@ -349,11 +349,25 @@ class ApiKeyAdmin(admin.ModelAdmin):
 
 @admin.register(ReleaseNote)
 class ReleaseNoteAdmin(admin.ModelAdmin):
-    """Release Notes für /ueber/. Erst mit „veröffentlicht“ für alle sichtbar."""
+    """Release Notes für /ueber/. Versionen aus CHANGELOG.md kommen beim Ausrollen von selbst und sind
+    hier nur lesbar; eigene Hinweise (andere Versionsbezeichnung) erst mit „veröffentlicht“ sichtbar."""
 
-    list_display = ["version", "title", "released_on", "published"]
-    list_editable = ["published"]
+    list_display = ["version", "title", "released_on", "published", "source"]
     search_fields = ["version", "title", "body"]
+
+    @admin.display(description=_("Quelle"))
+    def source(self, obj):
+        from . import release_notes
+
+        return "CHANGELOG.md" if obj.version in release_notes.managed_versions() else _("hier gepflegt")
+
+    def get_readonly_fields(self, request, obj=None):
+        """Einträge aus CHANGELOG.md würden beim nächsten Ausrollen überschrieben: dort ändern."""
+        from . import release_notes
+
+        if obj is not None and obj.version in release_notes.managed_versions():
+            return ["version", "title", "body", "released_on", "published"]
+        return super().get_readonly_fields(request, obj)
 
     def view_on_site(self, obj):
         return "/ueber/#neuigkeiten"

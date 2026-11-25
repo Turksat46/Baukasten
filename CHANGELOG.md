@@ -8,7 +8,35 @@ Alle nennenswerten Änderungen am Baukasten. Versionen nach [Semantic Versioning
 Neue Einträge oben unter „Unveröffentlicht“ sammeln und beim Release zur Version machen
 (Ablauf: docs/BETRIEB.md, „Neue Version einspielen“).
 
+**Diese Datei ist die einzige Quelle für Release Notes.** Je Version gehören dazu:
+
+- `**Kurz gesagt:** …` – ein Satz, wird zum Titel unter „Was ist neu“ (`/ueber/`) und im GitHub-Release;
+- `### Für Nutzer` – in einfacher Sprache, wird unter `/ueber/` angezeigt;
+- `### Neu`, `### Behoben` … – technische Einzelheiten für Entwicklung und Betrieb.
+
+Beim Ausrollen gleicht `migrate` die Release Notes im Baukasten ab: Versionen bis zur laufenden
+`BAUKASTEN_VERSION` sind veröffentlicht, „Unveröffentlicht“ sehen nur Verwalter als Entwurf. Ein
+Test prüft, dass die neueste Version hier und `BAUKASTEN_VERSION` übereinstimmen; ein Tag
+`v1.2.3` erzeugt das GitHub-Release aus demselben Abschnitt.
+
 ## Unveröffentlicht
+
+**Kurz gesagt:** Data Science, persönliche Startseite, Planung per Drag-and-drop und Fehler-Alarme
+
+### Für Nutzer
+- **Neue Diagramme für Auswertungen:** Streudiagramm mit Trendlinie, Boxplot, Korrelations-Heatmap,
+  Histogramm mit Drift-Erkennung und frei beschreibbare Diagramme. Ein Klick auf einen Balken oder
+  eine Gruppe filtert die ganze Seite.
+- **Meine Widgets:** Kennzahlen, Diagramme und Hinweise aus allen Apps auf die eigene Startseite holen.
+- **Planen per Drag-and-drop:** Schichten belegen, Wochenübersicht, Kanban-Board, Kalender und Checkliste.
+- **Berechnete Spalten:** Felder wie `preis * menge` rechnen sich beim Speichern selbst aus.
+- **Änderungsprotokoll:** Wer hat wann was geändert? Je App, als „Verlauf“ in jedem Eintrag und als CSV.
+- **Versionen vergleichen und Apps duplizieren:** vor dem Wiederherstellen sehen, was sich ändert;
+  eine App per Klick als Kopie anlegen.
+- **Fehler-Alarme:** Läuft eine Automatisierung auf einen Fehler, kommt auf Wunsch eine Nachricht
+  in Teams, per E-Mail oder an ein anderes System.
+- **Englisch vollständig** und viele Fehler behoben, unter anderem bei Filtern per Klick, Kommazahlen
+  und dem CSV-Export.
 
 ### Behoben
 - Beispiel-App „Qualitäts- & Modell-Cockpit“: Die Filterleiste zeigte nur den Hinweis
@@ -126,8 +154,11 @@ Neue Einträge oben unter „Unveröffentlicht“ sammeln und beim Release zur V
   Aufbewahrung, Zeitlimits); leer = Wert aus der Umgebung.
 - Als App installieren (Progressive Web App): Manifest, App-Symbole, Service Worker nur für
   statische Dateien und eine Offline-Seite; Knopf „Als App installieren“ unten auf jeder Seite.
-- Seite „Über den Baukasten“ (`/ueber/`) mit Version und Release Notes, gepflegt unter `/admin/`;
-  Hinweis „Was ist neu?“ unten auf jeder Seite.
+- Seite „Über den Baukasten“ (`/ueber/`) mit Version und Release Notes; Hinweis „Was ist neu?“
+  unten auf jeder Seite.
+- Release Notes kommen aus dieser Datei: `migrate` gleicht sie beim Ausrollen ab
+  (`python manage.py release_notes`), ein Test prüft CHANGELOG und `BAUKASTEN_VERSION`, ein Tag
+  `v…` erzeugt das GitHub-Release. Unter `/admin/` sind diese Einträge nur noch lesbar.
 
 ### Behoben
 - Status-Leiste (`stepper`): `field_label` wird auch dann bereitgestellt, wenn noch kein Eintrag über `?id=…` gewählt ist.
@@ -135,7 +166,20 @@ Neue Einträge oben unter „Unveröffentlicht“ sammeln und beim Release zur V
 
 ## 1.0.0 – 2026-11-17
 
+**Kurz gesagt:** Erste Version: Apps bauen, automatisieren und mit KI erweitern
+
 Erste Version für den produktiven Einsatz.
+
+### Für Nutzer
+Der Baukasten ist da. Fachabteilungen bauen ihre internen Apps selbst im Browser.
+
+- Tabellen und Felder festlegen, daraus per Klick eine fertige Seite mit Liste, Suche und Formular
+- Seiten-Designer mit 24 Bausteinen: Kennzahlen, Diagramme, Formulare, Tableau und mehr
+- Öffentliche Seiten für Gäste ohne Konto, z. B. Anmeldungen oder Einwilligungen
+- Versionen, Übersetzungen, Mitbearbeiter und eine geführte Einführung „Deine erste App“
+- Skripte in Python und JavaScript; Automatisierungen mit echtem Python im Hintergrund
+- REST-API, MCP-Server für KI-Agenten, Apps mit einer KI deiner Wahl bauen
+- Datenbanken und Databricks live anzeigen oder regelmäßig spiegeln
 
 ### Apps bauen
 - Tabellen mit zehn Feldtypen, daraus per Klick fertige Seiten mit Liste, Suche, Anlegen, Bearbeiten

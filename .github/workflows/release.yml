@@ -1,0 +1,38 @@
+# Erzeugt bei einem Tag v1.2.3 das GitHub-Release aus dem passenden Abschnitt in CHANGELOG.md.
+# Vorher prüft er, dass Tag, BAUKASTEN_VERSION und CHANGELOG zusammenpassen.
+name: Release
+
+on:
+  push:
+    tags: ["v*.*.*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: GitHub-Release aus CHANGELOG.md
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Tag, Version und CHANGELOG prüfen
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          SETTING=$(grep -oP '^BAUKASTEN_VERSION = "\K[^"]+' config/settings.py)
+          if [ "$VERSION" != "$SETTING" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME passt nicht zu BAUKASTEN_VERSION $SETTING in config/settings.py"
+            exit 1
+          fi
+          python -m builder.release_notes pruefen "$VERSION"
+      - name: Release anlegen
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          python -m builder.release_notes abschnitt "$VERSION" > notes.md
+          TITLE=$(python -m builder.release_notes titel "$VERSION")
+          gh release create "$GITHUB_REF_NAME" --title "Baukasten $VERSION – $TITLE" --notes-file notes.md --verify-tag

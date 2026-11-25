@@ -31,7 +31,7 @@
         <p class="empty">{% translate "Noch keine Release Notes veröffentlicht." %}</p>
       {% endfor %}
       {% if user.is_superuser %}
-        <p class="muted small">{% translate "Release Notes schreibst und veröffentlichst du unter /admin/ → Release Notes." %}
+        <p class="muted small">{% translate "Release Notes entstehen beim Ausrollen aus CHANGELOG.md („Kurz gesagt“ und „Für Nutzer“). Versionen bis zur laufenden sind veröffentlicht, „Unveröffentlicht“ sehen nur Verwalter. Eigene Hinweise:" %}
           <a href="{% url 'admin:builder_releasenote_add' %}">{% translate "Neue Release Note" %}</a></p>
       {% endif %}
     </section>

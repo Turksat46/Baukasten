@@ -1817,9 +1817,10 @@ Ein leeres Feld heißt: Es gilt der Wert aus der Umgebung (er steht beim Feld).
 gibt es hier bewusst nicht; sie bleiben in den Umgebungsvariablen (siehe
 [Konfiguration](#konfiguration)).
 
-**Release Notes:** Unter `/admin/` → Release Notes schreibst du, was eine
-Version Neues bringt (Text in Markdown). Mit „veröffentlicht“ erscheint sie für
-alle auf der Seite **Über den Baukasten** (`/ueber/`), erreichbar über
+**Release Notes:** Was eine Version Neues bringt, steht in `CHANGELOG.md`
+(„Kurz gesagt“ als Titel, „Für Nutzer“ als Text) und wird beim Ausrollen
+übernommen. Eigene Hinweise, etwa zu einer Wartung, legst du unter `/admin/` →
+Release Notes an. Veröffentlicht erscheinen sie für alle auf der Seite **Über den Baukasten** (`/ueber/`), erreichbar über
 „Baukasten 1.x · Was ist neu?“ unten auf jeder Seite. Gibt es etwas Neues, das
 jemand noch nicht gesehen hat, leuchtet der Link. Entwürfe sehen nur Superuser.
 

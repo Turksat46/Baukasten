@@ -1779,8 +1779,10 @@ within 30 seconds and appear in the audit log. Credentials and technical values
 (database, hosts, Keycloak) are deliberately not here; they stay in environment
 variables.
 
-**Release notes:** under `/admin/` → Release Notes you describe what a version
-brings (Markdown). Once "published", it appears for everyone on the page **About
+**Release notes:** what a version brings is written in `CHANGELOG.md` ("Kurz
+gesagt" as title, "Für Nutzer" as text) and taken over on rollout. Your own
+notices, e.g. about maintenance, go under `/admin/` → Release Notes. Once
+published, they appear for everyone on the page **About
 Baukasten** (`/ueber/`), reachable via "Baukasten 1.x · What’s new?" at the
 bottom of every page. If there is news someone has not seen yet, the link lights
 up. Drafts are visible to superusers only.
