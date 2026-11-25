@@ -16,3 +16,4 @@ nächste Nummer anlegen; überholte nicht löschen, sondern mit „Status: erset
 | 0008 | [Oberfläche ohne Frontend-Framework und ohne Build-Schritt](0008-oberflaeche-ohne-framework.md) | angenommen |
 | 0009 | [Versionen halten den Aufbau fest, nicht die Daten](0009-versionen-ohne-daten.md) | angenommen |
 | 0010 | [Änderungsprotokoll über Signale mit Kontext je Eingang](0010-aenderungsprotokoll-ueber-signale.md) | angenommen |
+| 0011 | [Lockdatei mit Prüfsummen für das Image, Versionsgrenzen in .in-Dateien](0011-lockdatei-fuer-das-image.md) | angenommen |

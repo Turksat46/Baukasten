@@ -1,5 +1,6 @@
-# Prüft jede Änderung automatisch: Tests mit SQLite und PostgreSQL, fehlende Migrationen,
-# und ob das Docker-Image baut. Ergebnis steht im Pull Request bzw. unter „Actions“.
+# Prüft jede Änderung automatisch: Codeprüfung (ruff) und Lockdatei, Tests mit SQLite und
+# PostgreSQL, fehlende Migrationen, und ob das Docker-Image baut.
+# Ergebnis steht im Pull Request bzw. unter „Actions“.
 name: Tests
 
 on:
@@ -16,17 +17,35 @@ permissions:
   contents: read
 
 jobs:
+  lint:
+    name: Codeprüfung und Lockdatei
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+      - name: Werkzeuge installieren
+        run: pip install "ruff==0.17.6" "packaging>=24"
+      - name: ruff
+        run: ruff check --output-format=github .
+      - name: Lockdatei passt zu requirements*.in
+        run: python tools/lockdatei_pruefen.py
+
   tests:
-    name: Tests (Python ${{ matrix.python }}, ${{ matrix.database }})
+    name: Tests (Python ${{ matrix.python }}, ${{ matrix.database }}, ${{ matrix.deps }})
     runs-on: ubuntu-latest
     timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
         include:
-          - {python: "3.13", database: postgres}
-          - {python: "3.13", database: sqlite}
-          - {python: "3.10", database: sqlite}   # älteste unterstützte Version (README)
+          # lock: genau die Versionen aus dem Image (requirements.txt)
+          # ranges: neueste Versionen innerhalb der Grenzen aus requirements*.in
+          - {python: "3.13", database: postgres, deps: lock}
+          - {python: "3.13", database: sqlite, deps: lock}
+          - {python: "3.10", database: sqlite, deps: ranges}   # älteste unterstützte Version (README)
     services:
       postgres:
         image: postgres:16
@@ -50,10 +69,15 @@ jobs:
           cache: pip
           cache-dependency-path: |
             requirements.txt
-            requirements-automation.txt
+            requirements*.in
 
-      - name: Abhängigkeiten installieren
-        run: pip install -r requirements.txt -r requirements-automation.txt
+      - name: Abhängigkeiten installieren (Lockdatei)
+        if: matrix.deps == 'lock'
+        run: pip install --require-hashes -r requirements.txt
+
+      - name: Abhängigkeiten installieren (neueste innerhalb der Grenzen)
+        if: matrix.deps == 'ranges'
+        run: pip install -r requirements.in -r requirements-automation.in
 
       - name: Datenbank wählen
         if: matrix.database == 'postgres'

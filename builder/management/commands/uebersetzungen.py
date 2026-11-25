@@ -241,7 +241,7 @@ class Command(BaseCommand):
         todo = missing(sprache)
         if aktion == "pruefen":
             for domain, items in todo.items():
-                for ctx, msgid, plural, where, _known in items:
+                for _ctx, msgid, _plural, where, _known in items:
                     self.stdout.write(f"{domain}: {where[0]}: {msgid}")
             total = sum(len(items) for items in todo.values())
             if total:

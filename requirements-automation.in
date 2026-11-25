@@ -1,0 +1,6 @@
+# Gemeinsame Umgebung für Automatisierungen: Diese Bibliotheken können alle Skripte von
+# Automatisierungen importieren (zusätzlich zu allem aus requirements.in, z. B. requests).
+# Neue Bibliothek: hier eintragen (mit Versionsgrenze), Lockdatei neu erzeugen (CONTRIBUTING.md),
+# Image neu bauen, ausrollen.
+openpyxl>=3.1,<4
+python-dateutil>=2.9,<5

@@ -11,7 +11,7 @@ Installieren lässt sich die App nur über HTTPS (oder localhost); über http://
 Browser höchstens eine Verknüpfung auf dem Startbildschirm an.
 """
 from django.conf import settings
-from django.http import HttpResponse, JsonResponse
+from django.http import JsonResponse
 from django.shortcuts import render
 from django.templatetags.static import static
 from django.utils.translation import gettext as _

@@ -159,7 +159,7 @@ baukasten/
 │   │   └── schedule.py     Zeitpläne
 │   ├── management/commands/  demo, beispiel_einwilligung, hintergrund, lokal_einrichten
 │   ├── templates/, static/   Oberfläche (Vanilla JS und CSS)
-│   └── tests.py            automatische Tests
+│   └── tests/              automatische Tests, eine Datei je Bereich (base.py: Testdaten)
 ├── extensions/             eigene Python-Erweiterungen (beispiel.py)
 ├── clients/python/         Bibliothek baukasten-client
 ├── k8s/                    Kubernetes-Manifeste (lokal/ für Docker Desktop)
@@ -908,7 +908,7 @@ Im Einzelnen:
 ```powershell
 python -m venv .venv
 .venv\Scripts\activate
-pip install -r requirements.txt -r requirements-automation.txt
+pip install -r requirements.in -r requirements-automation.in
 $env:DEBUG=1
 python manage.py migrate
 python manage.py createsuperuser
@@ -917,6 +917,9 @@ python manage.py runserver
 python manage.py hintergrund --dauerhaft # zweites Terminal: Worker
 python manage.py test builder            # automatische Tests
 ```
+
+Prüfungen vor einem Pull Request, Codeprüfung mit ruff und das Pflegen der Abhängigkeiten
+(Lockdatei): [CONTRIBUTING.md](../CONTRIBUTING.md).
 
 ### Erweiterungen (`extensions/`)
 

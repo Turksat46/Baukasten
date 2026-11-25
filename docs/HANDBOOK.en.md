@@ -935,8 +935,8 @@ automation's MCP server offers the same starts as tools `start_<script>`, plus
 `secret("NAME")`.
 
 **Libraries.** All automations share one environment: the libraries from
-`requirements.txt` and `requirements-automation.txt`. If one is missing,
-operations adds it to `requirements-automation.txt` and rebuilds the image.
+`requirements.in` and `requirements-automation.in`. If one is missing,
+operations adds it to `requirements-automation.in`, regenerates the lock file and rebuilds the image.
 There are deliberately no separate installations per script.
 
 Versions, export and import, co-editors and deleting work as for normal apps.
@@ -953,7 +953,7 @@ Requirement: Python 3.10 or newer.
 ```
 python -m venv .venv
 .venv\Scripts\activate            (Linux/macOS: source .venv/bin/activate)
-pip install -r requirements.txt
+pip install -r requirements.in -r requirements-automation.in
 
 $env:DEBUG=1                      (cmd: set DEBUG=1, Linux/macOS: export DEBUG=1)
 python manage.py migrate
@@ -1014,7 +1014,7 @@ builder/
                      planning.js (shift planning and Kanban, BaukastenBlocks.act),
                      widgets.js (checklist and sliders)
   templates/         templates
-  tests.py           automated tests
+  tests/             automated tests, one file per area
 extensions/          your own Python extensions
 clients/python/      Python library baukasten-client for the API
 docs/                this handbook (German and English)
@@ -1687,7 +1687,7 @@ one entry `SCRIPT_SECRET_<NAME>` each. Only the worker pod gets this secret.
 All automations see all entries; only put credentials there that automators
 may use.
 
-**Libraries** for automations are listed in `requirements-automation.txt` and
+**Libraries** for automations are listed in `requirements-automation.in` and
 are baked into the image (one environment for all).
 
 Errors are in the pod's log and in the app (for scripts under "Last runs", for

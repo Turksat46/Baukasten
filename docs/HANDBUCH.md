@@ -1009,8 +1009,8 @@ Geheimnis ein (siehe [Hintergrunddienst](#hintergrundarbeiten)), das Skript
 liest sie mit `secret("NAME")`.
 
 **Bibliotheken.** Alle Automatisierungen teilen sich eine Umgebung: die
-Bibliotheken aus `requirements.txt` und `requirements-automation.txt`. Fehlt
-eine, trägt der Betrieb sie in `requirements-automation.txt` ein und baut das
+Bibliotheken aus `requirements.in` und `requirements-automation.in`. Fehlt
+eine, trägt der Betrieb sie in `requirements-automation.in` ein, erzeugt die Lockdatei neu und baut das
 Image neu. Eigene Installationen je Skript gibt es bewusst nicht.
 
 Versionen, Export und Import, Mitbearbeiter und Löschen funktionieren wie bei
@@ -1028,7 +1028,7 @@ Voraussetzung: Python 3.10 oder neuer.
 ```
 python -m venv .venv
 .venv\Scripts\activate            (Linux/macOS: source .venv/bin/activate)
-pip install -r requirements.txt
+pip install -r requirements.in -r requirements-automation.in
 
 $env:DEBUG=1                      (cmd: set DEBUG=1, Linux/macOS: export DEBUG=1)
 python manage.py migrate
@@ -1088,7 +1088,7 @@ builder/
                      planning.js (Einsatzplanung und Kanban im Browser, BaukastenBlocks.act),
                      widgets.js (Checkliste und Schieberegler)
   templates/         Vorlagen
-  tests.py           automatische Tests
+  tests/             automatische Tests, eine Datei je Bereich
 extensions/          eigene Python-Erweiterungen
 clients/python/      Python-Bibliothek baukasten-client für die API
 docs/                dieses Handbuch (Deutsch und Englisch)
@@ -1772,7 +1772,7 @@ je Eintrag `SCRIPT_SECRET_<NAME>`. Nur der Worker-Pod bekommt dieses Secret.
 Alle Automatisierungen sehen alle Einträge; trage dort nur Zugänge ein, die
 Automatisierer benutzen dürfen.
 
-**Bibliotheken** für Automatisierungen stehen in `requirements-automation.txt`
+**Bibliotheken** für Automatisierungen stehen in `requirements-automation.in`
 und landen beim Bauen im Image (eine Umgebung für alle).
 
 Fehler stehen im Protokoll des Pods und in der App (bei Skripten unter „Letzte

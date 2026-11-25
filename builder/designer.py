@@ -20,7 +20,7 @@ from django.views.decorators.http import require_POST
 
 from . import app_i18n, audit, hooks, platform
 from .blocks import (BUILTIN_PLACEHOLDERS, all_types, clean_layout, designer_config, make_block,
-                     render_custom, render_custom_report, render_layout)
+                     render_custom_report, render_layout)
 from .sanitize import sanitize_html_report
 from . import datasources
 from .forms import (ApiKeyForm, AppForm, AutomationForm, AutomationScriptForm, CustomBlockForm, EntityForm,
@@ -788,7 +788,6 @@ def script_edit(request, app, pk=None):
                 return redirect("designer_script", app.slug, script.pk)
     runtime = None
     if script and script.language == Script.JAVASCRIPT:
-        from django.conf import settings
         from django.middleware.csrf import get_token
 
         runtime = {"sandbox": reverse("script_sandbox"), "bridge": reverse("script_bridge", args=[app.slug]),
@@ -855,7 +854,7 @@ def query_delete(request, app, pk):
 # ---------- Automatisierungen ----------
 
 AUTOMATION_EXAMPLE = """# Automatisierung: echtes Python im Hintergrund. Alle Bibliotheken aus
-# requirements-automation.txt stehen zur Verfügung (z. B. requests).
+# requirements-automation.in stehen zur Verfügung (z. B. requests).
 from datetime import datetime
 
 import requests

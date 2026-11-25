@@ -146,7 +146,7 @@ Voraussetzung: Python 3.10 oder neuer.
 ```
 python -m venv .venv
 .venv\Scripts\activate            # Linux/macOS: source .venv/bin/activate
-pip install -r requirements.txt -r requirements-automation.txt
+pip install -r requirements.in -r requirements-automation.in
 
 $env:DEBUG=1                      # cmd: set DEBUG=1, Linux/macOS: export DEBUG=1
 python manage.py migrate
@@ -168,7 +168,7 @@ auch die Seite „Live-Daten“ mit einer Beispiel-Datenquelle und Skripten an.
 Für Automatisierungen, zeitgesteuerte Skripte und das Spiegeln von Abfragen in
 einem zweiten Terminal: `python manage.py hintergrund --dauerhaft`.
 
-Nach einem Update des Baukastens: `pip install -r requirements.txt -r requirements-automation.txt`
+Nach einem Update des Baukastens: `pip install -r requirements.in -r requirements-automation.in`
 und `python manage.py migrate` erneut ausführen.
 
 <details>
@@ -272,7 +272,7 @@ an. Einzelheiten im Handbuch unter „Lokal mit Kubernetes“.
 | Benutzen, Apps bauen, Bausteine, Versionen | [Handbuch](docs/HANDBUCH.md) Teil 1 und 2 |
 | Datenquellen und Skripte anwenden | Handbuch Teil 2 |
 | Öffentliche Seiten, Übersetzungen, Mitbearbeiter, Automatisierungen | Handbuch Teil 2 und „Rechte“ |
-| Hintergrunddienst, Geheimnisse und Bibliotheken für Automatisierungen | Handbuch „Hintergrundarbeiten“, `requirements-automation.txt` |
+| Hintergrunddienst, Geheimnisse und Bibliotheken für Automatisierungen | Handbuch „Hintergrundarbeiten“, `requirements-automation.in` |
 | Skript-Referenz, Python-Bibliothek, API, MCP-Server, Aufbau des Codes | Handbuch Teil 3 |
 | Kubernetes, Datenquellen einrichten, Keycloak, Sicherheit | Handbuch Teil 4 |
 | Firmenlogo einbinden | `builder/static/builder/brand/LIESMICH.txt` |
@@ -286,7 +286,7 @@ an. Einzelheiten im Handbuch unter „Lokal mit Kubernetes“.
 
 ## Stand
 
-Version 1.0.0 (siehe [`CHANGELOG.md`](CHANGELOG.md)). 306 automatische Tests laufen bei jeder Änderung
+Version 1.0.0 (siehe [`CHANGELOG.md`](CHANGELOG.md)). 325 automatische Tests laufen bei jeder Änderung
 in GitHub Actions gegen SQLite und PostgreSQL, dazu Durchläufe im Browser. Docker-Build und die lokalen Manifeste laufen auf Kubernetes in Docker
 Desktop mit PostgreSQL 16. Nicht getestet: ein echter Produktions-Cluster (Ingress,
 TLS), der vollständige Login gegen einen echten Keycloak und Verbindungen zu

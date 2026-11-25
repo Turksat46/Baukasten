@@ -1,0 +1,19 @@
+# Einstellungen für Entwicklungswerkzeuge. Der Baukasten wird nicht als Paket installiert;
+# Abhängigkeiten stehen in requirements.in (siehe CONTRIBUTING.md).
+
+[tool.ruff]
+target-version = "py310"   # älteste unterstützte Version (README)
+line-length = 120
+extend-exclude = ["builder/migrations", "staticfiles"]
+
+[tool.ruff.lint]
+# Bewusst schmal: echte Fehler (F), Syntax- und Importprobleme (E4, E7, E9) und typische
+# Fallen (B). Weitere Regeln nur zusammen mit dem Aufräumen des betroffenen Codes einschalten.
+select = ["E4", "E7", "E9", "F", "B"]
+ignore = [
+    "B905",  # zip() ohne strict=: an mehreren Stellen ist Abschneiden gewollt
+]
+
+[tool.ruff.lint.per-file-ignores]
+# Der Kindprozess erweitert sys.path, bevor er RestrictedPython importieren kann.
+"builder/scripting/child.py" = ["E402"]

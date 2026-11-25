@@ -22,7 +22,6 @@ from dataclasses import dataclass, replace
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 
-from django.conf import settings
 from django.db.models.signals import post_delete, post_save, pre_delete, pre_save
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
@@ -48,7 +47,7 @@ class Context:
     quiet: bool = False
 
 
-_context = ContextVar("baukasten_audit", default=Context())
+_context = ContextVar("baukasten_audit", default=Context())  # noqa: B039 - Context ist unveränderlich (frozen)
 # Was gerade gelöscht wird (App, Tabelle): deren Kinder nicht einzeln protokollieren
 _deleting = threading.local()
 

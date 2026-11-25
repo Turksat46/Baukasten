@@ -9,8 +9,9 @@ updates:
       interval: weekly
       day: monday
     open-pull-requests-limit: 5
-    # requirements.txt nennt Bereiche (z. B. Django>=5.2,<6.0). Nur melden, wenn eine neue Version
-    # außerhalb des Bereichs liegt, statt bei jeder Version die Untergrenze anzuheben.
+    # requirements*.in nennen Bereiche (z. B. Django>=5.2,<7.0), requirements.txt ist die daraus
+    # erzeugte Lockdatei (pip-compile). Neue Versionen innerhalb der Bereiche hebt Dependabot nur in
+    # der Lockdatei an; die .in-Dateien ändert es erst, wenn eine Version außerhalb liegt.
     # Sicherheitsupdates kommen davon unabhängig.
     versioning-strategy: increase-if-necessary
     groups:
@@ -24,7 +25,7 @@ updates:
       # Neue Django-Hauptversionen bewusst von Hand einplanen (Django-Versionshinweise lesen)
       - dependency-name: django
         update-types: [version-update:semver-major]
-      - dependency-name: Django   # so steht es in requirements.txt
+      - dependency-name: Django   # so steht es in requirements.in
         update-types: [version-update:semver-major]
 
   - package-ecosystem: docker

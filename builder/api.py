@@ -28,7 +28,7 @@ from django.utils.translation import gettext as _
 from django.views.decorators.csrf import csrf_exempt
 
 from . import hooks, openapi
-from .models import ApiKey, App, Field, Record, Script
+from .models import ApiKey, Field, Record, Script
 from .scripting.ops import OpsError, coerce, save_record, serialize
 
 log = logging.getLogger(__name__)
