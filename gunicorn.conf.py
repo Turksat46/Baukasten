@@ -17,6 +17,9 @@ threads = int(os.environ.get("GUNICORN_THREADS", "4"))
 timeout = int(os.environ.get("GUNICORN_TIMEOUT", "60"))
 graceful_timeout = int(os.environ.get("GUNICORN_GRACEFUL_TIMEOUT", str(max(30, timeout))))
 keepalive = 5
+# Steuer-Socket (gunicornc, ab gunicorn 25.1) braucht ein beschreibbares Home-Verzeichnis, das
+# der App-Nutzer im Image nicht hat; ohne diese Zeile meldet jeder Start „Control server error“.
+control_socket_disable = True
 worker_tmp_dir = "/dev/shm" if os.path.isdir("/dev/shm") else None
 forwarded_allow_ips = os.environ.get("GUNICORN_FORWARDED_ALLOW_IPS", "127.0.0.1")
 # Prozesse regelmäßig erneuern: hält den Speicherverbrauch über Wochen stabil.

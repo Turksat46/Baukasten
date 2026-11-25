@@ -87,6 +87,10 @@ Test prüft, dass die neueste Version hier und `BAUKASTEN_VERSION` übereinstimm
   Fragezeichen startet die Führung wie bisher erneut.
 
 ### Behoben
+- Container: gunicorn meldete bei jedem Start „Control server error: Permission denied“, weil es
+  ab Version 25.1 eine Steuer-Socket im Home-Verzeichnis anlegen will, das der App-Nutzer nicht
+  hat. Die Socket ist jetzt abgeschaltet (`control_socket_disable`); ältere gunicorn-Versionen
+  ignorieren die Einstellung.
 - Schieberegler (u. a. What-If-Simulator im „Qualitäts- & Modell-Cockpit“): Ergebnisse
   aktualisierten sich erst nach dem Neuladen der Seite. Ursache: Der Regler speicherte nur beim
   Loslassen (`change`) und lud danach nur sich selbst neu. Die Prognose kommt aber aus einem
