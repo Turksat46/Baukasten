@@ -35,8 +35,20 @@ Neue Einträge oben unter „Unveröffentlicht“ sammeln und beim Release zur V
   nach Quelle (z. B. Agent). Beispiel-App: `python manage.py beispiel_berichte`.
 - OpenAPI und MCP-Server beschreiben das neue Feld; der Eingang steht in der OpenAPI-Datei
   (für Copilot-Connectoren und API-Plugins).
+- **Führung pro Person:** Ob jemand eine Führung gesehen hat, merkt sich der Baukasten jetzt auf
+  dem Server (neue Tabelle, Migration `0022`). Die Führung startet daher auf anderen Geräten und in
+  anderen Browsern nicht erneut von selbst. Ein bisher nur im Browser gemerkter Wert wird beim
+  nächsten Besuch einmalig übernommen. Gäste ohne Konto merken es sich weiter im Browser, und das
+  Fragezeichen startet die Führung wie bisher erneut.
 
 ### Behoben
+- Schieberegler (u. a. What-If-Simulator im „Qualitäts- & Modell-Cockpit“): Ergebnisse
+  aktualisierten sich erst nach dem Neuladen der Seite. Ursache: Der Regler speicherte nur beim
+  Loslassen (`change`) und lud danach nur sich selbst neu. Die Prognose kommt aber aus einem
+  Seitenskript, das nur beim Aufbau der Seite lief. Jetzt speichert der Regler schon beim Ziehen,
+  kurz verzögert (`input`, Debounce), und lädt danach die übrigen Bausteine der Seite neu, also
+  Skript-Ausgaben und Diagramme. Bausteine mit Eingabefeldern lässt er aus. Die Beispiel-App
+  zeigt das aktuelle Szenario zusätzlich als Diagramm.
 - Beispiel-App „Qualitäts- & Modell-Cockpit“: Die Filterleiste zeigte nur den Hinweis
   „Wähle mindestens ein Feld …“, weil `beispiel_datascience` die Felder falsch übergab.
 - Sicherheit: Der CSV-Export gespeicherter Abfragen (`/a/<app>/q/<abfrage>/export.csv`) war ohne

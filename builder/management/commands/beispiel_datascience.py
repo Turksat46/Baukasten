@@ -112,6 +112,9 @@ class Command(BaseCommand):
                            entity="parameter", field="wert", label_field="name", min=30, max=220, step=1),
                 {"id": "bsimout", "type": "output", "width": 6, "name": "sim_prognose",
                  "props": {"label": "Modell-Vorhersage (Ausschuss)", "unit": "%", "text": "Wird berechnet …"}},
+                make_block("spec_chart", width=12, title="Aktuelles Szenario (läuft beim Ziehen mit)", entity="parameter",
+                           spec='{"mark": "bar", "encoding": {"x": {"field": "name", "title": "Parameter"}, '
+                                '"y": {"field": "wert", "aggregate": "sum", "title": "Wert"}}}'),
                 make_block("table", width=8, entity="chargen", title="Chargen & Write-Back-Kommentare"),
                 make_block("form", width=4, entity="chargen", submit_label="Charge / Kommentar speichern"),
             ])
