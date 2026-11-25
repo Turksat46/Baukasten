@@ -309,3 +309,31 @@ msgstr "No preview"
 #: builder/static/builder/home.js
 msgid "Konnte nicht geladen werden."
 msgstr "Could not be loaded."
+
+#: builder/static/builder/designer.js
+msgid "Die Seite wurde seitdem gespeichert. Wiederhergestellte Änderungen ersetzen beim Speichern diesen neueren Stand."
+msgstr "The page has been saved since then. Restored changes will replace this newer state when you save."
+
+#: builder/static/builder/designer.js
+msgid "Diesen Baustein gibt es in dieser Version nicht. Er bleibt mit allen Einstellungen gespeichert, wird auf der Seite aber nicht angezeigt."
+msgstr "This block does not exist in this version. It stays saved with all its settings but is not shown on the page."
+
+#: builder/static/builder/designer.js
+msgid "Es gibt ungespeicherte Änderungen an dieser Seite vom %s. Wiederherstellen?"
+msgstr "There are unsaved changes to this page from %s. Restore them?"
+
+#: builder/static/builder/designer.js
+msgid "Unbekannter Baustein"
+msgstr "Unknown block"
+
+#: builder/static/builder/designer.js
+msgid "Ungespeicherte Änderungen"
+msgstr "Unsaved changes"
+
+#: builder/static/builder/designer.js
+msgid "Verwerfen"
+msgstr "Discard"
+
+#: builder/static/builder/designer.js
+msgid "Wiederherstellen"
+msgstr "Restore"

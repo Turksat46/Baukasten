@@ -71,6 +71,12 @@ dasselbe für `deploy/baukasten-worker`. Hat die neue Version Migrationen mitgeb
 die Daten verändern, vorher die Sicherung von vor dem Einspielen bereithalten
 (Abschnitt 4.2).
 
+**Wer gerade eine Seite bearbeitet,** verliert beim Ausrollen nichts. Der Designer speichert
+weiter, bittet danach ums Neuladen und hält ungespeicherte Änderungen als Entwurf im Browser.
+Seiten mit Bausteinen, die die laufende Version nicht kennt (auch nach einem Zurückrollen),
+behalten diese Bausteine. Regeln für Entwickler: TECHNISCHE_DOKUMENTATION.md,
+„Rückwärtskompatibilität bei Updates“.
+
 ## 4. Sicherung und Wiederherstellung
 
 Gesichert werden muss **nur die Datenbank**. Sie enthält alles: Apps, Einträge, Nutzer,

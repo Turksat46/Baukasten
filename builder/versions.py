@@ -132,7 +132,7 @@ def upgrade(data):
 
 
 def _missing_blocks(data):
-    """Bausteine, die es in diesem Baukasten nicht (mehr) gibt: werden beim Einspielen weggelassen."""
+    """Bausteine, die es in diesem Baukasten nicht (mehr) gibt: bleiben gespeichert, werden aber nicht angezeigt."""
     from .blocks import all_types
 
     known, notes = all_types(), []
@@ -140,8 +140,8 @@ def _missing_blocks(data):
         missing = sorted({str(b.get("type")) for b in page.get("layout") or []
                           if isinstance(b, dict) and b.get("type") not in known})
         if missing:
-            notes.append(_("Seite „%(page)s“: Diese Bausteine gibt es nicht mehr und werden weggelassen: "
-                           "%(types)s.") % {"page": page.get("title") or page.get("slug"), "types": ", ".join(missing)})
+            notes.append(_("Seite „%(page)s“: Diese Bausteine gibt es in dieser Version nicht. Sie bleiben "
+                           "gespeichert, werden aber erst nach einem passenden Update angezeigt: %(types)s.") % {"page": page.get("title") or page.get("slug"), "types": ", ".join(missing)})
     return notes
 
 
@@ -218,7 +218,7 @@ def _apply_snapshot(app, data):
                 app=app, slug=_text(item["slug"], 50), title=_text(item.get("title"), 80) or "Seite",
                 show_in_nav=bool(item.get("show_in_nav", True)), public=bool(item.get("public", False)),
                 order=int(item.get("order") or position),
-                layout=clean_layout(item.get("layout") or []),
+                layout=clean_layout(item.get("layout") or [], keep_unknown=True),
             )
         _apply_logic(app, data)
     except (KeyError, TypeError, ValueError, IntegrityError) as exc:

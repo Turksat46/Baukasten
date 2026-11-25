@@ -11,6 +11,7 @@ import secrets
 from dataclasses import dataclass, field
 from datetime import date, datetime, timedelta
 from decimal import ROUND_HALF_UP, Decimal, InvalidOperation
+from pathlib import Path
 
 from django.conf import settings
 from django.core.cache import cache
@@ -1067,12 +1068,21 @@ def render_placeholder(request, app, block):
     )
 
 
-def render_layout(request, app, page, layout=None, overrides=None, lazy=False):
+def render_unknown(block):
+    """Platzhalter im Designer für einen Baustein, den diese Version nicht kennt."""
+    return render_to_string("builder/blocks/unknown.html", {"type": block.get("type")})
+
+
+def render_layout(request, app, page, layout=None, overrides=None, lazy=False, unknown=False):
+    """unknown=True (Designer): Unbekannte Bausteine als Platzhalter zeigen statt auszulassen."""
     types = all_types()
     rendered = []
     for block in (page.layout if layout is None else layout):
         deferred = lazy and is_lazy(block)
-        html = render_placeholder(request, app, block) if deferred else render_block(request, app, block, types, overrides)
+        if unknown and block.get("type") not in types:
+            html = render_unknown(block)
+        else:
+            html = render_placeholder(request, app, block) if deferred else render_block(request, app, block, types, overrides)
         if html is None:
             continue
         rendered.append({"id": block["id"], "type": block.get("type"), "width": block.get("width", 12), "name": block.get("name", ""),
@@ -1080,17 +1090,74 @@ def render_layout(request, app, page, layout=None, overrides=None, lazy=False):
     return rendered
 
 
-def clean_layout(raw):
-    """Übernimmt aus dem Designer nur bekannte Bausteine und bekannte Einstellungen."""
+CONTRACT_FILE = Path(__file__).resolve().parent / "bausteinvertrag.json"
+
+
+def block_contract():
+    """{baustein: [einstellungen]} aller mitgelieferten Bausteine (ohne Erweiterungen)."""
+    return {key: sorted(spec["key"] for spec in block_type.fields) for key, block_type in sorted(REGISTRY.items())}
+
+
+UNKNOWN_TYPE_RE = re.compile(r"^[a-z][a-z0-9_-]{0,59}$")
+UNKNOWN_PROPS_MAX = 20000  # Zeichen JSON je Baustein, nur für Bausteine aus Dateien
+
+
+def _limited(props):
+    """Unbekannte Einstellungen aus einer Datei: nur JSON-taugliche Werte, Größe begrenzt."""
+    if not isinstance(props, dict):
+        return {}
+    kept = {str(k)[:60]: v for k, v in props.items() if isinstance(k, str)}
+    try:
+        return kept if len(json.dumps(kept)) <= UNKNOWN_PROPS_MAX else {}
+    except (TypeError, ValueError):
+        return {}
+
+
+def _unknown_block(item, stored, keep_unknown):
+    """Ein Baustein, den es in dieser Version nicht gibt (entfernt, umbenannt, aus einer neueren
+    Version oder einer abgeschalteten Erweiterung). Bleibt erhalten statt beim Speichern zu
+    verschwinden: aus dem gespeicherten Layout unverändert, aus einer Datei begrenzt."""
+    old = stored.get(str(item.get("id") or ""))
+    if old is not None and old.get("type") == item.get("type"):
+        block = {key: value for key, value in old.items()}
+    elif keep_unknown and isinstance(item.get("type"), str) and UNKNOWN_TYPE_RE.match(item["type"]):
+        block = {"id": str(item.get("id") or ""), "type": item["type"], "props": _limited(item.get("props"))}
+        for key in ("name", "refresh"):
+            if item.get(key):
+                block[key] = item[key]
+    else:
+        return None
+    block["width"] = item.get("width") if item.get("width") in WIDTHS else block.get("width", 12)
+    return block
+
+
+def clean_layout(raw, previous=None, keep_unknown=False):
+    """Übernimmt aus dem Designer bekannte Bausteine mit geprüften Einstellungen.
+
+    Rückwärtskompatibel: Was diese Version nicht kennt, geht nicht verloren. Unbekannte Bausteine
+    und Einstellungen werden aus „previous“ (dem gespeicherten Layout derselben Seite) unverändert
+    übernommen, der Browser kann sie also weder verlieren noch verändern. Mit „keep_unknown“
+    (App-Datei, ältere Version) werden sie aus „raw“ selbst übernommen, in begrenzter Größe."""
     if not isinstance(raw, list):
         raise ValueError("Das Layout muss eine Liste sein.")
     types = all_types()
+    stored = {str(b.get("id")): b for b in previous or [] if isinstance(b, dict)}
     cleaned, seen = [], set()
     for item in raw[:200]:
-        if not isinstance(item, dict) or item.get("type") not in types:
+        if not isinstance(item, dict):
+            continue
+        if item.get("type") not in types:
+            block = _unknown_block(item, stored, keep_unknown)
+            if block is not None:
+                bid = str(block.get("id") or "")
+                if not bid.isalnum() or len(bid) > 20 or bid in seen:
+                    block["id"] = bid = "b" + secrets.token_hex(4)
+                seen.add(bid)
+                cleaned.append(block)
             continue
         block_type = types[item["type"]]
         bid = str(item.get("id") or "")
+        old = stored.get(bid)
         if not bid.isalnum() or len(bid) > 20 or bid in seen:
             bid = "b" + secrets.token_hex(4)
         seen.add(bid)
@@ -1103,7 +1170,12 @@ def clean_layout(raw):
             refresh = 0
         refresh = refresh if refresh in REFRESH else 0
         given = item.get("props") if isinstance(item.get("props"), dict) else {}
-        props = {}
+        known = {spec["key"] for spec in block_type.fields}
+        if old is not None and old.get("type") == item["type"]:
+            extra = {k: v for k, v in (old.get("props") or {}).items() if k not in known}
+        else:
+            extra = {k: v for k, v in _limited(given).items() if k not in known} if keep_unknown else {}
+        props = dict(extra)  # Einstellungen, die diese Version nicht (mehr) kennt
         for spec in block_type.fields:
             value = given.get(spec["key"], spec.get("default", ""))
             if spec["type"] == "checkbox":
@@ -1165,4 +1237,5 @@ def designer_config(app, page):
         ],
         "layout": page.layout,
         "version": page.version,
+        "baukasten_version": settings.BAUKASTEN_VERSION,
     }
