@@ -891,8 +891,16 @@ html:not([data-theme="light"]):not([data-theme="dark"]) .theme-toggle .i-auto { 
 .install-help::backdrop { background: rgba(0, 0, 0, .45); }
 .install-help h3 { margin-top: 0; }
 .offline-page { max-width: 32rem; margin: 18vh auto 0; text-align: center; }
-/* Als installierte App: etwas Abstand zur Statusleiste des Handys */
-@media (display-mode: standalone) { .topbar { padding-top: max(.6rem, env(safe-area-inset-top)); } }
+/* Als installierte App: Platz für eine Statusleiste, die über der Seite liegt (iPhone mit Notch).
+   Nur der tatsächliche Abstand (safe-area-inset-top, sonst 0) und die Kopfzeile wird um genau so
+   viel höher. Ein fester Mindestabstand schob unter Windows und Android den Inhalt der 58 px hohen
+   Kopfzeile nach unten. */
+@media (display-mode: standalone) {
+  .topbar { padding-top: env(safe-area-inset-top, 0px); height: calc(58px + env(safe-area-inset-top, 0px)); }
+}
+@media (display-mode: standalone) and (max-width: 860px) {
+  .topbar { height: auto; min-height: calc(52px + env(safe-area-inset-top, 0px)); }
+}
 
 /* Wer weniger Bewegung möchte (Systemeinstellung), bekommt das Menü ohne Animation */
 @media (prefers-reduced-motion: reduce) {
