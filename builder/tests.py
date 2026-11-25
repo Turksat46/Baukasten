@@ -3274,11 +3274,146 @@ class AboutTests(TestCase):
         self.client.force_login(boss)
         self.assertContains(self.client.get(reverse("about")), "Entwurf")
 
-    def test_seeded_notes_and_login_required(self):
+    def test_notes_from_changelog_and_login_required(self):
+        """migrate gleicht die Release Notes mit CHANGELOG.md ab (post_migrate)."""
         from .models import ReleaseNote
-        self.assertTrue(ReleaseNote.objects.filter(version="1.0.0", published=True).exists())
-        self.assertTrue(ReleaseNote.objects.filter(version="1.1.0", published=False).exists())
+        from .release_notes import OLD_SEED_TITLE, UNRELEASED
+
+        note = ReleaseNote.objects.get(version="1.0.0")
+        self.assertTrue(note.published)
+        self.assertEqual(note.title, "Erste Version: Apps bauen, automatisieren und mit KI erweitern")
+        self.assertIn("Fachabteilungen bauen ihre internen Apps", note.body)
+        self.assertFalse(ReleaseNote.objects.get(version=UNRELEASED).published)  # Entwurf für Verwalter
+        self.assertFalse(ReleaseNote.objects.filter(title=OLD_SEED_TITLE).exists())  # alter Entwurf aufgeräumt
         self.assertEqual(self.client.get(reverse("about")).status_code, 302)
+
+    def test_changelog_matches_running_version(self):
+        """Fällt um, wenn BAUKASTEN_VERSION erhöht wird, ohne den CHANGELOG-Abschnitt anzulegen (oder umgekehrt)."""
+        from django.conf import settings
+
+        from .release_notes import check, read
+
+        self.assertEqual(check(read(), settings.BAUKASTEN_VERSION), [])
+
+
+class ReleaseNotesFromChangelogTests(TestCase):
+    """Eine Quelle für Release Notes: CHANGELOG.md → /ueber/, Prüfung und GitHub-Release."""
+
+    CHANGELOG = """# Änderungen
+
+Einleitung.
+
+## Unveröffentlicht
+
+**Kurz gesagt:** Bald kommt mehr
+
+### Neu
+- etwas Technisches
+
+## 1.1.0 – 2026-11-25
+
+**Kurz gesagt:** Berichte aus n8n und Teams.
+
+### Für Nutzer
+- **Berichte-Feed** für alle 📰
+
+### Neu
+- `api.inbox` mit `raw=True`
+
+## 1.0.0 – 2026-11-17
+
+Erste Version.
+
+### Apps bauen
+- Tabellen
+"""
+
+    def write(self, text):
+        import tempfile
+        from pathlib import Path
+
+        folder = tempfile.mkdtemp(prefix="changelog-")
+        path = Path(folder) / "CHANGELOG.md"
+        path.write_text(text, encoding="utf-8")
+        return path
+
+    def test_parse_title_user_part_and_fallback(self):
+        from datetime import date
+
+        from .release_notes import UNRELEASED, parse
+
+        drafts, new, first = parse(self.CHANGELOG)
+        self.assertEqual((drafts.version, drafts.released_on, drafts.title), (UNRELEASED, None, "Bald kommt mehr"))
+        self.assertEqual((new.version, new.released_on), ("1.1.0", date(2026, 11, 25)))
+        self.assertEqual(new.title, "Berichte aus n8n und Teams")
+        self.assertEqual(new.body, "- **Berichte-Feed** für alle 📰")  # nur „Für Nutzer“
+        self.assertIn("api.inbox", new.section)  # GitHub-Release: ganzer Abschnitt
+        self.assertEqual(first.title, "Erste Version")  # ohne „Kurz gesagt“: erster Satz
+        self.assertIn("### Apps bauen", first.body)  # ohne „Für Nutzer“: alle Unterabschnitte
+
+    def test_check_finds_mismatches(self):
+        from .release_notes import check, parse
+
+        releases = parse(self.CHANGELOG)
+        self.assertEqual(check(releases, "1.1.0"), [])
+        self.assertIn("BAUKASTEN_VERSION ist 1.2.0", check(releases, "1.2.0")[0])
+        swapped = self.CHANGELOG.replace("## 1.1.0 – 2026-11-25", "## 0.9.0 – 2026-11-25")
+        self.assertTrue(any("Reihenfolge" in p for p in check(parse(swapped), "0.9.0")))
+        broken = self.CHANGELOG.replace("## 1.0.0 – 2026-11-17", "## Version eins")
+        self.assertTrue(any("Überschrift" in p for p in check(parse(broken), "1.1.0")))
+        untitled = self.CHANGELOG.replace("**Kurz gesagt:** Berichte aus n8n und Teams.\n", "")
+        self.assertTrue(any("Kurz gesagt" in p for p in check(parse(untitled), "1.1.0")))
+
+    def test_sync_publishes_up_to_running_version_and_keeps_own_notes(self):
+        from .models import ReleaseNote
+        from .release_notes import UNRELEASED, sync
+
+        ReleaseNote.objects.all().delete()
+        own = ReleaseNote.objects.create(version="Wartung", title="Samstag Wartung", published=True)
+        path = self.write(self.CHANGELOG)
+        self.assertEqual(sync("1.0.0", path), (3, 0))
+        self.assertTrue(ReleaseNote.objects.get(version="1.0.0").published)
+        self.assertFalse(ReleaseNote.objects.get(version="1.1.0").published)  # noch nicht ausgerollt
+        self.assertFalse(ReleaseNote.objects.get(version=UNRELEASED).published)
+        self.assertEqual(sync("1.1.0", path), (0, 1))  # neue Version ausgerollt: jetzt veröffentlicht
+        self.assertTrue(ReleaseNote.objects.get(version="1.1.0").published)
+        self.assertEqual(sync("1.1.0", path), (0, 0))
+        own.refresh_from_db()
+        self.assertEqual(own.title, "Samstag Wartung")
+        ReleaseNote.objects.filter(version="1.1.0").update(title="von Hand geändert")
+        sync("1.1.0", path)
+        self.assertEqual(ReleaseNote.objects.get(version="1.1.0").title, "Berichte aus n8n und Teams")
+        self.assertEqual(sync("1.1.0", self.write("") .parent / "fehlt.md"), (0, 0))  # ohne Datei: nichts tun
+
+    def test_admin_shows_changelog_notes_read_only(self):
+        from .models import ReleaseNote
+
+        boss = User.objects.create_superuser("chef2", password="x")
+        self.client.force_login(boss)
+        note = ReleaseNote.objects.get(version="1.0.0")
+        page = self.client.get(reverse("admin:builder_releasenote_change", args=[note.pk]))
+        self.assertEqual(page.status_code, 200)
+        self.assertNotContains(page, 'name="title"')
+        listing = self.client.get(reverse("admin:builder_releasenote_changelist"))
+        self.assertContains(listing, "CHANGELOG.md")
+
+    def test_command_and_standalone_script(self):
+        import subprocess
+        import sys
+        from io import StringIO
+
+        from django.conf import settings
+
+        out = StringIO()
+        call_command("release_notes", "pruefen", stdout=out)
+        self.assertIn("passen zusammen", out.getvalue())
+        out = StringIO()
+        call_command("release_notes", "abschnitt", "1.0.0", stdout=out)
+        self.assertIn("Für Nutzer", out.getvalue())
+        result = subprocess.run([sys.executable, "-m", "builder.release_notes", "titel", settings.BAUKASTEN_VERSION],
+                                capture_output=True, text=True, encoding="utf-8", cwd=settings.BASE_DIR)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertTrue(result.stdout.strip())
 
 
 class PwaTests(TestCase):

@@ -35,6 +35,13 @@ class BuilderConfig(AppConfig):
 
         post_save.connect(about.forget, sender=ReleaseNote, dispatch_uid="baukasten-release-notes")
         post_delete.connect(about.forget, sender=ReleaseNote, dispatch_uid="baukasten-release-notes-del")
+
+        from django.db.models.signals import post_migrate
+
+        from . import release_notes
+
+        # Release Notes aus CHANGELOG.md: läuft beim Ausrollen im Migrations-Job mit.
+        post_migrate.connect(release_notes.on_post_migrate, sender=self, dispatch_uid="baukasten-release-notes-sync")
         _register_checks()
 
         try:

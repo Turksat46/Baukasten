@@ -47,10 +47,13 @@ Neues dazu. Kritisch sind allein Betrieb und Sicherungen.
 ## 3. Neue Version einspielen
 
 1. Tests auf `main` sind grün (GitHub Actions).
-2. `CHANGELOG.md` ergänzen, Version in `config/settings.py` (`BAUKASTEN_VERSION`) erhöhen,
-   Tag setzen: `git tag v1.1.0 && git push --tags`. Für die Nutzer unter `/admin/` →
-   Release Notes einen Eintrag in einfacher Sprache schreiben (oder den vorbereiteten Entwurf
-   anpassen) und nach dem Ausrollen „veröffentlicht“ anhaken; er erscheint dann unter `/ueber/`.
+2. In `CHANGELOG.md` aus „## Unveröffentlicht“ die Version machen (`## 1.1.0 – JJJJ-MM-TT`,
+   mit „**Kurz gesagt:** …“ und „### Für Nutzer“), darüber ein neues leeres „## Unveröffentlicht“
+   anlegen und `BAUKASTEN_VERSION` in `config/settings.py` gleich setzen. Ein Test prüft, dass
+   beides zusammenpasst (`python manage.py release_notes pruefen`). Tag setzen:
+   `git tag v1.1.0 && git push --tags`. Der Workflow „Release“ legt daraus das GitHub-Release
+   an. Die Release Notes unter `/ueber/` entstehen beim Migrieren (Schritt 4) von selbst und sind
+   veröffentlicht, sobald die neue Version läuft; nichts mehr unter `/admin/` von Hand pflegen.
 3. Image bauen und hochladen: `docker build -t registry.example.com/baukasten:1.1.0 .`
    und `docker push …`.
 4. **Erst migrieren, dann ausrollen:**

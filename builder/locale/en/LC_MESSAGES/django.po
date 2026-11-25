@@ -5994,6 +5994,14 @@ msgstr "These number fields do not exist in the table: %(names)s"
 msgid "Erlaubt sind Zahlen, Zahlenfelder, + - * / und round, abs, min, max."
 msgstr "Allowed are numbers, number fields, + - * / and round, abs, min, max."
 
+#: builder/admin.py
+msgid "hier gepflegt"
+msgstr "maintained here"
+
+#: builder/templates/builder/about.html
+msgid "Release Notes entstehen beim Ausrollen aus CHANGELOG.md („Kurz gesagt“ und „Für Nutzer“). Versionen bis zur laufenden sind veröffentlicht, „Unveröffentlicht“ sehen nur Verwalter. Eigene Hinweise:"
+msgstr "Release notes are created on rollout from CHANGELOG.md (“Kurz gesagt” and “Für Nutzer”). Versions up to the running one are published; only administrators see “Unveröffentlicht”. Your own notices:"
+
 #: builder/templates/builder/blocks/unknown.html
 msgid "Baustein „%(type)s“ gibt es in dieser Version nicht"
 msgstr "Block “%(type)s” does not exist in this version"

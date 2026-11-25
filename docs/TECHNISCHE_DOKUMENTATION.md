@@ -136,6 +136,7 @@ baukasten/
 │   ├── audit.py            Änderungsprotokoll (Signale, Kontext je Eingang, Aufbewahrung)
 │   ├── platform.py         fachliche Einstellungen: Datenbank vor Umgebung, 30 s Cache
 │   ├── about.py            Seite „Über den Baukasten“, Release Notes
+│   ├── release_notes.py    Release Notes aus CHANGELOG.md: Abgleich nach migrate, Prüfung, GitHub-Release
 │   ├── pwa.py              als App installieren: Manifest, Service Worker (/sw.js), Offline-Seite
 │   ├── app_i18n.py         Übersetzung von App-Inhalten
 │   ├── auth.py, accounts.py  Keycloak-Backend, Standardgruppen
