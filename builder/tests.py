@@ -4902,3 +4902,119 @@ class ReportInboxTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertFalse(response.json()["result"].get("isError"), response.content)
         self.assertIn("<strong>Fertig</strong> 🎉", self.last()["inhalt"])
+
+
+class TourSeenTests(TestCase):
+    """Die Führung merkt sich „gesehen“ pro Person auf dem Server, Gäste weiter nur im Browser."""
+
+    def setUp(self):
+        self.user = User.objects.create_user("tourist", password="x")
+        self.client.force_login(self.user)
+
+    def tour_span(self, response):
+        html = response.content.decode()
+        start = html.index('<span id="tour-id"')
+        return html[start:html.index("</span>", start)]
+
+    def test_state_comes_from_server_and_is_saved_per_user(self):
+        from .models import TourSeen
+
+        span = self.tour_span(self.client.get(reverse("home")))
+        self.assertIn('data-tour-id="start"', span)
+        self.assertIn('data-seen="0"', span)
+        self.assertIn('data-save-url="%s"' % reverse("tour_seen", args=["start"]), span)
+        self.assertIn("data-csrf=", span)
+
+        response = self.client.post(reverse("tour_seen", args=["start"]))
+        self.assertEqual(response.status_code, 204)
+        # Zweimal melden schadet nicht (z. B. Übernahme aus dem Browser und Ende der Führung).
+        self.assertEqual(self.client.post(reverse("tour_seen", args=["start"])).status_code, 204)
+        self.assertEqual(TourSeen.objects.filter(user=self.user, tour_id="start").count(), 1)
+        self.assertIn('data-seen="1"', self.tour_span(self.client.get(reverse("home"))))
+
+        # Andere Person: eigener Zustand.
+        other = User.objects.create_user("neu", password="x")
+        self.client.force_login(other)
+        self.assertIn('data-seen="0"', self.tour_span(self.client.get(reverse("home"))))
+
+    def test_endpoint_needs_post_login_csrf_and_known_tour(self):
+        from .models import TourSeen
+
+        self.assertEqual(self.client.get(reverse("tour_seen", args=["start"])).status_code, 405)
+        self.assertEqual(self.client.post(reverse("tour_seen", args=["gibtsnicht"])).status_code, 404)
+
+        strict = self.client_class(enforce_csrf_checks=True)
+        strict.force_login(self.user)
+        self.assertEqual(strict.post(reverse("tour_seen", args=["start"])).status_code, 403)
+
+        self.client.logout()
+        self.assertEqual(self.client.post(reverse("tour_seen", args=["start"])).status_code, 302)
+        self.assertFalse(TourSeen.objects.exists())
+
+    def test_guests_keep_browser_storage(self):
+        from django.contrib.auth.models import AnonymousUser
+        from django.template import Context, Template
+        from django.test import RequestFactory
+
+        request = RequestFactory().get("/")
+        request.user = AnonymousUser()
+        html = Template('{% load baukasten %}{% tour "start" %}').render(Context({"request": request}))
+        self.assertIn('data-tour-id="start"', html)
+        self.assertNotIn("data-save-url", html)
+        self.assertNotIn("data-seen", html)
+
+    def test_script_syncs_browser_value_once_and_on_end(self):
+        from django.contrib.staticfiles import finders
+
+        source = Path(finders.find("builder/tour.js")).read_text(encoding="utf-8")
+        self.assertIn("info.saveUrl", source)
+        self.assertIn("X-CSRFToken", source)
+        # Ein im Browser gemerkter Wert wird an den Server gemeldet.
+        self.assertIn("if (seenInBrowser()) {", source)
+
+
+class WhatIfLiveTests(TestCase):
+    """Data-Science-Beispiel: Der Simulator rechnet nach jedem gespeicherten Reglerwert neu."""
+
+    def setUp(self):
+        self.user = User.objects.create_user("analyst", password="x", is_staff=True)
+        self.client.force_login(self.user)
+        call_command("beispiel_datascience", verbosity=0)
+        self.app = App.objects.get(slug="datascience")
+        self.page = self.app.pages.get(slug="simulator")
+        self.sliders = next(b for b in self.page.layout if b["type"] == "sliders")
+        self.chart = next(b for b in self.page.layout if b["type"] == "spec_chart")
+        self.temp = self.app.entities.get(slug="parameter").records.get(data__name="Temperatur (°C)")
+
+    def block(self, block_id):
+        return self.client.get(reverse("page_block", args=[self.app.slug, self.page.slug, block_id]))
+
+    def test_page_has_live_slider_and_chart(self):
+        response = self.client.get(reverse("page", args=[self.app.slug, self.page.slug]))
+        self.assertContains(response, 'data-widget="sliders"')
+        self.assertContains(response, 'data-reload-url="%s"' % reverse(
+            "page_block", args=[self.app.slug, self.page.slug, self.sliders["id"]]))
+        self.assertContains(response, "builder/widgets.js")
+        self.assertContains(response, "spec-chart-block")
+
+    def test_saved_slider_value_changes_prognosis_and_chart(self):
+        before = self.block("bsimout").content.decode()
+        response = self.client.post(
+            reverse("block_action", args=[self.app.slug, self.page.slug, self.sliders["id"]]),
+            data=json.dumps({"op": "set", "record": self.temp.pk, "value": "200"}),
+            content_type="application/json")
+        self.assertEqual(response.json(), {"ok": True, "value": 200})
+        # Genau diese Bausteine lädt widgets.js nach jedem Speichern während des Ziehens nach.
+        after = self.block("bsimout").content.decode()
+        self.assertNotEqual(before, after)
+        self.assertRegex(after, r"2[.,]46")
+        self.assertContains(self.block(self.chart["id"]), "200")
+
+    def test_widgets_script_saves_while_dragging(self):
+        from django.contrib.staticfiles import finders
+
+        source = Path(finders.find("builder/widgets.js")).read_text(encoding="utf-8")
+        handler = source[source.index('document.addEventListener("input"'):]
+        handler = handler[:handler.index("});")]
+        self.assertIn("setTimeout", handler)  # mit Verzögerung, nicht bei jedem Pixel
+        self.assertIn("refreshDependents", source)

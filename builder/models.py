@@ -930,3 +930,22 @@ class HomeWidget(models.Model):
 
     def __str__(self):
         return f"{self.user} -> {self.page}:{self.block_id}"
+
+
+class TourSeen(models.Model):
+    """Eine Person hat eine Führung (siehe builder/tours.py) gesehen.
+
+    So startet sie auf anderen Geräten und in anderen Browsern nicht erneut von selbst.
+    Gäste ohne Konto merken sich das weiterhin nur im Browser."""
+
+    user = models.ForeignKey(settings_module.AUTH_USER_MODEL, related_name="seen_tours", on_delete=models.CASCADE)
+    tour_id = models.CharField(max_length=40)
+    seen_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = _("Gesehene Führung")
+        verbose_name_plural = _("Gesehene Führungen")
+        constraints = [models.UniqueConstraint(fields=["user", "tour_id"], name="tour_seen_per_user")]
+
+    def __str__(self):
+        return f"{self.user}: {self.tour_id}"

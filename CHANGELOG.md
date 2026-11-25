@@ -37,6 +37,10 @@ Test prüft, dass die neueste Version hier und `BAUKASTEN_VERSION` übereinstimm
   eine App per Klick als Kopie anlegen.
 - **Fehler-Alarme:** Läuft eine Automatisierung auf einen Fehler, kommt auf Wunsch eine Nachricht
   in Teams, per E-Mail oder an ein anderes System.
+- **Führung nur einmal:** Wer die Führung gesehen hat, bekommt sie auch auf anderen Geräten und
+  in anderen Browsern nicht noch einmal. Über das Fragezeichen startet sie jederzeit neu.
+- **Was-wäre-wenn live:** Beim Ziehen eines Schiebereglers rechnen Prognosen und Diagramme sofort
+  mit, ohne die Seite neu zu laden.
 - **Englisch vollständig** und viele Fehler behoben, unter anderem bei Filtern per Klick, Kommazahlen
   und dem CSV-Export.
 
@@ -51,8 +55,20 @@ Test prüft, dass die neueste Version hier und `BAUKASTEN_VERSION` übereinstimm
   nach Quelle (z. B. Agent). Beispiel-App: `python manage.py beispiel_berichte`.
 - OpenAPI und MCP-Server beschreiben das neue Feld; der Eingang steht in der OpenAPI-Datei
   (für Copilot-Connectoren und API-Plugins).
+- **Führung pro Person:** Ob jemand eine Führung gesehen hat, merkt sich der Baukasten jetzt auf
+  dem Server (neue Tabelle, Migration `0022`). Die Führung startet daher auf anderen Geräten und in
+  anderen Browsern nicht erneut von selbst. Ein bisher nur im Browser gemerkter Wert wird beim
+  nächsten Besuch einmalig übernommen. Gäste ohne Konto merken es sich weiter im Browser, und das
+  Fragezeichen startet die Führung wie bisher erneut.
 
 ### Behoben
+- Schieberegler (u. a. What-If-Simulator im „Qualitäts- & Modell-Cockpit“): Ergebnisse
+  aktualisierten sich erst nach dem Neuladen der Seite. Ursache: Der Regler speicherte nur beim
+  Loslassen (`change`) und lud danach nur sich selbst neu. Die Prognose kommt aber aus einem
+  Seitenskript, das nur beim Aufbau der Seite lief. Jetzt speichert der Regler schon beim Ziehen,
+  kurz verzögert (`input`, Debounce), und lädt danach die übrigen Bausteine der Seite neu, also
+  Skript-Ausgaben und Diagramme. Bausteine mit Eingabefeldern lässt er aus. Die Beispiel-App
+  zeigt das aktuelle Szenario zusätzlich als Diagramm.
 - Beispiel-App „Qualitäts- & Modell-Cockpit“: Die Filterleiste zeigte nur den Hinweis
   „Wähle mindestens ein Feld …“, weil `beispiel_datascience` die Felder falsch übergab.
 - Sicherheit: Der CSV-Export gespeicherter Abfragen (`/a/<app>/q/<abfrage>/export.csv`) war ohne

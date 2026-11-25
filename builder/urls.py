@@ -18,6 +18,7 @@ urlpatterns = [
     path("profil/schluessel/<int:pk>/loeschen/", profile.delete_key, name="profile_key_delete"),
     path("profil/ki-zugang/", profile.create_designer_token, name="profile_ai_token_create"),
     path("profil/ki-zugang/<int:pk>/loeschen/", profile.delete_designer_token, name="profile_ai_token_delete"),
+    path("fuehrung/<slug:tour_id>/gesehen/", profile.tour_seen, name="tour_seen"),
     # Laufzeit
     path("", views.home, name="home"),
     path("start/widgets/hinzufuegen/", views.home_widget_add, name="home_widget_add"),

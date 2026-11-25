@@ -6107,3 +6107,11 @@ msgstr "HTML or Markdown"
 #: builder/openapi.py
 msgid "Nimmt dieselbe Nachricht an, die sonst an Teams geht: HTML oder Text (Content-Type text/html oder text/plain) oder JSON mit text, title, Adaptive Card, MessageCard oder Graph-Nachricht. Bilder als data:-Adresse werden gespeichert. Felder der Tabelle (z. B. agent) als JSON-Schlüssel oder Adress-Parameter. Braucht einen Schlüssel mit Schreibrecht."
 msgstr "Accepts the same message that would otherwise go to Teams: HTML or text (Content-Type text/html or text/plain) or JSON with text, title, Adaptive Card, MessageCard or Graph message. Images as data: URLs are stored. Table fields (e.g. agent) as JSON keys or query parameters. Needs a key with write access."
+
+#: builder/models.py
+msgid "Gesehene Führung"
+msgstr "Seen tour"
+
+#: builder/models.py
+msgid "Gesehene Führungen"
+msgstr "Seen tours"
