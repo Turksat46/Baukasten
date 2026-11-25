@@ -39,11 +39,26 @@ def asset(path):
     return f"{url}?v={version}" if version else url
 
 
-@register.simple_tag
-def tour(tour_id):
-    """Gibt die Schritte einer Führung als JSON aus; tour.js liest sie von dort."""
+@register.simple_tag(takes_context=True)
+def tour(context, tour_id):
+    """Gibt die Schritte einer Führung als JSON aus; tour.js liest sie von dort.
+
+    Für Angemeldete steht dabei, ob sie die Führung schon gesehen haben, und wohin
+    tour.js das meldet. Gäste merken es sich nur im Browser."""
     script = json_script(TOURS[tour_id], "tour-steps")
-    return format_html('<span id="tour-id" data-tour-id="{}" hidden></span>{}', tour_id, script)
+    request = context.get("request")
+    user = getattr(request, "user", None)
+    if not (user and user.is_authenticated):
+        return format_html('<span id="tour-id" data-tour-id="{}" hidden></span>{}', tour_id, script)
+    from django.middleware.csrf import get_token
+    from django.urls import reverse
+
+    from ..models import TourSeen
+
+    seen = TourSeen.objects.filter(user=user, tour_id=tour_id).exists()
+    return format_html(
+        '<span id="tour-id" data-tour-id="{}" data-seen="{}" data-save-url="{}" data-csrf="{}" hidden></span>{}',
+        tour_id, "1" if seen else "0", reverse("tour_seen", args=[tour_id]), get_token(request), script)
 
 
 @register.simple_tag

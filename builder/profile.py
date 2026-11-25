@@ -4,12 +4,13 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db.models import Count, OuterRef, Subquery
 from django.core.exceptions import PermissionDenied
+from django.http import Http404, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils.translation import gettext as _
 from django.views.decorators.http import require_POST
 
-from .models import ApiKey, App, CustomBlock, DataQuery, DesignerToken, Script, ScriptRun, can_design
+from .models import ApiKey, App, CustomBlock, DataQuery, DesignerToken, Script, ScriptRun, TourSeen, can_design
 
 
 @login_required
@@ -70,3 +71,15 @@ def delete_designer_token(request, pk):
     get_object_or_404(DesignerToken, pk=pk, user=request.user).delete()
     messages.success(request, _("KI-Zugang gelöscht. Er funktioniert ab sofort nicht mehr."))
     return redirect(reverse("profile") + "#ki-zugang")
+
+
+@login_required
+@require_POST
+def tour_seen(request, tour_id):
+    """Merkt sich, dass die angemeldete Person eine Führung gesehen hat (aufgerufen von tour.js)."""
+    from .tours import TOURS
+
+    if tour_id not in TOURS:
+        raise Http404
+    TourSeen.objects.get_or_create(user=request.user, tour_id=tour_id)
+    return HttpResponse(status=204)
