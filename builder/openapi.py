@@ -12,6 +12,7 @@ from .models import Field
 TYPE_SCHEMAS = {
     Field.TEXT: {"type": "string", "maxLength": 500},
     Field.LONGTEXT: {"type": "string"},
+    Field.HTML: {"type": "string", "format": "html"},
     Field.NUMBER: {"type": "integer"},
     Field.DECIMAL: {"type": "number"},
     Field.DATE: {"type": "string", "format": "date", "example": "2026-11-16"},
@@ -142,6 +143,26 @@ def build(request, app):
                               **_error_responses("400", "401", "403", "404")},
             }
         paths[f"{base}{entity.slug}/"] = collection
+        if entity.allow_create and any(f.type == Field.HTML for f in fields):
+            paths[f"{base}{entity.slug}/eingang/"] = {"post": {
+                "tags": [tag], "operationId": f"{entity.slug}_bericht_ablegen",
+                "summary": _("Bericht ablegen (HTML, Markdown, Teams-Nachricht)"),
+                "description": _(
+                    "Nimmt dieselbe Nachricht an, die sonst an Teams geht: HTML oder Text (Content-Type text/html "
+                    "oder text/plain) oder JSON mit text, title, Adaptive Card, MessageCard oder Graph-Nachricht. "
+                    "Bilder als data:-Adresse werden gespeichert. Felder der Tabelle (z. B. agent) als JSON-Schlüssel "
+                    "oder Adress-Parameter. Braucht einen Schlüssel mit Schreibrecht."),
+                "requestBody": {"required": True, "content": {
+                    "application/json": {"schema": {"type": "object", "properties": {
+                        "title": {"type": "string"}, "text": {"type": "string", "description": _("HTML oder Markdown")},
+                        **{f.key: _field_schema(f) for f in fields if f.type != Field.HTML}}}},
+                    "text/html": {"schema": {"type": "string"}},
+                    "text/plain": {"schema": {"type": "string"}},
+                }},
+                "responses": {"201": {"description": _("Abgelegt"), "content": {"application/json": {"schema": {
+                    "type": "object", "properties": {"id": {"type": "integer"}, "url": {"type": "string"}}}}}},
+                    **_error_responses("400", "401", "403", "404")},
+            }}
 
         id_param = [{"name": "id", "in": "path", "required": True, "schema": {"type": "integer"},
                      "description": _("Nummer des Eintrags")}]

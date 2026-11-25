@@ -39,7 +39,7 @@
   <tr>
     <td width="33%" valign="top">
       <h3>🧱 Bauen statt programmieren</h3>
-      Tabellen festlegen, Seite aus 42 Bausteinen zusammenschieben, veröffentlichen.
+      Tabellen festlegen, Seite aus 45 Bausteinen zusammenschieben, veröffentlichen.
       Aus jeder Tabelle wird per Klick eine fertige Seite mit Liste, Suche und Formular.
     </td>
     <td width="33%" valign="top">
@@ -182,7 +182,7 @@ an. Einzelheiten im Handbuch unter „Lokal mit Kubernetes“.
 
 - **Daten → fertige App:** Tabellen und Felder festlegen (inklusive **berechneter Formelspalten** wie `preis * menge`), daraus entsteht per
   Klick eine Seite mit Liste, Suche, Anlegen, Bearbeiten und Löschen.
-- **Seiten-Designer:** 42 Bausteine per Drag-and-drop, Tastatursteuerung und Überschreib-Schutz (`409 Conflict`), mit Vorschau auf echten
+- **Seiten-Designer:** 45 Bausteine per Drag-and-drop, Tastatursteuerung und Überschreib-Schutz (`409 Conflict`), mit Vorschau auf echten
   Daten: Listen, Karten, Formulare, Kennzahlen, Diagramme, Verlauf, Export, Eingabefelder mit Schiebereglern, Filterleiste,
   Cross-Filtering per Klick, Kalender, Checkliste, Einsatzplanung per Drag-and-drop, Wochenübersicht, Kanban …
 - **Startseite mit persönlichen Widgets:** Kennzahlen, Diagramme, Abfragen und eigene Bausteine aus beliebigen Apps auf der eigenen Startseite anpinnen („Meine Widgets“).
@@ -225,6 +225,9 @@ an. Einzelheiten im Handbuch unter „Lokal mit Kubernetes“.
 
 - **API:** JSON-Schnittstelle je Tabelle mit Schlüsseln; eigene Endpunkte in Python.
   Dokumentation je App mit Swagger zum Ausprobieren und OpenAPI-Datei.
+- **Berichte aus n8n, Teams und Copilot:** Agenten schicken dieselbe Nachricht wie an Teams
+  (HTML, Markdown, Adaptive Card, MessageCard, Graph) an `/api/v1/<app>/<tabelle>/eingang/`;
+  der **Berichte-Feed** zeigt sie mit Emojis, Tabellen und eingebetteten Diagrammen.
 - **Python-Bibliothek** `baukasten-client` für die API, mit denselben Befehlen
   wie in Skripten (`clients/python/`).
 - **MCP-Server je App** (`/mcp/<app>/`): KI-Agenten wie n8n, Claude oder Cursor
@@ -274,7 +277,7 @@ an. Einzelheiten im Handbuch unter „Lokal mit Kubernetes“.
 
 ## Stand
 
-Version 1.0.0 (siehe [`CHANGELOG.md`](CHANGELOG.md)). 296 automatische Tests laufen bei jeder Änderung
+Version 1.0.0 (siehe [`CHANGELOG.md`](CHANGELOG.md)). 306 automatische Tests laufen bei jeder Änderung
 in GitHub Actions gegen SQLite und PostgreSQL, dazu Durchläufe im Browser. Docker-Build und die lokalen Manifeste laufen auf Kubernetes in Docker
 Desktop mit PostgreSQL 16. Nicht getestet: ein echter Produktions-Cluster (Ingress,
 TLS), der vollständige Login gegen einen echten Keycloak und Verbindungen zu

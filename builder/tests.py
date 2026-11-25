@@ -4686,3 +4686,169 @@ class BackwardCompatibilityTests(Base):
         new = sorted(f"{key}.{prop}" for key, props in current.items() for prop in set(props) - set(shipped.get(key, [])))
         new += sorted(key for key in current if key not in shipped)
         self.assertEqual(new, [], "Neue Bausteine/Einstellungen eintragen: python manage.py bausteinvertrag")
+
+
+class ReportInboxTests(TestCase):
+    """Berichte-Eingang: Formate aus n8n, Teams-Workflows, Graph und Copilot; Feldtyp HTML; Bilder; Feed."""
+
+    def setUp(self):
+        import base64
+
+        from .management.commands.beispiel_berichte import bar_chart_png
+        from .models import ApiKey
+
+        call_command("beispiel_berichte", "--ohne-daten", verbosity=0)
+        self.app = App.objects.get(slug="berichte")
+        self.entity = self.app.entities.get(slug="berichte")
+        self.write_key = ApiKey.issue(self.app, "n8n", can_write=True)[1]
+        self.read_key = ApiKey.issue(self.app, "lesen", can_write=False)[1]
+        self.png = bar_chart_png([1, 2, 3], width=30, height=20)
+        self.png64 = base64.b64encode(self.png).decode()
+        self.url = reverse("api_inbox", args=["berichte", "berichte"])
+
+    def post(self, body, content_type="application/json", key=None, query=""):
+        data = json.dumps(body) if not isinstance(body, (str, bytes)) else body
+        return self.client.post(self.url + query, data, content_type=content_type,
+                                HTTP_AUTHORIZATION=f"Bearer {key or self.write_key}")
+
+    def last(self):
+        return self.entity.records.order_by("-id").first().data
+
+    def test_html_body_with_embedded_chart_and_query_values(self):
+        from .models import Attachment
+
+        html = (f'<h2>Wochenbericht 📈</h2><p><b>71</b> Aufträge</p><img src="data:image/png;base64,{self.png64}" alt="Diagramm">'
+                '<script>alert(1)</script><p onclick="x()">ok</p>')
+        response = self.post(html, content_type="text/html", query="?agent=Vertrieb")
+        self.assertEqual(response.status_code, 201, response.content)
+        data = self.last()
+        self.assertEqual(data["titel"], "Wochenbericht 📈")  # erste Überschrift wird Titel …
+        self.assertNotIn("<h2>", data["inhalt"])  # … und steht nicht doppelt im Inhalt
+        self.assertEqual(data["agent"], "Vertrieb")
+        self.assertNotIn("script", data["inhalt"])
+        self.assertNotIn("onclick", data["inhalt"])
+        self.assertNotIn("data:image", data["inhalt"])
+        stored = Attachment.objects.get(app=self.app)
+        self.assertIn(f"/a/berichte/bild/{stored.sha256}.png", data["inhalt"])
+        self.assertEqual(bytes(stored.data), self.png)
+        self.assertEqual(response.json()["id"], self.entity.records.order_by("-id").first().pk)
+
+    def test_teams_webhook_markdown_message_card_and_adaptive_card(self):
+        self.assertEqual(self.post({"title": "Kurz", "text": "**Fett** und ✅\n\n- eins\n- zwei", "agent": "IT"}).status_code, 201)
+        data = self.last()
+        self.assertEqual((data["titel"], data["agent"]), ("Kurz", "IT"))
+        self.assertIn("<strong>Fett</strong>", data["inhalt"])
+        self.assertIn("<li>eins</li>", data["inhalt"])
+
+        self.post({"@type": "MessageCard", "summary": "Alarm", "sections": [
+            {"activityTitle": "Linie 2", "facts": [{"name": "Ausschuss", "value": "4,8 %"}],
+             "images": [{"image": "https://example.com/chart.png"}]}],
+            "potentialAction": [{"@type": "OpenUri", "name": "Öffnen", "targets": [{"uri": "https://example.com"}]}]})
+        data = self.last()
+        self.assertEqual(data["titel"], "Alarm")
+        self.assertIn("<th>Ausschuss</th><td>4,8 %</td>", data["inhalt"])
+        self.assertIn('src="https://example.com/chart.png"', data["inhalt"])
+        self.assertIn('href="https://example.com"', data["inhalt"])
+
+        self.post({"type": "message", "attachments": [{"contentType": "application/vnd.microsoft.card.adaptive", "content": {
+            "type": "AdaptiveCard", "body": [
+                {"type": "TextBlock", "text": "Qualität ⚠️", "size": "large"},
+                {"type": "FactSet", "facts": [{"title": "Werk", "value": "Hamburg"}]},
+                {"type": "Image", "url": f"data:image/png;base64,{self.png64}", "altText": "Verlauf"},
+                {"type": "Image", "url": "javascript:alert(1)"}]}}]})
+        data = self.last()
+        self.assertEqual(data["titel"], "Qualität ⚠️")
+        self.assertIn("<th>Werk</th><td>Hamburg</td>", data["inhalt"])
+        self.assertIn("/a/berichte/bild/", data["inhalt"])
+        self.assertNotIn("javascript", data["inhalt"])
+
+    def test_graph_message_with_hosted_contents(self):
+        response = self.post({"subject": "Teams-Kanal", "body": {
+            "contentType": "html", "content": '<p>Bild:</p><img src="../hostedContents/1/$value">'},
+            "hostedContents": [{"@microsoft.graph.temporaryId": "1", "contentBytes": self.png64,
+                                "contentType": "image/png"}]})
+        self.assertEqual(response.status_code, 201, response.content)
+        self.assertIn("/a/berichte/bild/", self.last()["inhalt"])
+        self.assertEqual(self.last()["titel"], "Teams-Kanal")
+
+    def test_rejections(self):
+        from . import api
+
+        self.assertEqual(self.post({"text": "x"}, key="falsch").status_code, 401)
+        self.assertEqual(self.post({"text": "x"}, key=self.read_key).status_code, 403)
+        self.assertEqual(self.post({"text": "   "}).status_code, 400)
+        self.assertEqual(self.post("kein json").status_code, 400)
+        self.assertEqual(self.client.get(self.url, HTTP_AUTHORIZATION=f"Bearer {self.write_key}").status_code, 405)
+        with mock.patch.object(api, "MAX_INBOX_BYTES", 50):
+            self.assertEqual(self.post({"text": "x" * 100}).status_code, 413)
+        Field.objects.filter(entity=self.entity, type=Field.HTML).update(type=Field.LONGTEXT)
+        self.assertEqual(self.post({"text": "x"}).status_code, 400)
+        self.assertEqual(self.entity.records.count(), 0)
+
+    def test_fake_image_and_svg_are_not_stored(self):
+        import base64
+
+        from .models import Attachment
+
+        svg = base64.b64encode(b'<svg onload="alert(1)"></svg>').decode()
+        self.post({"title": "t", "text": f'<p>x</p><img src="data:image/png;base64,{svg}"><img src="data:image/svg+xml;base64,{svg}">'})
+        self.assertFalse(Attachment.objects.exists())
+        self.assertNotIn("data:", self.last()["inhalt"])
+
+    def test_attachment_access_and_headers(self):
+        from .models import Attachment
+
+        self.post({"title": "t", "text": f'<img src="data:image/png;base64,{self.png64}">'})
+        url = reverse("attachment", args=["berichte", Attachment.objects.get().sha256 + ".png"])
+        self.assertEqual(self.client.get(url).status_code, 302)  # nicht angemeldet
+        self.client.force_login(User.objects.create_user("leser", password="x"))
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Content-Type"], "image/png")
+        self.assertEqual(response["X-Content-Type-Options"], "nosniff")
+        self.assertIn("sandbox", response["Content-Security-Policy"])
+        self.assertEqual(response.content, self.png)
+        other = App.objects.create(name="Andere", slug="andere", published=True)
+        self.assertEqual(self.client.get(reverse("attachment", args=[other.slug, url.rsplit("/", 1)[1]])).status_code, 404)
+
+    def test_html_field_in_api_form_list_and_detail(self):
+        from .blocks import display_value
+        from .scripting.ops import OpsError, save_record
+
+        record = save_record(self.entity, {"titel": "Per API", "inhalt": "Nur **Markdown** 🙂"})
+        self.assertIn("<strong>Markdown</strong>", record.data["inhalt"])
+        field = self.entity.fields.get(key="inhalt")
+        self.assertEqual(display_value(field, "<p>Hallo <b>Welt</b></p><ul><li>eins</li></ul>"), "Hallo Welt eins")
+        with self.assertRaises(OpsError):
+            save_record(self.entity, {"titel": "leer", "inhalt": "<script>x</script>"})  # Pflichtfeld bleibt leer
+
+    def test_report_feed_block_with_source_filter(self):
+        call_command("beispiel_berichte", "--neu", verbosity=0)
+        self.client.force_login(User.objects.create_user("leser2", password="x"))
+        response = self.client.get(reverse("page", args=["berichte", "feed"]))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "report-feed")
+        self.assertContains(response, "Wochenbericht Vertrieb KW 48")
+        self.assertContains(response, "<strong>12 Systeme</strong>")
+        self.assertContains(response, "/a/berichte/bild/")
+        self.assertContains(response, "berichte.agent=Copilot")
+        self.assertNotContains(response, "Ausschuss über Grenzwert</h3>")  # Überschrift nicht doppelt
+        filtered = self.client.get(reverse("page", args=["berichte", "feed"]), {"berichte.agent": "IT-Monitoring"})
+        self.assertContains(filtered, "Nächtliche Prüfung")
+        self.assertNotContains(filtered, "Wochenbericht Vertrieb")
+
+    def test_openapi_describes_html_fields(self):
+        spec = self.client.get(reverse("api_openapi", args=["berichte"]), HTTP_AUTHORIZATION=f"Bearer {self.read_key}").json()
+        self.assertIn('"format": "html"', json.dumps(spec))
+        inbox = spec["paths"]["/api/v1/berichte/berichte/eingang/"]["post"]
+        self.assertEqual(inbox["operationId"], "berichte_bericht_ablegen")
+        self.assertIn("text/html", inbox["requestBody"]["content"])
+
+    def test_mcp_create_tool_converts_markdown(self):
+        response = self.client.post(reverse("mcp", args=["berichte"]), json.dumps({
+            "jsonrpc": "2.0", "id": 1, "method": "tools/call", "params": {"name": "create_berichte", "arguments": {
+                "titel": "Von Copilot", "agent": "Copilot", "inhalt": "**Fertig** 🎉"}}}),
+            content_type="application/json", HTTP_AUTHORIZATION=f"Bearer {self.write_key}")
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(response.json()["result"].get("isError"), response.content)
+        self.assertIn("<strong>Fertig</strong> 🎉", self.last()["inhalt"])

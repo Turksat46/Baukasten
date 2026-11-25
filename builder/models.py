@@ -198,9 +198,11 @@ class Entity(models.Model):
 class Field(models.Model):
     TEXT, LONGTEXT, NUMBER, DECIMAL, DATE = "text", "longtext", "number", "decimal", "date"
     BOOL, CHOICE, EMAIL, URL, REFERENCE = "bool", "choice", "email", "url", "reference"
+    HTML = "html"
     TYPES = [
         (TEXT, _("Text")),
         (LONGTEXT, _("Langer Text")),
+        (HTML, _("Formatierter Text (HTML)")),
         (NUMBER, _("Ganze Zahl")),
         (DECIMAL, _("Kommazahl")),
         (DATE, _("Datum")),
@@ -379,6 +381,28 @@ def apply_formulas(entity, data, fields=None):
                 changed = True
         if not changed:
             break
+
+
+class Attachment(models.Model):
+    """Bild aus formatiertem Text (Feldtyp HTML), z. B. ein Diagramm aus einem Bericht von n8n.
+
+    Liegt in der Datenbank statt auf der Platte: So braucht der Baukasten in Kubernetes kein
+    gemeinsames Volume. Gleiche Bilder einer App werden über den Hash nur einmal gespeichert."""
+
+    app = models.ForeignKey(App, related_name="attachments", on_delete=models.CASCADE)
+    sha256 = models.CharField(max_length=64)
+    content_type = models.CharField(max_length=40)
+    data = models.BinaryField()
+    size = models.PositiveIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = _("Bild")
+        verbose_name_plural = _("Bilder")
+        constraints = [models.UniqueConstraint(fields=["app", "sha256"], name="attachment_hash_per_app")]
+
+    def __str__(self):
+        return f"{self.sha256[:12]} ({self.content_type})"
 
 
 class Page(models.Model):

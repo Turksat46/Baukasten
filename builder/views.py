@@ -657,3 +657,21 @@ def api_docs_ui(request, app):
     """Swagger UI ohne die Stile der Oberfläche, eingebettet in api_docs."""
     app = get_app(request, app)
     return render(request, "builder/api_swagger.html", {"app": app, "spec_url": reverse("api_docs_spec", args=[app.slug])})
+
+
+def attachment(request, app, name):
+    """Bild aus formatiertem Text. Sehen darf es, wer die App benutzen darf; bei Apps mit
+    öffentlichen Seiten auch Gäste (ohne Anfragebegrenzung, die Bilder ändern sich nie)."""
+    from .models import Attachment
+
+    target = get_object_or_404(App, slug=app, kind=App.APP)
+    allowed = request.user.is_authenticated and target.user_can_use(request.user)
+    if not allowed and not (target.published and target.pages.filter(public=True).exists()):
+        return deny(request)
+    found = get_object_or_404(Attachment, app=target, sha256=name.split(".", 1)[0][:64])
+    response = HttpResponse(bytes(found.data), content_type=found.content_type)
+    response["Cache-Control"] = "private, max-age=31536000, immutable"
+    response["X-Content-Type-Options"] = "nosniff"
+    response["Content-Security-Policy"] = "default-src 'none'; sandbox"
+    response["Content-Disposition"] = "inline"
+    return response

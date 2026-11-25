@@ -217,6 +217,14 @@
   "show_add",
   "title"
  ],
+ "report_feed": [
+  "entity",
+  "field",
+  "page_size",
+  "source_field",
+  "title",
+  "title_field"
+ ],
  "scatter": [
   "color_field",
   "entity",
