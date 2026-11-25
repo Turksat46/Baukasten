@@ -16,7 +16,7 @@ from django.utils.translation import gettext
 from django.utils.translation import gettext_lazy as _
 
 from . import app_i18n
-from .blocks import _entity, display_value, filter_param, filtered, reference_labels, register
+from .blocks import _entity, display_value, filter_param, filtered, reference_labels, register, rich_value
 from .models import Field
 
 MONTH_PARAM = "monat"   # ?monat=2026-11
@@ -513,7 +513,7 @@ def prep_detail(request, app, block):
         return {"error": gettext("Der ausgewählte Eintrag wurde nicht gefunden.")}
     fields = list(entity.fields.all())
     refs = reference_labels(fields, [record])
-    rows = [{"label": app_i18n.t(f.label), "value": display_value(f, record.data.get(f.key), refs) or "—"}
+    rows = [{"label": app_i18n.t(f.label), "value": rich_value(f, record.data.get(f.key), refs) or "—"}
             for f in fields]
     show_actions = bool(props.get("show_actions", True))
     return {

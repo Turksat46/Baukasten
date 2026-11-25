@@ -21,9 +21,11 @@ Test prüft, dass die neueste Version hier und `BAUKASTEN_VERSION` übereinstimm
 
 ## Unveröffentlicht
 
-**Kurz gesagt:** Data Science, persönliche Startseite, Planung per Drag-and-drop und Fehler-Alarme
+**Kurz gesagt:** Berichte aus n8n und Teams, Data Science, persönliche Startseite, Planung per Drag-and-drop und Fehler-Alarme
 
 ### Für Nutzer
+- **Berichte aus n8n, Teams und Copilot:** Agenten legen ihre Berichte mit Text, Emojis, Tabellen
+  und Diagrammen direkt im Baukasten ab; der Baustein „Berichte-Feed“ zeigt sie als Zeitleiste.
 - **Neue Diagramme für Auswertungen:** Streudiagramm mit Trendlinie, Boxplot, Korrelations-Heatmap,
   Histogramm mit Drift-Erkennung und frei beschreibbare Diagramme. Ein Klick auf einen Balken oder
   eine Gruppe filtert die ganze Seite.
@@ -37,6 +39,18 @@ Test prüft, dass die neueste Version hier und `BAUKASTEN_VERSION` übereinstimm
   in Teams, per E-Mail oder an ein anderes System.
 - **Englisch vollständig** und viele Fehler behoben, unter anderem bei Filtern per Klick, Kommazahlen
   und dem CSV-Export.
+
+### Neu
+- **Berichte aus n8n, Teams und Copilot:** Eingang `POST /api/v1/<app>/<tabelle>/eingang/` nimmt
+  dieselbe Nachricht an, die sonst an Teams geht (HTML, Text/Markdown, Teams-Webhook-JSON,
+  Adaptive Card, MessageCard, Graph-Nachricht mit Bildern), und legt sie als Eintrag ab.
+- Neuer Feldtyp **Formatierter Text (HTML)**: wird beim Speichern bereinigt, Markdown wird
+  umgewandelt, eingebettete Bilder (PNG, JPEG, GIF, WebP) speichert der Baukasten in der Datenbank
+  und liefert sie nur an Berechtigte aus. Detailansicht zeigt ihn formatiert, Listen als Text.
+- Neuer Baustein **Berichte-Feed**: Zeitleiste der Berichte, neueste zuerst, mit Schnellfilter
+  nach Quelle (z. B. Agent). Beispiel-App: `python manage.py beispiel_berichte`.
+- OpenAPI und MCP-Server beschreiben das neue Feld; der Eingang steht in der OpenAPI-Datei
+  (für Copilot-Connectoren und API-Plugins).
 
 ### Behoben
 - Beispiel-App „Qualitäts- & Modell-Cockpit“: Die Filterleiste zeigte nur den Hinweis

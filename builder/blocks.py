@@ -171,7 +171,18 @@ def display_value(f, value, refs=None):
         return (refs or {}).get(value, f"#{value}")
     if f.type == Field.CHOICE:
         return app_i18n.t(str(value))  # gespeichert bleibt der Wert der Quellsprache
+    if f.type == Field.HTML:
+        from .rich import html_to_text
+
+        return html_to_text(value, 160)  # Listen und Karten zeigen nur den Anfang als Text
     return str(value)
+
+
+def rich_value(f, value, refs=None):
+    """Wie display_value, formatierter Text aber als bereinigtes HTML (Detailansicht, Berichte)."""
+    if f.type == Field.HTML and value:
+        return mark_safe(f'<div class="rich-text">{sanitize_html(str(value))}</div>')
+    return display_value(f, value, refs)
 
 
 # ---------- Filter aus der Adresse (Baustein „Filterleiste“) ----------
@@ -218,7 +229,7 @@ def filtered(request, entity, records=None):
         if f.type == Field.BOOL:
             records = (records.filter(**{f"data__{f.key}": True}) if value.strip().lower() in ("1", "true", "ja", "yes")
                        else records.exclude(**{f"data__{f.key}": True}))
-        elif f.type in (Field.TEXT, Field.LONGTEXT, Field.EMAIL, Field.URL):
+        elif f.type in (Field.TEXT, Field.LONGTEXT, Field.HTML, Field.EMAIL, Field.URL):
             records = (records.annotate(**{f"_f_{f.key}": KeyTextTransform(f.key, "data")})
                        .filter(**{f"_f_{f.key}__icontains": value[:200]}))
         elif f.type in (Field.NUMBER, Field.REFERENCE, Field.DECIMAL):
@@ -1012,6 +1023,7 @@ register("input", _("Eingabefeld"), "⌨️", [
 from . import planning  # noqa: E402,F401  registriert die Planungs-Bausteine
 from . import widgets  # noqa: E402,F401  Filter, Kalender, Checkliste, Schieberegler, Aufklappbereich
 from . import datascience  # noqa: E402,F401  Scatter, Boxplot, Heatmap, Spec-Chart
+from . import reports  # noqa: E402,F401  Berichte-Feed
 
 # ---------- Anzeige, Prüfung, Designer-Konfiguration ----------
 

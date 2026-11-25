@@ -6001,3 +6001,109 @@ msgstr "maintained here"
 #: builder/templates/builder/about.html
 msgid "Release Notes entstehen beim Ausrollen aus CHANGELOG.md („Kurz gesagt“ und „Für Nutzer“). Versionen bis zur laufenden sind veröffentlicht, „Unveröffentlicht“ sehen nur Verwalter. Eigene Hinweise:"
 msgstr "Release notes are created on rollout from CHANGELOG.md (“Kurz gesagt” and “Für Nutzer”). Versions up to the running one are published; only administrators see “Unveröffentlicht”. Your own notices:"
+
+#: builder/api.py
+msgid "Der Inhalt ist zu groß (höchstens 10 MB)."
+msgstr "The content is too large (at most 10 MB)."
+
+#: builder/api.py
+msgid "Die Nachricht hat keinen Inhalt."
+msgstr "The message has no content."
+
+#: builder/api.py
+msgid "Die Tabelle braucht ein Feld vom Typ „Formatierter Text (HTML)“ für den Inhalt."
+msgstr "The table needs a field of type “Formatted text (HTML)” for the content."
+
+#: builder/forms.py
+msgid "HTML oder Markdown (z. B. **fett**), mit Listen, Tabellen und Bildern. Skripte werden entfernt."
+msgstr "HTML or Markdown (e.g. **bold**), with lists, tables and images. Scripts are removed."
+
+#: builder/models.py
+msgid "Bilder"
+msgstr "Images"
+
+#: builder/models.py
+msgid "Formatierter Text (HTML)"
+msgstr "Formatted text (HTML)"
+
+#: builder/reports.py
+msgid "Berichte pro Seite"
+msgstr "Reports per page"
+
+#: builder/reports.py
+msgid "Berichte von n8n, Teams-Workflows oder Copilot als Zeitleiste"
+msgstr "Reports from n8n, Teams workflows or Copilot as a timeline"
+
+#: builder/reports.py
+msgid "Berichte-Feed"
+msgstr "Report feed"
+
+#: builder/reports.py
+msgid "Der Berichte-Feed braucht ein Feld vom Typ „Formatierter Text (HTML)“."
+msgstr "The report feed needs a field of type “Formatted text (HTML)”."
+
+#: builder/reports.py
+msgid "Für den Berichte-Feed ist keine Tabelle ausgewählt."
+msgstr "No table is selected for the report feed."
+
+#: builder/reports.py
+msgid "Inhalt (Formatierter Text; leer: erstes solches Feld)"
+msgstr "Content (formatted text; empty: first such field)"
+
+#: builder/reports.py
+msgid "Quelle, z. B. Agent (optional, mit Schnellfilter)"
+msgstr "Source, e.g. agent (optional, with quick filter)"
+
+#: builder/reports.py
+msgid "gestern, %(zeit)s"
+msgstr "yesterday, %(zeit)s"
+
+#: builder/reports.py
+msgid "heute, %(zeit)s"
+msgstr "today, %(zeit)s"
+
+#: builder/reports.py
+msgid "Überschrift (optional; leer: erstes Textfeld)"
+msgstr "Heading (optional; empty: first text field)"
+
+#: builder/templates/builder/blocks/report_feed.html
+msgid "%(n)s Bericht"
+msgid_plural "%(n)s Berichte"
+msgstr[0] "%(n)s report"
+msgstr[1] "%(n)s reports"
+
+#: builder/templates/builder/blocks/report_feed.html
+msgid "Nach %(name)s filtern"
+msgstr "Filter by %(name)s"
+
+#: builder/templates/builder/blocks/report_feed.html
+msgid "Neue kommen über den Eingang:"
+msgstr "New ones arrive through the inbox:"
+
+#: builder/templates/builder/blocks/report_feed.html
+msgid "Neuere"
+msgstr "Newer"
+
+#: builder/templates/builder/blocks/report_feed.html
+msgid "Noch keine Berichte."
+msgstr "No reports yet."
+
+#: builder/templates/builder/blocks/report_feed.html
+msgid "Ältere"
+msgstr "Older"
+
+#: builder/openapi.py
+msgid "Abgelegt"
+msgstr "Stored"
+
+#: builder/openapi.py
+msgid "Bericht ablegen (HTML, Markdown, Teams-Nachricht)"
+msgstr "Store a report (HTML, Markdown, Teams message)"
+
+#: builder/openapi.py
+msgid "HTML oder Markdown"
+msgstr "HTML or Markdown"
+
+#: builder/openapi.py
+msgid "Nimmt dieselbe Nachricht an, die sonst an Teams geht: HTML oder Text (Content-Type text/html oder text/plain) oder JSON mit text, title, Adaptive Card, MessageCard oder Graph-Nachricht. Bilder als data:-Adresse werden gespeichert. Felder der Tabelle (z. B. agent) als JSON-Schlüssel oder Adress-Parameter. Braucht einen Schlüssel mit Schreibrecht."
+msgstr "Accepts the same message that would otherwise go to Teams: HTML or text (Content-Type text/html or text/plain) or JSON with text, title, Adaptive Card, MessageCard or Graph message. Images as data: URLs are stored. Table fields (e.g. agent) as JSON keys or query parameters. Needs a key with write access."
