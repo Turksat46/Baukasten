@@ -17,6 +17,10 @@
 </p>
 
 <p align="center">
+  <a href="https://codespaces.new/Turksat46/Baukasten?quickstart=1"><img src="https://github.com/codespaces/badge.svg" alt="In GitHub Codespaces öffnen"></a>
+</p>
+
+<p align="center">
   <a href="#in-fünf-minuten-starten">Schnellstart</a> ·
   <a href="#so-sieht-er-aus">Rundgang</a> ·
   <a href="#was-er-kann">Funktionen</a> ·
@@ -131,6 +135,11 @@ Kennzahlen, Diagramme und Listen; ein Klick auf einen Balken filtert die Seite.
 </table>
 
 ## In fünf Minuten starten
+
+> [!TIP]
+> **Ohne Installation ausprobieren:** [In GitHub Codespaces öffnen](https://codespaces.new/Turksat46/Baukasten?quickstart=1).
+> Nach ein bis zwei Minuten öffnet sich Baukasten mit allen Beispiel-Apps im Browser.
+> Anmeldung: `demo` / `demo`.
 
 Voraussetzung: Python 3.10 oder neuer.
 
