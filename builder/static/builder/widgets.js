@@ -18,23 +18,86 @@
     });
   });
 
-  // Schieberegler: Wert beim Ziehen zeigen, beim Loslassen speichern
+  // Schieberegler: Wert beim Ziehen zeigen und kurz nach dem letzten Bewegen speichern,
+  // damit abhängige Bausteine (Skript-Ausgaben, Diagramme) schon während des Ziehens
+  // mitlaufen. Beim Loslassen wird endgültig gespeichert und der Regler neu geladen.
+  var LIVE_DELAY = 250;
+  var pending = {};   // Regler-ID -> Timer
+  var running = {};   // Regler-ID -> läuft gerade eine Anfrage
+  var queued = {};    // Regler-ID -> Wert, der nach der laufenden Anfrage noch gesendet wird
+
+  function sliderRoot(slider) { return slider.closest("[data-widget='sliders']"); }
+
+  // Andere Bausteine derselben Seite neu laden, die vom gespeicherten Wert abhängen können.
+  // Ausgelassen werden Bausteine mit Eingaben (Formulare, Filter, andere Regler), damit
+  // nichts verloren geht, was jemand gerade tippt.
+  function refreshDependents(own, base) {
+    if (!own || !base) return Promise.resolve();
+    var grid = own.parentElement;
+    var jobs = [];
+    Array.prototype.forEach.call(grid.querySelectorAll(":scope > [data-block]"), function (el) {
+      if (el === own || el.dataset.loadingNow) return;
+      if (el.querySelector("form, input, select, textarea, [data-action-url]")) return;
+      var url = base.replace("/b/" + own.dataset.block + "/", "/b/" + encodeURIComponent(el.dataset.block) + "/");
+      el.dataset.loadingNow = "1";
+      jobs.push(fetch(url + window.location.search, {credentials: "same-origin"})
+        .then(function (r) { return r.ok ? r.text() : null; })
+        .then(function (html) {
+          if (html !== null) el.innerHTML = html;  // vom Server erzeugt und maskiert
+          document.dispatchEvent(new CustomEvent("baukasten:block-updated", {detail: {block: el}}));
+        })
+        .catch(function () { /* beim nächsten Wert wieder */ })
+        .then(function () { delete el.dataset.loadingNow; }));
+    });
+    return Promise.all(jobs);
+  }
+
+  // Während des Ziehens: speichern ohne den Regler selbst neu zu zeichnen (sonst reißt das Ziehen ab).
+  function saveLive(slider) {
+    var root = sliderRoot(slider);
+    var id = slider.dataset.slide;
+    if (!root) return;
+    if (running[id]) { queued[id] = slider.value; return; }
+    running[id] = true;
+    fetch(root.dataset.actionUrl, {
+      method: "POST", credentials: "same-origin",
+      headers: {"Content-Type": "application/json", "X-CSRFToken": root.dataset.csrf || ""},
+      body: JSON.stringify({op: "set", record: id, value: slider.value})
+    }).then(function (r) { return r.ok ? refreshDependents(root.closest("[data-block]"), root.dataset.reloadUrl) : null; })
+      .catch(function () { /* Fehler zeigt das endgültige Speichern beim Loslassen */ })
+      .then(function () {
+        running[id] = false;
+        if (queued[id] !== undefined && document.body.contains(slider)) {
+          delete queued[id];
+          saveLive(slider);
+        }
+      });
+  }
+
   document.addEventListener("input", function (e) {
     var slider = e.target.closest && e.target.closest("[data-slide]");
     if (!slider) return;
     var out = slider.parentElement.querySelector("[data-value]");
     if (out) { out.textContent = slider.value; out.parentElement.classList.remove("muted"); }
     slider.setAttribute("aria-valuetext", slider.value);
+    if (!sliderRoot(slider)) return;
+    var id = slider.dataset.slide;
+    clearTimeout(pending[id]);
+    pending[id] = setTimeout(function () { saveLive(slider); }, LIVE_DELAY);
   });
 
   document.addEventListener("change", function (e) {
     var slider = e.target.closest && e.target.closest("[data-slide]");
-    var root = slider && slider.closest("[data-widget='sliders']");
+    var root = slider && sliderRoot(slider);
     if (!root) return;
+    clearTimeout(pending[slider.dataset.slide]);
+    delete queued[slider.dataset.slide];
+    // Vor dem Speichern merken: Danach ersetzt das Neuladen den Regler samt root.
+    var own = root.closest("[data-block]"), base = root.dataset.reloadUrl;
     var label = (slider.parentElement.querySelector(".slider-label") || slider).textContent.trim();
     blocks.act(root, {op: "set", record: slider.dataset.slide, value: slider.value}, {
       done: label + ": " + slider.value + " " + gettext("gespeichert.")
-    });
+    }).then(function () { return refreshDependents(own, base); });
   });
 
   // Status-Leiste: Schritt direkt per Klick speichern

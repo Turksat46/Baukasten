@@ -9,18 +9,40 @@
   if (!source) return;
 
   var allSteps = JSON.parse(source.textContent);
-  var tourId = (document.getElementById("tour-id") || source).dataset.tourId;
+  var info = (document.getElementById("tour-id") || source).dataset;
+  var tourId = info.tourId;
   var storageKey = "baukasten-tour-" + tourId + "-" + (document.body.dataset.user || "");
+  // Angemeldete: Der Server merkt sich die Führung pro Person, damit sie auf anderen
+  // Geräten nicht erneut startet. Gäste: nur dieser Browser.
+  var saveUrl = info.saveUrl;
   var gettext = window.gettext || function (text) { return text; };
   var interpolate = window.interpolate || function (text) { return text; };
   var blocker, hole, popup, steps, index, lastFocus;
 
-  function alreadySeen() {
+  function seenInBrowser() {
     // Ohne Zugriff auf den Speicher lieber nicht bei jedem Besuch erneut starten.
-    try { return window.localStorage.getItem(storageKey) === "1"; } catch (e) { return true; }
+    try { return window.localStorage.getItem(storageKey) === "1"; } catch (e) { return !saveUrl; }
+  }
+  function saveOnServer() {
+    if (!saveUrl || info.seen === "1") return;
+    info.seen = "1";
+    fetch(saveUrl, {
+      method: "POST", credentials: "same-origin",
+      headers: { "X-CSRFToken": info.csrf || "", "X-Requested-With": "fetch" },
+    }).catch(function () { info.seen = "0"; });
+  }
+  function alreadySeen() {
+    if (saveUrl && info.seen === "1") return true;
+    if (seenInBrowser()) {
+      // Früher stand das nur im Browser: einmalig auf den Server übernehmen.
+      saveOnServer();
+      return true;
+    }
+    return false;
   }
   function markSeen() {
     try { window.localStorage.setItem(storageKey, "1"); } catch (e) { /* dann eben beim nächsten Mal wieder */ }
+    saveOnServer();
   }
 
   function el(tag, className, text) {
