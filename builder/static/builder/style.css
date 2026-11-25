@@ -1219,3 +1219,40 @@ button.stepper-btn:hover { border-color: var(--accent); }
 .version-diff summary { cursor: pointer; color: var(--accent-strong); font-weight: 500; }
 .version-diff ul { margin: .25rem 0 0 1rem; padding: 0; }
 
+/* ---------- Ladebalken und Wartezustand (progress.js) ---------- */
+.bk-progress { position: fixed; inset: 0 0 auto 0; height: 3px; z-index: 1000; pointer-events: none; opacity: 0; transition: opacity .2s ease; }
+.bk-progress.is-active { opacity: 1; }
+.bk-progress span { display: block; height: 100%; background: var(--accent); transform-origin: 0 50%; transform: scaleX(0); transition: transform .25s ease; box-shadow: 0 0 6px color-mix(in srgb, var(--accent) 60%, transparent); }
+.btn.is-loading, button.is-loading { position: relative; cursor: progress; color: transparent !important; }
+.btn.is-loading > *, button.is-loading > * { visibility: hidden; }
+.btn.is-loading::after, button.is-loading::after { content: ""; position: absolute; inset: 0; margin: auto; width: 1em; height: 1em; border-radius: 50%; border: 2px solid var(--accent-ink); border-right-color: transparent; animation: bk-spin .7s linear infinite; }
+.btn-secondary.is-loading::after, .link.is-loading::after { border-color: var(--ink); border-right-color: transparent; }
+.btn.is-loading:disabled { opacity: 1; }
+.busy-note { margin-left: .5rem; font-size: .86rem; color: var(--muted); white-space: nowrap; }
+@keyframes bk-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) {
+  .bk-progress span { transition: none; }
+  .btn.is-loading::after, button.is-loading::after { animation-duration: 2.4s; }
+}
+
+/* ---------- Startbildschirm der installierten App (splash.js) ---------- */
+.bk-splash { display: none; }
+.bk-splash-on .bk-splash { display: grid; place-items: center; position: fixed; inset: 0; z-index: 2000; background: var(--bg); transition: opacity .4s ease; }
+.bk-splash-on body { overflow: hidden; }
+.bk-splash-out .bk-splash { opacity: 0; pointer-events: none; }
+.bk-splash-inner { display: grid; justify-items: center; gap: .55rem; padding: 1rem; text-align: center; }
+.bk-splash-mark .s1 { fill: var(--accent); }
+.bk-splash-mark .s2, .bk-splash-mark .s3 { fill: #7fb9bf; }
+.bk-splash-mark .s4 { fill: #d98a1f; }
+.bk-splash-name { font-size: 1.9rem; font-weight: 700; color: var(--ink); letter-spacing: -.01em; margin-top: .4rem; }
+.bk-splash-claim { color: var(--muted); font-size: .95rem; max-width: 22rem; }
+@media (prefers-reduced-motion: no-preference) {
+  .bk-splash-mark rect { transform-box: fill-box; transform-origin: center; animation: bk-splash-block .42s cubic-bezier(.34, 1.56, .64, 1) both; }
+  .bk-splash-mark .s2 { animation-delay: .09s; }
+  .bk-splash-mark .s3 { animation-delay: .18s; }
+  .bk-splash-mark .s4 { animation-delay: .3s; }
+  .bk-splash-name, .bk-splash-claim { animation: bk-splash-text .45s ease-out .38s both; }
+  .bk-splash-claim { animation-delay: .5s; }
+  @keyframes bk-splash-block { from { opacity: 0; transform: translateY(-10px) scale(.4); } }
+  @keyframes bk-splash-text { from { opacity: 0; transform: translateY(6px); } }
+}

@@ -5103,3 +5103,24 @@ class WhatIfLiveTests(TestCase):
         handler = handler[:handler.index("});")]
         self.assertIn("setTimeout", handler)  # mit Verzögerung, nicht bei jedem Pixel
         self.assertIn("refreshDependents", source)
+
+
+class ProgressFeedbackTests(Base):
+    """Ladebalken und Wartezustand: progress.js auf jeder Seite, Übersetzung vorhanden."""
+
+    def test_progress_script_on_pages_and_login(self):
+        self.assertContains(self.client.get(reverse("login")), "builder/progress")
+        self.client.force_login(self.user)
+        page = self.client.get(reverse("page", args=["inventar"]))
+        self.assertContains(page, "builder/progress")
+        html = page.content.decode()
+        self.assertLess(html.index("builder/confirm"), html.index("builder/progress"))  # nach confirm.js
+
+    def test_splash_markup_script_and_offline_cache(self):
+        """Startbildschirm: Markup und Skript auf jeder Seite, Skript im Head vor dem Inhalt."""
+        page = self.client.get(reverse("login")).content.decode()
+        self.assertIn('class="bk-splash"', page)
+        self.assertLess(page.index("builder/splash"), page.index("</head>"))
+        self.assertNotIn("brand-logo", page[page.index('class="bk-splash"'):page.index("</svg>")])
+        self.assertContains(self.client.get("/sw.js"), "builder/splash")
+

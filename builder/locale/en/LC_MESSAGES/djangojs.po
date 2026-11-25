@@ -337,3 +337,7 @@ msgstr "Discard"
 #: builder/static/builder/designer.js
 msgid "Wiederherstellen"
 msgstr "Restore"
+
+#: builder/static/builder/progress.js
+msgid "Wird geladen"
+msgstr "Loading"

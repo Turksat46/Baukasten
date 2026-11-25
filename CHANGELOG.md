@@ -24,6 +24,11 @@ Test prüft, dass die neueste Version hier und `BAUKASTEN_VERSION` übereinstimm
 **Kurz gesagt:** Berichte aus n8n und Teams, Data Science, persönliche Startseite, Planung per Drag-and-drop und Fehler-Alarme
 
 ### Für Nutzer
+- **Ladebalken:** Beim Seitenwechsel, Speichern und bei Skripten zeigt ein dünner Balken oben,
+  dass etwas passiert. Buttons drehen sich, bis die Antwort da ist, und lassen sich nicht doppelt
+  drücken; dauert ein Skript länger, steht daneben „läuft … 5 s“.
+- **Startbildschirm:** Als App installiert, begrüßt der Baukasten beim Start kurz mit seinen vier
+  Bausteinen, bis die erste Seite bereit ist (höchstens 2,5 s, einmal je Start).
 - **Berichte aus n8n, Teams und Copilot:** Agenten legen ihre Berichte mit Text, Emojis, Tabellen
   und Diagrammen direkt im Baukasten ab; der Baustein „Berichte-Feed“ zeigt sie als Zeitleiste.
 - **Neue Diagramme für Auswertungen:** Streudiagramm mit Trendlinie, Boxplot, Korrelations-Heatmap,
@@ -59,6 +64,12 @@ Test prüft, dass die neueste Version hier und `BAUKASTEN_VERSION` übereinstimm
   Einstellungen verschwinden; `python manage.py bausteinvertrag` trägt neue ein.
 
 ### Neu
+- Ladebalken und Wartezustand (`builder/static/builder/progress.js`): automatisch bei Links,
+  abgeschickten Formularen und schreibenden `fetch`-Aufrufen; Downloads und `data-no-progress`
+  ausgenommen. Eigene Skripte nutzen `BaukastenProgress.start()/done()/busy(button, true)`.
+- Startbildschirm der installierten App (`splash.js`, `builder/_splash.html`): nur bei
+  `display-mode: standalone`, einmal je Start, ohne Firmenlogo; zum Ansehen `?splash=1` anhängen.
+  Bei reduzierter Bewegung ohne Animation.
 - **Berichte aus n8n, Teams und Copilot:** Eingang `POST /api/v1/<app>/<tabelle>/eingang/` nimmt
   dieselbe Nachricht an, die sonst an Teams geht (HTML, Text/Markdown, Teams-Webhook-JSON,
   Adaptive Card, MessageCard, Graph-Nachricht mit Bildern), und legt sie als Eintrag ab.
