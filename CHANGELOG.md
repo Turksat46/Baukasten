@@ -87,6 +87,8 @@ Test prüft, dass die neueste Version hier und `BAUKASTEN_VERSION` übereinstimm
   Fragezeichen startet die Führung wie bisher erneut.
 
 ### Behoben
+- Anmeldeseite auf dem Handy: Der farbige Kopf nahm fast die halbe Höhe ein. Er ist jetzt nur so
+  hoch wie sein Inhalt, das Formular steht direkt darunter.
 - Installierte App (Windows, Android): Logo, Reiter und Knöpfe saßen in der Kopfzeile zu weit
   unten. Der Abstand für die Statusleiste gilt jetzt nur noch, wo es eine gibt (iPhone).
 - Container: gunicorn meldete bei jedem Start „Control server error: Permission denied“, weil es
