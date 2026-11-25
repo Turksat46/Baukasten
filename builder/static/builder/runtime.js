@@ -246,7 +246,10 @@
     if (!button || !cfg.buttons) return;
     var script = cfg.buttons[button.dataset.jsScript];
     if (!script) return;
-    button.disabled = true;
-    run(script, {trigger: "button"}).then(function () { button.disabled = false; });
+    var progress = window.BaukastenProgress;
+    if (progress) { progress.busy(button, true); progress.start(); } else button.disabled = true;
+    run(script, {trigger: "button"}).then(function () {
+      if (progress) { progress.busy(button, false); progress.done(); } else button.disabled = false;
+    });
   });
 })();

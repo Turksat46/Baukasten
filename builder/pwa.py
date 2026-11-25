@@ -55,7 +55,7 @@ def manifest(request):
 def service_worker(request):
     from .templatetags.baukasten import asset
 
-    precache = [asset("builder/theme.css"), asset("builder/style.css"), asset("builder/theme.js"),
+    precache = [asset("builder/theme.css"), asset("builder/style.css"), asset("builder/theme.js"), asset("builder/splash.js"),
                 asset("builder/menu.js"), asset("builder/transitions.js"), static("builder/logo.svg"),
                 static("builder/app/icon-192.png")]
     response = render(request, "builder/sw.js", {
