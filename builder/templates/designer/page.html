@@ -27,6 +27,13 @@
       <button type="button" class="btn btn-secondary btn-small" id="conflict-reload">{% translate "Seite neu laden" %}</button>
     </div>
   </div>
+  <div class="notice update-note" id="update-note" hidden role="status">
+    <strong>{% translate "Der Baukasten wurde aktualisiert" %}</strong>
+    <span>{% translate "Deine Seite ist gespeichert. Läuft jetzt Version" %} <b data-update-version></b>. {% translate "Lade den Designer neu, um neue Bausteine und Einstellungen zu sehen." %}</span>
+    <div class="update-actions">
+      <button type="button" class="btn btn-secondary btn-small" id="update-reload">{% translate "Designer neu laden" %}</button>
+    </div>
+  </div>
   <div class="designer-body">
     <aside class="panel" id="palette-panel">
       <label class="visually-hidden" for="palette-search">{% translate "Bausteine suchen" %}</label>

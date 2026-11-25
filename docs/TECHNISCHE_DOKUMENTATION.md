@@ -929,6 +929,31 @@ Module in `extensions/` registrieren über `builder/hooks.py` eigene **Aktionen*
 Änderungen an `builder/models.py` (nicht an App-Tabellen!) brauchen
 `python manage.py makemigrations builder` und eine neue Datei in `builder/migrations/`.
 
+### Rückwärtskompatibilität bei Updates
+
+Beim Ausrollen laufen kurz alte und neue Pods nebeneinander auf derselben Datenbank, und
+offene Designer-Tabs haben noch den alten Stand. Damit dabei nichts bricht:
+
+- **Migrationen nur erweitern** (expand/contract): Spalten und Tabellen hinzufügen, neue Felder
+  mit Standardwert oder `null=True`. Entfernen oder Umbenennen frühestens eine Version später,
+  wenn kein alter Pod mehr läuft. Die Migration läuft vor dem Ausrollen (Migrations-Job).
+- **Bausteine und Einstellungen nie entfernen oder umbenennen**, ohne die gespeicherten Seiten
+  per Datenmigration umzustellen. `builder/bausteinvertrag.json` hält alle ausgelieferten
+  Namen fest. Ein Test schlägt fehl, wenn einer fehlt. Neue trägt
+  `python manage.py bausteinvertrag` ein.
+- **Neue Einstellungen brauchen einen Standardwert** (`default`): Alte Seiten und alte Tabs
+  speichern ohne sie.
+- **Unbekanntes bleibt erhalten:** `clean_layout(raw, previous=…)` übernimmt Bausteine und
+  Einstellungen, die diese Version nicht kennt, unverändert aus dem gespeicherten Stand der
+  Seite. Beispiele sind ein entfernter Baustein, eine abgeschaltete Erweiterung oder eine Seite
+  aus einer neueren Version. App-Dateien und Versionen (`keep_unknown=True`) behalten sie in
+  begrenzter Größe. Der Designer zeigt dafür einen Platzhalter, die Seite lässt sie aus.
+- **Designer nach einem Update:** Die Antwort aufs Speichern enthält `baukasten_version`. Weicht
+  sie vom Stand beim Öffnen ab, bittet der Designer ums Neuladen. Ungespeicherte Änderungen
+  liegen bis zum Speichern als Entwurf im Browser (localStorage) und werden nach dem Neuladen
+  angeboten. Die Versionsnummer der Seite (409 bei Konflikt) verhindert gegenseitiges
+  Überschreiben.
+
 ---
 
 *Siehe auch:* [HANDBUCH.md](HANDBUCH.md) · [HANDBOOK.en.md](HANDBOOK.en.md) ·

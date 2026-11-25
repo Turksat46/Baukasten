@@ -44,6 +44,20 @@ Test prüft, dass die neueste Version hier und `BAUKASTEN_VERSION` übereinstimm
 - **Englisch vollständig** und viele Fehler behoben, unter anderem bei Filtern per Klick, Kommazahlen
   und dem CSV-Export.
 
+### Rückwärtskompatibel bei Updates
+- Bausteine und Einstellungen, die eine Version nicht kennt, gehen beim Speichern nicht mehr
+  verloren. Betroffen sind entfernte Bausteine, abgeschaltete Erweiterungen und Seiten aus einer
+  neueren Version. Sie werden aus dem gespeicherten Stand übernommen, auch beim Einspielen von
+  App-Dateien und Versionen.
+- Der Designer stürzte bei einem unbekannten Baustein ab. Er zeigt jetzt einen Platzhalter, den
+  man löschen kann.
+- Wurde während des Bearbeitens ein Update eingespielt, bittet der Designer nach dem Speichern
+  ums Neuladen.
+- Ungespeicherte Änderungen bleiben als Entwurf im Browser und werden nach dem Neuladen
+  angeboten, auch nach einem Bearbeitungskonflikt.
+- `builder/bausteinvertrag.json` und ein Test verhindern, dass ausgelieferte Bausteine oder
+  Einstellungen verschwinden; `python manage.py bausteinvertrag` trägt neue ein.
+
 ### Neu
 - **Berichte aus n8n, Teams und Copilot:** Eingang `POST /api/v1/<app>/<tabelle>/eingang/` nimmt
   dieselbe Nachricht an, die sonst an Teams geht (HTML, Text/Markdown, Teams-Webhook-JSON,
