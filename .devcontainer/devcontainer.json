@@ -1,0 +1,26 @@
+{
+  // Ein Klick auf „Open in GitHub Codespaces“ im README startet Baukasten
+  // mit allen Beispiel-Apps. Anmeldung: demo / demo
+  "name": "Baukasten",
+  "image": "mcr.microsoft.com/devcontainers/python:3.13",
+  "postCreateCommand": "pip install --no-cache-dir -r requirements.txt -r requirements-automation.txt",
+  "postStartCommand": "bash .devcontainer/start.sh",
+  "forwardPorts": [8000],
+  "portsAttributes": {
+    "8000": {
+      "label": "Baukasten",
+      "onAutoForward": "openBrowser"
+    }
+  },
+  "hostRequirements": {
+    "cpus": 2
+  },
+  "customizations": {
+    "codespaces": {
+      "openFiles": ["README.md"]
+    },
+    "vscode": {
+      "extensions": ["ms-python.python"]
+    }
+  }
+}
