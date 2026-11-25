@@ -5124,3 +5124,44 @@ class ProgressFeedbackTests(Base):
         self.assertNotIn("brand-logo", page[page.index('class="bk-splash"'):page.index("</svg>")])
         self.assertContains(self.client.get("/sw.js"), "builder/splash")
 
+
+
+class FragmentLinkTests(TestCase):
+    """Einzeln geladene Bausteine (Startseiten-Widgets, Neuladen) verlinken auf ihre Seite, nicht auf /b/."""
+
+    def setUp(self):
+        call_command("beispiel_datascience", verbosity=0)
+        self.app = App.objects.get(slug="datascience")
+        User.objects.create_superuser("chef", password="x")
+        self.client.login(username="chef", password="x")
+
+    def test_click_filters_point_to_page(self):
+        page = Page.objects.create(app=self.app, title="Extra", slug="extra", layout=[
+            {"id": "bch", "type": "chart", "width": 6, "props": {"label": "Nach Werk", "entity": "chargen", "field": "werk"}},
+            {"id": "bdo", "type": "donut", "width": 6, "props": {"label": "Anteil", "entity": "chargen", "field": "werk"}},
+        ])
+        page_url = reverse("page", args=[self.app.slug, page.slug])
+        for block in ("bch", "bdo"):
+            html = self.client.get(reverse("page_block", args=[self.app.slug, page.slug, block])).content.decode()
+            self.assertIn(f'href="{page_url}?chargen.werk=', html)
+            self.assertNotIn("/b/", html)
+        # Mit Filter: derselbe Link nimmt ihn wieder heraus und bleibt auf der Seite
+        html = self.client.get(reverse("page_block", args=[self.app.slug, page.slug, "bch"]),
+                               {"chargen.werk": "München"}).content.decode()
+        self.assertIn(f'href="{page_url}"', html)
+
+    def test_scatter_widget_links_to_page(self):
+        page = next(p for p in self.app.pages.all() if any(b.get("type") == "scatter" for b in p.layout))
+        block = next(b for b in page.layout if b.get("type") == "scatter")
+        html = self.client.get(reverse("page_block", args=[self.app.slug, page.slug, block["id"]])).content.decode()
+        self.assertIn(f'href="{reverse("page", args=[self.app.slug, page.slug])}?', html)
+        self.assertNotIn(f"/b/{block['id']}/", html)
+
+    def test_next_links_point_to_page(self):
+        app = App.objects.get(slug="datascience")
+        entity = app.entities.get(slug="chargen")
+        page = Page.objects.create(app=app, title="Liste", slug="liste", layout=[
+            {"id": "tab", "type": "table", "width": 12, "props": {"entity": entity.slug}},
+        ])
+        html = self.client.get(reverse("page_block", args=[app.slug, page.slug, "tab"])).content.decode()
+        self.assertNotIn("/b/tab/", html)

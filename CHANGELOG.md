@@ -87,6 +87,9 @@ Test prüft, dass die neueste Version hier und `BAUKASTEN_VERSION` übereinstimm
   Fragezeichen startet die Führung wie bisher erneut.
 
 ### Behoben
+- Widgets auf der Startseite und neu geladene Bausteine: Ein Klick auf einen Punkt, Balken oder
+  eine Legende öffnete das nackte HTML des Bausteins (`…/b/<id>/`) statt der Seite. Filter-Links und
+  Rücksprünge (`next=`) zeigen jetzt immer auf die Seite (`builder/page_path.py`).
 - Anmeldeseite auf dem Handy: Der farbige Kopf nahm fast die halbe Höhe ein. Er ist jetzt nur so
   hoch wie sein Inhalt, das Formular steht direkt darunter.
 - Installierte App (Windows, Android): Logo, Reiter und Knöpfe saßen in der Kopfzeile zu weit
