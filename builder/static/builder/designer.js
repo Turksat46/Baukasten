@@ -18,6 +18,7 @@
   var conflictNote = document.getElementById("conflict-note");
   var conflictText = conflictNote ? conflictNote.querySelector("[data-conflict-text]") : null;
   var conflictReload = document.getElementById("conflict-reload");
+  var updateNote = document.getElementById("update-note");
 
   // Symbole der Bausteine (Linienzeichnungen, 24er Raster)
   var ICONS = {
@@ -97,6 +98,59 @@
 
   function uid() { return "b" + Math.random().toString(36).slice(2, 10); }
 
+  // Bausteine, die diese Version nicht kennt (entfernt, aus einer neueren Version, Erweiterung
+  // abgeschaltet): Der Designer zeigt einen Platzhalter, der Server behält sie beim Speichern.
+  function typeOf(block) {
+    return types[block.type] || {
+      key: block.type, unknown: true, fields: [],
+      label: gettext("Unbekannter Baustein") + " (" + block.type + ")",
+      hint: gettext("Diesen Baustein gibt es in dieser Version nicht. Er bleibt mit allen Einstellungen gespeichert, wird auf der Seite aber nicht angezeigt."),
+    };
+  }
+
+  // ---------- Entwurf im Browser ----------
+  // Ungespeicherte Änderungen überstehen Neuladen, Absturz oder ein Update mitten im Bearbeiten.
+  var draftKey = "baukasten-designer-entwurf:" + window.location.pathname;
+
+  function storeDraft() {
+    try {
+      window.localStorage.setItem(draftKey, JSON.stringify({
+        layout: layout, title: titleEl.value, version: pageVersion, at: Date.now(),
+      }));
+    } catch (e) { /* privater Modus oder Speicher voll: dann eben ohne Entwurf */ }
+  }
+
+  function dropDraft() {
+    try { window.localStorage.removeItem(draftKey); } catch (e) { /* egal */ }
+  }
+
+  function offerDraft() {
+    var draft = null;
+    try { draft = JSON.parse(window.localStorage.getItem(draftKey) || "null"); } catch (e) { draft = null; }
+    if (!draft || !Array.isArray(draft.layout)) return;
+    if (JSON.stringify(draft.layout) === JSON.stringify(layout) && draft.title === titleEl.value) {
+      dropDraft();
+      return;
+    }
+    var when = new Date(draft.at || Date.now()).toLocaleString();
+    var text = gettext("Es gibt ungespeicherte Änderungen an dieser Seite vom %s. Wiederherstellen?").replace("%s", when);
+    if (draft.version !== pageVersion) {
+      text += " " + gettext("Die Seite wurde seitdem gespeichert. Wiederhergestellte Änderungen ersetzen beim Speichern diesen neueren Stand.");
+    }
+    var ask = window.BaukastenDialog && typeof window.BaukastenDialog.confirm === "function"
+      ? window.BaukastenDialog.confirm({ title: gettext("Ungespeicherte Änderungen"), text: text,
+          ok: gettext("Wiederherstellen"), cancel: gettext("Verwerfen"), tone: "warning" })
+      : Promise.resolve(window.confirm(text));
+    ask.then(function (restore) {
+      if (!restore) { dropDraft(); return; }
+      layout = draft.layout;
+      if (typeof draft.title === "string" && draft.title) titleEl.value = draft.title;
+      selectedId = null;
+      markDirty();
+      render();
+    });
+  }
+
   function defaults(type) {
     var props = {};
     types[type].fields.forEach(function (f) { props[f.key] = f.default !== undefined ? f.default : ""; });
@@ -110,7 +164,7 @@
   // mit spec.of eine andere Tabellen-Einstellung oder die Zieltabelle eines Verweisfelds.
   function fieldEntity(spec, block, depth) {
     var of = spec.of || "entity";
-    var parent = (types[block.type].fields || []).filter(function (s) { return s.key === of; })[0];
+    var parent = (typeOf(block).fields || []).filter(function (s) { return s.key === of; })[0];
     if (parent && parent.type === "field" && (depth || 0) < 3) {
       var owner = fieldEntity(parent, block, (depth || 0) + 1);
       var ref = owner && owner.fields.filter(function (f) { return f.key === block.props[of]; })[0];
@@ -120,13 +174,14 @@
   }
 
   function dependsOnField(spec, block) {
-    var parent = (types[block.type].fields || []).filter(function (s) { return s.key === spec.of; })[0];
+    var parent = (typeOf(block).fields || []).filter(function (s) { return s.key === spec.of; })[0];
     return parent && parent.type === "field";
   }
 
   function markDirty() {
     dirty = true;
     statusEl.textContent = gettext("Nicht gespeichert");
+    storeDraft();
     schedulePreview();
   }
 
@@ -282,7 +337,7 @@
         el("span", { text: gettext("Ziehe links einen Baustein hierher oder klicke ihn an.") })));
     }
     layout.forEach(function (block, index) {
-      var type = types[block.type];
+      var type = typeOf(block);
       var body = el("div", { class: "dblock-body" });
       body.inert = true;  // Vorschau ist nicht bedienbar: Links und Formulare bleiben ohne Wirkung
       if (previews[block.id] !== undefined) body.innerHTML = previews[block.id];
@@ -513,7 +568,7 @@
       propsEl.appendChild(el("p", { class: "muted small", text: gettext("Wähle einen Baustein auf der Seite aus, um ihn einzustellen.") }));
       return;
     }
-    var type = types[block.type];
+    var type = typeOf(block);
     propsEl.appendChild(el("div", { class: "props-head" }, icon(block.type), el("strong", { text: type.label })));
     if (type.hint) propsEl.appendChild(el("p", { class: "muted small", text: type.hint }));
 
@@ -554,7 +609,7 @@
     propsEl.appendChild(el("div", { class: "prop-actions" },
       actionButton(gettext("Nach vorn"), function () { move(block, -1); }),
       actionButton(gettext("Nach hinten"), function () { move(block, 1); }),
-      actionButton(gettext("Duplizieren"), function () {
+      type.unknown ? null : actionButton(gettext("Duplizieren"), function () {
         var copy = JSON.parse(JSON.stringify(block));
         copy.id = uid();
         layout.splice(layout.indexOf(block) + 1, 0, copy);
@@ -563,6 +618,8 @@
         render();
       }),
       actionButton(gettext("Entfernen"), function () { removeBlock(block, false); }, " danger")));
+
+    if (type.unknown) return;  // ohne bekannte Einstellungen weder Kopie noch Vorlage
 
     // Als Vorlage speichern: der Baustein mit seinen jetzigen Einstellungen wird wiederverwendbar.
     var nameInput = el("input", { type: "text", id: "preset-name", maxlength: "80", placeholder: gettext("Name der Vorlage") });
@@ -596,6 +653,7 @@
       public: publicEl ? publicEl.checked : false,
       layout: layout,
       version: pageVersion,
+      baukasten_version: cfg.baukasten_version,
     })
       .then(function (data) {
         saving = false;
@@ -603,8 +661,16 @@
           layout = data.layout;
           if (typeof data.version === "number") pageVersion = data.version;
           dirty = false;
+          dropDraft();
           if (conflictNote) conflictNote.hidden = true;
           statusEl.textContent = gettext("Gespeichert");
+          // Inzwischen wurde ein Update eingespielt: Gespeichert ist alles, aber neue Bausteine und
+          // Einstellungen kennt dieser Tab erst nach dem Neuladen.
+          if (updateNote && data.baukasten_version && cfg.baukasten_version && data.baukasten_version !== cfg.baukasten_version) {
+            var versionEl = updateNote.querySelector("[data-update-version]");
+            if (versionEl) versionEl.textContent = data.baukasten_version;
+            updateNote.hidden = false;
+          }
           render();
           return;
         }
@@ -650,7 +716,7 @@
       save();
     }
   });
-  titleEl.addEventListener("input", function () { dirty = true; statusEl.textContent = gettext("Nicht gespeichert"); });
+  titleEl.addEventListener("input", function () { dirty = true; statusEl.textContent = gettext("Nicht gespeichert"); storeDraft(); });
   navEl.addEventListener("change", function () { dirty = true; statusEl.textContent = gettext("Nicht gespeichert"); });
   if (publicEl) {
     publicEl.addEventListener("change", function () {
@@ -663,7 +729,11 @@
     if (dirty) { e.preventDefault(); e.returnValue = ""; }
   });
 
+  var updateReload = document.getElementById("update-reload");
+  if (updateReload) updateReload.addEventListener("click", function () { window.location.reload(); });
+
   renderPalette();
   render();
   loadPreview();
+  offerDraft();
 })();

@@ -3163,7 +3163,8 @@ class FormatUpgradeTests(Base):
         self.assertEqual(self.OLD_FILE["format"], "baukasten-app/1")  # Eingabe bleibt unverändert
         app = versions.import_app(self.OLD_FILE, self.designer)
         self.assertEqual(app.entities.get().fields.get().key, "name")
-        self.assertEqual([b["type"] for b in app.pages.get().layout], ["table"])
+        # Unbekannte Bausteine bleiben gespeichert (Rückwärtskompatibilität), angezeigt wird nur „table“
+        self.assertEqual([b["type"] for b in app.pages.get().layout], ["table", "gibtsnichtmehr"])
         self.assertEqual(len(app.import_notes), 2)
         # Neue Dateien tragen Format und Baukasten-Version
         snapshot = versions.snapshot(app)
@@ -4601,3 +4602,87 @@ class BugHuntTests(TestCase):
         self.assertNotContains(response, 'value="doppelt"')
         self.client.post(url, {"step": "import", "col_0": "menge", "col_1": ""})
         self.assertEqual(self.entity.records.get().data["doppelt"], 6)
+
+
+class BackwardCompatibilityTests(Base):
+    """Updates im laufenden Betrieb: Seiten aus älteren oder neueren Versionen verlieren nichts."""
+
+    def stored_page(self):
+        page = self.app.pages.get(slug="gerate")
+        page.layout = [
+            {"id": "h1", "type": "heading", "width": 12,
+             "props": {"text": "Hallo", "level": "2", "farbe_aus_v2": "blau"}},
+            {"id": "alt1", "type": "weg_baustein", "width": 6, "name": "alt",
+             "props": {"geheim": 1, "liste": [1, 2]}},
+        ]
+        page.save()
+        return page
+
+    def post(self, url, layout, **extra):
+        return self.client.post(url, json.dumps({"title": "Geräte", "layout": layout, **extra}),
+                                content_type="application/json")
+
+    def test_unknown_blocks_and_props_survive_save(self):
+        """Ein Designer-Tab, der Baustein oder Einstellung nicht kennt, darf sie nicht löschen."""
+        page = self.stored_page()
+        self.client.force_login(self.designer)
+        url = reverse("designer_page", args=["inventar", page.pk])
+        sent = [
+            {"id": "h1", "type": "heading", "width": 6, "props": {"text": "Neu", "level": "1"}},
+            {"id": "alt1", "type": "weg_baustein", "width": 12, "props": {"geheim": 999}},  # Browser manipuliert
+            {"id": "fremd", "type": "erfunden", "width": 12, "props": {"x": 1}},  # nie gespeichert gewesen
+        ]
+        data = self.post(url, sent).json()
+        self.assertTrue(data["ok"])
+        from django.conf import settings
+        self.assertEqual(data["baukasten_version"], settings.BAUKASTEN_VERSION)
+        page.refresh_from_db()
+        heading, old = page.layout
+        self.assertEqual(heading["props"], {"text": "Neu", "subtitle": "", "level": "1", "farbe_aus_v2": "blau"})
+        self.assertEqual(old, {"id": "alt1", "type": "weg_baustein", "width": 12, "name": "alt",
+                               "props": {"geheim": 1, "liste": [1, 2]}})  # gespeicherter Stand, neue Breite
+        self.assertEqual(self.post(url, sent[:1]).status_code, 200)  # im Designer bewusst entfernt
+        page.refresh_from_db()
+        self.assertEqual([b["id"] for b in page.layout], ["h1"])
+
+    def test_designer_and_preview_show_placeholder_page_skips_it(self):
+        page = self.stored_page()
+        self.client.force_login(self.designer)
+        config = self.client.get(reverse("designer_page", args=["inventar", page.pk])).context["config"]
+        self.assertIn("weg_baustein", [b["type"] for b in config["layout"]])
+        self.assertTrue(config["baukasten_version"])
+        preview = self.client.post(reverse("designer_page_preview", args=["inventar", page.pk]),
+                                   json.dumps({"layout": page.layout}), content_type="application/json").json()
+        self.assertIn("block-unknown", preview["blocks"]["alt1"])
+        self.assertIn("weg_baustein", preview["blocks"]["alt1"])
+        live = self.client.get(reverse("page", args=["inventar", page.slug]))
+        self.assertEqual(live.status_code, 200)
+        self.assertNotContains(live, "block-unknown")
+
+    def test_app_file_keeps_unknown_blocks_with_limits(self):
+        from .versions import import_app, snapshot
+
+        page = self.stored_page()
+        data = snapshot(self.app)
+        imported = import_app(data, self.designer, name_override="Kopie")
+        layout = imported.pages.get(slug=page.slug).layout
+        self.assertEqual([b["type"] for b in layout], ["heading", "weg_baustein"])
+        self.assertEqual(layout[0]["props"]["farbe_aus_v2"], "blau")
+        self.assertTrue(any("weg_baustein" in note for note in imported.import_notes))
+        huge = clean_layout([{"id": "a", "type": "neu", "props": {"x": "y" * 30000}},
+                             {"id": "b", "type": "<script>", "props": {}}], keep_unknown=True)
+        self.assertEqual(huge, [{"id": "a", "type": "neu", "props": {}, "width": 12}])
+
+    def test_shipped_blocks_and_props_stay_registered(self):
+        """Gespeicherte Seiten verweisen auf diese Namen. Neu: python manage.py bausteinvertrag.
+        Entfernen oder Umbenennen nur mit Datenmigration für die Seiten und bewusst in der Datei."""
+        from .blocks import CONTRACT_FILE, block_contract
+
+        shipped = json.loads(CONTRACT_FILE.read_text(encoding="utf-8"))
+        current = block_contract()
+        missing = sorted(f"{key}.{prop}" if prop else key for key, props in shipped.items()
+                         for prop in ([None] if key not in current else sorted(set(props) - set(current[key]))))
+        self.assertEqual(missing, [], "Diese Bausteine/Einstellungen stecken in gespeicherten Seiten und fehlen jetzt.")
+        new = sorted(f"{key}.{prop}" for key, props in current.items() for prop in set(props) - set(shipped.get(key, [])))
+        new += sorted(key for key in current if key not in shipped)
+        self.assertEqual(new, [], "Neue Bausteine/Einstellungen eintragen: python manage.py bausteinvertrag")

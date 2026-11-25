@@ -5993,3 +5993,31 @@ msgstr "These number fields do not exist in the table: %(names)s"
 #: builder/models.py
 msgid "Erlaubt sind Zahlen, Zahlenfelder, + - * / und round, abs, min, max."
 msgstr "Allowed are numbers, number fields, + - * / and round, abs, min, max."
+
+#: builder/templates/builder/blocks/unknown.html
+msgid "Baustein „%(type)s“ gibt es in dieser Version nicht"
+msgstr "Block “%(type)s” does not exist in this version"
+
+#: builder/templates/builder/blocks/unknown.html
+msgid "Er bleibt mit allen Einstellungen gespeichert, wird auf der Seite aber nicht angezeigt. Nach einem Update auf die passende Version oder dem Einschalten der Erweiterung erscheint er wieder. Nicht mehr gebraucht? Hier löschen."
+msgstr "It stays saved with all its settings but is not shown on the page. It reappears after an update to the matching version or once the extension is enabled again. No longer needed? Remove it here."
+
+#: builder/templates/designer/page.html
+msgid "Deine Seite ist gespeichert. Läuft jetzt Version"
+msgstr "Your page is saved. Now running version"
+
+#: builder/templates/designer/page.html
+msgid "Der Baukasten wurde aktualisiert"
+msgstr "Baukasten has been updated"
+
+#: builder/templates/designer/page.html
+msgid "Designer neu laden"
+msgstr "Reload designer"
+
+#: builder/templates/designer/page.html
+msgid "Lade den Designer neu, um neue Bausteine und Einstellungen zu sehen."
+msgstr "Reload the designer to see new blocks and settings."
+
+#: builder/versions.py
+msgid "Seite „%(page)s“: Diese Bausteine gibt es in dieser Version nicht. Sie bleiben gespeichert, werden aber erst nach einem passenden Update angezeigt: %(types)s."
+msgstr "Page “%(page)s”: these blocks do not exist in this version. They stay saved but are only shown after a matching update: %(types)s."

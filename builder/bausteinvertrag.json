@@ -1,0 +1,309 @@
+{
+ "assign": [
+  "capacity_field",
+  "double_check",
+  "group_field",
+  "link",
+  "link_date",
+  "link_source",
+  "link_target",
+  "overbook",
+  "priority_check",
+  "priority_field",
+  "source",
+  "source_active",
+  "source_info",
+  "source_label",
+  "target",
+  "title"
+ ],
+ "boxplot": [
+  "entity",
+  "field",
+  "group_field",
+  "query",
+  "show_outliers",
+  "title"
+ ],
+ "button": [
+  "action",
+  "align",
+  "label",
+  "page",
+  "script",
+  "style",
+  "target",
+  "url"
+ ],
+ "calendar": [
+  "color_field",
+  "create_links",
+  "date_field",
+  "end_field",
+  "entity",
+  "label_field",
+  "title"
+ ],
+ "cards": [
+  "entity",
+  "page_size",
+  "title"
+ ],
+ "chart": [
+  "entity",
+  "field",
+  "label"
+ ],
+ "checklist": [
+  "detail",
+  "entity",
+  "field",
+  "hide_done",
+  "label_field",
+  "title"
+ ],
+ "csv_import": [
+  "entity",
+  "label"
+ ],
+ "detail": [
+  "entity",
+  "param",
+  "show_actions",
+  "title"
+ ],
+ "details": [
+  "open",
+  "text",
+  "title"
+ ],
+ "divider": [],
+ "donut": [
+  "entity",
+  "field",
+  "label"
+ ],
+ "export": [
+  "entity",
+  "label"
+ ],
+ "filter": [
+  "entity",
+  "field",
+  "field2",
+  "field3",
+  "field4"
+ ],
+ "form": [
+  "entity",
+  "submit_label"
+ ],
+ "gantt": [
+  "color_field",
+  "end_field",
+  "entity",
+  "group_field",
+  "label_field",
+  "start_field",
+  "title"
+ ],
+ "greeting": [
+  "text"
+ ],
+ "heading": [
+  "level",
+  "subtitle",
+  "text"
+ ],
+ "heatmap": [
+  "agg",
+  "col_field",
+  "entity",
+  "mode",
+  "query",
+  "row_field",
+  "title",
+  "value_field"
+ ],
+ "histogram": [
+  "bins",
+  "entity",
+  "field",
+  "group_field",
+  "query",
+  "title"
+ ],
+ "http": [
+  "label",
+  "max_rows",
+  "path",
+  "url"
+ ],
+ "image": [
+  "alt",
+  "caption",
+  "url"
+ ],
+ "input": [
+  "kind",
+  "label",
+  "max",
+  "min",
+  "options",
+  "param",
+  "placeholder",
+  "required",
+  "step"
+ ],
+ "kanban": [
+  "detail",
+  "entity",
+  "field",
+  "limit",
+  "title"
+ ],
+ "line": [
+  "aggregate",
+  "count",
+  "date_field",
+  "entity",
+  "field",
+  "label",
+  "period",
+  "show_band",
+  "threshold",
+  "unit"
+ ],
+ "notice": [
+  "text",
+  "title",
+  "tone"
+ ],
+ "output": [
+  "label",
+  "text",
+  "unit"
+ ],
+ "pagelinks": [
+  "title"
+ ],
+ "pivot": [
+  "agg",
+  "col_field",
+  "entity",
+  "row_field",
+  "show_totals",
+  "title",
+  "value_field"
+ ],
+ "progress": [
+  "aggregate",
+  "entity",
+  "field",
+  "label",
+  "target",
+  "unit"
+ ],
+ "query": [
+  "max_rows",
+  "query",
+  "show_time",
+  "title"
+ ],
+ "related_list": [
+  "entity",
+  "param",
+  "ref_field",
+  "show_add",
+  "title"
+ ],
+ "scatter": [
+  "color_field",
+  "entity",
+  "label_field",
+  "query",
+  "size_field",
+  "title",
+  "trendline",
+  "x_field",
+  "y_field"
+ ],
+ "search": [
+  "entity",
+  "field",
+  "placeholder",
+  "target_page",
+  "title"
+ ],
+ "sliders": [
+  "entity",
+  "field",
+  "label_field",
+  "max",
+  "min",
+  "step",
+  "title",
+  "unit"
+ ],
+ "spacer": [
+  "size"
+ ],
+ "spec_chart": [
+  "entity",
+  "query",
+  "spec",
+  "title"
+ ],
+ "stat": [
+  "aggregate",
+  "entity",
+  "field",
+  "label",
+  "unit"
+ ],
+ "stepper": [
+  "entity",
+  "field",
+  "param",
+  "title"
+ ],
+ "table": [
+  "entity",
+  "page_size",
+  "searchable",
+  "title"
+ ],
+ "tableau": [
+  "filters",
+  "height",
+  "hide_tabs",
+  "label",
+  "selection_map",
+  "toolbar",
+  "url"
+ ],
+ "text": [
+  "text"
+ ],
+ "timeline": [
+  "entity",
+  "field",
+  "label",
+  "months"
+ ],
+ "weekplan": [
+  "capacity_field",
+  "group_field",
+  "link",
+  "link_date",
+  "link_source",
+  "link_target",
+  "page",
+  "priority_field",
+  "show_names",
+  "source",
+  "target",
+  "title",
+  "weekdays_only"
+ ]
+}

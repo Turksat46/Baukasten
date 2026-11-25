@@ -477,7 +477,8 @@ def page_designer(request, app, pk):
             payload = json.loads(request.body)
             if not isinstance(payload, dict):
                 raise ValueError("Payload muss ein JSON-Objekt sein.")
-            cleaned_layout = clean_layout(payload.get("layout"))
+            raw_layout = payload.get("layout")
+            clean_layout(raw_layout)  # nur prüfen; übernommen wird unten mit dem gespeicherten Stand
         except (ValueError, AttributeError):
             return JsonResponse({"ok": False, "error": _("Ungültige Daten.")}, status=400)
         has_version = "version" in payload
@@ -496,14 +497,19 @@ def page_designer(request, app, pk):
                     "version": page.version,
                     "error": _("Diese Seite wurde inzwischen von jemand anderem gespeichert. Bitte lade die Seite neu, um keine Änderungen zu überschreiben."),
                 }, status=409)
-            page.layout = cleaned_layout
+            # Gegen den gesperrten, gespeicherten Stand abgleichen: Bausteine und Einstellungen, die
+            # dieser Baukasten nicht kennt, bleiben erhalten (Rückwärtskompatibilität bei Updates).
+            page.layout = clean_layout(raw_layout, previous=page.layout)
             title = str(payload.get("title") or "").strip()[:80]
             if title:
                 page.title = title
             page.show_in_nav = bool(payload.get("show_in_nav", True))
             page.public = bool(payload.get("public", page.public))
             page.save()
-        return JsonResponse({"ok": True, "layout": page.layout, "version": page.version})
+        # baukasten_version: Der Designer vergleicht sie mit dem Stand beim Öffnen und bittet nach
+        # einem Update ums Neuladen (neue Bausteine und Einstellungen).
+        return JsonResponse({"ok": True, "layout": page.layout, "version": page.version,
+                             "baukasten_version": settings.BAUKASTEN_VERSION})
     return render(request, "designer/page.html", {
         "app": app, "page": page, "config": designer_config(app, page),
     })
@@ -516,10 +522,10 @@ def page_preview(request, app, pk):
     app = get_object_or_404(App, slug=app)
     page = get_object_or_404(Page, pk=pk, app=app)
     try:
-        layout = clean_layout(json.loads(request.body).get("layout"))
+        layout = clean_layout(json.loads(request.body).get("layout"), previous=page.layout)
     except (ValueError, AttributeError):
         return JsonResponse({"ok": False}, status=400)
-    blocks = render_layout(request, app, page, layout)
+    blocks = render_layout(request, app, page, layout, unknown=True)
     return JsonResponse({"ok": True, "blocks": {b["id"]: b["html"] for b in blocks}})
 
 
