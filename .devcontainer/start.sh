@@ -6,11 +6,16 @@ cd "$(dirname "$0")/.."
 
 export DEBUG=1
 ALLOWED_HOSTS="localhost,127.0.0.1"
+# Die Weiterleitung von Codespaces (und VS Code) schreibt Host und Origin auf
+# localhost:8000 um, kommt aber per HTTPS an. Ohne diese Einträge schlägt die
+# CSRF-Prüfung bei jedem Formular fehl, schon bei der Anmeldung.
+CSRF_TRUSTED_ORIGINS="https://localhost:8000,https://127.0.0.1:8000"
 if [ -n "${CODESPACE_NAME:-}" ]; then
   HOST="${CODESPACE_NAME}-8000.${GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN:-app.github.dev}"
   ALLOWED_HOSTS="${ALLOWED_HOSTS},${HOST}"
-  export CSRF_TRUSTED_ORIGINS="https://${HOST}"
+  CSRF_TRUSTED_ORIGINS="${CSRF_TRUSTED_ORIGINS},https://${HOST}"
 fi
+export CSRF_TRUSTED_ORIGINS
 export ALLOWED_HOSTS
 
 python manage.py migrate --noinput
