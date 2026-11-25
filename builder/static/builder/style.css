@@ -286,7 +286,10 @@ body:has(#coach.collapsed) main { padding-bottom: 6rem; }
 .login-or::before, .login-or::after { content: ""; flex: 1; border-top: 1px solid var(--line); }
 .login-help { margin-top: 1.5rem; }
 @media (max-width: 820px) {
-  .login { grid-template-columns: 1fr; }
+  /* Untereinander: Kopf nur so hoch wie sein Inhalt, das Formular bekommt den Rest. Ohne
+     grid-template-rows teilt min-height: 100vh die Höhe auf beide Zeilen auf. */
+  .login { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
+  .login-main { place-items: start center; padding-top: 4.25rem; }
   .login-side { padding: 1.5rem 1.25rem; }
   .login-art, .login-claim p { display: none; }
   .login-side { gap: .75rem; justify-content: flex-start; }
