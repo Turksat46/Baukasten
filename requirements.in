@@ -9,5 +9,5 @@ cryptography>=42,<51
 RestrictedPython>=8.0,<9
 databricks-sql-connector>=4,<5
 markdown>=3.5,<4
-redis>=5,<7
+redis>=5,<9
 tzdata>=2024.1
