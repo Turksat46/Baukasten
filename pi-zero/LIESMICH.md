@@ -90,11 +90,18 @@ verlangt dann ebenfalls HTTPS (sichere Cookies, Umleitung, HSTS für 30 Tage). g
 1. **Name, der auf deinen Anschluss zeigt** (deine IP ändert sich, daher DynDNS), z. B.
    - FRITZ!Box: *Internet → MyFRITZ!-Konto* → Adresse wie `abc123.myfritz.net`, oder
    - kostenlos bei DuckDNS: `meinname.duckdns.org` (Router bzw. Pi aktualisiert die IP).
+   Mit DuckDNS hält der Pi den Namen selbst aktuell (IPv4 und IPv6): Token von duckdns.org als
+   `DUCKDNS_TOKEN=…` in `/etc/baukasten/pi.env` eintragen (siehe `pi-zero/dyndns.sh`).
 2. **Portfreigabe im Router:** TCP **80** und **443** auf den Pi (`hellgir`). Port 80 braucht Let's Encrypt
    zum Prüfen und für die Umleitung. SSH (22) nicht freigeben.
 3. **Auf dem Pi** den Namen in `/etc/baukasten/pi.env` eintragen (`DOMAIN=meinname.duckdns.org`) und
    `sudo /opt/baukasten/app/pi-zero/einrichten.sh` noch einmal ausführen. Danach
    `sudo systemctl start baukasten-aktualisieren` (übernimmt den Namen in `ALLOWED_HOSTS`).
+
+**Speedport (Telekom):** `http://speedport.ip` → *Internet → Portfreigaben*. Dort für IPv4 unter
+„Port-Umleitungen und Port-Weiterleitungen“ TCP 80 und 443 auf `hellgir` umleiten (dem Pi vorher unter
+*Heimnetzwerk* immer dieselbe IPv4 geben) und unter „IPv6-Portfreigaben“ dieselben Ports für `hellgir`
+freigeben. Die Menünamen können je nach Firmware leicht abweichen.
 
 Prüfen: `journalctl -u caddy -n 30` sollte „certificate obtained successfully“ zeigen.
 Im Heimnetz leitet `http://hellgir.local/` auf die HTTPS-Adresse um (der Router muss Aufrufe der eigenen

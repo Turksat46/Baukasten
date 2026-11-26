@@ -74,6 +74,8 @@ EXTRA_HOSTS=
 # Öffentlicher Name für HTTPS aus dem Internet (z. B. meinname.duckdns.org). Leer: nur http im Heimnetz.
 # Nach dem Eintragen einrichten.sh noch einmal ausführen (installiert Caddy, holt das Zertifikat).
 DOMAIN=
+# Nur mit einem Namen bei DuckDNS: Token von duckdns.org, hält den Namen auf der aktuellen IP (alle 5 Minuten)
+DUCKDNS_TOKEN=
 EOF
     chmod 600 "$KONF/pi.env"
 fi
@@ -249,6 +251,36 @@ systemctl enable baukasten-web baukasten-worker >/dev/null
 # Bestehende Installation: geänderte Dienst-Einstellungen (z. B. Port, HTTPS) sofort übernehmen.
 [ -f "$ZUSTAND/ausgerollt" ] && systemctl restart baukasten-web baukasten-worker
 systemctl enable --now baukasten-aktualisieren.timer baukasten-sichern.timer >/dev/null
+
+# DuckDNS (nur mit DUCKDNS_TOKEN in pi.env)
+if [ -n "$(. "$KONF/pi.env"; echo "${DUCKDNS_TOKEN:-}")" ]; then
+    cat >/etc/systemd/system/baukasten-dyndns.service <<EOF
+[Unit]
+Description=Baukasten: DuckDNS-Namen auf die aktuelle IP setzen
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=$APP/pi-zero/dyndns.sh
+EOF
+    cat >/etc/systemd/system/baukasten-dyndns.timer <<EOF
+[Unit]
+Description=Baukasten: DuckDNS alle 5 Minuten aktualisieren
+
+[Timer]
+OnBootSec=1min
+OnUnitActiveSec=5min
+
+[Install]
+WantedBy=timers.target
+EOF
+    systemctl daemon-reload
+    systemctl enable --now baukasten-dyndns.timer >/dev/null
+    systemctl start baukasten-dyndns.service || echo "WARNUNG: DuckDNS-Update fehlgeschlagen (journalctl -u baukasten-dyndns)."
+elif [ -f /etc/systemd/system/baukasten-dyndns.timer ]; then
+    systemctl disable --now baukasten-dyndns.timer >/dev/null || true
+fi
 
 schritt "Erste Installation starten"
 # Beim ersten Mal nicht auf GitHub-Tests warten: Der geklonte Stand wird direkt installiert.
