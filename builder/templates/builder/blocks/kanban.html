@@ -1,7 +1,7 @@
 {% load i18n baukasten %}<section class="card plan plan-kanban"{% if action_url and editable %} data-plan="kanban" data-csrf="{{ csrf_token }}" data-action-url="{{ action_url }}" data-reload-url="{{ reload_url }}"{% endif %}>
   <div class="card-head">
     <h3 data-slot="title">{{ p.title|default:entity.name|tr }}</h3>
-    {% if entity.allow_create %}<a class="btn btn-small" href="{% url 'record_create' app.slug entity.slug %}?next={{ request.get_full_path|urlencode }}">{% translate "Neu" %}</a>{% endif %}
+    {% if entity.allow_create %}<a class="btn btn-small" href="{% url 'record_create' app.slug entity.slug %}?next={{ next|urlencode }}">{% translate "Neu" %}</a>{% endif %}
   </div>
   <div class="kanban-columns">
     {% for column in columns %}
@@ -10,7 +10,7 @@
         <ul class="kanban-cards" role="list">
           {% for card in column.cards %}
             <li class="kanban-card" {% if action_url and editable %}draggable="true" data-drag="card" data-id="{{ card.id }}" tabindex="0" role="button" aria-pressed="false"{% endif %}>
-              {% if entity.allow_edit %}<a href="{% url 'record_edit' app.slug entity.slug card.id %}?next={{ request.get_full_path|urlencode }}" draggable="false">{{ card.label }}</a>{% else %}<span>{{ card.label }}</span>{% endif %}
+              {% if entity.allow_edit %}<a href="{% url 'record_edit' app.slug entity.slug card.id %}?next={{ next|urlencode }}" draggable="false">{{ card.label }}</a>{% else %}<span>{{ card.label }}</span>{% endif %}
               {% if card.detail %}<span class="kanban-detail muted small">{{ card.detail }}</span>{% endif %}
             </li>
           {% endfor %}

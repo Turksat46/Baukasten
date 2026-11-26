@@ -18,6 +18,7 @@ from django.utils.translation import gettext_lazy as _
 from . import app_i18n
 from .blocks import _entity, display_value, filter_param, filtered, reference_labels, register, rich_value
 from .models import Field
+from .page_path import page_url
 
 MONTH_PARAM = "monat"   # ?monat=2026-11
 GANTT_PARAM = "zeitraum"  # ?zeitraum=2026-11-16
@@ -46,7 +47,7 @@ def _urls(request, app, block):
 
 
 def _next(request):
-    return request.get_full_path() if hasattr(request, "get_full_path") else ""
+    return page_url(request)
 
 
 # ---------- Filterleiste ----------
@@ -196,7 +197,7 @@ def prep_checklist(request, app, block):
         shown = sorted(items, key=lambda i: i["done"])  # offene zuerst, sonst in Reihenfolge
     return {"entity": entity, "items": shown, "done": done, "count": len(items),
             "percent": round(100 * done / len(items)) if items else 0,
-            "editable": entity.allow_edit, **_urls(request, app, block)}
+            "editable": entity.allow_edit, "next": page_url(request), **_urls(request, app, block)}
 
 
 def handle_checklist(app, block, payload, user):

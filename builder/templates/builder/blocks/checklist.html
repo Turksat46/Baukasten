@@ -17,6 +17,6 @@
       <li class="empty">{% if p.hide_done and count %}{% translate "Alles erledigt." %}{% else %}{% translate "Noch keine Einträge." %}{% endif %}</li>
     {% endfor %}
   </ul>
-  {% if entity.allow_create %}<a class="link-add small" href="{% url 'record_create' app.slug entity.slug %}?next={{ request.get_full_path|urlencode }}">+ {% translate "Neuer Punkt" %}</a>{% endif %}
+  {% if entity.allow_create %}<a class="link-add small" href="{% url 'record_create' app.slug entity.slug %}?next={{ next|urlencode }}">+ {% translate "Neuer Punkt" %}</a>{% endif %}
   <p class="visually-hidden" role="status" aria-live="polite" data-plan-status></p>
 </section>
