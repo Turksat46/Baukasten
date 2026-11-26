@@ -1,0 +1,150 @@
+# Baukasten auf einem Raspberry Pi Zero 2 W (k3s, ein Knoten, 512 MB Arbeitsspeicher).
+# Nicht von Hand einspielen: aktualisieren.sh rendert diese Datei, setzt Image und Stand ein
+# und spielt sie ein (läuft auf dem Pi alle zwei Minuten, siehe LIESMICH.md).
+# Nutzt dieselben Manifeste wie die Produktion und ändert nur, was auf dem Pi anders sein muss.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: baukasten
+
+resources:
+  - ../lokal/namespace.yaml
+  - ../lokal/postgres.yaml
+  - ../app.yaml
+  - ../worker.yaml
+
+# Platzhalter; aktualisieren.sh ersetzt ihn durch ghcr.io/<besitzer>/baukasten:sha-<commit>.
+images:
+  - name: registry.example.com/baukasten
+    newName: baukasten-pi-image
+    newTag: aktuell
+
+patches:
+  # Wenig Speicher: ein gunicorn-Prozess, ein Automatisierungslauf zur Zeit, großzügige Zeitlimits.
+  # Ohne TLS im Heimnetz: Cookies auch über http. Hostnamen/IP setzt aktualisieren.sh in der
+  # ConfigMap baukasten-pi (überschreibt Werte von hier, eigene Werte: /etc/baukasten/einstellungen.env).
+  - target: {kind: ConfigMap, name: baukasten-config}
+    patch: |-
+      - {op: replace, path: /data/GUNICORN_WORKERS, value: "1"}
+      - {op: replace, path: /data/GUNICORN_THREADS, value: "4"}
+      - {op: replace, path: /data/GUNICORN_TIMEOUT, value: "120"}
+      - {op: add, path: /data/GUNICORN_MAX_REQUESTS, value: "1000"}
+      - {op: replace, path: /data/AUTOMATION_PARALLEL, value: "1"}
+      - {op: replace, path: /data/AUTOMATION_MEMORY_MB, value: "384"}
+      - {op: replace, path: /data/AUTOMATION_MAX_TIMEOUT_MINUTES, value: "60"}
+      - {op: replace, path: /data/QUERY_PARALLEL, value: "2"}
+      - {op: replace, path: /data/DB_CONN_MAX_AGE, value: "300"}
+      - {op: add, path: /data/COOKIE_SECURE, value: "false"}
+
+  - target: {kind: Deployment, name: baukasten}
+    patch: |-
+      - {op: replace, path: /spec/replicas, value: 1}
+      # Für zwei Pods gleichzeitig reicht der Speicher nicht: erst alten Pod beenden, dann neuen starten.
+      - {op: replace, path: /spec/strategy, value: {type: Recreate}}
+      # Ändern sich Einstellungen oder Geheimnisse, ändert sich dieser Wert – Pods starten neu.
+      - {op: add, path: /spec/template/metadata/annotations, value: {baukasten.pi/stand: PI_STAND}}
+      - op: add
+        path: /spec/template/spec/containers/0/envFrom/-
+        value: {configMapRef: {name: baukasten-pi, optional: true}}
+      # Datenbank migrieren, bevor die neue Version startet (ersetzt auf dem Pi den Migrations-Job).
+      - op: add
+        path: /spec/template/spec/initContainers
+        value:
+          - name: migrate
+            image: registry.example.com/baukasten:1.0.0
+            command: ["sh", "-c", "python manage.py migrate --noinput && python manage.py createcachetable"]
+            envFrom:
+              - configMapRef: {name: baukasten-config}
+              - secretRef: {name: baukasten-secret}
+              - configMapRef: {name: baukasten-pi, optional: true}
+            resources:
+              requests: {cpu: 50m, memory: 96Mi}
+              limits: {memory: 400Mi}
+            securityContext:
+              allowPrivilegeEscalation: false
+              capabilities: {drop: ["ALL"]}
+      - op: replace
+        path: /spec/template/spec/containers/0/resources
+        value:
+          requests: {cpu: 50m, memory: 160Mi}
+          limits: {memory: 480Mi}
+      # Der Pi braucht beim Start deutlich länger; bis zu fünf Minuten Zeit, bevor Kubernetes eingreift.
+      - op: add
+        path: /spec/template/spec/containers/0/startupProbe
+        value: {httpGet: {path: /healthz, port: 8000}, periodSeconds: 10, failureThreshold: 30, timeoutSeconds: 5}
+      - {op: replace, path: /spec/template/spec/containers/0/livenessProbe/periodSeconds, value: 30}
+      - {op: add, path: /spec/template/spec/containers/0/livenessProbe/timeoutSeconds, value: 10}
+      - {op: add, path: /spec/template/spec/containers/0/readinessProbe/timeoutSeconds, value: 10}
+
+  - target: {kind: Deployment, name: baukasten-worker}
+    patch: |-
+      - {op: add, path: /spec/template/metadata/annotations, value: {baukasten.pi/stand: PI_STAND}}
+      - op: add
+        path: /spec/template/spec/containers/0/envFrom/-
+        value: {configMapRef: {name: baukasten-pi, optional: true}}
+      # Erst starten, wenn der Web-Pod die Datenbank migriert hat.
+      - op: add
+        path: /spec/template/spec/initContainers
+        value:
+          - name: warte-auf-migration
+            image: registry.example.com/baukasten:1.0.0
+            command: ["sh", "-c", "until python manage.py migrate --check >/dev/null 2>&1; do echo 'warte auf Migration'; sleep 15; done"]
+            envFrom:
+              - configMapRef: {name: baukasten-config}
+              - secretRef: {name: baukasten-secret}
+              - configMapRef: {name: baukasten-pi, optional: true}
+            resources:
+              requests: {cpu: 20m, memory: 64Mi}
+              limits: {memory: 300Mi}
+            securityContext:
+              allowPrivilegeEscalation: false
+              capabilities: {drop: ["ALL"]}
+      - op: replace
+        path: /spec/template/spec/containers/0/resources
+        value:
+          requests: {cpu: 20m, memory: 96Mi}
+          limits: {memory: 640Mi}
+      # Die Probe startet jedes Mal Python – auf dem Pi seltener und mit mehr Geduld.
+      - {op: replace, path: /spec/template/spec/containers/0/livenessProbe/initialDelaySeconds, value: 240}
+      - {op: replace, path: /spec/template/spec/containers/0/livenessProbe/periodSeconds, value: 90}
+      - {op: add, path: /spec/template/spec/containers/0/livenessProbe/timeoutSeconds, value: 30}
+
+  # PostgreSQL klein halten (Standard ist für Server mit viel Speicher gedacht).
+  - target: {kind: Deployment, name: baukasten-db}
+    patch: |-
+      - op: add
+        path: /spec/template/spec/containers/0/args
+        value: ["-c", "shared_buffers=32MB", "-c", "max_connections=30", "-c", "work_mem=2MB",
+                "-c", "maintenance_work_mem=16MB", "-c", "effective_cache_size=96MB", "-c", "max_wal_size=256MB"]
+      - op: replace
+        path: /spec/template/spec/containers/0/resources
+        value:
+          requests: {cpu: 20m, memory: 48Mi}
+          limits: {memory: 256Mi}
+
+  # k3s bringt ServiceLB mit: Der Dienst ist direkt unter http://<pi>/ (Port 80) erreichbar.
+  - target: {kind: Service, name: baukasten}
+    patch: |-
+      - {op: add, path: /spec/type, value: LoadBalancer}
+
+  # Auf einem Knoten mit einem Pod nicht sinnvoll bzw. ohne Ingress-Controller/Metrics-Server nicht nutzbar.
+  - target: {kind: Ingress, name: baukasten}
+    patch: |-
+      $patch: delete
+      apiVersion: networking.k8s.io/v1
+      kind: Ingress
+      metadata:
+        name: baukasten
+  - target: {kind: HorizontalPodAutoscaler, name: baukasten}
+    patch: |-
+      $patch: delete
+      apiVersion: autoscaling/v2
+      kind: HorizontalPodAutoscaler
+      metadata:
+        name: baukasten
+  - target: {kind: PodDisruptionBudget, name: baukasten}
+    patch: |-
+      $patch: delete
+      apiVersion: policy/v1
+      kind: PodDisruptionBudget
+      metadata:
+        name: baukasten

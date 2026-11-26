@@ -185,6 +185,16 @@ an. Einzelheiten im Handbuch unter „Lokal mit Kubernetes“.
 
 </details>
 
+<details>
+<summary><b>Auf einem Raspberry Pi</b> (Zero 2 W oder größer, k3s, automatisches Ausrollen bei jedem Push)</summary>
+
+<br>
+
+Einmal `k8s/pi/einrichten.sh` auf dem Pi ausführen; danach baut GitHub Actions nach grünen Tests
+ein arm64-Image und der Pi rollt es selbst aus. Anleitung: [k8s/pi/LIESMICH.md](k8s/pi/LIESMICH.md).
+
+</details>
+
 ## Was er kann
 
 ### Apps bauen
