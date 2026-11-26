@@ -394,8 +394,35 @@ only for the group "Controlling".
 - A public page ("Reachable without sign-in") is visible to anyone; the groups
   do not matter then.
 - **Important:** this protects the page, not the data. Whoever may use the app
-  still reaches its tables through other pages, forms, CSV export, scripts and
-  the API. Confidential data belongs in an app of its own with its own groups.
+  still reaches its tables through other pages and the export. The data itself
+  is protected by [table permissions](#who-reads-and-changes-a-table).
+
+### Who reads and changes a table
+
+The settings of a table (Designer → table) have two lists of groups:
+
+- **May read:** who may see entries, in lists, figures, charts, calendars and
+  all other blocks, in the edit form and in the CSV export. Everyone else sees
+  the note "You lack permission for the table …" instead of the block; export
+  and editing are refused (error 403).
+- **May change:** who may create, edit and delete entries (on top of the
+  switches "Creating allowed" etc.). Whoever may only read sees no buttons to
+  create, edit or delete.
+
+With nothing ticked, it applies to everyone who may use the app. Editors of the
+app may always do everything.
+
+- **Create without reading:** a form needs only the right to change. So anyone
+  can send a report that only, e.g., Controlling may read. Editing or deleting
+  existing entries needs both rights.
+- **Guests** on public pages belong to no group: they do not see restricted
+  tables, and forms only work when "May change" is empty.
+- **JavaScript scripts** run with the rights of the signed-in person and follow
+  the table permissions.
+- **Not restricted** are Python scripts, saved SQL queries and API keys. Editors
+  create them, and they run with the editors' rights. A query reading a
+  protected table therefore belongs on a page only the right groups can see.
+- References to an entry of a protected table still show its name.
 
 ### Public pages
 
@@ -1765,7 +1792,7 @@ taken over by a Keycloak account of the same name.
 
 | Who | May |
 |---|---|
-| Users | use published apps that are shared with everyone or with one of their groups; within them the pages visible to everyone or to one of their groups ([Who sees a page](#who-sees-a-page)); public pages need no sign-in at all |
+| Users | use published apps that are shared with everyone or with one of their groups; within them the pages visible to everyone or to one of their groups ([Who sees a page](#who-sees-a-page)) and the tables they may read or change ([table permissions](#who-reads-and-changes-a-table)); public pages need no sign-in at all |
 | Designers | edit their own apps and apps they were invited to; create new apps and custom blocks |
 | Automators | additionally create and edit [automations](#automations) (real Python in the background) |
 | Administrators (superusers) | additionally all apps in the Designer and `/admin/`: users, groups, all data |

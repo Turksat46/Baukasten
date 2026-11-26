@@ -36,6 +36,8 @@ def snapshot(app):
             {
                 "slug": e.slug, "name": e.name, "allow_create": e.allow_create,
                 "allow_edit": e.allow_edit, "allow_delete": e.allow_delete, "api_enabled": e.api_enabled,
+                "read_groups": sorted(g.name for g in e.read_groups.all()),
+                "write_groups": sorted(g.name for g in e.write_groups.all()),
                 "fields": [
                     {"key": f.key, "label": f.label, "type": f.type, "required": f.required,
                      "choices": f.choices, "reference": f.reference.slug if f.reference else None,
@@ -44,7 +46,7 @@ def snapshot(app):
                     for f in e.fields.select_related("reference")
                 ],
             }
-            for e in app.entities.all()
+            for e in app.entities.prefetch_related("read_groups", "write_groups")
         ],
         "pages": [
             {"slug": p.slug, "title": p.title, "show_in_nav": p.show_in_nav, "public": p.public,
@@ -188,6 +190,12 @@ def _apply_snapshot(app, data):
             for flag in ("allow_create", "allow_edit", "allow_delete", "api_enabled"):
                 setattr(entity, flag, bool(item.get(flag, flag != "api_enabled")))
             entity.save()
+            # Gruppen über den Namen; Gruppen, die es hier nicht gibt, fallen weg
+            for relation in ("read_groups", "write_groups"):
+                if relation not in item:  # ältere Versionen ohne Tabellenrechte: nichts ändern
+                    continue
+                names = [str(n) for n in item.get(relation) or [] if isinstance(n, str)]
+                getattr(entity, relation).set(Group.objects.filter(name__in=names))
             wanted[slug] = (entity, item.get("fields") or [])
 
         # Felder erst anlegen, wenn alle Tabellen existieren (Verweise zeigen auf Tabellen).
@@ -343,7 +351,9 @@ def diff(current, target):
                     for f in (c_ent.get("fields") or [])]
         t_fields = [(f.get("key"), f.get("label"), f.get("type"), f.get("required"), f.get("formula", ""))
                     for f in (t_ent.get("fields") or [])]
-        return c_ent.get("name") != t_ent.get("name") or c_fields != t_fields
+        c_rights = [sorted(c_ent.get(k) or []) for k in ("read_groups", "write_groups")]
+        t_rights = [sorted(t_ent.get(k) or []) for k in ("read_groups", "write_groups")]
+        return c_ent.get("name") != t_ent.get("name") or c_fields != t_fields or c_rights != t_rights
 
     def _page_changed(c_pg, t_pg):
         return (c_pg.get("title") != t_pg.get("title")

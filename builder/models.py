@@ -182,6 +182,12 @@ class Entity(models.Model):
     allow_edit = models.BooleanField(_("Bearbeiten erlaubt"), default=True)
     allow_delete = models.BooleanField(_("Löschen erlaubt"), default=True)
     api_enabled = models.BooleanField(_("Über die API erreichbar"), default=False)
+    read_groups = models.ManyToManyField(
+        Group, blank=True, related_name="readable_entities", verbose_name=_("Lesen dürfen"),
+        help_text=_("Leer lassen: alle, die die App benutzen dürfen."))
+    write_groups = models.ManyToManyField(
+        Group, blank=True, related_name="writable_entities", verbose_name=_("Ändern dürfen"),
+        help_text=_("Anlegen, Bearbeiten, Löschen. Leer lassen: alle, die die App benutzen dürfen."))
 
     class Meta:
         verbose_name = _("Tabelle")
@@ -196,6 +202,27 @@ class Entity(models.Model):
         if not self.slug:
             self.slug = unique_slug(self.app.entities, slugify(self.name) or "tabelle")
         super().save(*args, **kwargs)
+
+    def _in_groups(self, user, relation):
+        """Ohne Gruppen: alle mit App-Zugriff. Bearbeiter der App dürfen immer.
+        Das Ergebnis merkt sich die Tabelle je Person (eine Anfrage fragt oft mehrfach)."""
+        cache = self.__dict__.setdefault("_rights_cache", {})
+        key = (relation, getattr(user, "pk", None))
+        if key not in cache:
+            group_ids = list(getattr(self, relation).values_list("pk", flat=True))
+            cache[key] = (not group_ids
+                          or (user is not None and user.is_authenticated
+                              and (self.app.user_can_edit(user) or user.groups.filter(pk__in=group_ids).exists())))
+        return cache[key]
+
+    def user_can_read(self, user):
+        """Einträge sehen (Listen, Kennzahlen, Export, Bearbeiten-Formular)."""
+        return self._in_groups(user, "read_groups")
+
+    def user_can_write(self, user):
+        """Einträge anlegen, bearbeiten oder löschen (zusätzlich zu den Schaltern der Tabelle).
+        Bestehende Einträge ändern braucht außerdem das Leserecht."""
+        return self._in_groups(user, "write_groups")
 
 
 class Field(models.Model):

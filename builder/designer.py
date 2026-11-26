@@ -399,7 +399,13 @@ def entity_detail(request, app, pk):
         if request.POST.get("kind") == "entity":
             form = EntityForm(request.POST, instance=entity, prefix="entity")
             if form.is_valid():
+                before = _entity_rights(entity)
                 form.save()
+                after = _entity_rights(entity)
+                if after != before:  # M2M erfassen die Signale nicht
+                    audit.log("share", "entity", app=app, target_id=entity.pk, label=entity.name,
+                              changes={k: [before[k], after[k]] for k in after if after[k] != before[k]},
+                              note="Rechte der Tabelle geändert")
                 messages.success(request, _("Tabelle gespeichert."))
                 return redirect("designer_entity", app.slug, entity.pk)
         else:
@@ -413,6 +419,11 @@ def entity_detail(request, app, pk):
         "app": app, "entity": entity, "form": form, "field_form": field_form,
         "fields": entity.fields.all(), "record_count": entity.records.count(),
     })
+
+
+def _entity_rights(entity):
+    return {"read_groups": ", ".join(sorted(entity.read_groups.values_list("name", flat=True))) or "alle",
+            "write_groups": ", ".join(sorted(entity.write_groups.values_list("name", flat=True))) or "alle"}
 
 
 @designer_required

@@ -3,7 +3,7 @@
 Python-Skripte schreiben Designer; sie dürfen alle Tabellen ihrer App lesen und
 schreiben. JavaScript läuft im Browser mit den Rechten der angemeldeten Person
 (enforce_flags=True): Anlegen, Bearbeiten und Löschen nur, wo die Tabelle es
-erlaubt.
+erlaubt, und nur in Tabellen, die die Person lesen bzw. ändern darf (Tabellenrechte).
 """
 from datetime import date, datetime
 from decimal import Decimal
@@ -75,10 +75,15 @@ class TableOps:
         self.user = user
         self.enforce_flags = enforce_flags
 
-    def entity(self, slug):
+    def entity(self, slug, write=False):
         entity = self.app.entities.filter(slug=str(slug)).first()
         if entity is None:
             raise OpsError(_("Die Tabelle „%(name)s“ gibt es in dieser App nicht.") % {"name": slug})
+        if self.enforce_flags:
+            if not entity.user_can_read(self.user) and not (write == "create" and entity.user_can_write(self.user)):
+                raise OpsError(_("Für die Tabelle „%(name)s“ fehlt dir die Berechtigung.") % {"name": entity.name})
+            if write and not entity.user_can_write(self.user):
+                raise OpsError(_("Die Tabelle „%(name)s“ darfst du nur lesen.") % {"name": entity.name})
         return entity
 
     def _where(self, entity, where):
@@ -120,14 +125,14 @@ class TableOps:
         return value or 0
 
     def create(self, table, data):
-        entity = self.entity(table)
+        entity = self.entity(table, write="create")
         if self.enforce_flags and not entity.allow_create:
             raise OpsError(_("In dieser Tabelle ist das Anlegen nicht erlaubt."))
         record = save_record(entity, data, self.user)
         return serialize(record, list(entity.fields.all()))
 
     def update(self, table, id, data):
-        entity = self.entity(table)
+        entity = self.entity(table, write=True)
         if self.enforce_flags and not entity.allow_edit:
             raise OpsError(_("In dieser Tabelle ist das Bearbeiten nicht erlaubt."))
         record = Record.objects.filter(pk=id, entity=entity).first()
@@ -137,7 +142,7 @@ class TableOps:
         return serialize(record, list(entity.fields.all()))
 
     def delete(self, table, id):
-        entity = self.entity(table)
+        entity = self.entity(table, write=True)
         if self.enforce_flags and not entity.allow_delete:
             raise OpsError(_("In dieser Tabelle ist das Löschen nicht erlaubt."))
         deleted, _detail = Record.objects.filter(pk=id, entity=entity).delete()
