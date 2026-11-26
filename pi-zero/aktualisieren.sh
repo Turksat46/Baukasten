@@ -90,7 +90,10 @@ ausrollen() {
 
 # ---- Adressen, unter denen der Pi erreichbar ist (DHCP kann die IP ändern) ----
 NAME=$(hostname)
-IPS=$(hostname -I 2>/dev/null | tr ' ' '\n' | grep -E '^[0-9]+(\.[0-9]+){3}$' | paste -sd, - || true)
+IPS4=$(hostname -I 2>/dev/null | tr ' ' '\n' | grep -E '^[0-9]+(\.[0-9]+){3}$' | paste -sd, - || true)
+# IPv6-Adressen in eckigen Klammern (so steht der Host im Browser: http://[2003:…]/)
+IPS6=$(hostname -I 2>/dev/null | tr ' ' '\n' | grep ':' | sed 's/.*/[&]/' | paste -sd, - || true)
+IPS="$IPS4${IPS6:+${IPS4:+,}$IPS6}"
 NETZ="ALLOWED_HOSTS=${DOMAIN:+$DOMAIN,}localhost,127.0.0.1,$NAME,$NAME.local${IPS:+,$IPS}${EXTRA_HOSTS:+,$EXTRA_HOSTS}"
 if [ "$(cat "$ZUSTAND/netz.env" 2>/dev/null)" != "$NETZ" ]; then
     echo "$NETZ" >"$ZUSTAND/netz.env"

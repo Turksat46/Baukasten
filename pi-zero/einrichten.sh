@@ -139,7 +139,13 @@ HTTPS
     systemctl restart caddy
 else
     : >"$KONF/https.env"
-    BIND=0.0.0.0:80
+    # [::] nimmt unter Linux IPv6 und IPv4 an (bindv6only=0). Wichtig, wenn Rechner im Heimnetz den Pi
+    # nur über IPv6 erreichen. Ohne IPv6 nur IPv4.
+    if [ -f /proc/net/if_inet6 ] && [ "$(cat /proc/sys/net/ipv6/bindv6only 2>/dev/null)" = 0 ]; then
+        BIND="[::]:80"
+    else
+        BIND=0.0.0.0:80
+    fi
     if systemctl is-active --quiet caddy 2>/dev/null; then systemctl disable --now caddy >/dev/null; fi
 fi
 chown root:baukasten "$KONF/https.env"
@@ -240,6 +246,8 @@ WantedBy=timers.target
 EOF
 systemctl daemon-reload
 systemctl enable baukasten-web baukasten-worker >/dev/null
+# Bestehende Installation: geänderte Dienst-Einstellungen (z. B. Port, HTTPS) sofort übernehmen.
+[ -f "$ZUSTAND/ausgerollt" ] && systemctl restart baukasten-web baukasten-worker
 systemctl enable --now baukasten-aktualisieren.timer baukasten-sichern.timer >/dev/null
 
 schritt "Erste Installation starten"
