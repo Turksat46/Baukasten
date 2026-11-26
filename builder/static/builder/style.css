@@ -508,10 +508,30 @@ html.sheet-open { overflow: hidden; }
   .widget-option-preview { height: 92px; }
   @keyframes widget-sheet-in { from { transform: translateY(100%); } }
 }
-.home-widgets { margin-bottom: 1.5rem; }
-.home-widget-card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: .75rem .9rem; }
-.home-widget-head { display: flex; justify-content: space-between; align-items: center; gap: .5rem; margin-bottom: .45rem; }
+.home-widgets { margin-bottom: 1.5rem; align-items: stretch; }  /* Widgets einer Reihe gleich hoch */
+.home-widget-card { display: flex; flex-direction: column; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: .75rem .9rem; }
+.home-widget-head { display: flex; justify-content: space-between; align-items: center; gap: .5rem; margin-bottom: .45rem; min-width: 0; }
+.home-widget-title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.home-widget-body { flex: 1; min-width: 0; }
 .home-widget-body .card, .home-widget-body .stat { margin-bottom: 0; }
+/* Keine Karte in der Karte: Der Baustein übernimmt den Rahmen des Widgets */
+.home-widget-body > .card, .home-widget-body > section.card { border: 0; background: transparent; box-shadow: none; padding: 0; }
+.home-widget-card { overflow: hidden; }
+/* Kennzahlen füllen das Widget bis zum Rand; die Ampel-Linie trennt sie vom Titel */
+.home-widget-body > .stat { height: calc(100% + .75rem); margin: 0 -.9rem -.75rem; border-width: 3px 0 0; border-radius: 0; }
+.widget-actions { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; justify-content: flex-end; }
+.widget-arrange-bar { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; }
+.widget-arrange-bar[hidden], .home-widget-tools[hidden] { display: none; }
+.home-widget-tools { display: flex; align-items: center; gap: .3rem; flex-wrap: wrap; margin-bottom: .55rem; }
+.home-widget-tools button { min-width: 2rem; height: 2rem; padding: 0 .5rem; border: 1px solid var(--line); border-radius: 8px; background: var(--surface-2); color: var(--ink); font: inherit; font-size: .9rem; cursor: pointer; }
+.home-widget-tools button:hover, .home-widget-tools button:focus-visible { border-color: var(--accent); }
+.home-widget-tools button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.home-widget-sizes { display: inline-flex; gap: .25rem; margin-left: auto; }
+.home-widgets.is-arranging .home-widget-card { outline: 2px dashed var(--line); outline-offset: 3px; cursor: grab; }
+.home-widgets.is-arranging .home-widget-body { pointer-events: none; opacity: .8; }  /* beim Anordnen keine Klicks in den Inhalt */
+.home-widget-card.is-dragged { opacity: .4; }
+/* Schmal sind alle Widgets ganz breit und stehen untereinander: Breite ausblenden, Pfeile nach oben/unten */
+@media (max-width: 799px) { .home-widget-sizes { display: none; } .home-widget-tools [data-move] { transform: rotate(90deg); } }
 /* ---------- Data-Science-Visualisierungen ---------- */
 .chart-filter-link { color: inherit; text-decoration: none; border-bottom: 1px dashed var(--muted); }
 .chart-filter-link:hover { color: var(--accent-strong); border-bottom-color: var(--accent); }

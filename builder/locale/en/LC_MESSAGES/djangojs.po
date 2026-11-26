@@ -341,3 +341,11 @@ msgstr "Restore"
 #: builder/static/builder/progress.js
 msgid "Wird geladen"
 msgstr "Loading"
+
+#: builder/static/builder/home.js
+msgid "Konnte nicht gespeichert werden. Bitte noch einmal versuchen."
+msgstr "Could not be saved. Please try again."
+
+#: builder/static/builder/home.js
+msgid "Position %(n)s von %(total)s"
+msgstr "Position %(n)s of %(total)s"

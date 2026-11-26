@@ -103,6 +103,9 @@ def safe_next(request, fallback):
     return fallback
 
 
+# Breiten der Widgets auf der Startseite in Spalten von 12: ein Drittel, halb, zwei Drittel, ganz
+WIDGET_WIDTHS = (4, 6, 8, 12)
+
 PINNABLE_WIDGET_TYPES = {
     "stat", "progress", "chart", "donut", "line", "timeline", "notice",
     "table", "cards", "checklist", "query", "output",
@@ -163,7 +166,7 @@ def home(request):
             continue
         pinned_keys.add((w.page_id, w.block_id))
         w.display_title = w.title or _block_label(block, types_map)
-        w.col_width = w.width if w.width in (4, 6, 12) else 4
+        w.col_width = w.width if w.width in WIDGET_WIDTHS else 4
         widgets.append(w)
 
     # Widget-Auswahl wie unter Android: je App eine Gruppe mit allen anpinnbaren Bausteinen.
@@ -192,6 +195,8 @@ def home(request):
         "apps": apps, "greeting": greeting, "today": timezone.localdate(),
         "drafts": sum(1 for a in apps if not a.published), "show_search": len(apps) > 6,
         "widgets": widgets, "widget_groups": widget_groups,
+        "widget_sizes": [(4, "⅓", _("Ein Drittel breit")), (6, "½", _("Halb breit")),
+                         (8, "⅔", _("Zwei Drittel breit")), (12, _("Ganz"), _("Ganze Breite"))],
     })
 
 
@@ -211,11 +216,14 @@ def home_widget_add(request):
         messages.error(request, _("Dieser Baustein kann nicht als Widget angepinnt werden."))
         return redirect("home")
     width = int(block.get("width") or 4)
-    if width not in (4, 6, 12):
+    if width not in WIDGET_WIDTHS:
         width = 6 if width >= 6 else 4
+    # Neue Widgets kommen ans Ende, die Anordnung der vorhandenen bleibt
+    last = HomeWidget.objects.filter(user=request.user).order_by("-order").values_list("order", flat=True).first()
     HomeWidget.objects.get_or_create(
         user=request.user, page=page, block_id=block_id,
-        defaults={"title": _block_label(block, all_types()), "width": width},
+        defaults={"title": _block_label(block, all_types()), "width": width,
+                  "order": 0 if last is None else last + 1},
     )
     return redirect("home")
 
@@ -225,6 +233,36 @@ def home_widget_add(request):
 def home_widget_remove(request, pk):
     get_object_or_404(HomeWidget, pk=pk, user=request.user).delete()
     return redirect("home")
+
+
+@login_required
+@require_POST
+def home_widgets_arrange(request):
+    """Reihenfolge und Breite der eigenen Widgets speichern („Anordnen“ auf der Startseite).
+
+    Erwartet {"widgets": [{"id": 3, "width": 6}, …]} in der gewünschten Reihenfolge.
+    Fremde oder unbekannte Widgets und ungültige Breiten werden übergangen."""
+    try:
+        items = json.loads(request.body).get("widgets")
+        if not isinstance(items, list):
+            raise ValueError
+    except (ValueError, AttributeError):
+        return JsonResponse({"error": _("Ungültige Daten.")}, status=400)
+    own = {w.pk: w for w in HomeWidget.objects.filter(user=request.user)}
+    changed = []
+    for item in items:
+        widget = own.pop(item.get("id"), None) if isinstance(item, dict) else None
+        if widget is None:
+            continue
+        if item.get("width") in WIDGET_WIDTHS:
+            widget.width = item["width"]
+        widget.order = len(changed)
+        changed.append(widget)
+    for widget in own.values():  # nicht mitgeschickte Widgets (z. B. gerade unsichtbare) ans Ende
+        widget.order = len(changed)
+        changed.append(widget)
+    HomeWidget.objects.bulk_update(changed, ["width", "order"])
+    return JsonResponse({"ok": True})
 
 
 def runtime_config(request, app, page, blocks):
