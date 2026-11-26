@@ -435,6 +435,10 @@ Sandbox.
 
 ## 6. Berechtigungskonzept
 
+Alle Entscheidungen trifft `builder/policy.py` (`darf(user, aktion, objekt)`, ADR 0012).
+Ansichten, Bausteine und Skript-Brücke prüfen nicht selbst; `tests/test_policy.py` hält eine
+Matrix aus Rollen und Zugriffswegen gegen die Policy und die echten Antworten.
+
 ```mermaid
 flowchart LR
     A(["Anfrage an<br/>eine App"]) --> L{{"angemeldet?"}}

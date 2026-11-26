@@ -27,14 +27,15 @@ from .blocks import all_types, display_value, reference_labels, render_block, re
 from .forms import RecordForm
 from .models import App, HomeWidget, Page, Record, Script
 from .page_path import set_page_path
+from .policy import (AENDERN, ANLEGEN, AUSFUEHREN, BEARBEITEN, BENUTZEN, EXPORTIEREN, IMPORTIEREN, LESEN,
+                     LOESCHEN, SEHEN, darf, pruefe, sichtbare_seiten)
 from .scripting import python as python_scripts
 from .scripting.ops import OpsError, TableOps
 from .scripting.triggers import execute, page_scripts, run_page
 
 def get_app(request, slug):
     app = get_object_or_404(App, slug=slug, kind=App.APP)  # Automatisierungen haben keine Seiten
-    if not app.user_can_use(request.user):
-        raise PermissionDenied
+    pruefe(request.user, BENUTZEN, app)
     app_i18n.activate(app)  # Texte der App in der Sprache der Person anzeigen
     return app
 
@@ -57,7 +58,7 @@ def permission_denied(request, exception=None):
         context["app"] = app
         context["owner"] = (owner.get_full_name() or owner.get_username()) if owner else ""
         start = reverse("page", args=[app.slug]) if app.kind == App.APP else ""
-        if start and start != request.path and app.user_can_use(request.user):
+        if start and start != request.path and darf(request.user, BENUTZEN, app):
             context["app_url"] = start
     return render(request, "403.html", context, status=403)
 
@@ -68,7 +69,7 @@ def runtime_access(request, slug):
     guest=True heißt: Die Person darf die App nicht regulär benutzen (nicht angemeldet oder
     nicht in den Gruppen) und bekommt nur öffentliche Seiten und was auf ihnen steht."""
     app = get_object_or_404(App, slug=slug, kind=App.APP)
-    if request.user.is_authenticated and app.user_can_use(request.user):
+    if darf(request.user, BENUTZEN, app):
         app_i18n.activate(app)
         return app, False
     if not app.published or not app.pages.filter(public=True).exists():
@@ -127,11 +128,11 @@ def _block_label(block, types_map):
 
 @login_required
 def home(request):
-    apps = [a for a in App.objects.prefetch_related("pages", "scripts", "queries") if a.user_can_use(request.user)]
+    apps = [a for a in App.objects.prefetch_related("pages", "scripts", "queries") if darf(request.user, BENUTZEN, a)]
     app_ids = {a.pk for a in apps}
     types_map = all_types()
     for app in apps:
-        pages = list(Page.visible_to(app, request.user))
+        pages = list(sichtbare_seiten(request.user, app))
         app.visible_pages = pages
         app.page_count = sum(1 for p in pages if p.show_in_nav)
         app.tone = sum(map(ord, app.slug)) % 5 + 1  # feste Farbe je App für die Kachel
@@ -148,7 +149,7 @@ def home(request):
             if len(notices) >= 2:
                 break
         app.page_notices = notices
-        if app.user_can_edit(request.user):
+        if darf(request.user, BEARBEITEN, app):
             script_errors = sum(1 for s in app.scripts.all() if s.failures > 0)
             query_errors = sum(1 for q in app.queries.all() if q.last_sync_at and not q.last_sync_ok)
             app.error_count = script_errors + query_errors
@@ -209,8 +210,8 @@ def home_widget_add(request):
         messages.error(request, _("Bitte einen gültigen Baustein auswählen."))
         return redirect("home")
     page = get_object_or_404(Page.objects.select_related("app"), pk=int(page_id))
-    if not page.app.user_can_use(request.user) or not page.user_can_view(request.user):
-        raise PermissionDenied
+    pruefe(request.user, SEHEN, page)
+    pruefe(request.user, BENUTZEN, page.app)  # Gäste pinnen nichts an
     block = next((b for b in (page.layout or []) if b.get("id") == block_id), None)
     if block is None or not _is_pinnable(block):
         messages.error(request, _("Dieser Baustein kann nicht als Widget angepinnt werden."))
@@ -281,7 +282,7 @@ def runtime_config(request, app, page, blocks):
         "block_url": reverse("page_block", args=[app.slug, page.slug, "BLOCK"]) if page else "",
         "csrf": get_token(request), "scripts": js_page, "buttons": js_buttons,
         "timeout": int(platform.value("script_timeout") * 1000), "page": page.slug if page else "",
-        "user": python_scripts.user_info(request.user), "show_errors": app.user_can_edit(request.user),
+        "user": python_scripts.user_info(request.user), "show_errors": darf(request.user, BEARBEITEN, app),
     }
 
 
@@ -293,7 +294,7 @@ def _interactive(blocks):
 
 def nav_pages(app, guest, user=None):
     pages = app.pages.filter(show_in_nav=True)
-    return pages.filter(public=True) if guest else Page.visible_to(app, user, pages)
+    return pages.filter(public=True) if guest else sichtbare_seiten(user, app, pages)
 
 
 def visible_page(request, app, guest, slug):
@@ -302,9 +303,9 @@ def visible_page(request, app, guest, slug):
     if not slug:
         if guest:  # Gäste: wie bisher die erste Seite, sonst zur Anmeldung (siehe page())
             return app.home_page, None
-        return Page.visible_to(app, request.user).order_by("order", "id").first(), None
+        return sichtbare_seiten(request.user, app).order_by("order", "id").first(), None
     current = get_object_or_404(app.pages, slug=slug)
-    if current.public or (not guest and current.user_can_view(request.user)):
+    if darf(request.user, SEHEN, current):
         return current, None
     return None, deny(request)
 
@@ -328,7 +329,7 @@ def page(request, app, page=None):
         "nav_pages": nav_pages(app, guest, request.user),
         "blocks": blocks,
         "script_notes": notes,
-        "script_errors": errors if app.user_can_edit(request.user) else [],
+        "script_errors": errors if darf(request.user, BEARBEITEN, app) else [],
         "runtime": runtime_config(request, app, current, blocks) if current else None,
         "interactive": _interactive(blocks),
     })
@@ -367,8 +368,7 @@ def block_action(request, app, page, block):
 
     app = get_app(request, app)
     current = get_object_or_404(app.pages, slug=page)
-    if not current.user_can_view(request.user):
-        raise PermissionDenied
+    pruefe(request.user, SEHEN, current)
     found = next((b for b in current.layout or [] if b.get("id") == block), None)
     if found is None:
         return JsonResponse({"error": _("Diesen Baustein gibt es auf der Seite nicht (mehr).")}, status=404)
@@ -394,9 +394,10 @@ def run_script(request, app, name):
     if isinstance(access, HttpResponse):
         return access
     app, guest = access
-    if guest and name not in app.public_reach()[0]:
-        return deny(request)
-    script = get_object_or_404(app.scripts, slug=name, language=Script.PYTHON, trigger=Script.BUTTON, enabled=True)
+    script = app.scripts.filter(slug=name, language=Script.PYTHON, trigger=Script.BUTTON, enabled=True).first()
+    if script is None or not darf(request.user, AUSFUEHREN, script):
+        # Gäste erfahren nicht, ob es das Skript gibt
+        return deny(request) if guest else HttpResponse(status=404)
     # Parameter der Seite (aus der Adresse) und des Formulars; das Formular hat Vorrang.
     params = {**request.GET.dict(), **request.POST.dict()}
     params.pop("csrfmiddlewaretoken", None)
@@ -405,7 +406,7 @@ def run_script(request, app, name):
         messages.success(request, text)
     if not result.ok:
         messages.error(request, _("Das Skript „%(name)s“ ist fehlgeschlagen.") % {"name": script.name}
-                       + (" " + result.error_text() if app.user_can_edit(request.user) else ""))
+                       + (" " + result.error_text() if darf(request.user, BEARBEITEN, app) else ""))
     elif not result.messages:
         messages.success(request, _("Erledigt."))
     return redirect(safe_next(request, reverse("page", args=[app.slug])))
@@ -474,7 +475,7 @@ def _record_form(request, app, entity, record=None, guest=False):
         messages.success(request, _("Gespeichert."))
         return redirect(safe_next(request, home_url))
     history = []
-    if record and request.user.is_authenticated and app.user_can_edit(request.user):
+    if record and darf(request.user, BEARBEITEN, app):
         from .designer import _audit_labels
         from .models import AuditEntry
 
@@ -493,27 +494,20 @@ def record_create(request, app, entity):
     if isinstance(access, HttpResponse):
         return access
     app, guest = access
-    if guest and entity not in app.public_reach()[1]:
-        return deny(request)
-    entity = get_object_or_404(app.entities, slug=entity)
-    if not entity.allow_create:
-        raise PermissionDenied
-    if not entity.user_can_write(request.user):
+    entity = app.entities.filter(slug=entity).first()
+    if entity is None or not darf(request.user, ANLEGEN, entity):
+        # Gäste erfahren nicht, ob es die Tabelle gibt
+        if entity is None and not guest:
+            return HttpResponse(status=404)
         return deny(request)
     return _record_form(request, app, entity, guest=guest)
-
-
-def _can_change(entity, user):
-    """Bestehende Einträge ändern oder löschen: Lese- und Schreibrecht auf die Tabelle."""
-    return entity.user_can_read(user) and entity.user_can_write(user)
 
 
 @login_required
 def record_edit(request, app, entity, pk):
     app = get_app(request, app)
     entity = get_object_or_404(app.entities, slug=entity)
-    if not entity.allow_edit or not _can_change(entity, request.user):
-        raise PermissionDenied
+    pruefe(request.user, AENDERN, entity)
     return _record_form(request, app, entity, get_object_or_404(Record, pk=pk, entity=entity))
 
 
@@ -522,8 +516,7 @@ def record_edit(request, app, entity, pk):
 def record_delete(request, app, entity, pk):
     app = get_app(request, app)
     entity = get_object_or_404(app.entities, slug=entity)
-    if not entity.allow_delete or not _can_change(entity, request.user):
-        raise PermissionDenied
+    pruefe(request.user, LOESCHEN, entity)
     get_object_or_404(Record, pk=pk, entity=entity).delete()
     messages.success(request, _("Gelöscht."))
     return redirect(safe_next(request, reverse("page", args=[app.slug])))
@@ -566,8 +559,7 @@ def entity_export(request, app, entity):
 
     app = get_app(request, app)
     entity = get_object_or_404(app.entities, slug=entity)
-    if not entity.user_can_read(request.user):
-        raise PermissionDenied
+    pruefe(request.user, EXPORTIEREN, entity)
     fields = list(entity.fields.all())
     writer = csv.writer(_Echo(), delimiter=";")
     qs = filtered(request, entity).order_by("id")
@@ -626,8 +618,7 @@ def entity_import(request, app, entity):
 
     app = get_app(request, app)
     entity = get_object_or_404(app.entities, slug=entity)
-    if not entity.allow_create or not entity.user_can_write(request.user):
-        raise PermissionDenied
+    pruefe(request.user, IMPORTIEREN, entity)
     # Formelfelder werden beim Speichern berechnet; eine Spalte dorthin würde nur überschrieben.
     fields = [f for f in entity.fields.all() if not f.formula]
     session_key = f"csv_import:{app.slug}:{entity.slug}"
@@ -704,7 +695,7 @@ def entity_import(request, app, entity):
 @login_required
 def api_index(request):
     """Alle Apps, deren API die angemeldete Person einsehen darf."""
-    apps = [a for a in App.objects.prefetch_related("entities", "groups") if a.user_can_use(request.user)]
+    apps = [a for a in App.objects.prefetch_related("entities", "groups") if darf(request.user, BENUTZEN, a)]
     rows = [{"app": a, "tables": [e for e in a.entities.all() if e.api_enabled]} for a in apps]
     return render(request, "builder/api_index.html", {"rows": rows, "custom_endpoints": sorted(hooks.API_ENDPOINTS)})
 
@@ -723,7 +714,7 @@ def api_docs(request, app):
     return render(request, "builder/api_docs.html", {
         "app": app, "operations": operations,
         "tables": [e for e in app.entities.filter(api_enabled=True).prefetch_related("fields")
-                   if e.user_can_read(request.user)],
+                   if darf(request.user, LESEN, e)],
         "base": request.build_absolute_uri(reverse("api_describe", args=[app.slug])),
         "spec_url": reverse("api_docs_spec", args=[app.slug]),
         "public_spec_url": request.build_absolute_uri(reverse("api_openapi", args=[app.slug])),
@@ -751,7 +742,7 @@ def attachment(request, app, name):
     from .models import Attachment
 
     target = get_object_or_404(App, slug=app, kind=App.APP)
-    allowed = request.user.is_authenticated and target.user_can_use(request.user)
+    allowed = darf(request.user, BENUTZEN, target)
     if not allowed and not (target.published and target.pages.filter(public=True).exists()):
         return deny(request)
     found = get_object_or_404(Attachment, app=target, sha256=name.split(".", 1)[0][:64])

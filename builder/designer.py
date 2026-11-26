@@ -18,7 +18,7 @@ from django.utils import timezone
 from django.utils.translation import gettext as _, gettext_lazy
 from django.views.decorators.http import require_POST
 
-from . import app_i18n, audit, hooks, platform
+from . import app_i18n, audit, hooks, platform, policy
 from .blocks import (BUILTIN_PLACEHOLDERS, all_types, clean_layout, designer_config, make_block,
                      render_custom_report, render_layout)
 from .sanitize import sanitize_html_report
@@ -39,12 +39,9 @@ def designer_required(view):
     @wraps(view)
     @login_required
     def wrapper(request, *args, **kwargs):
-        if not can_design(request.user):
-            raise PermissionDenied
+        policy.pruefe(request.user, policy.DESIGNEN)
         if "app" in kwargs:
-            app = get_object_or_404(App, slug=kwargs["app"])
-            if not app.user_can_edit(request.user):
-                raise PermissionDenied
+            policy.pruefe(request.user, policy.BEARBEITEN, get_object_or_404(App, slug=kwargs["app"]))
         return view(request, *args, **kwargs)
 
     return wrapper
@@ -61,7 +58,7 @@ def _share(request, app):
         audit.log("share", "app", app=app, target_id=app.pk, label=app.name, note="App übernommen (Eigentümer/in)")
         messages.success(request, _("Du bist jetzt Eigentümer/in der App. Andere Designer brauchen ab sofort eine Einladung."))
         return
-    if not app.user_can_manage(request.user):
+    if not policy.darf(request.user, policy.VERWALTEN, app):
         raise PermissionDenied
     if action == "add_user":
         name = request.POST.get("username", "").strip()
@@ -121,7 +118,7 @@ def home(request):
     # In der Einführung ist der erste Schritt schon vorausgefüllt.
     coach = tutorial.state(request.user)
     initial = {"name": "Urlaub", "icon": "🌴"} if coach and not coach["finished"] and coach["number"] == 1 else None
-    automator = can_automate(request.user)
+    automator = policy.darf(request.user, policy.AUTOMATISIEREN)
     is_auto = request.method == "POST" and "auto-name" in request.POST
     if is_auto and not automator:
         raise PermissionDenied
@@ -144,7 +141,7 @@ def home(request):
         return redirect("designer_app", app.slug)
     everything = list(App.editable_by(request.user).select_related("created_by").prefetch_related("scripts"))
     for item in everything:
-        item.can_manage = item.user_can_manage(request.user)
+        item.can_manage = policy.darf(request.user, policy.VERWALTEN, item)
     apps = [a for a in everything if not a.is_automation]
     automations = [_automation_summary(a) for a in everything if a.is_automation]
     # Welcher Reiter unter „Neu anlegen“ offen ist: nach einem Fehler der betroffene, sonst ?neu=…
@@ -290,7 +287,7 @@ def app_detail(request, app):
         "scripts": app.scripts.select_related("page", "entity"),
         "queries": app.queries.select_related("sync_entity"),
         "sources": datasources.describe_sources(),
-        "can_manage": app.user_can_manage(request.user),
+        "can_manage": policy.darf(request.user, policy.VERWALTEN, app),
         "translation_progress": translation_progress(app),
         "editors": app.editors.order_by("username"),
         "editor_groups": app.editor_groups.order_by("name"),
@@ -358,7 +355,7 @@ def version_download(request, app, pk):
 def app_clone(request, app):
     """Dupliziert den Aufbau einer App (Tabellen, Felder, Seiten, Skripte, Abfragen) als neuen Entwurf."""
     source = get_object_or_404(App, slug=app)
-    if source.is_automation and not can_automate(request.user):
+    if source.is_automation and not policy.darf(request.user, policy.AUTOMATISIEREN):
         raise PermissionDenied
     snap = versions.snapshot(source)
     copy_name = _("%(name)s (Kopie)") % {"name": source.name}
@@ -374,7 +371,7 @@ def app_clone(request, app):
 @require_POST
 def app_delete(request, app):
     app = get_object_or_404(App, slug=app)
-    if not app.user_can_manage(request.user):
+    if not policy.darf(request.user, policy.VERWALTEN, app):
         raise PermissionDenied
     app.delete()
     messages.success(request, _("App gelöscht."))
