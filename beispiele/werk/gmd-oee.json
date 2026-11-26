@@ -1,0 +1,5035 @@
+{
+ "slug": "gmd-oee",
+ "name": "OEE-Cockpit",
+ "icon": "🏭",
+ "description": "Verfügbarkeit × Leistung × Qualität je Linie und Schicht, Trends, Ampeln und Verlustanalyse",
+ "rolle": "Werksleiter / Fertigungsleiter",
+ "komplexitaet": "komplex",
+ "entities": [
+  {
+   "name": "Schichtdaten",
+   "slug": "schichtdaten",
+   "fields": [
+    {
+     "label": "Datum",
+     "key": "datum",
+     "type": "date",
+     "required": true
+    },
+    {
+     "label": "Linie",
+     "key": "linie",
+     "type": "choice",
+     "choices": [
+      "ZS-1 Zahnstange",
+      "LG-2 Lenkgetriebe",
+      "EPS-3 Servoeinheit",
+      "PR-4 Endprüfung",
+      "HT-5 Härterei",
+      "VM-6 Ventilmontage"
+     ],
+     "required": true
+    },
+    {
+     "label": "Schicht",
+     "key": "schicht",
+     "type": "choice",
+     "choices": [
+      "Früh",
+      "Spät",
+      "Nacht"
+     ]
+    },
+    {
+     "label": "Planzeit (min)",
+     "key": "planzeit",
+     "type": "number"
+    },
+    {
+     "label": "Stillstand (min)",
+     "key": "stillstand",
+     "type": "number"
+    },
+    {
+     "label": "Soll bei Laufzeit (Stück)",
+     "key": "soll",
+     "type": "number"
+    },
+    {
+     "label": "Ist (Stück)",
+     "key": "ist",
+     "type": "number"
+    },
+    {
+     "label": "Gut (Stück)",
+     "key": "gut",
+     "type": "number"
+    },
+    {
+     "label": "Verfügbarkeit (%)",
+     "key": "vf",
+     "type": "decimal",
+     "formula": "round((planzeit - stillstand) / planzeit * 100, 1)",
+     "show_in_form": false
+    },
+    {
+     "label": "Leistung (%)",
+     "key": "lg",
+     "type": "decimal",
+     "formula": "round(ist / soll * 100, 1)",
+     "show_in_form": false
+    },
+    {
+     "label": "Qualität (%)",
+     "key": "ql",
+     "type": "decimal",
+     "formula": "round(gut / ist * 100, 1)",
+     "show_in_form": false
+    },
+    {
+     "label": "OEE (%)",
+     "key": "oee",
+     "type": "decimal",
+     "formula": "round((planzeit - stillstand) / planzeit * ist / soll * gut / ist * 100, 1)",
+     "show_in_form": false
+    }
+   ]
+  }
+ ],
+ "pages": [
+  {
+   "title": "Cockpit",
+   "slug": "cockpit",
+   "layout": [
+    {
+     "type": "heading",
+     "width": 12,
+     "props": {
+      "text": "OEE-Cockpit Werk Gmünd",
+      "subtitle": "Ziel 75 % · Weltklasse 85 %",
+      "level": "1"
+     }
+    },
+    {
+     "type": "filter",
+     "width": 12,
+     "props": {
+      "entity": "schichtdaten",
+      "field": "linie",
+      "field2": "schicht",
+      "field3": "datum"
+     }
+    },
+    {
+     "type": "stat",
+     "width": 3,
+     "props": {
+      "label": "OEE",
+      "entity": "schichtdaten",
+      "aggregate": "avg",
+      "field": "oee",
+      "unit": "%"
+     }
+    },
+    {
+     "type": "stat",
+     "width": 3,
+     "props": {
+      "label": "Verfügbarkeit",
+      "entity": "schichtdaten",
+      "aggregate": "avg",
+      "field": "vf",
+      "unit": "%"
+     }
+    },
+    {
+     "type": "stat",
+     "width": 3,
+     "props": {
+      "label": "Leistung",
+      "entity": "schichtdaten",
+      "aggregate": "avg",
+      "field": "lg",
+      "unit": "%"
+     }
+    },
+    {
+     "type": "stat",
+     "width": 3,
+     "props": {
+      "label": "Qualität",
+      "entity": "schichtdaten",
+      "aggregate": "avg",
+      "field": "ql",
+      "unit": "%"
+     }
+    },
+    {
+     "type": "stat",
+     "width": 4,
+     "props": {
+      "label": "ZS-1 Zahnstange",
+      "entity": "schichtdaten",
+      "aggregate": "avg",
+      "field": "oee",
+      "unit": "%",
+      "where": "Linie = ZS-1 Zahnstange",
+      "direction": "lower_worse",
+      "warn_at": "75",
+      "alarm_at": "65",
+      "compare_field": "datum",
+      "compare_days": 7
+     }
+    },
+    {
+     "type": "stat",
+     "width": 4,
+     "props": {
+      "label": "LG-2 Lenkgetriebe",
+      "entity": "schichtdaten",
+      "aggregate": "avg",
+      "field": "oee",
+      "unit": "%",
+      "where": "Linie = LG-2 Lenkgetriebe",
+      "direction": "lower_worse",
+      "warn_at": "75",
+      "alarm_at": "65",
+      "compare_field": "datum",
+      "compare_days": 7
+     }
+    },
+    {
+     "type": "stat",
+     "width": 4,
+     "props": {
+      "label": "EPS-3 Servoeinheit",
+      "entity": "schichtdaten",
+      "aggregate": "avg",
+      "field": "oee",
+      "unit": "%",
+      "where": "Linie = EPS-3 Servoeinheit",
+      "direction": "lower_worse",
+      "warn_at": "75",
+      "alarm_at": "65",
+      "compare_field": "datum",
+      "compare_days": 7
+     }
+    },
+    {
+     "type": "stat",
+     "width": 4,
+     "props": {
+      "label": "PR-4 Endprüfung",
+      "entity": "schichtdaten",
+      "aggregate": "avg",
+      "field": "oee",
+      "unit": "%",
+      "where": "Linie = PR-4 Endprüfung",
+      "direction": "lower_worse",
+      "warn_at": "75",
+      "alarm_at": "65",
+      "compare_field": "datum",
+      "compare_days": 7
+     }
+    },
+    {
+     "type": "stat",
+     "width": 4,
+     "props": {
+      "label": "HT-5 Härterei",
+      "entity": "schichtdaten",
+      "aggregate": "avg",
+      "field": "oee",
+      "unit": "%",
+      "where": "Linie = HT-5 Härterei",
+      "direction": "lower_worse",
+      "warn_at": "75",
+      "alarm_at": "65",
+      "compare_field": "datum",
+      "compare_days": 7
+     }
+    },
+    {
+     "type": "notice",
+     "width": 4,
+     "props": {
+      "title": "So liest man die Ampeln",
+      "text": "OEE der letzten 7 Tage je Linie. Grün ab 75 %, rot unter 65 %. Der Pfeil vergleicht mit den 7 Tagen davor."
+     }
+    },
+    {
+     "type": "line",
+     "width": 12,
+     "props": {
+      "label": "OEE je Tag",
+      "entity": "schichtdaten",
+      "date_field": "datum",
+      "aggregate": "avg",
+      "field": "oee",
+      "period": "day",
+      "count": 42,
+      "unit": "%",
+      "show_band": true,
+      "threshold": "75"
+     }
+    },
+    {
+     "type": "chart",
+     "width": 6,
+     "props": {
+      "label": "Ø OEE je Linie (%)",
+      "entity": "schichtdaten",
+      "field": "linie",
+      "agg": "avg",
+      "value_field": "oee"
+     }
+    },
+    {
+     "type": "pivot",
+     "width": 6,
+     "props": {
+      "title": "OEE Linie × Schicht",
+      "entity": "schichtdaten",
+      "row_field": "linie",
+      "col_field": "schicht",
+      "agg": "avg",
+      "value_field": "oee"
+     }
+    }
+   ]
+  },
+  {
+   "title": "Verluste",
+   "slug": "verluste",
+   "layout": [
+    {
+     "type": "filter",
+     "width": 12,
+     "props": {
+      "entity": "schichtdaten",
+      "field": "linie",
+      "field2": "datum"
+     }
+    },
+    {
+     "type": "chart",
+     "width": 12,
+     "props": {
+      "label": "Stillstand je Linie (Summe min)",
+      "entity": "schichtdaten",
+      "field": "linie",
+      "agg": "sum",
+      "value_field": "stillstand",
+      "pareto": true
+     }
+    },
+    {
+     "type": "boxplot",
+     "width": 6,
+     "props": {
+      "title": "OEE-Streuung je Linie",
+      "entity": "schichtdaten",
+      "field": "oee",
+      "group_field": "linie"
+     }
+    },
+    {
+     "type": "scatter",
+     "width": 6,
+     "props": {
+      "title": "Stillstand vs. OEE",
+      "entity": "schichtdaten",
+      "x_field": "stillstand",
+      "y_field": "oee",
+      "color_field": "linie",
+      "trendline": true
+     }
+    },
+    {
+     "type": "heatmap",
+     "width": 12,
+     "props": {
+      "title": "Korrelationen",
+      "entity": "schichtdaten",
+      "mode": "correlation"
+     }
+    }
+   ]
+  },
+  {
+   "title": "Erfassung",
+   "slug": "erfassung",
+   "layout": [
+    {
+     "type": "form",
+     "width": 6,
+     "props": {
+      "entity": "schichtdaten",
+      "submit_label": "Schicht melden"
+     }
+    },
+    {
+     "type": "csv_import",
+     "width": 6,
+     "props": {
+      "entity": "schichtdaten",
+      "label": "MES-Export laden"
+     }
+    },
+    {
+     "type": "table",
+     "width": 12,
+     "props": {
+      "entity": "schichtdaten",
+      "page_size": 20
+     }
+    }
+   ]
+  }
+ ],
+ "scripts": [],
+ "beispieldaten": {
+  "schichtdaten": [
+   {
+    "datum": "@-41",
+    "linie": "ZS-1 Zahnstange",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 20,
+    "soll": 614,
+    "ist": 553,
+    "gut": 544
+   },
+   {
+    "datum": "@-41",
+    "linie": "ZS-1 Zahnstange",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 30,
+    "soll": 600,
+    "ist": 567,
+    "gut": 559
+   },
+   {
+    "datum": "@-41",
+    "linie": "LG-2 Lenkgetriebe",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 0,
+    "soll": 500,
+    "ist": 435,
+    "gut": 431
+   },
+   {
+    "datum": "@-41",
+    "linie": "LG-2 Lenkgetriebe",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 30,
+    "soll": 466,
+    "ist": 426,
+    "gut": 423
+   },
+   {
+    "datum": "@-41",
+    "linie": "EPS-3 Servoeinheit",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 10,
+    "soll": 399,
+    "ist": 328,
+    "gut": 326
+   },
+   {
+    "datum": "@-41",
+    "linie": "EPS-3 Servoeinheit",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 60,
+    "soll": 354,
+    "ist": 320,
+    "gut": 313
+   },
+   {
+    "datum": "@-41",
+    "linie": "PR-4 Endprüfung",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 60,
+    "soll": 780,
+    "ist": 648,
+    "gut": 645
+   },
+   {
+    "datum": "@-41",
+    "linie": "PR-4 Endprüfung",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 15,
+    "soll": 870,
+    "ist": 778,
+    "gut": 767
+   },
+   {
+    "datum": "@-41",
+    "linie": "HT-5 Härterei",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 10,
+    "soll": 550,
+    "ist": 538,
+    "gut": 529
+   },
+   {
+    "datum": "@-41",
+    "linie": "HT-5 Härterei",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 60,
+    "soll": 487,
+    "ist": 415,
+    "gut": 408
+   },
+   {
+    "datum": "@-41",
+    "linie": "HT-5 Härterei",
+    "schicht": "Nacht",
+    "planzeit": 450,
+    "stillstand": 30,
+    "soll": 525,
+    "ist": 512,
+    "gut": 505
+   },
+   {
+    "datum": "@-40",
+    "linie": "ZS-1 Zahnstange",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 60,
+    "soll": 557,
+    "ist": 470,
+    "gut": 468
+   },
+   {
+    "datum": "@-40",
+    "linie": "ZS-1 Zahnstange",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 0,
+    "soll": 642,
+    "ist": 540,
+    "gut": 540
+   },
+   {
+    "datum": "@-40",
+    "linie": "LG-2 Lenkgetriebe",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 15,
+    "soll": 483,
+    "ist": 405,
+    "gut": 398
+   },
+   {
+    "datum": "@-40",
+    "linie": "LG-2 Lenkgetriebe",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 45,
+    "soll": 450,
+    "ist": 420,
+    "gut": 411
+   },
+   {
+    "datum": "@-40",
+    "linie": "EPS-3 Servoeinheit",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 45,
+    "soll": 368,
+    "ist": 332,
+    "gut": 331
+   },
+   {
+    "datum": "@-40",
+    "linie": "EPS-3 Servoeinheit",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 20,
+    "soll": 390,
+    "ist": 321,
+    "gut": 316
+   },
+   {
+    "datum": "@-40",
+    "linie": "PR-4 Endprüfung",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 20,
+    "soll": 860,
+    "ist": 817,
+    "gut": 812
+   },
+   {
+    "datum": "@-40",
+    "linie": "PR-4 Endprüfung",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 90,
+    "soll": 720,
+    "ist": 693,
+    "gut": 679
+   },
+   {
+    "datum": "@-40",
+    "linie": "HT-5 Härterei",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 30,
+    "soll": 525,
+    "ist": 506,
+    "gut": 500
+   },
+   {
+    "datum": "@-40",
+    "linie": "HT-5 Härterei",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 5,
+    "soll": 556,
+    "ist": 497,
+    "gut": 488
+   },
+   {
+    "datum": "@-40",
+    "linie": "HT-5 Härterei",
+    "schicht": "Nacht",
+    "planzeit": 450,
+    "stillstand": 10,
+    "soll": 550,
+    "ist": 481,
+    "gut": 481
+   },
+   {
+    "datum": "@-39",
+    "linie": "ZS-1 Zahnstange",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 0,
+    "soll": 642,
+    "ist": 575,
+    "gut": 569
+   },
+   {
+    "datum": "@-39",
+    "linie": "ZS-1 Zahnstange",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 20,
+    "soll": 614,
+    "ist": 503,
+    "gut": 499
+   },
+   {
+    "datum": "@-39",
+    "linie": "LG-2 Lenkgetriebe",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 90,
+    "soll": 400,
+    "ist": 355,
+    "gut": 351
+   },
+   {
+    "datum": "@-39",
+    "linie": "LG-2 Lenkgetriebe",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 60,
+    "soll": 433,
+    "ist": 356,
+    "gut": 349
+   },
+   {
+    "datum": "@-39",
+    "linie": "EPS-3 Servoeinheit",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 5,
+    "soll": 404,
+    "ist": 386,
+    "gut": 378
+   },
+   {
+    "datum": "@-39",
+    "linie": "EPS-3 Servoeinheit",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 45,
+    "soll": 368,
+    "ist": 337,
+    "gut": 332
+   },
+   {
+    "datum": "@-39",
+    "linie": "PR-4 Endprüfung",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 60,
+    "soll": 780,
+    "ist": 740,
+    "gut": 740
+   },
+   {
+    "datum": "@-39",
+    "linie": "PR-4 Endprüfung",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 20,
+    "soll": 860,
+    "ist": 749,
+    "gut": 741
+   },
+   {
+    "datum": "@-39",
+    "linie": "HT-5 Härterei",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 10,
+    "soll": 550,
+    "ist": 483,
+    "gut": 472
+   },
+   {
+    "datum": "@-39",
+    "linie": "HT-5 Härterei",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 30,
+    "soll": 525,
+    "ist": 486,
+    "gut": 477
+   },
+   {
+    "datum": "@-39",
+    "linie": "HT-5 Härterei",
+    "schicht": "Nacht",
+    "planzeit": 450,
+    "stillstand": 30,
+    "soll": 525,
+    "ist": 470,
+    "gut": 464
+   },
+   {
+    "datum": "@-38",
+    "linie": "ZS-1 Zahnstange",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 5,
+    "soll": 635,
+    "ist": 530,
+    "gut": 519
+   },
+   {
+    "datum": "@-38",
+    "linie": "ZS-1 Zahnstange",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 60,
+    "soll": 557,
+    "ist": 495,
+    "gut": 494
+   },
+   {
+    "datum": "@-38",
+    "linie": "LG-2 Lenkgetriebe",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 0,
+    "soll": 500,
+    "ist": 490,
+    "gut": 484
+   },
+   {
+    "datum": "@-38",
+    "linie": "LG-2 Lenkgetriebe",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 30,
+    "soll": 466,
+    "ist": 417,
+    "gut": 412
+   },
+   {
+    "datum": "@-38",
+    "linie": "EPS-3 Servoeinheit",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 30,
+    "soll": 381,
+    "ist": 354,
+    "gut": 348
+   },
+   {
+    "datum": "@-38",
+    "linie": "EPS-3 Servoeinheit",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 60,
+    "soll": 354,
+    "ist": 296,
+    "gut": 290
+   },
+   {
+    "datum": "@-38",
+    "linie": "PR-4 Endprüfung",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 15,
+    "soll": 870,
+    "ist": 730,
+    "gut": 712
+   },
+   {
+    "datum": "@-38",
+    "linie": "PR-4 Endprüfung",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 30,
+    "soll": 840,
+    "ist": 757,
+    "gut": 755
+   },
+   {
+    "datum": "@-38",
+    "linie": "HT-5 Härterei",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 0,
+    "soll": 562,
+    "ist": 471,
+    "gut": 467
+   },
+   {
+    "datum": "@-38",
+    "linie": "HT-5 Härterei",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 5,
+    "soll": 556,
+    "ist": 527,
+    "gut": 518
+   },
+   {
+    "datum": "@-38",
+    "linie": "HT-5 Härterei",
+    "schicht": "Nacht",
+    "planzeit": 450,
+    "stillstand": 0,
+    "soll": 562,
+    "ist": 552,
+    "gut": 543
+   },
+   {
+    "datum": "@-37",
+    "linie": "ZS-1 Zahnstange",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 90,
+    "soll": 514,
+    "ist": 504,
+    "gut": 492
+   },
+   {
+    "datum": "@-37",
+    "linie": "ZS-1 Zahnstange",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 5,
+    "soll": 635,
+    "ist": 606,
+    "gut": 604
+   },
+   {
+    "datum": "@-37",
+    "linie": "LG-2 Lenkgetriebe",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 90,
+    "soll": 400,
+    "ist": 366,
+    "gut": 364
+   },
+   {
+    "datum": "@-37",
+    "linie": "LG-2 Lenkgetriebe",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 5,
+    "soll": 494,
+    "ist": 473,
+    "gut": 473
+   },
+   {
+    "datum": "@-37",
+    "linie": "EPS-3 Servoeinheit",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 45,
+    "soll": 368,
+    "ist": 303,
+    "gut": 301
+   },
+   {
+    "datum": "@-37",
+    "linie": "EPS-3 Servoeinheit",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 45,
+    "soll": 368,
+    "ist": 310,
+    "gut": 308
+   },
+   {
+    "datum": "@-37",
+    "linie": "PR-4 Endprüfung",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 10,
+    "soll": 880,
+    "ist": 736,
+    "gut": 735
+   },
+   {
+    "datum": "@-37",
+    "linie": "PR-4 Endprüfung",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 30,
+    "soll": 840,
+    "ist": 784,
+    "gut": 774
+   },
+   {
+    "datum": "@-37",
+    "linie": "HT-5 Härterei",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 0,
+    "soll": 562,
+    "ist": 505,
+    "gut": 494
+   },
+   {
+    "datum": "@-37",
+    "linie": "HT-5 Härterei",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 10,
+    "soll": 550,
+    "ist": 456,
+    "gut": 447
+   },
+   {
+    "datum": "@-37",
+    "linie": "HT-5 Härterei",
+    "schicht": "Nacht",
+    "planzeit": 450,
+    "stillstand": 20,
+    "soll": 537,
+    "ist": 518,
+    "gut": 508
+   },
+   {
+    "datum": "@-36",
+    "linie": "ZS-1 Zahnstange",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 5,
+    "soll": 635,
+    "ist": 600,
+    "gut": 592
+   },
+   {
+    "datum": "@-36",
+    "linie": "ZS-1 Zahnstange",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 10,
+    "soll": 628,
+    "ist": 544,
+    "gut": 540
+   },
+   {
+    "datum": "@-36",
+    "linie": "LG-2 Lenkgetriebe",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 0,
+    "soll": 500,
+    "ist": 491,
+    "gut": 484
+   },
+   {
+    "datum": "@-36",
+    "linie": "LG-2 Lenkgetriebe",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 30,
+    "soll": 466,
+    "ist": 430,
+    "gut": 430
+   },
+   {
+    "datum": "@-36",
+    "linie": "EPS-3 Servoeinheit",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 30,
+    "soll": 381,
+    "ist": 338,
+    "gut": 334
+   },
+   {
+    "datum": "@-36",
+    "linie": "EPS-3 Servoeinheit",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 10,
+    "soll": 399,
+    "ist": 328,
+    "gut": 326
+   },
+   {
+    "datum": "@-36",
+    "linie": "PR-4 Endprüfung",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 0,
+    "soll": 900,
+    "ist": 764,
+    "gut": 753
+   },
+   {
+    "datum": "@-36",
+    "linie": "PR-4 Endprüfung",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 15,
+    "soll": 870,
+    "ist": 756,
+    "gut": 742
+   },
+   {
+    "datum": "@-36",
+    "linie": "HT-5 Härterei",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 5,
+    "soll": 556,
+    "ist": 506,
+    "gut": 494
+   },
+   {
+    "datum": "@-36",
+    "linie": "HT-5 Härterei",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 0,
+    "soll": 562,
+    "ist": 546,
+    "gut": 544
+   },
+   {
+    "datum": "@-36",
+    "linie": "HT-5 Härterei",
+    "schicht": "Nacht",
+    "planzeit": 450,
+    "stillstand": 10,
+    "soll": 550,
+    "ist": 507,
+    "gut": 501
+   },
+   {
+    "datum": "@-35",
+    "linie": "ZS-1 Zahnstange",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 20,
+    "soll": 614,
+    "ist": 601,
+    "gut": 595
+   },
+   {
+    "datum": "@-35",
+    "linie": "ZS-1 Zahnstange",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 20,
+    "soll": 614,
+    "ist": 580,
+    "gut": 572
+   },
+   {
+    "datum": "@-35",
+    "linie": "LG-2 Lenkgetriebe",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 20,
+    "soll": 477,
+    "ist": 453,
+    "gut": 453
+   },
+   {
+    "datum": "@-35",
+    "linie": "LG-2 Lenkgetriebe",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 60,
+    "soll": 433,
+    "ist": 416,
+    "gut": 416
+   },
+   {
+    "datum": "@-35",
+    "linie": "EPS-3 Servoeinheit",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 30,
+    "soll": 381,
+    "ist": 365,
+    "gut": 356
+   },
+   {
+    "datum": "@-35",
+    "linie": "EPS-3 Servoeinheit",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 60,
+    "soll": 354,
+    "ist": 348,
+    "gut": 348
+   },
+   {
+    "datum": "@-35",
+    "linie": "PR-4 Endprüfung",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 0,
+    "soll": 900,
+    "ist": 807,
+    "gut": 788
+   },
+   {
+    "datum": "@-35",
+    "linie": "PR-4 Endprüfung",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 15,
+    "soll": 870,
+    "ist": 828,
+    "gut": 814
+   },
+   {
+    "datum": "@-35",
+    "linie": "HT-5 Härterei",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 20,
+    "soll": 537,
+    "ist": 495,
+    "gut": 489
+   },
+   {
+    "datum": "@-35",
+    "linie": "HT-5 Härterei",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 30,
+    "soll": 525,
+    "ist": 505,
+    "gut": 501
+   },
+   {
+    "datum": "@-35",
+    "linie": "HT-5 Härterei",
+    "schicht": "Nacht",
+    "planzeit": 450,
+    "stillstand": 45,
+    "soll": 506,
+    "ist": 447,
+    "gut": 446
+   },
+   {
+    "datum": "@-34",
+    "linie": "ZS-1 Zahnstange",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 30,
+    "soll": 600,
+    "ist": 542,
+    "gut": 538
+   },
+   {
+    "datum": "@-34",
+    "linie": "ZS-1 Zahnstange",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 20,
+    "soll": 614,
+    "ist": 564,
+    "gut": 553
+   },
+   {
+    "datum": "@-34",
+    "linie": "LG-2 Lenkgetriebe",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 90,
+    "soll": 400,
+    "ist": 344,
+    "gut": 342
+   },
+   {
+    "datum": "@-34",
+    "linie": "LG-2 Lenkgetriebe",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 90,
+    "soll": 400,
+    "ist": 364,
+    "gut": 356
+   },
+   {
+    "datum": "@-34",
+    "linie": "EPS-3 Servoeinheit",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 15,
+    "soll": 395,
+    "ist": 332,
+    "gut": 331
+   },
+   {
+    "datum": "@-34",
+    "linie": "EPS-3 Servoeinheit",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 10,
+    "soll": 399,
+    "ist": 388,
+    "gut": 384
+   },
+   {
+    "datum": "@-34",
+    "linie": "PR-4 Endprüfung",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 90,
+    "soll": 720,
+    "ist": 636,
+    "gut": 627
+   },
+   {
+    "datum": "@-34",
+    "linie": "PR-4 Endprüfung",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 90,
+    "soll": 720,
+    "ist": 600,
+    "gut": 598
+   },
+   {
+    "datum": "@-34",
+    "linie": "HT-5 Härterei",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 60,
+    "soll": 487,
+    "ist": 426,
+    "gut": 417
+   },
+   {
+    "datum": "@-34",
+    "linie": "HT-5 Härterei",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 45,
+    "soll": 506,
+    "ist": 426,
+    "gut": 418
+   },
+   {
+    "datum": "@-34",
+    "linie": "HT-5 Härterei",
+    "schicht": "Nacht",
+    "planzeit": 450,
+    "stillstand": 5,
+    "soll": 556,
+    "ist": 547,
+    "gut": 545
+   },
+   {
+    "datum": "@-33",
+    "linie": "ZS-1 Zahnstange",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 30,
+    "soll": 600,
+    "ist": 575,
+    "gut": 575
+   },
+   {
+    "datum": "@-33",
+    "linie": "ZS-1 Zahnstange",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 0,
+    "soll": 642,
+    "ist": 588,
+    "gut": 578
+   },
+   {
+    "datum": "@-33",
+    "linie": "LG-2 Lenkgetriebe",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 45,
+    "soll": 450,
+    "ist": 422,
+    "gut": 414
+   },
+   {
+    "datum": "@-33",
+    "linie": "LG-2 Lenkgetriebe",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 10,
+    "soll": 488,
+    "ist": 405,
+    "gut": 403
+   },
+   {
+    "datum": "@-33",
+    "linie": "EPS-3 Servoeinheit",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 10,
+    "soll": 399,
+    "ist": 340,
+    "gut": 338
+   },
+   {
+    "datum": "@-33",
+    "linie": "EPS-3 Servoeinheit",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 15,
+    "soll": 395,
+    "ist": 378,
+    "gut": 371
+   },
+   {
+    "datum": "@-33",
+    "linie": "PR-4 Endprüfung",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 20,
+    "soll": 860,
+    "ist": 825,
+    "gut": 825
+   },
+   {
+    "datum": "@-33",
+    "linie": "PR-4 Endprüfung",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 90,
+    "soll": 720,
+    "ist": 669,
+    "gut": 661
+   },
+   {
+    "datum": "@-33",
+    "linie": "HT-5 Härterei",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 30,
+    "soll": 525,
+    "ist": 458,
+    "gut": 452
+   },
+   {
+    "datum": "@-33",
+    "linie": "HT-5 Härterei",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 90,
+    "soll": 450,
+    "ist": 391,
+    "gut": 390
+   },
+   {
+    "datum": "@-33",
+    "linie": "HT-5 Härterei",
+    "schicht": "Nacht",
+    "planzeit": 450,
+    "stillstand": 90,
+    "soll": 450,
+    "ist": 397,
+    "gut": 394
+   },
+   {
+    "datum": "@-32",
+    "linie": "ZS-1 Zahnstange",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 60,
+    "soll": 557,
+    "ist": 514,
+    "gut": 511
+   },
+   {
+    "datum": "@-32",
+    "linie": "ZS-1 Zahnstange",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 45,
+    "soll": 578,
+    "ist": 483,
+    "gut": 481
+   },
+   {
+    "datum": "@-32",
+    "linie": "LG-2 Lenkgetriebe",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 0,
+    "soll": 500,
+    "ist": 432,
+    "gut": 426
+   },
+   {
+    "datum": "@-32",
+    "linie": "LG-2 Lenkgetriebe",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 15,
+    "soll": 483,
+    "ist": 454,
+    "gut": 453
+   },
+   {
+    "datum": "@-32",
+    "linie": "EPS-3 Servoeinheit",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 0,
+    "soll": 409,
+    "ist": 368,
+    "gut": 365
+   },
+   {
+    "datum": "@-32",
+    "linie": "EPS-3 Servoeinheit",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 5,
+    "soll": 404,
+    "ist": 395,
+    "gut": 394
+   },
+   {
+    "datum": "@-32",
+    "linie": "PR-4 Endprüfung",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 60,
+    "soll": 780,
+    "ist": 666,
+    "gut": 662
+   },
+   {
+    "datum": "@-32",
+    "linie": "PR-4 Endprüfung",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 5,
+    "soll": 890,
+    "ist": 772,
+    "gut": 760
+   },
+   {
+    "datum": "@-32",
+    "linie": "HT-5 Härterei",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 45,
+    "soll": 506,
+    "ist": 435,
+    "gut": 435
+   },
+   {
+    "datum": "@-32",
+    "linie": "HT-5 Härterei",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 15,
+    "soll": 543,
+    "ist": 537,
+    "gut": 527
+   },
+   {
+    "datum": "@-32",
+    "linie": "HT-5 Härterei",
+    "schicht": "Nacht",
+    "planzeit": 450,
+    "stillstand": 0,
+    "soll": 562,
+    "ist": 538,
+    "gut": 527
+   },
+   {
+    "datum": "@-31",
+    "linie": "ZS-1 Zahnstange",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 45,
+    "soll": 578,
+    "ist": 543,
+    "gut": 535
+   },
+   {
+    "datum": "@-31",
+    "linie": "ZS-1 Zahnstange",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 30,
+    "soll": 600,
+    "ist": 577,
+    "gut": 569
+   },
+   {
+    "datum": "@-31",
+    "linie": "LG-2 Lenkgetriebe",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 5,
+    "soll": 494,
+    "ist": 406,
+    "gut": 399
+   },
+   {
+    "datum": "@-31",
+    "linie": "LG-2 Lenkgetriebe",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 90,
+    "soll": 400,
+    "ist": 360,
+    "gut": 355
+   },
+   {
+    "datum": "@-31",
+    "linie": "EPS-3 Servoeinheit",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 30,
+    "soll": 381,
+    "ist": 317,
+    "gut": 317
+   },
+   {
+    "datum": "@-31",
+    "linie": "EPS-3 Servoeinheit",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 5,
+    "soll": 404,
+    "ist": 399,
+    "gut": 392
+   },
+   {
+    "datum": "@-31",
+    "linie": "PR-4 Endprüfung",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 30,
+    "soll": 840,
+    "ist": 773,
+    "gut": 770
+   },
+   {
+    "datum": "@-31",
+    "linie": "PR-4 Endprüfung",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 90,
+    "soll": 720,
+    "ist": 630,
+    "gut": 626
+   },
+   {
+    "datum": "@-31",
+    "linie": "HT-5 Härterei",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 5,
+    "soll": 556,
+    "ist": 519,
+    "gut": 508
+   },
+   {
+    "datum": "@-31",
+    "linie": "HT-5 Härterei",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 0,
+    "soll": 562,
+    "ist": 488,
+    "gut": 477
+   },
+   {
+    "datum": "@-31",
+    "linie": "HT-5 Härterei",
+    "schicht": "Nacht",
+    "planzeit": 450,
+    "stillstand": 60,
+    "soll": 487,
+    "ist": 425,
+    "gut": 425
+   },
+   {
+    "datum": "@-30",
+    "linie": "ZS-1 Zahnstange",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 15,
+    "soll": 621,
+    "ist": 582,
+    "gut": 579
+   },
+   {
+    "datum": "@-30",
+    "linie": "ZS-1 Zahnstange",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 10,
+    "soll": 628,
+    "ist": 551,
+    "gut": 542
+   },
+   {
+    "datum": "@-30",
+    "linie": "LG-2 Lenkgetriebe",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 90,
+    "soll": 400,
+    "ist": 368,
+    "gut": 360
+   },
+   {
+    "datum": "@-30",
+    "linie": "LG-2 Lenkgetriebe",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 15,
+    "soll": 483,
+    "ist": 445,
+    "gut": 441
+   },
+   {
+    "datum": "@-30",
+    "linie": "EPS-3 Servoeinheit",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 90,
+    "soll": 327,
+    "ist": 280,
+    "gut": 273
+   },
+   {
+    "datum": "@-30",
+    "linie": "EPS-3 Servoeinheit",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 5,
+    "soll": 404,
+    "ist": 353,
+    "gut": 346
+   },
+   {
+    "datum": "@-30",
+    "linie": "PR-4 Endprüfung",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 30,
+    "soll": 840,
+    "ist": 769,
+    "gut": 753
+   },
+   {
+    "datum": "@-30",
+    "linie": "PR-4 Endprüfung",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 45,
+    "soll": 810,
+    "ist": 779,
+    "gut": 779
+   },
+   {
+    "datum": "@-30",
+    "linie": "HT-5 Härterei",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 20,
+    "soll": 537,
+    "ist": 441,
+    "gut": 439
+   },
+   {
+    "datum": "@-30",
+    "linie": "HT-5 Härterei",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 20,
+    "soll": 537,
+    "ist": 493,
+    "gut": 492
+   },
+   {
+    "datum": "@-30",
+    "linie": "HT-5 Härterei",
+    "schicht": "Nacht",
+    "planzeit": 450,
+    "stillstand": 10,
+    "soll": 550,
+    "ist": 461,
+    "gut": 456
+   },
+   {
+    "datum": "@-29",
+    "linie": "ZS-1 Zahnstange",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 30,
+    "soll": 600,
+    "ist": 540,
+    "gut": 528
+   },
+   {
+    "datum": "@-29",
+    "linie": "ZS-1 Zahnstange",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 20,
+    "soll": 614,
+    "ist": 557,
+    "gut": 555
+   },
+   {
+    "datum": "@-29",
+    "linie": "LG-2 Lenkgetriebe",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 5,
+    "soll": 494,
+    "ist": 459,
+    "gut": 453
+   },
+   {
+    "datum": "@-29",
+    "linie": "LG-2 Lenkgetriebe",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 30,
+    "soll": 466,
+    "ist": 448,
+    "gut": 444
+   },
+   {
+    "datum": "@-29",
+    "linie": "EPS-3 Servoeinheit",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 90,
+    "soll": 327,
+    "ist": 311,
+    "gut": 309
+   },
+   {
+    "datum": "@-29",
+    "linie": "EPS-3 Servoeinheit",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 20,
+    "soll": 390,
+    "ist": 366,
+    "gut": 364
+   },
+   {
+    "datum": "@-29",
+    "linie": "PR-4 Endprüfung",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 45,
+    "soll": 810,
+    "ist": 671,
+    "gut": 667
+   },
+   {
+    "datum": "@-29",
+    "linie": "PR-4 Endprüfung",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 30,
+    "soll": 840,
+    "ist": 813,
+    "gut": 793
+   },
+   {
+    "datum": "@-29",
+    "linie": "HT-5 Härterei",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 5,
+    "soll": 556,
+    "ist": 535,
+    "gut": 528
+   },
+   {
+    "datum": "@-29",
+    "linie": "HT-5 Härterei",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 10,
+    "soll": 550,
+    "ist": 461,
+    "gut": 456
+   },
+   {
+    "datum": "@-29",
+    "linie": "HT-5 Härterei",
+    "schicht": "Nacht",
+    "planzeit": 450,
+    "stillstand": 15,
+    "soll": 543,
+    "ist": 500,
+    "gut": 488
+   },
+   {
+    "datum": "@-28",
+    "linie": "ZS-1 Zahnstange",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 45,
+    "soll": 578,
+    "ist": 492,
+    "gut": 480
+   },
+   {
+    "datum": "@-28",
+    "linie": "ZS-1 Zahnstange",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 5,
+    "soll": 635,
+    "ist": 544,
+    "gut": 544
+   },
+   {
+    "datum": "@-28",
+    "linie": "LG-2 Lenkgetriebe",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 60,
+    "soll": 433,
+    "ist": 356,
+    "gut": 355
+   },
+   {
+    "datum": "@-28",
+    "linie": "LG-2 Lenkgetriebe",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 90,
+    "soll": 400,
+    "ist": 395,
+    "gut": 394
+   },
+   {
+    "datum": "@-28",
+    "linie": "EPS-3 Servoeinheit",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 60,
+    "soll": 354,
+    "ist": 319,
+    "gut": 317
+   },
+   {
+    "datum": "@-28",
+    "linie": "EPS-3 Servoeinheit",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 60,
+    "soll": 354,
+    "ist": 342,
+    "gut": 335
+   },
+   {
+    "datum": "@-28",
+    "linie": "PR-4 Endprüfung",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 0,
+    "soll": 900,
+    "ist": 863,
+    "gut": 858
+   },
+   {
+    "datum": "@-28",
+    "linie": "PR-4 Endprüfung",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 30,
+    "soll": 840,
+    "ist": 756,
+    "gut": 739
+   },
+   {
+    "datum": "@-28",
+    "linie": "HT-5 Härterei",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 60,
+    "soll": 487,
+    "ist": 460,
+    "gut": 460
+   },
+   {
+    "datum": "@-28",
+    "linie": "HT-5 Härterei",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 10,
+    "soll": 550,
+    "ist": 470,
+    "gut": 470
+   },
+   {
+    "datum": "@-28",
+    "linie": "HT-5 Härterei",
+    "schicht": "Nacht",
+    "planzeit": 450,
+    "stillstand": 5,
+    "soll": 556,
+    "ist": 480,
+    "gut": 471
+   },
+   {
+    "datum": "@-27",
+    "linie": "ZS-1 Zahnstange",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 15,
+    "soll": 621,
+    "ist": 576,
+    "gut": 567
+   },
+   {
+    "datum": "@-27",
+    "linie": "ZS-1 Zahnstange",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 30,
+    "soll": 600,
+    "ist": 587,
+    "gut": 576
+   },
+   {
+    "datum": "@-27",
+    "linie": "LG-2 Lenkgetriebe",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 45,
+    "soll": 450,
+    "ist": 420,
+    "gut": 419
+   },
+   {
+    "datum": "@-27",
+    "linie": "LG-2 Lenkgetriebe",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 0,
+    "soll": 500,
+    "ist": 447,
+    "gut": 442
+   },
+   {
+    "datum": "@-27",
+    "linie": "EPS-3 Servoeinheit",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 60,
+    "soll": 354,
+    "ist": 307,
+    "gut": 300
+   },
+   {
+    "datum": "@-27",
+    "linie": "EPS-3 Servoeinheit",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 10,
+    "soll": 399,
+    "ist": 338,
+    "gut": 333
+   },
+   {
+    "datum": "@-27",
+    "linie": "PR-4 Endprüfung",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 45,
+    "soll": 810,
+    "ist": 684,
+    "gut": 670
+   },
+   {
+    "datum": "@-27",
+    "linie": "PR-4 Endprüfung",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 30,
+    "soll": 840,
+    "ist": 821,
+    "gut": 812
+   },
+   {
+    "datum": "@-27",
+    "linie": "HT-5 Härterei",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 90,
+    "soll": 450,
+    "ist": 439,
+    "gut": 431
+   },
+   {
+    "datum": "@-27",
+    "linie": "HT-5 Härterei",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 0,
+    "soll": 562,
+    "ist": 479,
+    "gut": 476
+   },
+   {
+    "datum": "@-27",
+    "linie": "HT-5 Härterei",
+    "schicht": "Nacht",
+    "planzeit": 450,
+    "stillstand": 15,
+    "soll": 543,
+    "ist": 448,
+    "gut": 446
+   },
+   {
+    "datum": "@-26",
+    "linie": "ZS-1 Zahnstange",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 0,
+    "soll": 642,
+    "ist": 608,
+    "gut": 595
+   },
+   {
+    "datum": "@-26",
+    "linie": "ZS-1 Zahnstange",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 90,
+    "soll": 514,
+    "ist": 438,
+    "gut": 437
+   },
+   {
+    "datum": "@-26",
+    "linie": "LG-2 Lenkgetriebe",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 45,
+    "soll": 450,
+    "ist": 404,
+    "gut": 400
+   },
+   {
+    "datum": "@-26",
+    "linie": "LG-2 Lenkgetriebe",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 0,
+    "soll": 500,
+    "ist": 479,
+    "gut": 475
+   },
+   {
+    "datum": "@-26",
+    "linie": "EPS-3 Servoeinheit",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 15,
+    "soll": 395,
+    "ist": 379,
+    "gut": 379
+   },
+   {
+    "datum": "@-26",
+    "linie": "EPS-3 Servoeinheit",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 10,
+    "soll": 399,
+    "ist": 365,
+    "gut": 361
+   },
+   {
+    "datum": "@-26",
+    "linie": "PR-4 Endprüfung",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 30,
+    "soll": 840,
+    "ist": 785,
+    "gut": 776
+   },
+   {
+    "datum": "@-26",
+    "linie": "PR-4 Endprüfung",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 90,
+    "soll": 720,
+    "ist": 691,
+    "gut": 682
+   },
+   {
+    "datum": "@-26",
+    "linie": "HT-5 Härterei",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 30,
+    "soll": 525,
+    "ist": 452,
+    "gut": 449
+   },
+   {
+    "datum": "@-26",
+    "linie": "HT-5 Härterei",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 0,
+    "soll": 562,
+    "ist": 478,
+    "gut": 474
+   },
+   {
+    "datum": "@-26",
+    "linie": "HT-5 Härterei",
+    "schicht": "Nacht",
+    "planzeit": 450,
+    "stillstand": 60,
+    "soll": 487,
+    "ist": 471,
+    "gut": 469
+   },
+   {
+    "datum": "@-25",
+    "linie": "ZS-1 Zahnstange",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 90,
+    "soll": 514,
+    "ist": 494,
+    "gut": 492
+   },
+   {
+    "datum": "@-25",
+    "linie": "ZS-1 Zahnstange",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 60,
+    "soll": 557,
+    "ist": 490,
+    "gut": 480
+   },
+   {
+    "datum": "@-25",
+    "linie": "LG-2 Lenkgetriebe",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 20,
+    "soll": 477,
+    "ist": 453,
+    "gut": 444
+   },
+   {
+    "datum": "@-25",
+    "linie": "LG-2 Lenkgetriebe",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 5,
+    "soll": 494,
+    "ist": 406,
+    "gut": 398
+   },
+   {
+    "datum": "@-25",
+    "linie": "EPS-3 Servoeinheit",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 90,
+    "soll": 327,
+    "ist": 317,
+    "gut": 310
+   },
+   {
+    "datum": "@-25",
+    "linie": "EPS-3 Servoeinheit",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 60,
+    "soll": 354,
+    "ist": 339,
+    "gut": 337
+   },
+   {
+    "datum": "@-25",
+    "linie": "PR-4 Endprüfung",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 15,
+    "soll": 870,
+    "ist": 812,
+    "gut": 792
+   },
+   {
+    "datum": "@-25",
+    "linie": "PR-4 Endprüfung",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 30,
+    "soll": 840,
+    "ist": 757,
+    "gut": 755
+   },
+   {
+    "datum": "@-25",
+    "linie": "HT-5 Härterei",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 45,
+    "soll": 506,
+    "ist": 435,
+    "gut": 429
+   },
+   {
+    "datum": "@-25",
+    "linie": "HT-5 Härterei",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 20,
+    "soll": 537,
+    "ist": 459,
+    "gut": 453
+   },
+   {
+    "datum": "@-25",
+    "linie": "HT-5 Härterei",
+    "schicht": "Nacht",
+    "planzeit": 450,
+    "stillstand": 10,
+    "soll": 550,
+    "ist": 535,
+    "gut": 533
+   },
+   {
+    "datum": "@-24",
+    "linie": "ZS-1 Zahnstange",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 90,
+    "soll": 514,
+    "ist": 451,
+    "gut": 445
+   },
+   {
+    "datum": "@-24",
+    "linie": "ZS-1 Zahnstange",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 0,
+    "soll": 642,
+    "ist": 571,
+    "gut": 567
+   },
+   {
+    "datum": "@-24",
+    "linie": "LG-2 Lenkgetriebe",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 10,
+    "soll": 488,
+    "ist": 415,
+    "gut": 413
+   },
+   {
+    "datum": "@-24",
+    "linie": "LG-2 Lenkgetriebe",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 10,
+    "soll": 488,
+    "ist": 441,
+    "gut": 435
+   },
+   {
+    "datum": "@-24",
+    "linie": "EPS-3 Servoeinheit",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 10,
+    "soll": 399,
+    "ist": 354,
+    "gut": 353
+   },
+   {
+    "datum": "@-24",
+    "linie": "EPS-3 Servoeinheit",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 90,
+    "soll": 327,
+    "ist": 301,
+    "gut": 301
+   },
+   {
+    "datum": "@-24",
+    "linie": "PR-4 Endprüfung",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 90,
+    "soll": 720,
+    "ist": 688,
+    "gut": 683
+   },
+   {
+    "datum": "@-24",
+    "linie": "PR-4 Endprüfung",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 45,
+    "soll": 810,
+    "ist": 773,
+    "gut": 767
+   },
+   {
+    "datum": "@-24",
+    "linie": "HT-5 Härterei",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 5,
+    "soll": 556,
+    "ist": 538,
+    "gut": 530
+   },
+   {
+    "datum": "@-24",
+    "linie": "HT-5 Härterei",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 5,
+    "soll": 556,
+    "ist": 463,
+    "gut": 462
+   },
+   {
+    "datum": "@-24",
+    "linie": "HT-5 Härterei",
+    "schicht": "Nacht",
+    "planzeit": 450,
+    "stillstand": 30,
+    "soll": 525,
+    "ist": 518,
+    "gut": 518
+   },
+   {
+    "datum": "@-23",
+    "linie": "ZS-1 Zahnstange",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 5,
+    "soll": 635,
+    "ist": 583,
+    "gut": 569
+   },
+   {
+    "datum": "@-23",
+    "linie": "ZS-1 Zahnstange",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 15,
+    "soll": 621,
+    "ist": 603,
+    "gut": 590
+   },
+   {
+    "datum": "@-23",
+    "linie": "LG-2 Lenkgetriebe",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 45,
+    "soll": 450,
+    "ist": 375,
+    "gut": 372
+   },
+   {
+    "datum": "@-23",
+    "linie": "LG-2 Lenkgetriebe",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 45,
+    "soll": 450,
+    "ist": 388,
+    "gut": 387
+   },
+   {
+    "datum": "@-23",
+    "linie": "EPS-3 Servoeinheit",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 5,
+    "soll": 404,
+    "ist": 398,
+    "gut": 396
+   },
+   {
+    "datum": "@-23",
+    "linie": "EPS-3 Servoeinheit",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 20,
+    "soll": 390,
+    "ist": 334,
+    "gut": 329
+   },
+   {
+    "datum": "@-23",
+    "linie": "PR-4 Endprüfung",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 5,
+    "soll": 890,
+    "ist": 799,
+    "gut": 784
+   },
+   {
+    "datum": "@-23",
+    "linie": "PR-4 Endprüfung",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 10,
+    "soll": 880,
+    "ist": 763,
+    "gut": 753
+   },
+   {
+    "datum": "@-23",
+    "linie": "HT-5 Härterei",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 0,
+    "soll": 562,
+    "ist": 502,
+    "gut": 495
+   },
+   {
+    "datum": "@-23",
+    "linie": "HT-5 Härterei",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 30,
+    "soll": 525,
+    "ist": 493,
+    "gut": 481
+   },
+   {
+    "datum": "@-23",
+    "linie": "HT-5 Härterei",
+    "schicht": "Nacht",
+    "planzeit": 450,
+    "stillstand": 0,
+    "soll": 562,
+    "ist": 481,
+    "gut": 477
+   },
+   {
+    "datum": "@-22",
+    "linie": "ZS-1 Zahnstange",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 45,
+    "soll": 578,
+    "ist": 509,
+    "gut": 500
+   },
+   {
+    "datum": "@-22",
+    "linie": "ZS-1 Zahnstange",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 90,
+    "soll": 514,
+    "ist": 465,
+    "gut": 455
+   },
+   {
+    "datum": "@-22",
+    "linie": "LG-2 Lenkgetriebe",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 90,
+    "soll": 400,
+    "ist": 381,
+    "gut": 381
+   },
+   {
+    "datum": "@-22",
+    "linie": "LG-2 Lenkgetriebe",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 60,
+    "soll": 433,
+    "ist": 404,
+    "gut": 403
+   },
+   {
+    "datum": "@-22",
+    "linie": "EPS-3 Servoeinheit",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 0,
+    "soll": 409,
+    "ist": 353,
+    "gut": 352
+   },
+   {
+    "datum": "@-22",
+    "linie": "EPS-3 Servoeinheit",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 5,
+    "soll": 404,
+    "ist": 337,
+    "gut": 333
+   },
+   {
+    "datum": "@-22",
+    "linie": "PR-4 Endprüfung",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 10,
+    "soll": 880,
+    "ist": 742,
+    "gut": 740
+   },
+   {
+    "datum": "@-22",
+    "linie": "PR-4 Endprüfung",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 10,
+    "soll": 880,
+    "ist": 800,
+    "gut": 783
+   },
+   {
+    "datum": "@-22",
+    "linie": "HT-5 Härterei",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 60,
+    "soll": 487,
+    "ist": 467,
+    "gut": 466
+   },
+   {
+    "datum": "@-22",
+    "linie": "HT-5 Härterei",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 45,
+    "soll": 506,
+    "ist": 484,
+    "gut": 473
+   },
+   {
+    "datum": "@-22",
+    "linie": "HT-5 Härterei",
+    "schicht": "Nacht",
+    "planzeit": 450,
+    "stillstand": 90,
+    "soll": 450,
+    "ist": 409,
+    "gut": 403
+   },
+   {
+    "datum": "@-21",
+    "linie": "ZS-1 Zahnstange",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 5,
+    "soll": 635,
+    "ist": 620,
+    "gut": 616
+   },
+   {
+    "datum": "@-21",
+    "linie": "ZS-1 Zahnstange",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 45,
+    "soll": 578,
+    "ist": 497,
+    "gut": 487
+   },
+   {
+    "datum": "@-21",
+    "linie": "LG-2 Lenkgetriebe",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 90,
+    "soll": 400,
+    "ist": 392,
+    "gut": 390
+   },
+   {
+    "datum": "@-21",
+    "linie": "LG-2 Lenkgetriebe",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 20,
+    "soll": 477,
+    "ist": 464,
+    "gut": 453
+   },
+   {
+    "datum": "@-21",
+    "linie": "EPS-3 Servoeinheit",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 30,
+    "soll": 381,
+    "ist": 339,
+    "gut": 339
+   },
+   {
+    "datum": "@-21",
+    "linie": "EPS-3 Servoeinheit",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 5,
+    "soll": 404,
+    "ist": 366,
+    "gut": 364
+   },
+   {
+    "datum": "@-21",
+    "linie": "PR-4 Endprüfung",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 60,
+    "soll": 780,
+    "ist": 706,
+    "gut": 705
+   },
+   {
+    "datum": "@-21",
+    "linie": "PR-4 Endprüfung",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 15,
+    "soll": 870,
+    "ist": 739,
+    "gut": 735
+   },
+   {
+    "datum": "@-21",
+    "linie": "HT-5 Härterei",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 45,
+    "soll": 506,
+    "ist": 475,
+    "gut": 470
+   },
+   {
+    "datum": "@-21",
+    "linie": "HT-5 Härterei",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 15,
+    "soll": 543,
+    "ist": 533,
+    "gut": 532
+   },
+   {
+    "datum": "@-21",
+    "linie": "HT-5 Härterei",
+    "schicht": "Nacht",
+    "planzeit": 450,
+    "stillstand": 5,
+    "soll": 556,
+    "ist": 505,
+    "gut": 493
+   },
+   {
+    "datum": "@-20",
+    "linie": "ZS-1 Zahnstange",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 0,
+    "soll": 642,
+    "ist": 534,
+    "gut": 525
+   },
+   {
+    "datum": "@-20",
+    "linie": "ZS-1 Zahnstange",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 30,
+    "soll": 600,
+    "ist": 496,
+    "gut": 489
+   },
+   {
+    "datum": "@-20",
+    "linie": "LG-2 Lenkgetriebe",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 10,
+    "soll": 488,
+    "ist": 483,
+    "gut": 471
+   },
+   {
+    "datum": "@-20",
+    "linie": "LG-2 Lenkgetriebe",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 15,
+    "soll": 483,
+    "ist": 418,
+    "gut": 415
+   },
+   {
+    "datum": "@-20",
+    "linie": "EPS-3 Servoeinheit",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 5,
+    "soll": 404,
+    "ist": 389,
+    "gut": 384
+   },
+   {
+    "datum": "@-20",
+    "linie": "EPS-3 Servoeinheit",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 5,
+    "soll": 404,
+    "ist": 375,
+    "gut": 372
+   },
+   {
+    "datum": "@-20",
+    "linie": "PR-4 Endprüfung",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 20,
+    "soll": 860,
+    "ist": 804,
+    "gut": 795
+   },
+   {
+    "datum": "@-20",
+    "linie": "PR-4 Endprüfung",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 45,
+    "soll": 810,
+    "ist": 695,
+    "gut": 680
+   },
+   {
+    "datum": "@-20",
+    "linie": "HT-5 Härterei",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 10,
+    "soll": 550,
+    "ist": 453,
+    "gut": 450
+   },
+   {
+    "datum": "@-20",
+    "linie": "HT-5 Härterei",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 45,
+    "soll": 506,
+    "ist": 490,
+    "gut": 484
+   },
+   {
+    "datum": "@-20",
+    "linie": "HT-5 Härterei",
+    "schicht": "Nacht",
+    "planzeit": 450,
+    "stillstand": 60,
+    "soll": 487,
+    "ist": 437,
+    "gut": 431
+   },
+   {
+    "datum": "@-19",
+    "linie": "ZS-1 Zahnstange",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 45,
+    "soll": 578,
+    "ist": 483,
+    "gut": 473
+   },
+   {
+    "datum": "@-19",
+    "linie": "ZS-1 Zahnstange",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 45,
+    "soll": 578,
+    "ist": 511,
+    "gut": 505
+   },
+   {
+    "datum": "@-19",
+    "linie": "LG-2 Lenkgetriebe",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 45,
+    "soll": 450,
+    "ist": 403,
+    "gut": 393
+   },
+   {
+    "datum": "@-19",
+    "linie": "LG-2 Lenkgetriebe",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 30,
+    "soll": 466,
+    "ist": 399,
+    "gut": 393
+   },
+   {
+    "datum": "@-19",
+    "linie": "EPS-3 Servoeinheit",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 60,
+    "soll": 354,
+    "ist": 291,
+    "gut": 291
+   },
+   {
+    "datum": "@-19",
+    "linie": "EPS-3 Servoeinheit",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 45,
+    "soll": 368,
+    "ist": 349,
+    "gut": 348
+   },
+   {
+    "datum": "@-19",
+    "linie": "PR-4 Endprüfung",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 5,
+    "soll": 890,
+    "ist": 756,
+    "gut": 747
+   },
+   {
+    "datum": "@-19",
+    "linie": "PR-4 Endprüfung",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 60,
+    "soll": 780,
+    "ist": 717,
+    "gut": 713
+   },
+   {
+    "datum": "@-19",
+    "linie": "HT-5 Härterei",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 15,
+    "soll": 543,
+    "ist": 465,
+    "gut": 456
+   },
+   {
+    "datum": "@-19",
+    "linie": "HT-5 Härterei",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 10,
+    "soll": 550,
+    "ist": 491,
+    "gut": 487
+   },
+   {
+    "datum": "@-19",
+    "linie": "HT-5 Härterei",
+    "schicht": "Nacht",
+    "planzeit": 450,
+    "stillstand": 90,
+    "soll": 450,
+    "ist": 430,
+    "gut": 423
+   },
+   {
+    "datum": "@-18",
+    "linie": "ZS-1 Zahnstange",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 60,
+    "soll": 557,
+    "ist": 491,
+    "gut": 484
+   },
+   {
+    "datum": "@-18",
+    "linie": "ZS-1 Zahnstange",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 0,
+    "soll": 642,
+    "ist": 527,
+    "gut": 521
+   },
+   {
+    "datum": "@-18",
+    "linie": "LG-2 Lenkgetriebe",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 90,
+    "soll": 400,
+    "ist": 352,
+    "gut": 348
+   },
+   {
+    "datum": "@-18",
+    "linie": "LG-2 Lenkgetriebe",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 10,
+    "soll": 488,
+    "ist": 421,
+    "gut": 419
+   },
+   {
+    "datum": "@-18",
+    "linie": "EPS-3 Servoeinheit",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 45,
+    "soll": 368,
+    "ist": 347,
+    "gut": 341
+   },
+   {
+    "datum": "@-18",
+    "linie": "EPS-3 Servoeinheit",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 45,
+    "soll": 368,
+    "ist": 351,
+    "gut": 343
+   },
+   {
+    "datum": "@-18",
+    "linie": "PR-4 Endprüfung",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 30,
+    "soll": 840,
+    "ist": 713,
+    "gut": 702
+   },
+   {
+    "datum": "@-18",
+    "linie": "PR-4 Endprüfung",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 60,
+    "soll": 780,
+    "ist": 725,
+    "gut": 717
+   },
+   {
+    "datum": "@-18",
+    "linie": "HT-5 Härterei",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 30,
+    "soll": 525,
+    "ist": 458,
+    "gut": 449
+   },
+   {
+    "datum": "@-18",
+    "linie": "HT-5 Härterei",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 90,
+    "soll": 450,
+    "ist": 417,
+    "gut": 407
+   },
+   {
+    "datum": "@-18",
+    "linie": "HT-5 Härterei",
+    "schicht": "Nacht",
+    "planzeit": 450,
+    "stillstand": 60,
+    "soll": 487,
+    "ist": 463,
+    "gut": 456
+   },
+   {
+    "datum": "@-17",
+    "linie": "ZS-1 Zahnstange",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 45,
+    "soll": 578,
+    "ist": 499,
+    "gut": 495
+   },
+   {
+    "datum": "@-17",
+    "linie": "ZS-1 Zahnstange",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 45,
+    "soll": 578,
+    "ist": 474,
+    "gut": 463
+   },
+   {
+    "datum": "@-17",
+    "linie": "LG-2 Lenkgetriebe",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 45,
+    "soll": 450,
+    "ist": 417,
+    "gut": 409
+   },
+   {
+    "datum": "@-17",
+    "linie": "LG-2 Lenkgetriebe",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 20,
+    "soll": 477,
+    "ist": 424,
+    "gut": 415
+   },
+   {
+    "datum": "@-17",
+    "linie": "EPS-3 Servoeinheit",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 30,
+    "soll": 381,
+    "ist": 373,
+    "gut": 370
+   },
+   {
+    "datum": "@-17",
+    "linie": "EPS-3 Servoeinheit",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 5,
+    "soll": 404,
+    "ist": 359,
+    "gut": 357
+   },
+   {
+    "datum": "@-17",
+    "linie": "PR-4 Endprüfung",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 5,
+    "soll": 890,
+    "ist": 868,
+    "gut": 855
+   },
+   {
+    "datum": "@-17",
+    "linie": "PR-4 Endprüfung",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 20,
+    "soll": 860,
+    "ist": 796,
+    "gut": 793
+   },
+   {
+    "datum": "@-17",
+    "linie": "HT-5 Härterei",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 30,
+    "soll": 525,
+    "ist": 467,
+    "gut": 459
+   },
+   {
+    "datum": "@-17",
+    "linie": "HT-5 Härterei",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 15,
+    "soll": 543,
+    "ist": 469,
+    "gut": 460
+   },
+   {
+    "datum": "@-17",
+    "linie": "HT-5 Härterei",
+    "schicht": "Nacht",
+    "planzeit": 450,
+    "stillstand": 5,
+    "soll": 556,
+    "ist": 519,
+    "gut": 514
+   },
+   {
+    "datum": "@-16",
+    "linie": "ZS-1 Zahnstange",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 45,
+    "soll": 578,
+    "ist": 537,
+    "gut": 529
+   },
+   {
+    "datum": "@-16",
+    "linie": "ZS-1 Zahnstange",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 60,
+    "soll": 557,
+    "ist": 465,
+    "gut": 461
+   },
+   {
+    "datum": "@-16",
+    "linie": "LG-2 Lenkgetriebe",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 5,
+    "soll": 494,
+    "ist": 414,
+    "gut": 406
+   },
+   {
+    "datum": "@-16",
+    "linie": "LG-2 Lenkgetriebe",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 30,
+    "soll": 466,
+    "ist": 389,
+    "gut": 381
+   },
+   {
+    "datum": "@-16",
+    "linie": "EPS-3 Servoeinheit",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 20,
+    "soll": 390,
+    "ist": 355,
+    "gut": 349
+   },
+   {
+    "datum": "@-16",
+    "linie": "EPS-3 Servoeinheit",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 90,
+    "soll": 327,
+    "ist": 306,
+    "gut": 306
+   },
+   {
+    "datum": "@-16",
+    "linie": "PR-4 Endprüfung",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 15,
+    "soll": 870,
+    "ist": 718,
+    "gut": 703
+   },
+   {
+    "datum": "@-16",
+    "linie": "PR-4 Endprüfung",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 20,
+    "soll": 860,
+    "ist": 774,
+    "gut": 769
+   },
+   {
+    "datum": "@-16",
+    "linie": "HT-5 Härterei",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 90,
+    "soll": 450,
+    "ist": 435,
+    "gut": 433
+   },
+   {
+    "datum": "@-16",
+    "linie": "HT-5 Härterei",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 60,
+    "soll": 487,
+    "ist": 446,
+    "gut": 437
+   },
+   {
+    "datum": "@-16",
+    "linie": "HT-5 Härterei",
+    "schicht": "Nacht",
+    "planzeit": 450,
+    "stillstand": 5,
+    "soll": 556,
+    "ist": 530,
+    "gut": 517
+   },
+   {
+    "datum": "@-15",
+    "linie": "ZS-1 Zahnstange",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 10,
+    "soll": 628,
+    "ist": 568,
+    "gut": 554
+   },
+   {
+    "datum": "@-15",
+    "linie": "ZS-1 Zahnstange",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 20,
+    "soll": 614,
+    "ist": 598,
+    "gut": 591
+   },
+   {
+    "datum": "@-15",
+    "linie": "LG-2 Lenkgetriebe",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 5,
+    "soll": 494,
+    "ist": 461,
+    "gut": 455
+   },
+   {
+    "datum": "@-15",
+    "linie": "LG-2 Lenkgetriebe",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 0,
+    "soll": 500,
+    "ist": 468,
+    "gut": 468
+   },
+   {
+    "datum": "@-15",
+    "linie": "EPS-3 Servoeinheit",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 30,
+    "soll": 381,
+    "ist": 332,
+    "gut": 331
+   },
+   {
+    "datum": "@-15",
+    "linie": "EPS-3 Servoeinheit",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 0,
+    "soll": 409,
+    "ist": 348,
+    "gut": 347
+   },
+   {
+    "datum": "@-15",
+    "linie": "PR-4 Endprüfung",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 60,
+    "soll": 780,
+    "ist": 755,
+    "gut": 750
+   },
+   {
+    "datum": "@-15",
+    "linie": "PR-4 Endprüfung",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 30,
+    "soll": 840,
+    "ist": 816,
+    "gut": 809
+   },
+   {
+    "datum": "@-15",
+    "linie": "HT-5 Härterei",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 0,
+    "soll": 562,
+    "ist": 503,
+    "gut": 499
+   },
+   {
+    "datum": "@-15",
+    "linie": "HT-5 Härterei",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 0,
+    "soll": 562,
+    "ist": 465,
+    "gut": 454
+   },
+   {
+    "datum": "@-15",
+    "linie": "HT-5 Härterei",
+    "schicht": "Nacht",
+    "planzeit": 450,
+    "stillstand": 15,
+    "soll": 543,
+    "ist": 453,
+    "gut": 452
+   },
+   {
+    "datum": "@-14",
+    "linie": "ZS-1 Zahnstange",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 20,
+    "soll": 614,
+    "ist": 582,
+    "gut": 582
+   },
+   {
+    "datum": "@-14",
+    "linie": "ZS-1 Zahnstange",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 5,
+    "soll": 635,
+    "ist": 618,
+    "gut": 603
+   },
+   {
+    "datum": "@-14",
+    "linie": "LG-2 Lenkgetriebe",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 20,
+    "soll": 477,
+    "ist": 464,
+    "gut": 453
+   },
+   {
+    "datum": "@-14",
+    "linie": "LG-2 Lenkgetriebe",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 90,
+    "soll": 400,
+    "ist": 331,
+    "gut": 328
+   },
+   {
+    "datum": "@-14",
+    "linie": "EPS-3 Servoeinheit",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 20,
+    "soll": 390,
+    "ist": 336,
+    "gut": 334
+   },
+   {
+    "datum": "@-14",
+    "linie": "EPS-3 Servoeinheit",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 60,
+    "soll": 354,
+    "ist": 306,
+    "gut": 304
+   },
+   {
+    "datum": "@-14",
+    "linie": "PR-4 Endprüfung",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 60,
+    "soll": 780,
+    "ist": 643,
+    "gut": 630
+   },
+   {
+    "datum": "@-14",
+    "linie": "PR-4 Endprüfung",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 20,
+    "soll": 860,
+    "ist": 850,
+    "gut": 833
+   },
+   {
+    "datum": "@-14",
+    "linie": "HT-5 Härterei",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 5,
+    "soll": 556,
+    "ist": 486,
+    "gut": 485
+   },
+   {
+    "datum": "@-14",
+    "linie": "HT-5 Härterei",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 5,
+    "soll": 556,
+    "ist": 460,
+    "gut": 449
+   },
+   {
+    "datum": "@-14",
+    "linie": "HT-5 Härterei",
+    "schicht": "Nacht",
+    "planzeit": 450,
+    "stillstand": 60,
+    "soll": 487,
+    "ist": 410,
+    "gut": 404
+   },
+   {
+    "datum": "@-13",
+    "linie": "ZS-1 Zahnstange",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 0,
+    "soll": 642,
+    "ist": 633,
+    "gut": 620
+   },
+   {
+    "datum": "@-13",
+    "linie": "ZS-1 Zahnstange",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 0,
+    "soll": 642,
+    "ist": 620,
+    "gut": 613
+   },
+   {
+    "datum": "@-13",
+    "linie": "LG-2 Lenkgetriebe",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 20,
+    "soll": 477,
+    "ist": 399,
+    "gut": 390
+   },
+   {
+    "datum": "@-13",
+    "linie": "LG-2 Lenkgetriebe",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 15,
+    "soll": 483,
+    "ist": 433,
+    "gut": 427
+   },
+   {
+    "datum": "@-13",
+    "linie": "EPS-3 Servoeinheit",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 25,
+    "soll": 386,
+    "ist": 337,
+    "gut": 332
+   },
+   {
+    "datum": "@-13",
+    "linie": "EPS-3 Servoeinheit",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 115,
+    "soll": 304,
+    "ist": 289,
+    "gut": 287
+   },
+   {
+    "datum": "@-13",
+    "linie": "PR-4 Endprüfung",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 60,
+    "soll": 780,
+    "ist": 728,
+    "gut": 713
+   },
+   {
+    "datum": "@-13",
+    "linie": "PR-4 Endprüfung",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 0,
+    "soll": 900,
+    "ist": 749,
+    "gut": 739
+   },
+   {
+    "datum": "@-13",
+    "linie": "HT-5 Härterei",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 90,
+    "soll": 450,
+    "ist": 388,
+    "gut": 383
+   },
+   {
+    "datum": "@-13",
+    "linie": "HT-5 Härterei",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 30,
+    "soll": 525,
+    "ist": 489,
+    "gut": 484
+   },
+   {
+    "datum": "@-13",
+    "linie": "HT-5 Härterei",
+    "schicht": "Nacht",
+    "planzeit": 450,
+    "stillstand": 0,
+    "soll": 562,
+    "ist": 497,
+    "gut": 490
+   },
+   {
+    "datum": "@-12",
+    "linie": "ZS-1 Zahnstange",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 60,
+    "soll": 557,
+    "ist": 517,
+    "gut": 514
+   },
+   {
+    "datum": "@-12",
+    "linie": "ZS-1 Zahnstange",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 15,
+    "soll": 621,
+    "ist": 549,
+    "gut": 546
+   },
+   {
+    "datum": "@-12",
+    "linie": "LG-2 Lenkgetriebe",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 5,
+    "soll": 494,
+    "ist": 480,
+    "gut": 468
+   },
+   {
+    "datum": "@-12",
+    "linie": "LG-2 Lenkgetriebe",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 0,
+    "soll": 500,
+    "ist": 429,
+    "gut": 421
+   },
+   {
+    "datum": "@-12",
+    "linie": "EPS-3 Servoeinheit",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 25,
+    "soll": 386,
+    "ist": 320,
+    "gut": 318
+   },
+   {
+    "datum": "@-12",
+    "linie": "EPS-3 Servoeinheit",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 70,
+    "soll": 345,
+    "ist": 318,
+    "gut": 314
+   },
+   {
+    "datum": "@-12",
+    "linie": "PR-4 Endprüfung",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 0,
+    "soll": 900,
+    "ist": 765,
+    "gut": 749
+   },
+   {
+    "datum": "@-12",
+    "linie": "PR-4 Endprüfung",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 45,
+    "soll": 810,
+    "ist": 683,
+    "gut": 673
+   },
+   {
+    "datum": "@-12",
+    "linie": "HT-5 Härterei",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 5,
+    "soll": 556,
+    "ist": 504,
+    "gut": 503
+   },
+   {
+    "datum": "@-12",
+    "linie": "HT-5 Härterei",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 10,
+    "soll": 550,
+    "ist": 527,
+    "gut": 516
+   },
+   {
+    "datum": "@-12",
+    "linie": "HT-5 Härterei",
+    "schicht": "Nacht",
+    "planzeit": 450,
+    "stillstand": 5,
+    "soll": 556,
+    "ist": 548,
+    "gut": 539
+   },
+   {
+    "datum": "@-11",
+    "linie": "ZS-1 Zahnstange",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 20,
+    "soll": 614,
+    "ist": 538,
+    "gut": 538
+   },
+   {
+    "datum": "@-11",
+    "linie": "ZS-1 Zahnstange",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 15,
+    "soll": 621,
+    "ist": 561,
+    "gut": 558
+   },
+   {
+    "datum": "@-11",
+    "linie": "LG-2 Lenkgetriebe",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 15,
+    "soll": 483,
+    "ist": 406,
+    "gut": 400
+   },
+   {
+    "datum": "@-11",
+    "linie": "LG-2 Lenkgetriebe",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 15,
+    "soll": 483,
+    "ist": 425,
+    "gut": 421
+   },
+   {
+    "datum": "@-11",
+    "linie": "EPS-3 Servoeinheit",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 45,
+    "soll": 368,
+    "ist": 349,
+    "gut": 348
+   },
+   {
+    "datum": "@-11",
+    "linie": "EPS-3 Servoeinheit",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 30,
+    "soll": 381,
+    "ist": 343,
+    "gut": 336
+   },
+   {
+    "datum": "@-11",
+    "linie": "PR-4 Endprüfung",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 15,
+    "soll": 870,
+    "ist": 813,
+    "gut": 812
+   },
+   {
+    "datum": "@-11",
+    "linie": "PR-4 Endprüfung",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 10,
+    "soll": 880,
+    "ist": 865,
+    "gut": 862
+   },
+   {
+    "datum": "@-11",
+    "linie": "HT-5 Härterei",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 10,
+    "soll": 550,
+    "ist": 538,
+    "gut": 527
+   },
+   {
+    "datum": "@-11",
+    "linie": "HT-5 Härterei",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 20,
+    "soll": 537,
+    "ist": 508,
+    "gut": 498
+   },
+   {
+    "datum": "@-11",
+    "linie": "HT-5 Härterei",
+    "schicht": "Nacht",
+    "planzeit": 450,
+    "stillstand": 0,
+    "soll": 562,
+    "ist": 468,
+    "gut": 464
+   },
+   {
+    "datum": "@-10",
+    "linie": "ZS-1 Zahnstange",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 10,
+    "soll": 628,
+    "ist": 525,
+    "gut": 513
+   },
+   {
+    "datum": "@-10",
+    "linie": "ZS-1 Zahnstange",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 45,
+    "soll": 578,
+    "ist": 486,
+    "gut": 476
+   },
+   {
+    "datum": "@-10",
+    "linie": "LG-2 Lenkgetriebe",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 20,
+    "soll": 477,
+    "ist": 419,
+    "gut": 413
+   },
+   {
+    "datum": "@-10",
+    "linie": "LG-2 Lenkgetriebe",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 90,
+    "soll": 400,
+    "ist": 388,
+    "gut": 380
+   },
+   {
+    "datum": "@-10",
+    "linie": "EPS-3 Servoeinheit",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 30,
+    "soll": 381,
+    "ist": 346,
+    "gut": 343
+   },
+   {
+    "datum": "@-10",
+    "linie": "EPS-3 Servoeinheit",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 25,
+    "soll": 386,
+    "ist": 345,
+    "gut": 344
+   },
+   {
+    "datum": "@-10",
+    "linie": "PR-4 Endprüfung",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 10,
+    "soll": 880,
+    "ist": 859,
+    "gut": 840
+   },
+   {
+    "datum": "@-10",
+    "linie": "PR-4 Endprüfung",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 10,
+    "soll": 880,
+    "ist": 729,
+    "gut": 716
+   },
+   {
+    "datum": "@-10",
+    "linie": "HT-5 Härterei",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 5,
+    "soll": 556,
+    "ist": 470,
+    "gut": 461
+   },
+   {
+    "datum": "@-10",
+    "linie": "HT-5 Härterei",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 15,
+    "soll": 543,
+    "ist": 516,
+    "gut": 505
+   },
+   {
+    "datum": "@-10",
+    "linie": "HT-5 Härterei",
+    "schicht": "Nacht",
+    "planzeit": 450,
+    "stillstand": 90,
+    "soll": 450,
+    "ist": 395,
+    "gut": 386
+   },
+   {
+    "datum": "@-9",
+    "linie": "ZS-1 Zahnstange",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 90,
+    "soll": 514,
+    "ist": 429,
+    "gut": 426
+   },
+   {
+    "datum": "@-9",
+    "linie": "ZS-1 Zahnstange",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 15,
+    "soll": 621,
+    "ist": 533,
+    "gut": 521
+   },
+   {
+    "datum": "@-9",
+    "linie": "LG-2 Lenkgetriebe",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 15,
+    "soll": 483,
+    "ist": 401,
+    "gut": 392
+   },
+   {
+    "datum": "@-9",
+    "linie": "LG-2 Lenkgetriebe",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 30,
+    "soll": 466,
+    "ist": 460,
+    "gut": 452
+   },
+   {
+    "datum": "@-9",
+    "linie": "EPS-3 Servoeinheit",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 115,
+    "soll": 304,
+    "ist": 258,
+    "gut": 256
+   },
+   {
+    "datum": "@-9",
+    "linie": "EPS-3 Servoeinheit",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 55,
+    "soll": 359,
+    "ist": 299,
+    "gut": 292
+   },
+   {
+    "datum": "@-9",
+    "linie": "PR-4 Endprüfung",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 10,
+    "soll": 880,
+    "ist": 735,
+    "gut": 719
+   },
+   {
+    "datum": "@-9",
+    "linie": "PR-4 Endprüfung",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 5,
+    "soll": 890,
+    "ist": 844,
+    "gut": 836
+   },
+   {
+    "datum": "@-9",
+    "linie": "HT-5 Härterei",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 0,
+    "soll": 562,
+    "ist": 480,
+    "gut": 469
+   },
+   {
+    "datum": "@-9",
+    "linie": "HT-5 Härterei",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 45,
+    "soll": 506,
+    "ist": 420,
+    "gut": 420
+   },
+   {
+    "datum": "@-9",
+    "linie": "HT-5 Härterei",
+    "schicht": "Nacht",
+    "planzeit": 450,
+    "stillstand": 10,
+    "soll": 550,
+    "ist": 509,
+    "gut": 508
+   },
+   {
+    "datum": "@-8",
+    "linie": "ZS-1 Zahnstange",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 60,
+    "soll": 557,
+    "ist": 487,
+    "gut": 478
+   },
+   {
+    "datum": "@-8",
+    "linie": "ZS-1 Zahnstange",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 10,
+    "soll": 628,
+    "ist": 574,
+    "gut": 568
+   },
+   {
+    "datum": "@-8",
+    "linie": "LG-2 Lenkgetriebe",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 30,
+    "soll": 466,
+    "ist": 402,
+    "gut": 397
+   },
+   {
+    "datum": "@-8",
+    "linie": "LG-2 Lenkgetriebe",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 60,
+    "soll": 433,
+    "ist": 396,
+    "gut": 392
+   },
+   {
+    "datum": "@-8",
+    "linie": "EPS-3 Servoeinheit",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 30,
+    "soll": 381,
+    "ist": 369,
+    "gut": 360
+   },
+   {
+    "datum": "@-8",
+    "linie": "EPS-3 Servoeinheit",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 45,
+    "soll": 368,
+    "ist": 331,
+    "gut": 330
+   },
+   {
+    "datum": "@-8",
+    "linie": "PR-4 Endprüfung",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 45,
+    "soll": 810,
+    "ist": 792,
+    "gut": 773
+   },
+   {
+    "datum": "@-8",
+    "linie": "PR-4 Endprüfung",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 5,
+    "soll": 890,
+    "ist": 775,
+    "gut": 769
+   },
+   {
+    "datum": "@-8",
+    "linie": "HT-5 Härterei",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 20,
+    "soll": 537,
+    "ist": 452,
+    "gut": 449
+   },
+   {
+    "datum": "@-8",
+    "linie": "HT-5 Härterei",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 0,
+    "soll": 562,
+    "ist": 554,
+    "gut": 551
+   },
+   {
+    "datum": "@-8",
+    "linie": "HT-5 Härterei",
+    "schicht": "Nacht",
+    "planzeit": 450,
+    "stillstand": 10,
+    "soll": 550,
+    "ist": 525,
+    "gut": 519
+   },
+   {
+    "datum": "@-7",
+    "linie": "ZS-1 Zahnstange",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 20,
+    "soll": 614,
+    "ist": 554,
+    "gut": 542
+   },
+   {
+    "datum": "@-7",
+    "linie": "ZS-1 Zahnstange",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 30,
+    "soll": 600,
+    "ist": 531,
+    "gut": 530
+   },
+   {
+    "datum": "@-7",
+    "linie": "LG-2 Lenkgetriebe",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 15,
+    "soll": 483,
+    "ist": 408,
+    "gut": 400
+   },
+   {
+    "datum": "@-7",
+    "linie": "LG-2 Lenkgetriebe",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 15,
+    "soll": 483,
+    "ist": 468,
+    "gut": 465
+   },
+   {
+    "datum": "@-7",
+    "linie": "EPS-3 Servoeinheit",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 30,
+    "soll": 381,
+    "ist": 347,
+    "gut": 341
+   },
+   {
+    "datum": "@-7",
+    "linie": "EPS-3 Servoeinheit",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 30,
+    "soll": 381,
+    "ist": 321,
+    "gut": 321
+   },
+   {
+    "datum": "@-7",
+    "linie": "PR-4 Endprüfung",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 30,
+    "soll": 840,
+    "ist": 692,
+    "gut": 690
+   },
+   {
+    "datum": "@-7",
+    "linie": "PR-4 Endprüfung",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 0,
+    "soll": 900,
+    "ist": 878,
+    "gut": 878
+   },
+   {
+    "datum": "@-7",
+    "linie": "HT-5 Härterei",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 0,
+    "soll": 562,
+    "ist": 537,
+    "gut": 527
+   },
+   {
+    "datum": "@-7",
+    "linie": "HT-5 Härterei",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 15,
+    "soll": 543,
+    "ist": 502,
+    "gut": 496
+   },
+   {
+    "datum": "@-7",
+    "linie": "HT-5 Härterei",
+    "schicht": "Nacht",
+    "planzeit": 450,
+    "stillstand": 15,
+    "soll": 543,
+    "ist": 457,
+    "gut": 446
+   },
+   {
+    "datum": "@-6",
+    "linie": "ZS-1 Zahnstange",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 30,
+    "soll": 600,
+    "ist": 590,
+    "gut": 586
+   },
+   {
+    "datum": "@-6",
+    "linie": "ZS-1 Zahnstange",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 10,
+    "soll": 628,
+    "ist": 606,
+    "gut": 603
+   },
+   {
+    "datum": "@-6",
+    "linie": "LG-2 Lenkgetriebe",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 10,
+    "soll": 488,
+    "ist": 403,
+    "gut": 398
+   },
+   {
+    "datum": "@-6",
+    "linie": "LG-2 Lenkgetriebe",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 15,
+    "soll": 483,
+    "ist": 452,
+    "gut": 449
+   },
+   {
+    "datum": "@-6",
+    "linie": "EPS-3 Servoeinheit",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 35,
+    "soll": 377,
+    "ist": 365,
+    "gut": 360
+   },
+   {
+    "datum": "@-6",
+    "linie": "EPS-3 Servoeinheit",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 35,
+    "soll": 377,
+    "ist": 372,
+    "gut": 364
+   },
+   {
+    "datum": "@-6",
+    "linie": "PR-4 Endprüfung",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 15,
+    "soll": 870,
+    "ist": 842,
+    "gut": 827
+   },
+   {
+    "datum": "@-6",
+    "linie": "PR-4 Endprüfung",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 15,
+    "soll": 870,
+    "ist": 745,
+    "gut": 735
+   },
+   {
+    "datum": "@-6",
+    "linie": "HT-5 Härterei",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 0,
+    "soll": 562,
+    "ist": 510,
+    "gut": 499
+   },
+   {
+    "datum": "@-6",
+    "linie": "HT-5 Härterei",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 5,
+    "soll": 556,
+    "ist": 539,
+    "gut": 529
+   },
+   {
+    "datum": "@-6",
+    "linie": "HT-5 Härterei",
+    "schicht": "Nacht",
+    "planzeit": 450,
+    "stillstand": 20,
+    "soll": 537,
+    "ist": 442,
+    "gut": 438
+   },
+   {
+    "datum": "@-5",
+    "linie": "ZS-1 Zahnstange",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 0,
+    "soll": 642,
+    "ist": 615,
+    "gut": 603
+   },
+   {
+    "datum": "@-5",
+    "linie": "ZS-1 Zahnstange",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 10,
+    "soll": 628,
+    "ist": 558,
+    "gut": 547
+   },
+   {
+    "datum": "@-5",
+    "linie": "LG-2 Lenkgetriebe",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 20,
+    "soll": 477,
+    "ist": 425,
+    "gut": 421
+   },
+   {
+    "datum": "@-5",
+    "linie": "LG-2 Lenkgetriebe",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 5,
+    "soll": 494,
+    "ist": 437,
+    "gut": 435
+   },
+   {
+    "datum": "@-5",
+    "linie": "EPS-3 Servoeinheit",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 25,
+    "soll": 386,
+    "ist": 334,
+    "gut": 333
+   },
+   {
+    "datum": "@-5",
+    "linie": "EPS-3 Servoeinheit",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 70,
+    "soll": 345,
+    "ist": 289,
+    "gut": 288
+   },
+   {
+    "datum": "@-5",
+    "linie": "PR-4 Endprüfung",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 5,
+    "soll": 890,
+    "ist": 812,
+    "gut": 794
+   },
+   {
+    "datum": "@-5",
+    "linie": "PR-4 Endprüfung",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 60,
+    "soll": 780,
+    "ist": 713,
+    "gut": 710
+   },
+   {
+    "datum": "@-5",
+    "linie": "HT-5 Härterei",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 20,
+    "soll": 537,
+    "ist": 448,
+    "gut": 442
+   },
+   {
+    "datum": "@-5",
+    "linie": "HT-5 Härterei",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 0,
+    "soll": 562,
+    "ist": 523,
+    "gut": 512
+   },
+   {
+    "datum": "@-5",
+    "linie": "HT-5 Härterei",
+    "schicht": "Nacht",
+    "planzeit": 450,
+    "stillstand": 45,
+    "soll": 506,
+    "ist": 453,
+    "gut": 447
+   },
+   {
+    "datum": "@-4",
+    "linie": "ZS-1 Zahnstange",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 5,
+    "soll": 635,
+    "ist": 608,
+    "gut": 607
+   },
+   {
+    "datum": "@-4",
+    "linie": "ZS-1 Zahnstange",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 15,
+    "soll": 621,
+    "ist": 582,
+    "gut": 569
+   },
+   {
+    "datum": "@-4",
+    "linie": "LG-2 Lenkgetriebe",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 45,
+    "soll": 450,
+    "ist": 397,
+    "gut": 389
+   },
+   {
+    "datum": "@-4",
+    "linie": "LG-2 Lenkgetriebe",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 60,
+    "soll": 433,
+    "ist": 428,
+    "gut": 424
+   },
+   {
+    "datum": "@-4",
+    "linie": "EPS-3 Servoeinheit",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 25,
+    "soll": 386,
+    "ist": 346,
+    "gut": 339
+   },
+   {
+    "datum": "@-4",
+    "linie": "EPS-3 Servoeinheit",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 25,
+    "soll": 386,
+    "ist": 362,
+    "gut": 354
+   },
+   {
+    "datum": "@-4",
+    "linie": "PR-4 Endprüfung",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 0,
+    "soll": 900,
+    "ist": 789,
+    "gut": 774
+   },
+   {
+    "datum": "@-4",
+    "linie": "PR-4 Endprüfung",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 45,
+    "soll": 810,
+    "ist": 725,
+    "gut": 723
+   },
+   {
+    "datum": "@-4",
+    "linie": "HT-5 Härterei",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 60,
+    "soll": 487,
+    "ist": 415,
+    "gut": 407
+   },
+   {
+    "datum": "@-4",
+    "linie": "HT-5 Härterei",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 15,
+    "soll": 543,
+    "ist": 516,
+    "gut": 508
+   },
+   {
+    "datum": "@-4",
+    "linie": "HT-5 Härterei",
+    "schicht": "Nacht",
+    "planzeit": 450,
+    "stillstand": 0,
+    "soll": 562,
+    "ist": 492,
+    "gut": 489
+   },
+   {
+    "datum": "@-3",
+    "linie": "ZS-1 Zahnstange",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 30,
+    "soll": 600,
+    "ist": 562,
+    "gut": 559
+   },
+   {
+    "datum": "@-3",
+    "linie": "ZS-1 Zahnstange",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 10,
+    "soll": 628,
+    "ist": 580,
+    "gut": 572
+   },
+   {
+    "datum": "@-3",
+    "linie": "LG-2 Lenkgetriebe",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 30,
+    "soll": 466,
+    "ist": 398,
+    "gut": 394
+   },
+   {
+    "datum": "@-3",
+    "linie": "LG-2 Lenkgetriebe",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 60,
+    "soll": 433,
+    "ist": 411,
+    "gut": 401
+   },
+   {
+    "datum": "@-3",
+    "linie": "EPS-3 Servoeinheit",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 55,
+    "soll": 359,
+    "ist": 307,
+    "gut": 302
+   },
+   {
+    "datum": "@-3",
+    "linie": "EPS-3 Servoeinheit",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 45,
+    "soll": 368,
+    "ist": 340,
+    "gut": 338
+   },
+   {
+    "datum": "@-3",
+    "linie": "PR-4 Endprüfung",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 90,
+    "soll": 720,
+    "ist": 700,
+    "gut": 692
+   },
+   {
+    "datum": "@-3",
+    "linie": "PR-4 Endprüfung",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 45,
+    "soll": 810,
+    "ist": 707,
+    "gut": 698
+   },
+   {
+    "datum": "@-3",
+    "linie": "HT-5 Härterei",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 0,
+    "soll": 562,
+    "ist": 512,
+    "gut": 509
+   },
+   {
+    "datum": "@-3",
+    "linie": "HT-5 Härterei",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 15,
+    "soll": 543,
+    "ist": 524,
+    "gut": 512
+   },
+   {
+    "datum": "@-3",
+    "linie": "HT-5 Härterei",
+    "schicht": "Nacht",
+    "planzeit": 450,
+    "stillstand": 20,
+    "soll": 537,
+    "ist": 446,
+    "gut": 435
+   },
+   {
+    "datum": "@-2",
+    "linie": "ZS-1 Zahnstange",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 10,
+    "soll": 628,
+    "ist": 607,
+    "gut": 593
+   },
+   {
+    "datum": "@-2",
+    "linie": "ZS-1 Zahnstange",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 90,
+    "soll": 514,
+    "ist": 457,
+    "gut": 447
+   },
+   {
+    "datum": "@-2",
+    "linie": "LG-2 Lenkgetriebe",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 10,
+    "soll": 488,
+    "ist": 472,
+    "gut": 470
+   },
+   {
+    "datum": "@-2",
+    "linie": "LG-2 Lenkgetriebe",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 60,
+    "soll": 433,
+    "ist": 413,
+    "gut": 404
+   },
+   {
+    "datum": "@-2",
+    "linie": "EPS-3 Servoeinheit",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 25,
+    "soll": 386,
+    "ist": 380,
+    "gut": 377
+   },
+   {
+    "datum": "@-2",
+    "linie": "EPS-3 Servoeinheit",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 85,
+    "soll": 331,
+    "ist": 275,
+    "gut": 273
+   },
+   {
+    "datum": "@-2",
+    "linie": "PR-4 Endprüfung",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 10,
+    "soll": 880,
+    "ist": 766,
+    "gut": 763
+   },
+   {
+    "datum": "@-2",
+    "linie": "PR-4 Endprüfung",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 30,
+    "soll": 840,
+    "ist": 736,
+    "gut": 718
+   },
+   {
+    "datum": "@-2",
+    "linie": "HT-5 Härterei",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 20,
+    "soll": 537,
+    "ist": 456,
+    "gut": 449
+   },
+   {
+    "datum": "@-2",
+    "linie": "HT-5 Härterei",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 45,
+    "soll": 506,
+    "ist": 449,
+    "gut": 444
+   },
+   {
+    "datum": "@-2",
+    "linie": "HT-5 Härterei",
+    "schicht": "Nacht",
+    "planzeit": 450,
+    "stillstand": 30,
+    "soll": 525,
+    "ist": 487,
+    "gut": 477
+   },
+   {
+    "datum": "@-1",
+    "linie": "ZS-1 Zahnstange",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 10,
+    "soll": 628,
+    "ist": 532,
+    "gut": 526
+   },
+   {
+    "datum": "@-1",
+    "linie": "ZS-1 Zahnstange",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 10,
+    "soll": 628,
+    "ist": 591,
+    "gut": 589
+   },
+   {
+    "datum": "@-1",
+    "linie": "LG-2 Lenkgetriebe",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 90,
+    "soll": 400,
+    "ist": 382,
+    "gut": 373
+   },
+   {
+    "datum": "@-1",
+    "linie": "LG-2 Lenkgetriebe",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 90,
+    "soll": 400,
+    "ist": 379,
+    "gut": 376
+   },
+   {
+    "datum": "@-1",
+    "linie": "EPS-3 Servoeinheit",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 30,
+    "soll": 381,
+    "ist": 345,
+    "gut": 343
+   },
+   {
+    "datum": "@-1",
+    "linie": "EPS-3 Servoeinheit",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 85,
+    "soll": 331,
+    "ist": 290,
+    "gut": 283
+   },
+   {
+    "datum": "@-1",
+    "linie": "PR-4 Endprüfung",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 30,
+    "soll": 840,
+    "ist": 756,
+    "gut": 738
+   },
+   {
+    "datum": "@-1",
+    "linie": "PR-4 Endprüfung",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 15,
+    "soll": 870,
+    "ist": 774,
+    "gut": 761
+   },
+   {
+    "datum": "@-1",
+    "linie": "HT-5 Härterei",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 45,
+    "soll": 506,
+    "ist": 463,
+    "gut": 459
+   },
+   {
+    "datum": "@-1",
+    "linie": "HT-5 Härterei",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 60,
+    "soll": 487,
+    "ist": 456,
+    "gut": 450
+   },
+   {
+    "datum": "@-1",
+    "linie": "HT-5 Härterei",
+    "schicht": "Nacht",
+    "planzeit": 450,
+    "stillstand": 5,
+    "soll": 556,
+    "ist": 540,
+    "gut": 537
+   },
+   {
+    "datum": "@+0",
+    "linie": "ZS-1 Zahnstange",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 15,
+    "soll": 621,
+    "ist": 557,
+    "gut": 555
+   },
+   {
+    "datum": "@+0",
+    "linie": "ZS-1 Zahnstange",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 90,
+    "soll": 514,
+    "ist": 503,
+    "gut": 494
+   },
+   {
+    "datum": "@+0",
+    "linie": "LG-2 Lenkgetriebe",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 60,
+    "soll": 433,
+    "ist": 384,
+    "gut": 383
+   },
+   {
+    "datum": "@+0",
+    "linie": "LG-2 Lenkgetriebe",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 30,
+    "soll": 466,
+    "ist": 412,
+    "gut": 407
+   },
+   {
+    "datum": "@+0",
+    "linie": "EPS-3 Servoeinheit",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 35,
+    "soll": 377,
+    "ist": 364,
+    "gut": 359
+   },
+   {
+    "datum": "@+0",
+    "linie": "EPS-3 Servoeinheit",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 40,
+    "soll": 372,
+    "ist": 350,
+    "gut": 345
+   },
+   {
+    "datum": "@+0",
+    "linie": "PR-4 Endprüfung",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 30,
+    "soll": 840,
+    "ist": 817,
+    "gut": 805
+   },
+   {
+    "datum": "@+0",
+    "linie": "PR-4 Endprüfung",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 90,
+    "soll": 720,
+    "ist": 679,
+    "gut": 673
+   },
+   {
+    "datum": "@+0",
+    "linie": "HT-5 Härterei",
+    "schicht": "Früh",
+    "planzeit": 450,
+    "stillstand": 15,
+    "soll": 543,
+    "ist": 507,
+    "gut": 500
+   },
+   {
+    "datum": "@+0",
+    "linie": "HT-5 Härterei",
+    "schicht": "Spät",
+    "planzeit": 450,
+    "stillstand": 45,
+    "soll": 506,
+    "ist": 420,
+    "gut": 414
+   },
+   {
+    "datum": "@+0",
+    "linie": "HT-5 Härterei",
+    "schicht": "Nacht",
+    "planzeit": 450,
+    "stillstand": 5,
+    "soll": 556,
+    "ist": 472,
+    "gut": 471
+   }
+  ]
+ },
+ "nachbauten": [
+  {
+   "baustein": "ampel",
+   "ersatz": "5 Linien-Ampeln mit Trendpfeil (7 Tage gegen Vorwoche) als Hinweis-Bausteine.",
+   "geloest": true,
+   "jetzt": "5 Kennzahlen mit Bedingung „Linie = …“, Ampel (niedrig ist schlecht) und 7-Tage-Vergleich – kein Skript mehr."
+  },
+  {
+   "baustein": "diagramm_summe",
+   "ersatz": "OEE je Linie (Durchschnitt, sortiert) nur als Skript-Tabelle; Stillstand-Summe nur per Spec-Chart.",
+   "geloest": true,
+   "jetzt": "Balkendiagramm mit Durchschnitt bzw. Summe."
+  },
+  {
+   "baustein": "kennzahl_vergleich",
+   "ersatz": "Kennzahl mit Vergleich zum Vorzeitraum (Trendpfeil) fehlt.",
+   "geloest": true,
+   "jetzt": "Kennzahl-Einstellung „Vergleich: Zeitraum in Tagen“."
+  }
+ ]
+}

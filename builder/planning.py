@@ -23,6 +23,7 @@ from django.utils.translation import gettext_lazy as _
 
 from .blocks import _entity, display_value, filtered, register
 from .models import Field, Record
+from .page_path import page_url
 
 DAY_PARAM = "datum"     # ?datum=2026-11-19: Tag der Einsatzplanung
 WEEK_PARAM = "woche"    # ?woche=2026-11-16: irgendein Tag der gewünschten Woche
@@ -372,7 +373,7 @@ def prep_kanban(request, app, block):
         column["count"] = len(column["cards"])
         column["over"] = bool(limit and column["value"] and column["count"] > limit)
         column["full"] = bool(limit and column["value"] and column["count"] >= limit)
-    return {"columns": result, "limit": limit, "entity": entity,
+    return {"columns": result, "limit": limit, "entity": entity, "next": page_url(request),
             "editable": entity.allow_edit, **_urls(request, app, block)}
 
 

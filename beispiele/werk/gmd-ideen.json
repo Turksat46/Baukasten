@@ -1,0 +1,278 @@
+{
+ "slug": "gmd-ideen",
+ "name": "Ideenmanagement",
+ "icon": "💡",
+ "description": "Verbesserungsvorschläge einreichen, Status verfolgen, umgesetzte Einsparungen",
+ "rolle": "Alle Mitarbeitenden",
+ "komplexitaet": "einfach",
+ "entities": [
+  {
+   "name": "Ideen",
+   "slug": "ideen",
+   "fields": [
+    {
+     "label": "Idee",
+     "key": "titel",
+     "type": "text",
+     "required": true
+    },
+    {
+     "label": "Bereich",
+     "key": "bereich",
+     "type": "choice",
+     "choices": [
+      "Halle 1 Zerspanung",
+      "Halle 2 Montage",
+      "Halle 3 Prüffeld",
+      "Logistik Wareneingang",
+      "Werkstatt IH",
+      "Härterei"
+     ]
+    },
+    {
+     "label": "Eingereicht von",
+     "key": "einreicher",
+     "type": "text"
+    },
+    {
+     "label": "Kategorie",
+     "key": "kategorie",
+     "type": "choice",
+     "choices": [
+      "Arbeitssicherheit",
+      "Qualität",
+      "Kosten",
+      "Ergonomie",
+      "Umwelt"
+     ]
+    },
+    {
+     "label": "Einsparung pro Jahr (€)",
+     "key": "ersparnis",
+     "type": "number"
+    },
+    {
+     "label": "Status",
+     "key": "status",
+     "type": "choice",
+     "choices": [
+      "Eingereicht",
+      "In Prüfung",
+      "Umgesetzt",
+      "Abgelehnt"
+     ]
+    },
+    {
+     "label": "Datum",
+     "key": "datum",
+     "type": "date"
+    },
+    {
+     "label": "Beschreibung",
+     "key": "beschreibung",
+     "type": "longtext",
+     "show_in_list": false
+    }
+   ]
+  }
+ ],
+ "pages": [
+  {
+   "title": "Einreichen",
+   "slug": "einreichen",
+   "layout": [
+    {
+     "type": "heading",
+     "width": 12,
+     "props": {
+      "text": "Deine Idee zählt",
+      "level": "1"
+     }
+    },
+    {
+     "type": "form",
+     "width": 8,
+     "props": {
+      "entity": "ideen",
+      "submit_label": "Idee einreichen"
+     }
+    },
+    {
+     "type": "stat",
+     "width": 4,
+     "props": {
+      "label": "Umgesetzte Einsparung",
+      "entity": "ideen",
+      "aggregate": "sum",
+      "field": "ersparnis",
+      "unit": "€/Jahr",
+      "where": "Status = Umgesetzt"
+     }
+    }
+   ]
+  },
+  {
+   "title": "Board",
+   "slug": "board",
+   "layout": [
+    {
+     "type": "filter",
+     "width": 12,
+     "props": {
+      "entity": "ideen",
+      "field": "bereich",
+      "field2": "kategorie"
+     }
+    },
+    {
+     "type": "kanban",
+     "width": 12,
+     "props": {
+      "entity": "ideen",
+      "field": "status",
+      "detail": "einreicher"
+     }
+    },
+    {
+     "type": "donut",
+     "width": 6,
+     "props": {
+      "label": "Nach Kategorie",
+      "entity": "ideen",
+      "field": "kategorie"
+     }
+    },
+    {
+     "type": "chart",
+     "width": 6,
+     "props": {
+      "label": "Nach Bereich",
+      "entity": "ideen",
+      "field": "bereich"
+     }
+    }
+   ]
+  }
+ ],
+ "scripts": [],
+ "beispieldaten": {
+  "ideen": [
+   {
+    "titel": "Rutschmatte vor Presse 4",
+    "bereich": "Halle 3 Prüffeld",
+    "einreicher": "Kemal Schäfer",
+    "kategorie": "Ergonomie",
+    "ersparnis": 3500,
+    "status": "Eingereicht",
+    "datum": "@-27"
+   },
+   {
+    "titel": "Schraubenbehälter näher an Station",
+    "bereich": "Halle 2 Montage",
+    "einreicher": "Wolfgang Wolf",
+    "kategorie": "Umwelt",
+    "ersparnis": 0,
+    "status": "Umgesetzt",
+    "datum": "@-74"
+   },
+   {
+    "titel": "LED statt Leuchtstoff Halle 3",
+    "bereich": "Härterei",
+    "einreicher": "Selin Kaya",
+    "kategorie": "Qualität",
+    "ersparnis": 0,
+    "status": "Umgesetzt",
+    "datum": "@-79"
+   },
+   {
+    "titel": "Druckluft-Leck an Verteiler B suchen",
+    "bereich": "Halle 3 Prüffeld",
+    "einreicher": "Nadine Kaya",
+    "kategorie": "Kosten",
+    "ersparnis": 0,
+    "status": "Umgesetzt",
+    "datum": "@-114"
+   },
+   {
+    "titel": "Einlegehilfe Ritzel",
+    "bereich": "Werkstatt IH",
+    "einreicher": "Thomas Ott",
+    "kategorie": "Qualität",
+    "ersparnis": 500,
+    "status": "Umgesetzt",
+    "datum": "@-2"
+   },
+   {
+    "titel": "Mehrweg statt Einweg-Folie",
+    "bereich": "Härterei",
+    "einreicher": "Marco Engel",
+    "kategorie": "Umwelt",
+    "ersparnis": 1200,
+    "status": "Umgesetzt",
+    "datum": "@-120"
+   },
+   {
+    "titel": "Prüfprogramm schneller starten",
+    "bereich": "Halle 2 Montage",
+    "einreicher": "Vesna Jäger",
+    "kategorie": "Umwelt",
+    "ersparnis": 1200,
+    "status": "Umgesetzt",
+    "datum": "@-47"
+   },
+   {
+    "titel": "Kühlwasser-Kreislauf schließen",
+    "bereich": "Halle 1 Zerspanung",
+    "einreicher": "Kemal Ott",
+    "kategorie": "Arbeitssicherheit",
+    "ersparnis": 0,
+    "status": "Umgesetzt",
+    "datum": "@-37"
+   },
+   {
+    "titel": "Kabelbinder-Farben je Variante",
+    "bereich": "Härterei",
+    "einreicher": "Uwe Vogel",
+    "kategorie": "Ergonomie",
+    "ersparnis": 0,
+    "status": "Abgelehnt",
+    "datum": "@-118"
+   },
+   {
+    "titel": "Hubtisch für Gehäuse",
+    "bereich": "Härterei",
+    "einreicher": "Nadine Abele",
+    "kategorie": "Kosten",
+    "ersparnis": 0,
+    "status": "Umgesetzt",
+    "datum": "@-66"
+   },
+   {
+    "titel": "Prüfprotokoll digital",
+    "bereich": "Werkstatt IH",
+    "einreicher": "Selin Nowak",
+    "kategorie": "Qualität",
+    "ersparnis": 500,
+    "status": "In Prüfung",
+    "datum": "@-104"
+   },
+   {
+    "titel": "Werkzeugvoreinstellung extern",
+    "bereich": "Halle 1 Zerspanung",
+    "einreicher": "Frank Rapp",
+    "kategorie": "Ergonomie",
+    "ersparnis": 500,
+    "status": "In Prüfung",
+    "datum": "@-13"
+   }
+  ]
+ },
+ "nachbauten": [
+  {
+   "baustein": "kennzahl_bedingung",
+   "ersatz": "Summe nur der umgesetzten Ideen per Skript.",
+   "geloest": true,
+   "jetzt": "Kennzahl Summe mit Bedingung „Status = Umgesetzt“, kein Skript mehr."
+  }
+ ]
+}

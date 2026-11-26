@@ -1,0 +1,651 @@
+{
+ "slug": "gmd-pruefmittel",
+ "name": "Prüfmittelverwaltung",
+ "icon": "🔬",
+ "description": "Prüfmittel mit Kalibrierintervall, Fälligkeiten, Sperren und Ausleihe",
+ "rolle": "Prüfmittelbeauftragter / Qualität",
+ "komplexitaet": "mittel",
+ "entities": [
+  {
+   "name": "Prüfmittel",
+   "slug": "pruefmittel",
+   "fields": [
+    {
+     "label": "Inventarnummer",
+     "key": "inv",
+     "type": "text",
+     "required": true
+    },
+    {
+     "label": "Bezeichnung",
+     "key": "bezeichnung",
+     "type": "text"
+    },
+    {
+     "label": "Standort",
+     "key": "standort",
+     "type": "choice",
+     "choices": [
+      "Halle 1 Zerspanung",
+      "Halle 2 Montage",
+      "Halle 3 Prüffeld",
+      "Logistik Wareneingang",
+      "Werkstatt IH",
+      "Härterei"
+     ]
+    },
+    {
+     "label": "Letzte Kalibrierung",
+     "key": "letzte",
+     "type": "date"
+    },
+    {
+     "label": "Intervall (Monate)",
+     "key": "intervall",
+     "type": "number"
+    },
+    {
+     "label": "Nächste Kalibrierung",
+     "key": "naechste",
+     "type": "date",
+     "formula": "add_months(letzte, intervall)",
+     "show_in_form": false
+    },
+    {
+     "label": "Status",
+     "key": "status",
+     "type": "choice",
+     "choices": [
+      "Freigegeben",
+      "Gesperrt",
+      "In Kalibrierung"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Ausleihen",
+   "slug": "ausleihen",
+   "fields": [
+    {
+     "label": "Prüfmittel",
+     "key": "pruefmittel",
+     "type": "reference",
+     "reference": "pruefmittel",
+     "required": true
+    },
+    {
+     "label": "Person",
+     "key": "person",
+     "type": "text"
+    },
+    {
+     "label": "Von",
+     "key": "von",
+     "type": "date"
+    },
+    {
+     "label": "Zurück",
+     "key": "zurueck",
+     "type": "bool"
+    }
+   ]
+  }
+ ],
+ "pages": [
+  {
+   "title": "Fällig",
+   "slug": "faellig",
+   "layout": [
+    {
+     "type": "heading",
+     "width": 12,
+     "props": {
+      "text": "Kalibrierung",
+      "level": "1"
+     }
+    },
+    {
+     "type": "stat",
+     "width": 4,
+     "props": {
+      "label": "Überfällig (müsste gesperrt sein)",
+      "entity": "pruefmittel",
+      "where": "Nächste Kalibrierung < heute\nStatus = Freigegeben",
+      "alarm_at": "1"
+     }
+    },
+    {
+     "type": "stat",
+     "width": 4,
+     "props": {
+      "label": "Fällig in 30 Tagen",
+      "entity": "pruefmittel",
+      "where": "Nächste Kalibrierung >= heute\nNächste Kalibrierung <= heute+30",
+      "warn_at": "5"
+     }
+    },
+    {
+     "type": "stat",
+     "width": 4,
+     "props": {
+      "label": "Ausgeliehen",
+      "entity": "ausleihen",
+      "where": "Zurück = nein"
+     }
+    },
+    {
+     "type": "table",
+     "width": 12,
+     "props": {
+      "title": "Überfällig oder in 30 Tagen fällig",
+      "entity": "pruefmittel",
+      "where": "Nächste Kalibrierung <= heute+30"
+     }
+    },
+    {
+     "type": "calendar",
+     "width": 12,
+     "props": {
+      "entity": "pruefmittel",
+      "date_field": "naechste",
+      "label_field": "inv",
+      "color_field": "status"
+     }
+    }
+   ]
+  },
+  {
+   "title": "Bestand",
+   "slug": "bestand",
+   "layout": [
+    {
+     "type": "search",
+     "width": 12,
+     "props": {
+      "entity": "pruefmittel",
+      "field": "inv",
+      "target_page": "pruefmittel"
+     }
+    },
+    {
+     "type": "filter",
+     "width": 12,
+     "props": {
+      "entity": "pruefmittel",
+      "field": "standort",
+      "field2": "status"
+     }
+    },
+    {
+     "type": "table",
+     "width": 12,
+     "props": {
+      "entity": "pruefmittel",
+      "searchable": true
+     }
+    }
+   ]
+  },
+  {
+   "title": "Prüfmittel",
+   "slug": "pruefmittel",
+   "layout": [
+    {
+     "type": "detail",
+     "width": 12,
+     "props": {
+      "entity": "pruefmittel"
+     }
+    },
+    {
+     "type": "related_list",
+     "width": 12,
+     "props": {
+      "title": "Ausleihen",
+      "entity": "ausleihen",
+      "ref_field": "pruefmittel"
+     }
+    }
+   ],
+   "show_in_nav": false
+  }
+ ],
+ "scripts": [],
+ "beispieldaten": {
+  "pruefmittel": [
+   {
+    "inv": "PM-1000",
+    "bezeichnung": "Grenzlehrdorn Ø24 h7",
+    "standort": "Werkstatt IH",
+    "letzte": "@-91",
+    "intervall": 12,
+    "status": "Freigegeben"
+   },
+   {
+    "inv": "PM-1001",
+    "bezeichnung": "Grenzlehrdorn Ø24 h7",
+    "standort": "Halle 1 Zerspanung",
+    "letzte": "@-129",
+    "intervall": 12,
+    "status": "Freigegeben"
+   },
+   {
+    "inv": "PM-1002",
+    "bezeichnung": "Messuhr 0,01",
+    "standort": "Halle 3 Prüffeld",
+    "letzte": "@-317",
+    "intervall": 12,
+    "status": "In Kalibrierung"
+   },
+   {
+    "inv": "PM-1003",
+    "bezeichnung": "Härteprüfer HRC",
+    "standort": "Halle 1 Zerspanung",
+    "letzte": "@-130",
+    "intervall": 12,
+    "status": "Freigegeben"
+   },
+   {
+    "inv": "PM-1004",
+    "bezeichnung": "Koordinatenmessgerät",
+    "standort": "Logistik Wareneingang",
+    "letzte": "@-161",
+    "intervall": 6,
+    "status": "Freigegeben"
+   },
+   {
+    "inv": "PM-1005",
+    "bezeichnung": "Koordinatenmessgerät",
+    "standort": "Halle 3 Prüffeld",
+    "letzte": "@-334",
+    "intervall": 24,
+    "status": "Freigegeben"
+   },
+   {
+    "inv": "PM-1006",
+    "bezeichnung": "Drehmomentschlüssel 5–25 Nm",
+    "standort": "Härterei",
+    "letzte": "@-349",
+    "intervall": 12,
+    "status": "Freigegeben"
+   },
+   {
+    "inv": "PM-1007",
+    "bezeichnung": "Härteprüfer HRC",
+    "standort": "Halle 2 Montage",
+    "letzte": "@-288",
+    "intervall": 24,
+    "status": "Freigegeben"
+   },
+   {
+    "inv": "PM-1008",
+    "bezeichnung": "Bügelmessschraube 0–25",
+    "standort": "Halle 1 Zerspanung",
+    "letzte": "@-88",
+    "intervall": 12,
+    "status": "Freigegeben"
+   },
+   {
+    "inv": "PM-1009",
+    "bezeichnung": "Messuhr 0,01",
+    "standort": "Halle 2 Montage",
+    "letzte": "@-137",
+    "intervall": 12,
+    "status": "Freigegeben"
+   },
+   {
+    "inv": "PM-1010",
+    "bezeichnung": "Bügelmessschraube 0–25",
+    "standort": "Halle 2 Montage",
+    "letzte": "@-234",
+    "intervall": 24,
+    "status": "Gesperrt"
+   },
+   {
+    "inv": "PM-1011",
+    "bezeichnung": "Koordinatenmessgerät",
+    "standort": "Logistik Wareneingang",
+    "letzte": "@-311",
+    "intervall": 12,
+    "status": "Freigegeben"
+   },
+   {
+    "inv": "PM-1012",
+    "bezeichnung": "Drehmomentschlüssel 5–25 Nm",
+    "standort": "Werkstatt IH",
+    "letzte": "@-394",
+    "intervall": 6,
+    "status": "Freigegeben"
+   },
+   {
+    "inv": "PM-1013",
+    "bezeichnung": "Rauheitsmessgerät",
+    "standort": "Halle 3 Prüffeld",
+    "letzte": "@-261",
+    "intervall": 24,
+    "status": "Freigegeben"
+   },
+   {
+    "inv": "PM-1014",
+    "bezeichnung": "Härteprüfer HRC",
+    "standort": "Werkstatt IH",
+    "letzte": "@-20",
+    "intervall": 6,
+    "status": "Freigegeben"
+   },
+   {
+    "inv": "PM-1015",
+    "bezeichnung": "Bügelmessschraube 0–25",
+    "standort": "Halle 3 Prüffeld",
+    "letzte": "@-368",
+    "intervall": 24,
+    "status": "Freigegeben"
+   },
+   {
+    "inv": "PM-1016",
+    "bezeichnung": "Bügelmessschraube 0–25",
+    "standort": "Halle 1 Zerspanung",
+    "letzte": "@-163",
+    "intervall": 6,
+    "status": "Freigegeben"
+   },
+   {
+    "inv": "PM-1017",
+    "bezeichnung": "Härteprüfer HRC",
+    "standort": "Halle 2 Montage",
+    "letzte": "@-44",
+    "intervall": 12,
+    "status": "Freigegeben"
+   },
+   {
+    "inv": "PM-1018",
+    "bezeichnung": "Messuhr 0,01",
+    "standort": "Logistik Wareneingang",
+    "letzte": "@-19",
+    "intervall": 6,
+    "status": "In Kalibrierung"
+   },
+   {
+    "inv": "PM-1019",
+    "bezeichnung": "Koordinatenmessgerät",
+    "standort": "Werkstatt IH",
+    "letzte": "@-217",
+    "intervall": 6,
+    "status": "Freigegeben"
+   },
+   {
+    "inv": "PM-1020",
+    "bezeichnung": "Rauheitsmessgerät",
+    "standort": "Halle 1 Zerspanung",
+    "letzte": "@-336",
+    "intervall": 6,
+    "status": "Freigegeben"
+   },
+   {
+    "inv": "PM-1021",
+    "bezeichnung": "Koordinatenmessgerät",
+    "standort": "Halle 1 Zerspanung",
+    "letzte": "@-333",
+    "intervall": 6,
+    "status": "Freigegeben"
+   },
+   {
+    "inv": "PM-1022",
+    "bezeichnung": "Drehmomentschlüssel 5–25 Nm",
+    "standort": "Logistik Wareneingang",
+    "letzte": "@-133",
+    "intervall": 12,
+    "status": "Freigegeben"
+   },
+   {
+    "inv": "PM-1023",
+    "bezeichnung": "Koordinatenmessgerät",
+    "standort": "Halle 3 Prüffeld",
+    "letzte": "@-326",
+    "intervall": 12,
+    "status": "Freigegeben"
+   },
+   {
+    "inv": "PM-1024",
+    "bezeichnung": "Messuhr 0,01",
+    "standort": "Logistik Wareneingang",
+    "letzte": "@-391",
+    "intervall": 12,
+    "status": "Freigegeben"
+   },
+   {
+    "inv": "PM-1025",
+    "bezeichnung": "Drehmomentschlüssel 5–25 Nm",
+    "standort": "Halle 2 Montage",
+    "letzte": "@-143",
+    "intervall": 12,
+    "status": "Gesperrt"
+   },
+   {
+    "inv": "PM-1026",
+    "bezeichnung": "Rauheitsmessgerät",
+    "standort": "Härterei",
+    "letzte": "@-1",
+    "intervall": 24,
+    "status": "Freigegeben"
+   },
+   {
+    "inv": "PM-1027",
+    "bezeichnung": "Bügelmessschraube 0–25",
+    "standort": "Härterei",
+    "letzte": "@-294",
+    "intervall": 12,
+    "status": "Freigegeben"
+   },
+   {
+    "inv": "PM-1028",
+    "bezeichnung": "Rauheitsmessgerät",
+    "standort": "Halle 3 Prüffeld",
+    "letzte": "@-242",
+    "intervall": 24,
+    "status": "Freigegeben"
+   },
+   {
+    "inv": "PM-1029",
+    "bezeichnung": "Messuhr 0,01",
+    "standort": "Halle 2 Montage",
+    "letzte": "@-71",
+    "intervall": 24,
+    "status": "Freigegeben"
+   },
+   {
+    "inv": "PM-1030",
+    "bezeichnung": "Drehmomentschlüssel 5–25 Nm",
+    "standort": "Halle 3 Prüffeld",
+    "letzte": "@-388",
+    "intervall": 12,
+    "status": "Freigegeben"
+   },
+   {
+    "inv": "PM-1031",
+    "bezeichnung": "Grenzlehrdorn Ø24 h7",
+    "standort": "Werkstatt IH",
+    "letzte": "@-204",
+    "intervall": 12,
+    "status": "Freigegeben"
+   },
+   {
+    "inv": "PM-1032",
+    "bezeichnung": "Rauheitsmessgerät",
+    "standort": "Härterei",
+    "letzte": "@-236",
+    "intervall": 12,
+    "status": "Freigegeben"
+   },
+   {
+    "inv": "PM-1033",
+    "bezeichnung": "Bügelmessschraube 0–25",
+    "standort": "Halle 3 Prüffeld",
+    "letzte": "@-78",
+    "intervall": 12,
+    "status": "Freigegeben"
+   },
+   {
+    "inv": "PM-1034",
+    "bezeichnung": "Bügelmessschraube 0–25",
+    "standort": "Logistik Wareneingang",
+    "letzte": "@-303",
+    "intervall": 24,
+    "status": "Freigegeben"
+   },
+   {
+    "inv": "PM-1035",
+    "bezeichnung": "Bügelmessschraube 0–25",
+    "standort": "Logistik Wareneingang",
+    "letzte": "@-100",
+    "intervall": 12,
+    "status": "Freigegeben"
+   },
+   {
+    "inv": "PM-1036",
+    "bezeichnung": "Härteprüfer HRC",
+    "standort": "Härterei",
+    "letzte": "@-108",
+    "intervall": 6,
+    "status": "Freigegeben"
+   },
+   {
+    "inv": "PM-1037",
+    "bezeichnung": "Bügelmessschraube 0–25",
+    "standort": "Halle 3 Prüffeld",
+    "letzte": "@-121",
+    "intervall": 12,
+    "status": "Gesperrt"
+   },
+   {
+    "inv": "PM-1038",
+    "bezeichnung": "Härteprüfer HRC",
+    "standort": "Logistik Wareneingang",
+    "letzte": "@-379",
+    "intervall": 24,
+    "status": "Freigegeben"
+   },
+   {
+    "inv": "PM-1039",
+    "bezeichnung": "Grenzlehrdorn Ø24 h7",
+    "standort": "Logistik Wareneingang",
+    "letzte": "@-395",
+    "intervall": 12,
+    "status": "Freigegeben"
+   }
+  ],
+  "ausleihen": [
+   {
+    "pruefmittel": "#9",
+    "person": "Oleksandr Bauer",
+    "von": "@-9",
+    "zurueck": true
+   },
+   {
+    "pruefmittel": "#13",
+    "person": "Thomas Ott",
+    "von": "@-9",
+    "zurueck": true
+   },
+   {
+    "pruefmittel": "#19",
+    "person": "Yusuf Rapp",
+    "von": "@-7",
+    "zurueck": false
+   },
+   {
+    "pruefmittel": "#14",
+    "person": "Kemal Abele",
+    "von": "@-9",
+    "zurueck": false
+   },
+   {
+    "pruefmittel": "#23",
+    "person": "Lena Schäfer",
+    "von": "@-1",
+    "zurueck": false
+   },
+   {
+    "pruefmittel": "#16",
+    "person": "Kemal Ott",
+    "von": "@-7",
+    "zurueck": false
+   },
+   {
+    "pruefmittel": "#35",
+    "person": "Zoe Rapp",
+    "von": "@-9",
+    "zurueck": true
+   },
+   {
+    "pruefmittel": "#20",
+    "person": "Ayşe Traub",
+    "von": "@-9",
+    "zurueck": true
+   },
+   {
+    "pruefmittel": "#24",
+    "person": "Frank Maier",
+    "von": "@-3",
+    "zurueck": true
+   },
+   {
+    "pruefmittel": "#8",
+    "person": "Frank Bauer",
+    "von": "@-4",
+    "zurueck": false
+   },
+   {
+    "pruefmittel": "#22",
+    "person": "Kemal Traub",
+    "von": "@-8",
+    "zurueck": true
+   },
+   {
+    "pruefmittel": "#27",
+    "person": "Ayşe Wolf",
+    "von": "@-2",
+    "zurueck": true
+   },
+   {
+    "pruefmittel": "#19",
+    "person": "Ayşe Bauer",
+    "von": "@-5",
+    "zurueck": false
+   },
+   {
+    "pruefmittel": "#39",
+    "person": "Kemal Lutz",
+    "von": "@-3",
+    "zurueck": true
+   },
+   {
+    "pruefmittel": "#14",
+    "person": "Oleksandr Rapp",
+    "von": "@-1",
+    "zurueck": false
+   }
+  ]
+ },
+ "nachbauten": [
+  {
+   "baustein": "datumsformel",
+   "ersatz": "„Nächste = Letzte + Intervall (Monate)“ per Skript nach dem Speichern.",
+   "geloest": true,
+   "jetzt": "Formel „add_months(letzte, intervall)“, kein Skript mehr (der 31. wird zum Monatsletzten)."
+  },
+  {
+   "baustein": "kennzahl_bedingung",
+   "ersatz": "3 Kennzahlen per Skript.",
+   "geloest": true,
+   "jetzt": "3 Kennzahlen mit Bedingung und Ampel."
+  },
+  {
+   "baustein": "liste_bedingung",
+   "ersatz": "Fällige Prüfmittel als Ausgabe-Baustein.",
+   "geloest": true,
+   "jetzt": "Liste mit Bedingung „Nächste Kalibrierung <= heute+30“."
+  }
+ ]
+}

@@ -1,0 +1,1543 @@
+{
+ "slug": "gmd-spc",
+ "name": "SPC Zahnstangen-Durchmesser",
+ "icon": "📐",
+ "description": "Messwerte erfassen, Regelkarte, Verteilung, Prozessfähigkeit Cp/Cpk mit verstellbaren Toleranzen",
+ "rolle": "Qualitätsingenieur",
+ "komplexitaet": "komplex",
+ "entities": [
+  {
+   "name": "Messungen",
+   "slug": "messungen",
+   "fields": [
+    {
+     "label": "Datum",
+     "key": "datum",
+     "type": "date",
+     "required": true
+    },
+    {
+     "label": "Maschine",
+     "key": "maschine",
+     "type": "choice",
+     "choices": [
+      "Schleifmaschine S1",
+      "Schleifmaschine S2",
+      "Schleifmaschine S3"
+     ],
+     "required": true
+    },
+    {
+     "label": "Merkmal",
+     "key": "merkmal",
+     "type": "choice",
+     "choices": [
+      "Ø Zahnstange 24 h7",
+      "Rundlauf",
+      "Oberflächenhärte HRC"
+     ]
+    },
+    {
+     "label": "Messwert (mm)",
+     "key": "wert",
+     "type": "decimal",
+     "required": true
+    },
+    {
+     "label": "Prüfer/in",
+     "key": "pruefer",
+     "type": "text"
+    }
+   ]
+  },
+  {
+   "name": "Toleranzen",
+   "slug": "toleranzen",
+   "fields": [
+    {
+     "label": "Grenze",
+     "key": "name",
+     "type": "text",
+     "required": true
+    },
+    {
+     "label": "Wert (µm Abweichung von 24,000)",
+     "key": "wert",
+     "type": "number"
+    }
+   ]
+  }
+ ],
+ "pages": [
+  {
+   "title": "Regelkarte",
+   "slug": "regelkarte",
+   "layout": [
+    {
+     "type": "heading",
+     "width": 12,
+     "props": {
+      "text": "SPC · Ø Zahnstange 24 h7",
+      "subtitle": "Nennmaß 24,000 mm · h7: 0 / −21 µm (hier zur Übung symmetrisch einstellbar)",
+      "level": "1"
+     }
+    },
+    {
+     "type": "filter",
+     "width": 12,
+     "props": {
+      "entity": "messungen",
+      "field": "maschine"
+     }
+    },
+    {
+     "type": "notice",
+     "width": 12,
+     "props": {
+      "title": "Prozessfähigkeit",
+      "text": "wird berechnet …"
+     },
+     "name": "ampel"
+    },
+    {
+     "type": "stat",
+     "width": 3,
+     "props": {
+      "label": "Cp"
+     },
+     "name": "k_cp"
+    },
+    {
+     "type": "stat",
+     "width": 3,
+     "props": {
+      "label": "Cpk"
+     },
+     "name": "k_cpk"
+    },
+    {
+     "type": "stat",
+     "width": 3,
+     "props": {
+      "label": "Mittelwert",
+      "entity": "messungen",
+      "aggregate": "avg",
+      "field": "wert",
+      "unit": "mm"
+     }
+    },
+    {
+     "type": "stat",
+     "width": 3,
+     "props": {
+      "label": "Außerhalb Toleranz"
+     },
+     "name": "k_aus"
+    },
+    {
+     "type": "line",
+     "width": 12,
+     "props": {
+      "label": "Mittelwert je Tag (Regelkarte mit OEG und UEG)",
+      "entity": "messungen",
+      "date_field": "datum",
+      "aggregate": "avg",
+      "field": "wert",
+      "period": "day",
+      "count": 30,
+      "show_band": true,
+      "threshold": "24,008",
+      "threshold_low": "23,992"
+     }
+    },
+    {
+     "type": "histogram",
+     "width": 6,
+     "props": {
+      "title": "Verteilung je Maschine",
+      "entity": "messungen",
+      "field": "wert",
+      "group_field": "maschine",
+      "bins": 12
+     }
+    },
+    {
+     "type": "boxplot",
+     "width": 6,
+     "props": {
+      "title": "Streuung je Maschine",
+      "entity": "messungen",
+      "field": "wert",
+      "group_field": "maschine"
+     }
+    }
+   ]
+  },
+  {
+   "title": "Toleranzen",
+   "slug": "toleranzen",
+   "layout": [
+    {
+     "type": "heading",
+     "width": 12,
+     "props": {
+      "text": "Was wäre, wenn … die Toleranz anders wäre?",
+      "level": "2"
+     }
+    },
+    {
+     "type": "sliders",
+     "width": 6,
+     "props": {
+      "title": "Toleranzgrenzen in µm",
+      "entity": "toleranzen",
+      "field": "wert",
+      "label_field": "name",
+      "min": -30,
+      "max": 30,
+      "step": 1,
+      "unit": "µm"
+     }
+    },
+    {
+     "type": "output",
+     "width": 6,
+     "props": {
+      "label": "Cpk je Maschine"
+     },
+     "name": "was_waere"
+    }
+   ]
+  },
+  {
+   "title": "Erfassen",
+   "slug": "erfassen",
+   "layout": [
+    {
+     "type": "form",
+     "width": 6,
+     "props": {
+      "entity": "messungen",
+      "submit_label": "Messwert speichern"
+     }
+    },
+    {
+     "type": "csv_import",
+     "width": 6,
+     "props": {
+      "entity": "messungen",
+      "label": "Messprotokoll (CSV) laden"
+     }
+    },
+    {
+     "type": "table",
+     "width": 12,
+     "props": {
+      "entity": "messungen",
+      "page_size": 20
+     }
+    }
+   ]
+  }
+ ],
+ "scripts": [
+  {
+   "name": "Prozessfähigkeit",
+   "language": "python",
+   "trigger": "page",
+   "code": "import statistics\ntol = {r[\"name\"]: (r[\"wert\"] or 0) for r in app.table(\"toleranzen\").all()}\nugw = 24 + tol.get(\"UGW\", -12) / 1000\nogw = 24 + tol.get(\"OGW\", 12) / 1000\nfilt = {}\nif params.get(\"messungen.maschine\"):\n    filt[\"maschine\"] = params.get(\"messungen.maschine\")\nwerte = [r[\"wert\"] for r in app.table(\"messungen\").filter(**filt) if r[\"wert\"] is not None]\ndef kennwerte(w):\n    if len(w) < 3:\n        return None, None\n    mu, s = statistics.mean(w), statistics.stdev(w)\n    return round((ogw - ugw) / (6 * s), 2), round(min(ogw - mu, mu - ugw) / (3 * s), 2)\ncp, cpk = kennwerte(werte)\nui.set(\"k_cp\", value=cp if cp is not None else \"–\")\nui.set(\"k_cpk\", value=cpk if cpk is not None else \"–\")\nui.set(\"k_aus\", value=len([w for w in werte if w < ugw or w > ogw]))\nif cpk is not None:\n    ton = \"success\" if cpk >= 1.33 else (\"warning\" if cpk >= 1.0 else \"danger\")\n    de = lambda x, n=2: f\"{x:.{n}f}\".replace(\".\", \",\")\n    ui.set(\"ampel\", tone=ton, title=f\"Cpk {de(cpk)} – \" + (\"fähig\" if cpk >= 1.33 else (\"bedingt fähig\" if cpk >= 1 else \"nicht fähig\")),\n           text=f\"Grenzen {de(ugw, 3)} … {de(ogw, 3)} mm, n = {len(werte)}\")\nzeilen = []\nfor m in [\"Schleifmaschine S1\", \"Schleifmaschine S2\", \"Schleifmaschine S3\"]:\n    w = [r[\"wert\"] for r in app.table(\"messungen\").filter(maschine=m) if r[\"wert\"] is not None]\n    a, k = kennwerte(w)\n    zeilen.append({\"Maschine\": m, \"n\": len(w), \"Cp\": a, \"Cpk\": k, \"Bewertung\": \"fähig\" if (k or 0) >= 1.33 else \"prüfen\"})\nui.set(\"was_waere\", rows=zeilen)\n"
+  }
+ ],
+ "beispieldaten": {
+  "messungen": [
+   {
+    "datum": "@-29",
+    "maschine": "Schleifmaschine S1",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 24.003,
+    "pruefer": "Lena Traub"
+   },
+   {
+    "datum": "@-29",
+    "maschine": "Schleifmaschine S1",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 24.0015,
+    "pruefer": "Thomas Gruber"
+   },
+   {
+    "datum": "@-29",
+    "maschine": "Schleifmaschine S2",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 23.9963,
+    "pruefer": "Bernd Dietrich"
+   },
+   {
+    "datum": "@-29",
+    "maschine": "Schleifmaschine S2",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 23.9961,
+    "pruefer": "Chiara Nowak"
+   },
+   {
+    "datum": "@-29",
+    "maschine": "Schleifmaschine S3",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 23.995,
+    "pruefer": "Heike Hahn"
+   },
+   {
+    "datum": "@-29",
+    "maschine": "Schleifmaschine S3",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 23.9997,
+    "pruefer": "Jana Nowak"
+   },
+   {
+    "datum": "@-28",
+    "maschine": "Schleifmaschine S1",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 23.9959,
+    "pruefer": "Selin Abele"
+   },
+   {
+    "datum": "@-28",
+    "maschine": "Schleifmaschine S1",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 23.9996,
+    "pruefer": "Nadine Bauer"
+   },
+   {
+    "datum": "@-28",
+    "maschine": "Schleifmaschine S2",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 24.0017,
+    "pruefer": "Uwe Abele"
+   },
+   {
+    "datum": "@-28",
+    "maschine": "Schleifmaschine S2",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 24.0045,
+    "pruefer": "Oleksandr Schäfer"
+   },
+   {
+    "datum": "@-28",
+    "maschine": "Schleifmaschine S3",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 24.004,
+    "pruefer": "Chiara Jäger"
+   },
+   {
+    "datum": "@-28",
+    "maschine": "Schleifmaschine S3",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 24.0057,
+    "pruefer": "Nadine Nowak"
+   },
+   {
+    "datum": "@-27",
+    "maschine": "Schleifmaschine S1",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 23.9982,
+    "pruefer": "Thomas Bauer"
+   },
+   {
+    "datum": "@-27",
+    "maschine": "Schleifmaschine S1",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 24.0007,
+    "pruefer": "Jana Ulrich"
+   },
+   {
+    "datum": "@-27",
+    "maschine": "Schleifmaschine S2",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 24.0084,
+    "pruefer": "Selin Wolf"
+   },
+   {
+    "datum": "@-27",
+    "maschine": "Schleifmaschine S2",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 24.0076,
+    "pruefer": "Chiara Traub"
+   },
+   {
+    "datum": "@-27",
+    "maschine": "Schleifmaschine S3",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 24.0016,
+    "pruefer": "Wolfgang Dietrich"
+   },
+   {
+    "datum": "@-27",
+    "maschine": "Schleifmaschine S3",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 23.9935,
+    "pruefer": "Rüdiger Bauer"
+   },
+   {
+    "datum": "@-26",
+    "maschine": "Schleifmaschine S1",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 23.9977,
+    "pruefer": "Rüdiger Schäfer"
+   },
+   {
+    "datum": "@-26",
+    "maschine": "Schleifmaschine S1",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 23.9963,
+    "pruefer": "Chiara Kaya"
+   },
+   {
+    "datum": "@-26",
+    "maschine": "Schleifmaschine S2",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 24.001,
+    "pruefer": "Yusuf Maier"
+   },
+   {
+    "datum": "@-26",
+    "maschine": "Schleifmaschine S2",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 23.9986,
+    "pruefer": "Uwe Ott"
+   },
+   {
+    "datum": "@-26",
+    "maschine": "Schleifmaschine S3",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 23.9952,
+    "pruefer": "Uwe Engel"
+   },
+   {
+    "datum": "@-26",
+    "maschine": "Schleifmaschine S3",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 23.9956,
+    "pruefer": "Dragan Gruber"
+   },
+   {
+    "datum": "@-25",
+    "maschine": "Schleifmaschine S1",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 23.9983,
+    "pruefer": "Rüdiger Abele"
+   },
+   {
+    "datum": "@-25",
+    "maschine": "Schleifmaschine S1",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 24.0058,
+    "pruefer": "Ayşe Ilić"
+   },
+   {
+    "datum": "@-25",
+    "maschine": "Schleifmaschine S2",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 24.007,
+    "pruefer": "Marco Wolf"
+   },
+   {
+    "datum": "@-25",
+    "maschine": "Schleifmaschine S2",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 24.0039,
+    "pruefer": "Uwe Ilić"
+   },
+   {
+    "datum": "@-25",
+    "maschine": "Schleifmaschine S3",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 24.0009,
+    "pruefer": "Vesna Ulrich"
+   },
+   {
+    "datum": "@-25",
+    "maschine": "Schleifmaschine S3",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 23.9955,
+    "pruefer": "Gül Maier"
+   },
+   {
+    "datum": "@-24",
+    "maschine": "Schleifmaschine S1",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 24.002,
+    "pruefer": "Selin Jäger"
+   },
+   {
+    "datum": "@-24",
+    "maschine": "Schleifmaschine S1",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 24.0005,
+    "pruefer": "Marco Jäger"
+   },
+   {
+    "datum": "@-24",
+    "maschine": "Schleifmaschine S2",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 24.0108,
+    "pruefer": "Lena Schäfer"
+   },
+   {
+    "datum": "@-24",
+    "maschine": "Schleifmaschine S2",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 24.0066,
+    "pruefer": "Yusuf Hahn"
+   },
+   {
+    "datum": "@-24",
+    "maschine": "Schleifmaschine S3",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 23.9949,
+    "pruefer": "Nadine Jäger"
+   },
+   {
+    "datum": "@-24",
+    "maschine": "Schleifmaschine S3",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 23.9916,
+    "pruefer": "Rüdiger Lutz"
+   },
+   {
+    "datum": "@-23",
+    "maschine": "Schleifmaschine S1",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 24.0,
+    "pruefer": "Zoe Nowak"
+   },
+   {
+    "datum": "@-23",
+    "maschine": "Schleifmaschine S1",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 24.0041,
+    "pruefer": "Uwe Hahn"
+   },
+   {
+    "datum": "@-23",
+    "maschine": "Schleifmaschine S2",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 24.0043,
+    "pruefer": "Chiara Jäger"
+   },
+   {
+    "datum": "@-23",
+    "maschine": "Schleifmaschine S2",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 24.0068,
+    "pruefer": "Chiara Bauer"
+   },
+   {
+    "datum": "@-23",
+    "maschine": "Schleifmaschine S3",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 24.0035,
+    "pruefer": "Yusuf Nowak"
+   },
+   {
+    "datum": "@-23",
+    "maschine": "Schleifmaschine S3",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 23.9951,
+    "pruefer": "Thomas Ott"
+   },
+   {
+    "datum": "@-22",
+    "maschine": "Schleifmaschine S1",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 24.0026,
+    "pruefer": "Heike Kaya"
+   },
+   {
+    "datum": "@-22",
+    "maschine": "Schleifmaschine S1",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 24.0046,
+    "pruefer": "Ivan Ulrich"
+   },
+   {
+    "datum": "@-22",
+    "maschine": "Schleifmaschine S2",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 24.0076,
+    "pruefer": "Ayşe Gruber"
+   },
+   {
+    "datum": "@-22",
+    "maschine": "Schleifmaschine S2",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 24.0019,
+    "pruefer": "Uwe Maier"
+   },
+   {
+    "datum": "@-22",
+    "maschine": "Schleifmaschine S3",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 24.0012,
+    "pruefer": "Dragan Traub"
+   },
+   {
+    "datum": "@-22",
+    "maschine": "Schleifmaschine S3",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 23.9995,
+    "pruefer": "Selin Ott"
+   },
+   {
+    "datum": "@-21",
+    "maschine": "Schleifmaschine S1",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 24.002,
+    "pruefer": "Frank Engel"
+   },
+   {
+    "datum": "@-21",
+    "maschine": "Schleifmaschine S1",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 24.0016,
+    "pruefer": "Lena Hahn"
+   },
+   {
+    "datum": "@-21",
+    "maschine": "Schleifmaschine S2",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 24.0082,
+    "pruefer": "Bernd Fuchs"
+   },
+   {
+    "datum": "@-21",
+    "maschine": "Schleifmaschine S2",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 24.0014,
+    "pruefer": "Frank Gruber"
+   },
+   {
+    "datum": "@-21",
+    "maschine": "Schleifmaschine S3",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 24.0075,
+    "pruefer": "Thomas Wolf"
+   },
+   {
+    "datum": "@-21",
+    "maschine": "Schleifmaschine S3",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 23.9996,
+    "pruefer": "Selin Rapp"
+   },
+   {
+    "datum": "@-20",
+    "maschine": "Schleifmaschine S1",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 23.9994,
+    "pruefer": "Ivan Dietrich"
+   },
+   {
+    "datum": "@-20",
+    "maschine": "Schleifmaschine S1",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 23.9972,
+    "pruefer": "Chiara Engel"
+   },
+   {
+    "datum": "@-20",
+    "maschine": "Schleifmaschine S2",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 24.0105,
+    "pruefer": "Petra Lutz"
+   },
+   {
+    "datum": "@-20",
+    "maschine": "Schleifmaschine S2",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 24.0069,
+    "pruefer": "Uwe Ilić"
+   },
+   {
+    "datum": "@-20",
+    "maschine": "Schleifmaschine S3",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 23.9926,
+    "pruefer": "Vesna Fuchs"
+   },
+   {
+    "datum": "@-20",
+    "maschine": "Schleifmaschine S3",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 24.0026,
+    "pruefer": "Zoe Traub"
+   },
+   {
+    "datum": "@-19",
+    "maschine": "Schleifmaschine S1",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 23.998,
+    "pruefer": "Ayşe Maier"
+   },
+   {
+    "datum": "@-19",
+    "maschine": "Schleifmaschine S1",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 23.9954,
+    "pruefer": "Kemal Bauer"
+   },
+   {
+    "datum": "@-19",
+    "maschine": "Schleifmaschine S2",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 24.0039,
+    "pruefer": "Dragan Fuchs"
+   },
+   {
+    "datum": "@-19",
+    "maschine": "Schleifmaschine S2",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 24.0142,
+    "pruefer": "Rüdiger Ilić"
+   },
+   {
+    "datum": "@-19",
+    "maschine": "Schleifmaschine S3",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 23.9971,
+    "pruefer": "Bernd Ilić"
+   },
+   {
+    "datum": "@-19",
+    "maschine": "Schleifmaschine S3",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 23.9996,
+    "pruefer": "Yusuf Traub"
+   },
+   {
+    "datum": "@-18",
+    "maschine": "Schleifmaschine S1",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 24.0016,
+    "pruefer": "Nadine Schäfer"
+   },
+   {
+    "datum": "@-18",
+    "maschine": "Schleifmaschine S1",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 23.9961,
+    "pruefer": "Nadine Ilić"
+   },
+   {
+    "datum": "@-18",
+    "maschine": "Schleifmaschine S2",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 24.0014,
+    "pruefer": "Thomas Schäfer"
+   },
+   {
+    "datum": "@-18",
+    "maschine": "Schleifmaschine S2",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 24.0068,
+    "pruefer": "Jana Gruber"
+   },
+   {
+    "datum": "@-18",
+    "maschine": "Schleifmaschine S3",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 23.9963,
+    "pruefer": "Gül Dietrich"
+   },
+   {
+    "datum": "@-18",
+    "maschine": "Schleifmaschine S3",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 23.9971,
+    "pruefer": "Zoe Vogel"
+   },
+   {
+    "datum": "@-17",
+    "maschine": "Schleifmaschine S1",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 23.9978,
+    "pruefer": "Yusuf Gruber"
+   },
+   {
+    "datum": "@-17",
+    "maschine": "Schleifmaschine S1",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 23.9944,
+    "pruefer": "Vesna Schäfer"
+   },
+   {
+    "datum": "@-17",
+    "maschine": "Schleifmaschine S2",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 24.0103,
+    "pruefer": "Ivan Engel"
+   },
+   {
+    "datum": "@-17",
+    "maschine": "Schleifmaschine S2",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 24.0132,
+    "pruefer": "Nadine Kaya"
+   },
+   {
+    "datum": "@-17",
+    "maschine": "Schleifmaschine S3",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 23.996,
+    "pruefer": "Elif Fuchs"
+   },
+   {
+    "datum": "@-17",
+    "maschine": "Schleifmaschine S3",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 23.9934,
+    "pruefer": "Lena Fuchs"
+   },
+   {
+    "datum": "@-16",
+    "maschine": "Schleifmaschine S1",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 24.0011,
+    "pruefer": "Thomas Celik"
+   },
+   {
+    "datum": "@-16",
+    "maschine": "Schleifmaschine S1",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 23.9998,
+    "pruefer": "Uwe Abele"
+   },
+   {
+    "datum": "@-16",
+    "maschine": "Schleifmaschine S2",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 24.0095,
+    "pruefer": "Wolfgang Ulrich"
+   },
+   {
+    "datum": "@-16",
+    "maschine": "Schleifmaschine S2",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 24.0096,
+    "pruefer": "Vesna Nowak"
+   },
+   {
+    "datum": "@-16",
+    "maschine": "Schleifmaschine S3",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 23.9966,
+    "pruefer": "Vesna Schäfer"
+   },
+   {
+    "datum": "@-16",
+    "maschine": "Schleifmaschine S3",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 23.9939,
+    "pruefer": "Wolfgang Fuchs"
+   },
+   {
+    "datum": "@-15",
+    "maschine": "Schleifmaschine S1",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 23.9976,
+    "pruefer": "Lena Schäfer"
+   },
+   {
+    "datum": "@-15",
+    "maschine": "Schleifmaschine S1",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 23.9971,
+    "pruefer": "Chiara Ilić"
+   },
+   {
+    "datum": "@-15",
+    "maschine": "Schleifmaschine S2",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 24.0154,
+    "pruefer": "Thomas Ilić"
+   },
+   {
+    "datum": "@-15",
+    "maschine": "Schleifmaschine S2",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 24.0089,
+    "pruefer": "Vesna Pfeiffer"
+   },
+   {
+    "datum": "@-15",
+    "maschine": "Schleifmaschine S3",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 23.9937,
+    "pruefer": "Vesna Engel"
+   },
+   {
+    "datum": "@-15",
+    "maschine": "Schleifmaschine S3",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 23.998,
+    "pruefer": "Wolfgang Jäger"
+   },
+   {
+    "datum": "@-14",
+    "maschine": "Schleifmaschine S1",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 23.9983,
+    "pruefer": "Nadine Abele"
+   },
+   {
+    "datum": "@-14",
+    "maschine": "Schleifmaschine S1",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 24.0005,
+    "pruefer": "Kemal Schäfer"
+   },
+   {
+    "datum": "@-14",
+    "maschine": "Schleifmaschine S2",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 24.0104,
+    "pruefer": "Zoe Traub"
+   },
+   {
+    "datum": "@-14",
+    "maschine": "Schleifmaschine S2",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 24.0113,
+    "pruefer": "Yusuf Bauer"
+   },
+   {
+    "datum": "@-14",
+    "maschine": "Schleifmaschine S3",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 23.9989,
+    "pruefer": "Kemal Wolf"
+   },
+   {
+    "datum": "@-14",
+    "maschine": "Schleifmaschine S3",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 24.0,
+    "pruefer": "Selin Gruber"
+   },
+   {
+    "datum": "@-13",
+    "maschine": "Schleifmaschine S1",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 24.0001,
+    "pruefer": "Zoe Wolf"
+   },
+   {
+    "datum": "@-13",
+    "maschine": "Schleifmaschine S1",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 24.0023,
+    "pruefer": "Nadine Gruber"
+   },
+   {
+    "datum": "@-13",
+    "maschine": "Schleifmaschine S2",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 24.0115,
+    "pruefer": "Vesna Fuchs"
+   },
+   {
+    "datum": "@-13",
+    "maschine": "Schleifmaschine S2",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 24.0102,
+    "pruefer": "Jana Bauer"
+   },
+   {
+    "datum": "@-13",
+    "maschine": "Schleifmaschine S3",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 24.0035,
+    "pruefer": "Petra Jäger"
+   },
+   {
+    "datum": "@-13",
+    "maschine": "Schleifmaschine S3",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 23.9978,
+    "pruefer": "Elif Fuchs"
+   },
+   {
+    "datum": "@-12",
+    "maschine": "Schleifmaschine S1",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 23.9972,
+    "pruefer": "Petra Traub"
+   },
+   {
+    "datum": "@-12",
+    "maschine": "Schleifmaschine S1",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 23.9979,
+    "pruefer": "Uwe Kaya"
+   },
+   {
+    "datum": "@-12",
+    "maschine": "Schleifmaschine S2",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 24.0172,
+    "pruefer": "Bernd Ott"
+   },
+   {
+    "datum": "@-12",
+    "maschine": "Schleifmaschine S2",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 24.0133,
+    "pruefer": "Lena Vogel"
+   },
+   {
+    "datum": "@-12",
+    "maschine": "Schleifmaschine S3",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 24.0064,
+    "pruefer": "Elif Rapp"
+   },
+   {
+    "datum": "@-12",
+    "maschine": "Schleifmaschine S3",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 23.9995,
+    "pruefer": "Nadine Schäfer"
+   },
+   {
+    "datum": "@-11",
+    "maschine": "Schleifmaschine S1",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 24.0004,
+    "pruefer": "Ivan Maier"
+   },
+   {
+    "datum": "@-11",
+    "maschine": "Schleifmaschine S1",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 24.0007,
+    "pruefer": "Frank Schäfer"
+   },
+   {
+    "datum": "@-11",
+    "maschine": "Schleifmaschine S2",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 24.0131,
+    "pruefer": "Dragan Maier"
+   },
+   {
+    "datum": "@-11",
+    "maschine": "Schleifmaschine S2",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 24.0072,
+    "pruefer": "Jana Fuchs"
+   },
+   {
+    "datum": "@-11",
+    "maschine": "Schleifmaschine S3",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 23.992,
+    "pruefer": "Thomas Fuchs"
+   },
+   {
+    "datum": "@-11",
+    "maschine": "Schleifmaschine S3",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 23.9891,
+    "pruefer": "Heike Kaya"
+   },
+   {
+    "datum": "@-10",
+    "maschine": "Schleifmaschine S1",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 23.9951,
+    "pruefer": "Petra Fuchs"
+   },
+   {
+    "datum": "@-10",
+    "maschine": "Schleifmaschine S1",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 24.0007,
+    "pruefer": "Thomas Nowak"
+   },
+   {
+    "datum": "@-10",
+    "maschine": "Schleifmaschine S2",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 24.0109,
+    "pruefer": "Selin Engel"
+   },
+   {
+    "datum": "@-10",
+    "maschine": "Schleifmaschine S2",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 24.0189,
+    "pruefer": "Gül Traub"
+   },
+   {
+    "datum": "@-10",
+    "maschine": "Schleifmaschine S3",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 23.9993,
+    "pruefer": "Yusuf Lutz"
+   },
+   {
+    "datum": "@-10",
+    "maschine": "Schleifmaschine S3",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 23.9958,
+    "pruefer": "Ivan Vogel"
+   },
+   {
+    "datum": "@-9",
+    "maschine": "Schleifmaschine S1",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 23.9972,
+    "pruefer": "Zoe Traub"
+   },
+   {
+    "datum": "@-9",
+    "maschine": "Schleifmaschine S1",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 23.9992,
+    "pruefer": "Bernd Nowak"
+   },
+   {
+    "datum": "@-9",
+    "maschine": "Schleifmaschine S2",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 24.0035,
+    "pruefer": "Uwe Vogel"
+   },
+   {
+    "datum": "@-9",
+    "maschine": "Schleifmaschine S2",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 24.0148,
+    "pruefer": "Ayşe Rapp"
+   },
+   {
+    "datum": "@-9",
+    "maschine": "Schleifmaschine S3",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 23.9982,
+    "pruefer": "Dragan Celik"
+   },
+   {
+    "datum": "@-9",
+    "maschine": "Schleifmaschine S3",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 23.9989,
+    "pruefer": "Jana Jäger"
+   },
+   {
+    "datum": "@-8",
+    "maschine": "Schleifmaschine S1",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 23.9983,
+    "pruefer": "Zoe Vogel"
+   },
+   {
+    "datum": "@-8",
+    "maschine": "Schleifmaschine S1",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 23.9977,
+    "pruefer": "Nadine Lutz"
+   },
+   {
+    "datum": "@-8",
+    "maschine": "Schleifmaschine S2",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 24.0116,
+    "pruefer": "Frank Traub"
+   },
+   {
+    "datum": "@-8",
+    "maschine": "Schleifmaschine S2",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 24.0119,
+    "pruefer": "Rüdiger Dietrich"
+   },
+   {
+    "datum": "@-8",
+    "maschine": "Schleifmaschine S3",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 23.9988,
+    "pruefer": "Petra Celik"
+   },
+   {
+    "datum": "@-8",
+    "maschine": "Schleifmaschine S3",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 23.9954,
+    "pruefer": "Frank Engel"
+   },
+   {
+    "datum": "@-7",
+    "maschine": "Schleifmaschine S1",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 24.0015,
+    "pruefer": "Ayşe Lutz"
+   },
+   {
+    "datum": "@-7",
+    "maschine": "Schleifmaschine S1",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 23.9955,
+    "pruefer": "Zoe Dietrich"
+   },
+   {
+    "datum": "@-7",
+    "maschine": "Schleifmaschine S2",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 24.0032,
+    "pruefer": "Heike Schäfer"
+   },
+   {
+    "datum": "@-7",
+    "maschine": "Schleifmaschine S2",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 24.014,
+    "pruefer": "Kemal Kaya"
+   },
+   {
+    "datum": "@-7",
+    "maschine": "Schleifmaschine S3",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 23.9988,
+    "pruefer": "Jana Maier"
+   },
+   {
+    "datum": "@-7",
+    "maschine": "Schleifmaschine S3",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 23.9942,
+    "pruefer": "Rüdiger Vogel"
+   },
+   {
+    "datum": "@-6",
+    "maschine": "Schleifmaschine S1",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 24.0041,
+    "pruefer": "Nadine Celik"
+   },
+   {
+    "datum": "@-6",
+    "maschine": "Schleifmaschine S1",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 23.9977,
+    "pruefer": "Thomas Vogel"
+   },
+   {
+    "datum": "@-6",
+    "maschine": "Schleifmaschine S2",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 24.0164,
+    "pruefer": "Thomas Fuchs"
+   },
+   {
+    "datum": "@-6",
+    "maschine": "Schleifmaschine S2",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 24.0103,
+    "pruefer": "Chiara Hahn"
+   },
+   {
+    "datum": "@-6",
+    "maschine": "Schleifmaschine S3",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 23.9945,
+    "pruefer": "Ivan Ilić"
+   },
+   {
+    "datum": "@-6",
+    "maschine": "Schleifmaschine S3",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 23.9999,
+    "pruefer": "Ivan Gruber"
+   },
+   {
+    "datum": "@-5",
+    "maschine": "Schleifmaschine S1",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 24.0043,
+    "pruefer": "Ayşe Fuchs"
+   },
+   {
+    "datum": "@-5",
+    "maschine": "Schleifmaschine S1",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 24.0009,
+    "pruefer": "Yusuf Bauer"
+   },
+   {
+    "datum": "@-5",
+    "maschine": "Schleifmaschine S2",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 24.0121,
+    "pruefer": "Marco Nowak"
+   },
+   {
+    "datum": "@-5",
+    "maschine": "Schleifmaschine S2",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 24.0135,
+    "pruefer": "Rüdiger Bauer"
+   },
+   {
+    "datum": "@-5",
+    "maschine": "Schleifmaschine S3",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 23.9942,
+    "pruefer": "Nadine Kaya"
+   },
+   {
+    "datum": "@-5",
+    "maschine": "Schleifmaschine S3",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 24.0054,
+    "pruefer": "Uwe Bauer"
+   },
+   {
+    "datum": "@-4",
+    "maschine": "Schleifmaschine S1",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 24.0018,
+    "pruefer": "Gül Fuchs"
+   },
+   {
+    "datum": "@-4",
+    "maschine": "Schleifmaschine S1",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 23.9966,
+    "pruefer": "Selin Abele"
+   },
+   {
+    "datum": "@-4",
+    "maschine": "Schleifmaschine S2",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 24.012,
+    "pruefer": "Wolfgang Hahn"
+   },
+   {
+    "datum": "@-4",
+    "maschine": "Schleifmaschine S2",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 24.0217,
+    "pruefer": "Vesna Ulrich"
+   },
+   {
+    "datum": "@-4",
+    "maschine": "Schleifmaschine S3",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 23.9935,
+    "pruefer": "Oleksandr Schäfer"
+   },
+   {
+    "datum": "@-4",
+    "maschine": "Schleifmaschine S3",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 24.0033,
+    "pruefer": "Thomas Gruber"
+   },
+   {
+    "datum": "@-3",
+    "maschine": "Schleifmaschine S1",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 24.0005,
+    "pruefer": "Zoe Schäfer"
+   },
+   {
+    "datum": "@-3",
+    "maschine": "Schleifmaschine S1",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 23.9988,
+    "pruefer": "Marco Nowak"
+   },
+   {
+    "datum": "@-3",
+    "maschine": "Schleifmaschine S2",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 24.0153,
+    "pruefer": "Kemal Bauer"
+   },
+   {
+    "datum": "@-3",
+    "maschine": "Schleifmaschine S2",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 24.024,
+    "pruefer": "Dragan Ott"
+   },
+   {
+    "datum": "@-3",
+    "maschine": "Schleifmaschine S3",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 23.9995,
+    "pruefer": "Selin Fuchs"
+   },
+   {
+    "datum": "@-3",
+    "maschine": "Schleifmaschine S3",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 23.9977,
+    "pruefer": "Frank Celik"
+   },
+   {
+    "datum": "@-2",
+    "maschine": "Schleifmaschine S1",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 24.0067,
+    "pruefer": "Rüdiger Lutz"
+   },
+   {
+    "datum": "@-2",
+    "maschine": "Schleifmaschine S1",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 24.0021,
+    "pruefer": "Vesna Gruber"
+   },
+   {
+    "datum": "@-2",
+    "maschine": "Schleifmaschine S2",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 24.0084,
+    "pruefer": "Vesna Kaya"
+   },
+   {
+    "datum": "@-2",
+    "maschine": "Schleifmaschine S2",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 24.0129,
+    "pruefer": "Lena Rapp"
+   },
+   {
+    "datum": "@-2",
+    "maschine": "Schleifmaschine S3",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 23.9981,
+    "pruefer": "Jana Schäfer"
+   },
+   {
+    "datum": "@-2",
+    "maschine": "Schleifmaschine S3",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 23.9977,
+    "pruefer": "Oleksandr Ilić"
+   },
+   {
+    "datum": "@-1",
+    "maschine": "Schleifmaschine S1",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 24.0035,
+    "pruefer": "Lena Lutz"
+   },
+   {
+    "datum": "@-1",
+    "maschine": "Schleifmaschine S1",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 23.996,
+    "pruefer": "Thomas Lutz"
+   },
+   {
+    "datum": "@-1",
+    "maschine": "Schleifmaschine S2",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 24.0194,
+    "pruefer": "Lena Schäfer"
+   },
+   {
+    "datum": "@-1",
+    "maschine": "Schleifmaschine S2",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 24.0186,
+    "pruefer": "Gül Pfeiffer"
+   },
+   {
+    "datum": "@-1",
+    "maschine": "Schleifmaschine S3",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 23.9972,
+    "pruefer": "Dragan Dietrich"
+   },
+   {
+    "datum": "@-1",
+    "maschine": "Schleifmaschine S3",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 24.0054,
+    "pruefer": "Chiara Gruber"
+   },
+   {
+    "datum": "@+0",
+    "maschine": "Schleifmaschine S1",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 24.0036,
+    "pruefer": "Rüdiger Ilić"
+   },
+   {
+    "datum": "@+0",
+    "maschine": "Schleifmaschine S1",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 24.0047,
+    "pruefer": "Uwe Celik"
+   },
+   {
+    "datum": "@+0",
+    "maschine": "Schleifmaschine S2",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 24.0212,
+    "pruefer": "Kemal Wolf"
+   },
+   {
+    "datum": "@+0",
+    "maschine": "Schleifmaschine S2",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 24.0115,
+    "pruefer": "Yusuf Dietrich"
+   },
+   {
+    "datum": "@+0",
+    "maschine": "Schleifmaschine S3",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 24.0011,
+    "pruefer": "Gül Traub"
+   },
+   {
+    "datum": "@+0",
+    "maschine": "Schleifmaschine S3",
+    "merkmal": "Ø Zahnstange 24 h7",
+    "wert": 24.0026,
+    "pruefer": "Jana Engel"
+   }
+  ],
+  "toleranzen": [
+   {
+    "name": "UGW",
+    "wert": -12
+   },
+   {
+    "name": "OGW",
+    "wert": 12
+   }
+  ]
+ },
+ "nachbauten": [
+  {
+   "baustein": "regelkarte",
+   "ersatz": "Regelkarte mit OEG und UEG: Liniendiagramm hat nur einen Schwellwert, UEG fehlt.",
+   "geloest": true,
+   "jetzt": "Liniendiagramm mit oberer und unterer Grenze; Punkte außerhalb werden rot markiert."
+  },
+  {
+   "baustein": "kennzahl_berechnet",
+   "ersatz": "Cp/Cpk/außerhalb Toleranz: Statistik per Skript (statistics.stdev).",
+   "geloest": false
+  },
+  {
+   "baustein": "ampel",
+   "ersatz": "Fähigkeits-Ampel als Hinweis mit tone.",
+   "geloest": false
+  }
+ ]
+}

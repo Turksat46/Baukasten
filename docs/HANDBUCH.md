@@ -64,6 +64,7 @@ Am Ende stehen [Häufige Fragen](#häufige-fragen),
 | Aufnahme-Einwilligung | Ablauf über mehrere Personen: Veranstaltung anlegen, Link verschicken, zustimmen oder ablehnen, Auswertung | `python manage.py beispiel_einwilligung` |
 | Personaleinsatz | Schichten per Drag-and-drop planen, Linien mit Priorität, Rückfragen bei Überplanung, Wochenübersicht, Kanban-Board | `python manage.py beispiel_einsatzplanung` |
 | Agenten-Berichte | Berichte von n8n-Agenten, Teams-Workflows und Copilot mit Text, Emojis, Tabellen und Diagrammen im Berichte-Feed, siehe [Berichte aus n8n, Teams und Copilot](#berichte-aus-n8n-teams-und-copilot) | `python manage.py beispiel_berichte` |
+| 20 Werks-Apps | Erfundene Apps aus einem Lenkungswerk, vom Werker bis zur Werksleitung: Kantine, Schichtbuch, Andon, 5S, TPM, 8D, SPC, SMED, Nachschub, Qualifikation, Sicherheit, Kostenstellen, OEE, Anlauf, Ideen, Besucher, Energie, Prüfmittel, LPA, Shopfloor-Tafel. Übersicht in `beispiele/werk/README.md` | `python manage.py beispiel_werk` |
 
 **Aufnahme-Einwilligung** im Einzelnen:
 
@@ -354,6 +355,14 @@ Funktionen `round`, `abs`, `min` und `max` mit den Kurznamen (`key`) anderer Fel
 derselben Tabelle. Der Wert wird bei jedem Speichern eines Eintrags (Formular, API,
 CSV-Import, Skript) sicher über den Syntaxbaum (AST, ohne `eval`) berechnet.
 
+**Mit Datumsfeldern rechnen:** Datumsfelder zählen in Formeln als Tage. Ein Feld vom
+Typ „Datum“ kann selbst eine Formel haben, z. B. „Nächste Fälligkeit“ =
+`letzte + intervall` (Intervall in Tagen) oder „Nächste Kalibrierung“ =
+`add_months(letzte, 12)` (der 31. wird im kürzeren Monat zum Monatsletzten). Ein
+Zahlenfeld mit `ende - start` ergibt die Dauer in Tagen. Was sich täglich ändert
+(„Tage seit dem letzten Unfall“), rechnet eine Formel nicht, weil sie nur beim
+Speichern läuft – dafür gibt es die Kennzahl „Tage seit/bis“ (siehe [Bausteine](#bausteine)).
+
 Pro Tabelle lässt sich abschalten, ob Einträge angelegt, bearbeitet oder
 gelöscht werden dürfen. Das gilt für die Oberfläche und für die API.
 
@@ -441,12 +450,12 @@ prüfen.
 | | Kanban-Board | Einträge per Drag-and-drop zwischen den Werten eines Auswahlfelds (z. B. Status) verschieben, optional mit Höchstzahl je Spalte |
 | | Kalender | Monatsansicht nach einem Datumsfeld, optional mit Enddatum (mehrtägig) und Farbe nach Auswahlfeld; „+“ legt einen Eintrag für den Tag an |
 | | Checkliste | Ja/Nein-Feld per Häkchen setzen, mit Fortschritt; Erledigte optional ausblenden |
-| Auswertung | Kennzahl | Anzahl, Summe oder Durchschnitt, optional mit Einheit |
+| Auswertung | Kennzahl | Anzahl, Summe, Durchschnitt oder „Tage seit dem letzten / bis zum nächsten Datum“, optional mit Einheit, Ampel (gelb/rot ab, „Was ist schlecht?“) und Vergleich mit dem Vorzeitraum (z. B. diese gegen letzte Woche, mit Trendpfeil) |
 | | Fortschritt | Wert im Verhältnis zu einem Zielwert |
-| | Balkendiagramm | Einträge je Wert eines Feldes, als Rangliste |
+| | Balkendiagramm | Anzahl, Summe oder Durchschnitt je Wert eines Feldes, als Rangliste; optional als Pareto mit kumuliertem Anteil |
 | | Kreisdiagramm | Anteile der fünf häufigsten Werte, Rest als „Sonstige“ |
 | | Verlauf | Einträge pro Monat, nach einem Datumsfeld oder dem Erfassungsdatum |
-| | Liniendiagramm | Anzahl, Summe oder Durchschnitt je Tag, Woche oder Monat als Linie, optional mit Konfidenzband ($\pm 1\,\sigma$), Schwellenwert und Anomalie-Markierung |
+| | Liniendiagramm | Anzahl, Summe oder Durchschnitt je Tag, Woche oder Monat als Linie, optional mit Konfidenzband ($\pm 1\,\sigma$), Schwellenwert und Anomalie-Markierung; mit oberer und unterer Grenze eine Regelkarte (OEG/UEG), Punkte außerhalb werden rot |
 | | Streudiagramm | X/Y-Zahlenfelder (oder Live-Abfrage) mit Bubble-Größe, Farbgruppen, Trendlinie, Pearson-$r$ und Bestimmtheitsmaß $R^2$ |
 | | Boxplot & Verteilung | Median, Quartile ($Q_1$, $Q_3$), Mittelwert, Whisker und $1{,}5\times\text{IQR}$-Ausreißer, optional gruppiert |
 | | Heatmap & Korrelation | Pearson-Korrelationsmatrix über alle Zahlenfelder oder farbcodierte Kreuztabelle |
@@ -472,6 +481,24 @@ lässt sich also als Link weitergeben. Er gilt für **alle** Bausteine derselben
 Tabelle auf der Seite: Liste, Karten, Kennzahl, Fortschritt, Diagramme, Verlauf,
 Liniendiagramm, Kanban-Board, Kalender, Checkliste und Schieberegler. Andere
 Parameter der Adresse bleiben beim Filtern erhalten.
+
+**Feste Bedingung je Baustein:** Liste, Karten, Kennzahl, Fortschritt, die Diagramme,
+Kanban-Board, Kalender, Checkliste und Schieberegler haben die Einstellung **„Nur
+Einträge, für die gilt“**. Eine Bedingung je Zeile, alle müssen zutreffen:
+
+```
+Status != Erledigt
+Fällig < heute
+```
+
+Felder per Bezeichnung oder Kurzname; Vergleiche `=`, `!=`, `<`, `<=`, `>`, `>=`,
+`enthält`, `ist leer`, `ist nicht leer`. `=` und `!=` nehmen mehrere Werte mit Komma
+(`Status = Offen, In Arbeit`). Rechts darf auch ein anderes Feld stehen
+(`Bestand < Mindestbestand`). Datumswörter: `heute`, `wochenanfang`, `monatsanfang`,
+`quartalsanfang`, `jahresanfang`, jeweils mit `+N`/`-N` Tagen (`heute+7`). Ja/Nein-Felder
+mit `ja`/`nein`. Die Bedingung gilt nur für ihren Baustein, die Filterleiste kommt
+noch dazu. So zeigt dieselbe Seite „Offen“, „Überfällig“ und „Fällig in 7 Tagen“
+ohne ein Skript.
 
 Ein **„Neu“-Link kann Felder vorbelegen**: `…/t/<tabelle>/neu/?faellig=2026-12-24`
 füllt das Feld „faellig“ im Formular vor (so arbeitet das „+“ im Kalender).

@@ -1,0 +1,1028 @@
+{
+ "slug": "gmd-smed",
+ "name": "Rüstzeit-Analyse (SMED)",
+ "icon": "⏱️",
+ "description": "Rüstvorgänge erfassen, intern/extern trennen, Verzögerungen nach Ursache auswerten",
+ "rolle": "Prozessingenieur",
+ "komplexitaet": "mittel",
+ "entities": [
+  {
+   "name": "Rüstvorgänge",
+   "slug": "ruesten",
+   "fields": [
+    {
+     "label": "Datum",
+     "key": "datum",
+     "type": "date",
+     "required": true
+    },
+    {
+     "label": "Linie",
+     "key": "linie",
+     "type": "choice",
+     "choices": [
+      "ZS-1 Zahnstange",
+      "LG-2 Lenkgetriebe",
+      "EPS-3 Servoeinheit"
+     ]
+    },
+    {
+     "label": "Von Typ",
+     "key": "von",
+     "type": "text"
+    },
+    {
+     "label": "Nach Typ",
+     "key": "nach",
+     "type": "text"
+    },
+    {
+     "label": "Intern (min)",
+     "key": "intern",
+     "type": "number"
+    },
+    {
+     "label": "Extern (min)",
+     "key": "extern",
+     "type": "number"
+    },
+    {
+     "label": "Verzögerung (min)",
+     "key": "verzoegerung",
+     "type": "number"
+    },
+    {
+     "label": "Rüstzeit gesamt (min)",
+     "key": "gesamt",
+     "type": "number",
+     "formula": "intern + verzoegerung",
+     "show_in_form": false
+    },
+    {
+     "label": "Ursache Verzögerung",
+     "key": "ursache",
+     "type": "choice",
+     "choices": [
+      "Werkzeug nicht vorbereitet",
+      "Warten auf Erstmusterfreigabe",
+      "Programm suchen",
+      "Spannmittel fehlt",
+      "Kran belegt",
+      "Keine Verzögerung"
+     ]
+    }
+   ]
+  }
+ ],
+ "pages": [
+  {
+   "title": "Analyse",
+   "slug": "analyse",
+   "layout": [
+    {
+     "type": "heading",
+     "width": 12,
+     "props": {
+      "text": "Rüstzeit-Analyse",
+      "subtitle": "Ziel: Rüstzeit < 30 min (Single Minute Exchange of Die)",
+      "level": "1"
+     }
+    },
+    {
+     "type": "filter",
+     "width": 12,
+     "props": {
+      "entity": "ruesten",
+      "field": "linie",
+      "field2": "ursache",
+      "field3": "datum"
+     }
+    },
+    {
+     "type": "stat",
+     "width": 4,
+     "props": {
+      "label": "Ø Rüstzeit",
+      "entity": "ruesten",
+      "aggregate": "avg",
+      "field": "gesamt",
+      "unit": "min"
+     }
+    },
+    {
+     "type": "stat",
+     "width": 4,
+     "props": {
+      "label": "Verlorene Minuten (Verzögerung)",
+      "entity": "ruesten",
+      "aggregate": "sum",
+      "field": "verzoegerung",
+      "unit": "min"
+     }
+    },
+    {
+     "type": "progress",
+     "width": 4,
+     "props": {
+      "label": "Rüstvorgänge im Monat (Ziel 100)",
+      "entity": "ruesten",
+      "target": 100,
+      "where": "Datum >= monatsanfang"
+     }
+    },
+    {
+     "type": "chart",
+     "width": 6,
+     "props": {
+      "label": "Pareto: Verzögerung nach Ursache (Summe min)",
+      "entity": "ruesten",
+      "field": "ursache",
+      "agg": "sum",
+      "value_field": "verzoegerung",
+      "pareto": true,
+      "where": "Ursache != Keine Verzögerung"
+     }
+    },
+    {
+     "type": "scatter",
+     "width": 6,
+     "props": {
+      "title": "Intern vs. Extern",
+      "entity": "ruesten",
+      "x_field": "intern",
+      "y_field": "extern",
+      "color_field": "linie",
+      "trendline": true
+     }
+    },
+    {
+     "type": "line",
+     "width": 12,
+     "props": {
+      "label": "Ø Rüstzeit je Woche",
+      "entity": "ruesten",
+      "date_field": "datum",
+      "aggregate": "avg",
+      "field": "gesamt",
+      "period": "week",
+      "count": 9,
+      "threshold": "30"
+     }
+    },
+    {
+     "type": "pivot",
+     "width": 12,
+     "props": {
+      "title": "Ø Rüstzeit Linie × Zieltyp",
+      "entity": "ruesten",
+      "row_field": "linie",
+      "col_field": "nach",
+      "agg": "avg",
+      "value_field": "gesamt"
+     }
+    }
+   ]
+  },
+  {
+   "title": "Erfassen",
+   "slug": "erfassen",
+   "layout": [
+    {
+     "type": "form",
+     "width": 12,
+     "props": {
+      "entity": "ruesten",
+      "submit_label": "Rüstvorgang speichern"
+     }
+    },
+    {
+     "type": "table",
+     "width": 12,
+     "props": {
+      "entity": "ruesten",
+      "page_size": 15
+     }
+    }
+   ]
+  }
+ ],
+ "scripts": [],
+ "beispieldaten": {
+  "ruesten": [
+   {
+    "datum": "@-4",
+    "linie": "EPS-3 Servoeinheit",
+    "von": "8.4",
+    "nach": "8.4",
+    "intern": 41,
+    "extern": 26,
+    "verzoegerung": 11,
+    "ursache": "Werkzeug nicht vorbereitet"
+   },
+   {
+    "datum": "@-20",
+    "linie": "LG-2 Lenkgetriebe",
+    "von": "8.4",
+    "nach": "8.4",
+    "intern": 41,
+    "extern": 18,
+    "verzoegerung": 17,
+    "ursache": "Spannmittel fehlt"
+   },
+   {
+    "datum": "@-38",
+    "linie": "EPS-3 Servoeinheit",
+    "von": "7.8",
+    "nach": "Gen4-L",
+    "intern": 48,
+    "extern": 29,
+    "verzoegerung": 28,
+    "ursache": "Kran belegt"
+   },
+   {
+    "datum": "@-50",
+    "linie": "ZS-1 Zahnstange",
+    "von": "Gen4-R",
+    "nach": "7.8",
+    "intern": 40,
+    "extern": 27,
+    "verzoegerung": 39,
+    "ursache": "Programm suchen"
+   },
+   {
+    "datum": "@-41",
+    "linie": "LG-2 Lenkgetriebe",
+    "von": "Gen4-L",
+    "nach": "Gen4-L",
+    "intern": 54,
+    "extern": 17,
+    "verzoegerung": 0,
+    "ursache": "Keine Verzögerung"
+   },
+   {
+    "datum": "@-11",
+    "linie": "LG-2 Lenkgetriebe",
+    "von": "8.4",
+    "nach": "Gen4-R",
+    "intern": 38,
+    "extern": 20,
+    "verzoegerung": 9,
+    "ursache": "Werkzeug nicht vorbereitet"
+   },
+   {
+    "datum": "@-56",
+    "linie": "ZS-1 Zahnstange",
+    "von": "8.1",
+    "nach": "Gen4-R",
+    "intern": 27,
+    "extern": 7,
+    "verzoegerung": 0,
+    "ursache": "Keine Verzögerung"
+   },
+   {
+    "datum": "@-10",
+    "linie": "LG-2 Lenkgetriebe",
+    "von": "8.4",
+    "nach": "8.1",
+    "intern": 21,
+    "extern": 30,
+    "verzoegerung": 40,
+    "ursache": "Warten auf Erstmusterfreigabe"
+   },
+   {
+    "datum": "@-33",
+    "linie": "ZS-1 Zahnstange",
+    "von": "8.4",
+    "nach": "Gen4-L",
+    "intern": 29,
+    "extern": 17,
+    "verzoegerung": 34,
+    "ursache": "Werkzeug nicht vorbereitet"
+   },
+   {
+    "datum": "@-43",
+    "linie": "EPS-3 Servoeinheit",
+    "von": "7.8",
+    "nach": "8.4",
+    "intern": 23,
+    "extern": 10,
+    "verzoegerung": 24,
+    "ursache": "Werkzeug nicht vorbereitet"
+   },
+   {
+    "datum": "@-5",
+    "linie": "LG-2 Lenkgetriebe",
+    "von": "Gen4-R",
+    "nach": "Gen4-R",
+    "intern": 39,
+    "extern": 21,
+    "verzoegerung": 24,
+    "ursache": "Warten auf Erstmusterfreigabe"
+   },
+   {
+    "datum": "@-49",
+    "linie": "LG-2 Lenkgetriebe",
+    "von": "Gen4-L",
+    "nach": "8.1",
+    "intern": 54,
+    "extern": 29,
+    "verzoegerung": 19,
+    "ursache": "Werkzeug nicht vorbereitet"
+   },
+   {
+    "datum": "@-19",
+    "linie": "EPS-3 Servoeinheit",
+    "von": "7.8",
+    "nach": "8.1",
+    "intern": 50,
+    "extern": 15,
+    "verzoegerung": 6,
+    "ursache": "Werkzeug nicht vorbereitet"
+   },
+   {
+    "datum": "@-38",
+    "linie": "EPS-3 Servoeinheit",
+    "von": "7.8",
+    "nach": "Gen4-L",
+    "intern": 23,
+    "extern": 13,
+    "verzoegerung": 26,
+    "ursache": "Spannmittel fehlt"
+   },
+   {
+    "datum": "@-35",
+    "linie": "EPS-3 Servoeinheit",
+    "von": "8.4",
+    "nach": "Gen4-R",
+    "intern": 17,
+    "extern": 17,
+    "verzoegerung": 31,
+    "ursache": "Werkzeug nicht vorbereitet"
+   },
+   {
+    "datum": "@-43",
+    "linie": "LG-2 Lenkgetriebe",
+    "von": "7.8",
+    "nach": "Gen4-R",
+    "intern": 19,
+    "extern": 20,
+    "verzoegerung": 0,
+    "ursache": "Keine Verzögerung"
+   },
+   {
+    "datum": "@-27",
+    "linie": "LG-2 Lenkgetriebe",
+    "von": "8.4",
+    "nach": "Gen4-L",
+    "intern": 13,
+    "extern": 29,
+    "verzoegerung": 17,
+    "ursache": "Warten auf Erstmusterfreigabe"
+   },
+   {
+    "datum": "@-28",
+    "linie": "EPS-3 Servoeinheit",
+    "von": "7.8",
+    "nach": "Gen4-L",
+    "intern": 46,
+    "extern": 17,
+    "verzoegerung": 8,
+    "ursache": "Werkzeug nicht vorbereitet"
+   },
+   {
+    "datum": "@-28",
+    "linie": "EPS-3 Servoeinheit",
+    "von": "Gen4-L",
+    "nach": "7.8",
+    "intern": 45,
+    "extern": 7,
+    "verzoegerung": 0,
+    "ursache": "Keine Verzögerung"
+   },
+   {
+    "datum": "@-49",
+    "linie": "LG-2 Lenkgetriebe",
+    "von": "7.8",
+    "nach": "8.4",
+    "intern": 37,
+    "extern": 20,
+    "verzoegerung": 0,
+    "ursache": "Keine Verzögerung"
+   },
+   {
+    "datum": "@-21",
+    "linie": "ZS-1 Zahnstange",
+    "von": "Gen4-L",
+    "nach": "8.4",
+    "intern": 53,
+    "extern": 11,
+    "verzoegerung": 0,
+    "ursache": "Keine Verzögerung"
+   },
+   {
+    "datum": "@-56",
+    "linie": "EPS-3 Servoeinheit",
+    "von": "Gen4-L",
+    "nach": "Gen4-L",
+    "intern": 31,
+    "extern": 23,
+    "verzoegerung": 7,
+    "ursache": "Warten auf Erstmusterfreigabe"
+   },
+   {
+    "datum": "@-14",
+    "linie": "EPS-3 Servoeinheit",
+    "von": "7.8",
+    "nach": "8.1",
+    "intern": 16,
+    "extern": 6,
+    "verzoegerung": 27,
+    "ursache": "Spannmittel fehlt"
+   },
+   {
+    "datum": "@-4",
+    "linie": "EPS-3 Servoeinheit",
+    "von": "8.4",
+    "nach": "8.4",
+    "intern": 29,
+    "extern": 23,
+    "verzoegerung": 0,
+    "ursache": "Keine Verzögerung"
+   },
+   {
+    "datum": "@-49",
+    "linie": "LG-2 Lenkgetriebe",
+    "von": "Gen4-R",
+    "nach": "8.1",
+    "intern": 45,
+    "extern": 25,
+    "verzoegerung": 0,
+    "ursache": "Keine Verzögerung"
+   },
+   {
+    "datum": "@-31",
+    "linie": "ZS-1 Zahnstange",
+    "von": "Gen4-L",
+    "nach": "Gen4-R",
+    "intern": 28,
+    "extern": 26,
+    "verzoegerung": 18,
+    "ursache": "Programm suchen"
+   },
+   {
+    "datum": "@-29",
+    "linie": "EPS-3 Servoeinheit",
+    "von": "7.8",
+    "nach": "7.8",
+    "intern": 40,
+    "extern": 16,
+    "verzoegerung": 40,
+    "ursache": "Kran belegt"
+   },
+   {
+    "datum": "@-60",
+    "linie": "EPS-3 Servoeinheit",
+    "von": "Gen4-L",
+    "nach": "Gen4-L",
+    "intern": 34,
+    "extern": 27,
+    "verzoegerung": 0,
+    "ursache": "Keine Verzögerung"
+   },
+   {
+    "datum": "@-1",
+    "linie": "ZS-1 Zahnstange",
+    "von": "Gen4-R",
+    "nach": "7.8",
+    "intern": 50,
+    "extern": 7,
+    "verzoegerung": 12,
+    "ursache": "Werkzeug nicht vorbereitet"
+   },
+   {
+    "datum": "@-36",
+    "linie": "EPS-3 Servoeinheit",
+    "von": "Gen4-R",
+    "nach": "8.1",
+    "intern": 22,
+    "extern": 19,
+    "verzoegerung": 0,
+    "ursache": "Keine Verzögerung"
+   },
+   {
+    "datum": "@-54",
+    "linie": "ZS-1 Zahnstange",
+    "von": "7.8",
+    "nach": "8.1",
+    "intern": 36,
+    "extern": 26,
+    "verzoegerung": 0,
+    "ursache": "Keine Verzögerung"
+   },
+   {
+    "datum": "@-49",
+    "linie": "EPS-3 Servoeinheit",
+    "von": "8.4",
+    "nach": "8.1",
+    "intern": 34,
+    "extern": 12,
+    "verzoegerung": 36,
+    "ursache": "Spannmittel fehlt"
+   },
+   {
+    "datum": "@-34",
+    "linie": "LG-2 Lenkgetriebe",
+    "von": "7.8",
+    "nach": "Gen4-R",
+    "intern": 19,
+    "extern": 22,
+    "verzoegerung": 34,
+    "ursache": "Warten auf Erstmusterfreigabe"
+   },
+   {
+    "datum": "@-53",
+    "linie": "ZS-1 Zahnstange",
+    "von": "Gen4-R",
+    "nach": "8.1",
+    "intern": 29,
+    "extern": 21,
+    "verzoegerung": 36,
+    "ursache": "Warten auf Erstmusterfreigabe"
+   },
+   {
+    "datum": "@-10",
+    "linie": "LG-2 Lenkgetriebe",
+    "von": "Gen4-R",
+    "nach": "8.1",
+    "intern": 35,
+    "extern": 28,
+    "verzoegerung": 34,
+    "ursache": "Warten auf Erstmusterfreigabe"
+   },
+   {
+    "datum": "@-31",
+    "linie": "ZS-1 Zahnstange",
+    "von": "Gen4-R",
+    "nach": "8.1",
+    "intern": 46,
+    "extern": 23,
+    "verzoegerung": 19,
+    "ursache": "Werkzeug nicht vorbereitet"
+   },
+   {
+    "datum": "@-22",
+    "linie": "EPS-3 Servoeinheit",
+    "von": "8.4",
+    "nach": "7.8",
+    "intern": 20,
+    "extern": 8,
+    "verzoegerung": 37,
+    "ursache": "Spannmittel fehlt"
+   },
+   {
+    "datum": "@-20",
+    "linie": "LG-2 Lenkgetriebe",
+    "von": "7.8",
+    "nach": "Gen4-R",
+    "intern": 29,
+    "extern": 11,
+    "verzoegerung": 0,
+    "ursache": "Keine Verzögerung"
+   },
+   {
+    "datum": "@-52",
+    "linie": "LG-2 Lenkgetriebe",
+    "von": "8.1",
+    "nach": "Gen4-L",
+    "intern": 23,
+    "extern": 21,
+    "verzoegerung": 17,
+    "ursache": "Kran belegt"
+   },
+   {
+    "datum": "@-14",
+    "linie": "EPS-3 Servoeinheit",
+    "von": "Gen4-L",
+    "nach": "7.8",
+    "intern": 27,
+    "extern": 9,
+    "verzoegerung": 28,
+    "ursache": "Spannmittel fehlt"
+   },
+   {
+    "datum": "@-46",
+    "linie": "EPS-3 Servoeinheit",
+    "von": "8.4",
+    "nach": "Gen4-R",
+    "intern": 36,
+    "extern": 12,
+    "verzoegerung": 24,
+    "ursache": "Werkzeug nicht vorbereitet"
+   },
+   {
+    "datum": "@-36",
+    "linie": "ZS-1 Zahnstange",
+    "von": "8.1",
+    "nach": "Gen4-L",
+    "intern": 23,
+    "extern": 7,
+    "verzoegerung": 31,
+    "ursache": "Werkzeug nicht vorbereitet"
+   },
+   {
+    "datum": "@-10",
+    "linie": "EPS-3 Servoeinheit",
+    "von": "8.1",
+    "nach": "7.8",
+    "intern": 43,
+    "extern": 20,
+    "verzoegerung": 0,
+    "ursache": "Keine Verzögerung"
+   },
+   {
+    "datum": "@-2",
+    "linie": "LG-2 Lenkgetriebe",
+    "von": "8.1",
+    "nach": "8.1",
+    "intern": 23,
+    "extern": 27,
+    "verzoegerung": 25,
+    "ursache": "Spannmittel fehlt"
+   },
+   {
+    "datum": "@-27",
+    "linie": "LG-2 Lenkgetriebe",
+    "von": "8.1",
+    "nach": "7.8",
+    "intern": 55,
+    "extern": 14,
+    "verzoegerung": 29,
+    "ursache": "Programm suchen"
+   },
+   {
+    "datum": "@-59",
+    "linie": "LG-2 Lenkgetriebe",
+    "von": "Gen4-L",
+    "nach": "7.8",
+    "intern": 40,
+    "extern": 26,
+    "verzoegerung": 5,
+    "ursache": "Programm suchen"
+   },
+   {
+    "datum": "@-58",
+    "linie": "EPS-3 Servoeinheit",
+    "von": "8.1",
+    "nach": "7.8",
+    "intern": 50,
+    "extern": 20,
+    "verzoegerung": 0,
+    "ursache": "Keine Verzögerung"
+   },
+   {
+    "datum": "@-33",
+    "linie": "LG-2 Lenkgetriebe",
+    "von": "Gen4-L",
+    "nach": "Gen4-R",
+    "intern": 27,
+    "extern": 7,
+    "verzoegerung": 33,
+    "ursache": "Werkzeug nicht vorbereitet"
+   },
+   {
+    "datum": "@-40",
+    "linie": "LG-2 Lenkgetriebe",
+    "von": "Gen4-R",
+    "nach": "Gen4-R",
+    "intern": 32,
+    "extern": 29,
+    "verzoegerung": 20,
+    "ursache": "Programm suchen"
+   },
+   {
+    "datum": "@-32",
+    "linie": "EPS-3 Servoeinheit",
+    "von": "7.8",
+    "nach": "Gen4-L",
+    "intern": 28,
+    "extern": 5,
+    "verzoegerung": 36,
+    "ursache": "Warten auf Erstmusterfreigabe"
+   },
+   {
+    "datum": "@-42",
+    "linie": "ZS-1 Zahnstange",
+    "von": "Gen4-R",
+    "nach": "8.4",
+    "intern": 53,
+    "extern": 23,
+    "verzoegerung": 31,
+    "ursache": "Werkzeug nicht vorbereitet"
+   },
+   {
+    "datum": "@-30",
+    "linie": "ZS-1 Zahnstange",
+    "von": "Gen4-L",
+    "nach": "Gen4-R",
+    "intern": 40,
+    "extern": 9,
+    "verzoegerung": 0,
+    "ursache": "Keine Verzögerung"
+   },
+   {
+    "datum": "@-32",
+    "linie": "EPS-3 Servoeinheit",
+    "von": "Gen4-R",
+    "nach": "8.1",
+    "intern": 21,
+    "extern": 26,
+    "verzoegerung": 10,
+    "ursache": "Programm suchen"
+   },
+   {
+    "datum": "@-27",
+    "linie": "EPS-3 Servoeinheit",
+    "von": "8.4",
+    "nach": "Gen4-L",
+    "intern": 22,
+    "extern": 30,
+    "verzoegerung": 5,
+    "ursache": "Warten auf Erstmusterfreigabe"
+   },
+   {
+    "datum": "@-1",
+    "linie": "EPS-3 Servoeinheit",
+    "von": "Gen4-R",
+    "nach": "Gen4-L",
+    "intern": 45,
+    "extern": 14,
+    "verzoegerung": 5,
+    "ursache": "Werkzeug nicht vorbereitet"
+   },
+   {
+    "datum": "@-10",
+    "linie": "EPS-3 Servoeinheit",
+    "von": "8.1",
+    "nach": "8.1",
+    "intern": 45,
+    "extern": 18,
+    "verzoegerung": 15,
+    "ursache": "Werkzeug nicht vorbereitet"
+   },
+   {
+    "datum": "@-38",
+    "linie": "EPS-3 Servoeinheit",
+    "von": "Gen4-L",
+    "nach": "8.4",
+    "intern": 32,
+    "extern": 27,
+    "verzoegerung": 18,
+    "ursache": "Warten auf Erstmusterfreigabe"
+   },
+   {
+    "datum": "@-58",
+    "linie": "EPS-3 Servoeinheit",
+    "von": "7.8",
+    "nach": "7.8",
+    "intern": 12,
+    "extern": 24,
+    "verzoegerung": 26,
+    "ursache": "Spannmittel fehlt"
+   },
+   {
+    "datum": "@-55",
+    "linie": "LG-2 Lenkgetriebe",
+    "von": "8.1",
+    "nach": "7.8",
+    "intern": 38,
+    "extern": 29,
+    "verzoegerung": 0,
+    "ursache": "Keine Verzögerung"
+   },
+   {
+    "datum": "@-45",
+    "linie": "ZS-1 Zahnstange",
+    "von": "Gen4-R",
+    "nach": "Gen4-R",
+    "intern": 51,
+    "extern": 24,
+    "verzoegerung": 32,
+    "ursache": "Warten auf Erstmusterfreigabe"
+   },
+   {
+    "datum": "@-35",
+    "linie": "ZS-1 Zahnstange",
+    "von": "Gen4-R",
+    "nach": "7.8",
+    "intern": 53,
+    "extern": 7,
+    "verzoegerung": 11,
+    "ursache": "Werkzeug nicht vorbereitet"
+   },
+   {
+    "datum": "@-45",
+    "linie": "LG-2 Lenkgetriebe",
+    "von": "7.8",
+    "nach": "7.8",
+    "intern": 23,
+    "extern": 16,
+    "verzoegerung": 39,
+    "ursache": "Warten auf Erstmusterfreigabe"
+   },
+   {
+    "datum": "@-35",
+    "linie": "ZS-1 Zahnstange",
+    "von": "8.4",
+    "nach": "Gen4-L",
+    "intern": 26,
+    "extern": 10,
+    "verzoegerung": 18,
+    "ursache": "Programm suchen"
+   },
+   {
+    "datum": "@-3",
+    "linie": "ZS-1 Zahnstange",
+    "von": "7.8",
+    "nach": "8.1",
+    "intern": 55,
+    "extern": 29,
+    "verzoegerung": 17,
+    "ursache": "Spannmittel fehlt"
+   },
+   {
+    "datum": "@-42",
+    "linie": "ZS-1 Zahnstange",
+    "von": "7.8",
+    "nach": "8.1",
+    "intern": 42,
+    "extern": 10,
+    "verzoegerung": 11,
+    "ursache": "Werkzeug nicht vorbereitet"
+   },
+   {
+    "datum": "@-2",
+    "linie": "ZS-1 Zahnstange",
+    "von": "Gen4-R",
+    "nach": "8.1",
+    "intern": 30,
+    "extern": 30,
+    "verzoegerung": 27,
+    "ursache": "Spannmittel fehlt"
+   },
+   {
+    "datum": "@-56",
+    "linie": "ZS-1 Zahnstange",
+    "von": "8.4",
+    "nach": "Gen4-R",
+    "intern": 42,
+    "extern": 9,
+    "verzoegerung": 18,
+    "ursache": "Werkzeug nicht vorbereitet"
+   },
+   {
+    "datum": "@-60",
+    "linie": "LG-2 Lenkgetriebe",
+    "von": "Gen4-L",
+    "nach": "Gen4-R",
+    "intern": 55,
+    "extern": 6,
+    "verzoegerung": 31,
+    "ursache": "Warten auf Erstmusterfreigabe"
+   },
+   {
+    "datum": "@-15",
+    "linie": "EPS-3 Servoeinheit",
+    "von": "Gen4-R",
+    "nach": "Gen4-L",
+    "intern": 33,
+    "extern": 6,
+    "verzoegerung": 34,
+    "ursache": "Spannmittel fehlt"
+   },
+   {
+    "datum": "@-34",
+    "linie": "EPS-3 Servoeinheit",
+    "von": "8.4",
+    "nach": "8.1",
+    "intern": 13,
+    "extern": 14,
+    "verzoegerung": 29,
+    "ursache": "Werkzeug nicht vorbereitet"
+   },
+   {
+    "datum": "@-4",
+    "linie": "EPS-3 Servoeinheit",
+    "von": "Gen4-R",
+    "nach": "8.4",
+    "intern": 27,
+    "extern": 15,
+    "verzoegerung": 6,
+    "ursache": "Werkzeug nicht vorbereitet"
+   },
+   {
+    "datum": "@-47",
+    "linie": "EPS-3 Servoeinheit",
+    "von": "8.1",
+    "nach": "7.8",
+    "intern": 16,
+    "extern": 23,
+    "verzoegerung": 0,
+    "ursache": "Keine Verzögerung"
+   },
+   {
+    "datum": "@-49",
+    "linie": "EPS-3 Servoeinheit",
+    "von": "Gen4-L",
+    "nach": "8.1",
+    "intern": 17,
+    "extern": 13,
+    "verzoegerung": 0,
+    "ursache": "Keine Verzögerung"
+   },
+   {
+    "datum": "@-2",
+    "linie": "EPS-3 Servoeinheit",
+    "von": "8.4",
+    "nach": "8.4",
+    "intern": 30,
+    "extern": 11,
+    "verzoegerung": 12,
+    "ursache": "Kran belegt"
+   },
+   {
+    "datum": "@-25",
+    "linie": "ZS-1 Zahnstange",
+    "von": "8.4",
+    "nach": "Gen4-L",
+    "intern": 44,
+    "extern": 29,
+    "verzoegerung": 0,
+    "ursache": "Keine Verzögerung"
+   },
+   {
+    "datum": "@-38",
+    "linie": "ZS-1 Zahnstange",
+    "von": "Gen4-R",
+    "nach": "Gen4-R",
+    "intern": 38,
+    "extern": 24,
+    "verzoegerung": 11,
+    "ursache": "Werkzeug nicht vorbereitet"
+   },
+   {
+    "datum": "@-42",
+    "linie": "ZS-1 Zahnstange",
+    "von": "Gen4-L",
+    "nach": "Gen4-R",
+    "intern": 50,
+    "extern": 6,
+    "verzoegerung": 5,
+    "ursache": "Warten auf Erstmusterfreigabe"
+   },
+   {
+    "datum": "@-46",
+    "linie": "LG-2 Lenkgetriebe",
+    "von": "7.8",
+    "nach": "7.8",
+    "intern": 47,
+    "extern": 25,
+    "verzoegerung": 0,
+    "ursache": "Keine Verzögerung"
+   },
+   {
+    "datum": "@-51",
+    "linie": "EPS-3 Servoeinheit",
+    "von": "Gen4-R",
+    "nach": "Gen4-L",
+    "intern": 12,
+    "extern": 10,
+    "verzoegerung": 0,
+    "ursache": "Keine Verzögerung"
+   },
+   {
+    "datum": "@-59",
+    "linie": "EPS-3 Servoeinheit",
+    "von": "Gen4-R",
+    "nach": "7.8",
+    "intern": 36,
+    "extern": 7,
+    "verzoegerung": 6,
+    "ursache": "Kran belegt"
+   }
+  ]
+ },
+ "nachbauten": [
+  {
+   "baustein": "diagramm_summe",
+   "ersatz": "Pareto über Summe der Minuten nur mit Spec-Chart (Vega-Lite-JSON von Hand) – für Fachanwender kaum machbar.",
+   "geloest": true,
+   "jetzt": "Balkendiagramm mit Summe und Pareto-Anteil."
+  },
+  {
+   "baustein": "fortschritt_zeitraum",
+   "ersatz": "„Rüstvorgänge im Monat“: Fortschritt zählt alle Einträge, nicht nur den laufenden Monat.",
+   "geloest": true,
+   "jetzt": "Fortschritt mit Bedingung „Datum >= monatsanfang“."
+  }
+ ]
+}

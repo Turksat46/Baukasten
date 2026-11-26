@@ -1,0 +1,2304 @@
+{
+ "slug": "gmd-sfm",
+ "name": "Shopfloor-Management (SQDCP)",
+ "icon": "📋",
+ "description": "Tägliche Runde: SQDCP-Ampeln je Bereich, Themenspeicher mit automatischer Eskalation über 4 Stufen, Trends",
+ "rolle": "Werksleiter · Abteilungsleiter · Meister",
+ "komplexitaet": "extrem komplex",
+ "entities": [
+  {
+   "name": "Kennzahlen",
+   "slug": "kennzahlen",
+   "fields": [
+    {
+     "label": "Datum",
+     "key": "datum",
+     "type": "date",
+     "required": true
+    },
+    {
+     "label": "Bereich",
+     "key": "bereich",
+     "type": "choice",
+     "choices": [
+      "Zerspanung",
+      "Montage LG",
+      "Montage EPS",
+      "Prüffeld",
+      "Logistik"
+     ],
+     "required": true
+    },
+    {
+     "label": "S Sicherheitsereignisse",
+     "key": "s",
+     "type": "number"
+    },
+    {
+     "label": "Q Ausschuss (ppm)",
+     "key": "q",
+     "type": "number"
+    },
+    {
+     "label": "D Liefertreue (%)",
+     "key": "d",
+     "type": "decimal"
+    },
+    {
+     "label": "C Produktivität (%)",
+     "key": "c",
+     "type": "decimal"
+    },
+    {
+     "label": "P Anwesenheit (%)",
+     "key": "p",
+     "type": "decimal"
+    }
+   ]
+  },
+  {
+   "name": "Themen",
+   "slug": "themen",
+   "fields": [
+    {
+     "label": "Thema",
+     "key": "thema",
+     "type": "text",
+     "required": true
+    },
+    {
+     "label": "Bereich",
+     "key": "bereich",
+     "type": "choice",
+     "choices": [
+      "Zerspanung",
+      "Montage LG",
+      "Montage EPS",
+      "Prüffeld",
+      "Logistik"
+     ]
+    },
+    {
+     "label": "Kategorie",
+     "key": "kategorie",
+     "type": "choice",
+     "choices": [
+      "S Sicherheit",
+      "Q Qualität",
+      "D Lieferung",
+      "C Kosten",
+      "P Personal"
+     ]
+    },
+    {
+     "label": "Eskalationsstufe",
+     "key": "stufe",
+     "type": "choice",
+     "choices": [
+      "1 Linie",
+      "2 Meister",
+      "3 Abteilung",
+      "4 Werksleitung"
+     ]
+    },
+    {
+     "label": "Verantwortlich",
+     "key": "verantwortlich",
+     "type": "text"
+    },
+    {
+     "label": "Fällig",
+     "key": "faellig",
+     "type": "date"
+    },
+    {
+     "label": "Status",
+     "key": "status",
+     "type": "choice",
+     "choices": [
+      "Offen",
+      "In Arbeit",
+      "Erledigt"
+     ]
+    },
+    {
+     "label": "Zuletzt eskaliert",
+     "key": "eskaliert_am",
+     "type": "date",
+     "show_in_form": false
+    },
+    {
+     "label": "Beschreibung",
+     "key": "beschreibung",
+     "type": "longtext",
+     "show_in_list": false
+    }
+   ]
+  },
+  {
+   "name": "Eskalationen",
+   "slug": "eskalationen",
+   "fields": [
+    {
+     "label": "Thema",
+     "key": "thema",
+     "type": "reference",
+     "reference": "themen"
+    },
+    {
+     "label": "Von Stufe",
+     "key": "von",
+     "type": "text"
+    },
+    {
+     "label": "Nach Stufe",
+     "key": "nach",
+     "type": "text"
+    },
+    {
+     "label": "Datum",
+     "key": "datum",
+     "type": "date"
+    },
+    {
+     "label": "Grund",
+     "key": "grund",
+     "type": "text"
+    }
+   ]
+  }
+ ],
+ "pages": [
+  {
+   "title": "Tafel",
+   "slug": "tafel",
+   "layout": [
+    {
+     "type": "heading",
+     "width": 12,
+     "props": {
+      "text": "Shopfloor-Tafel",
+      "subtitle": "Tägliche Runde 8:30 · Filter = Bereich",
+      "level": "1"
+     }
+    },
+    {
+     "type": "filter",
+     "width": 12,
+     "props": {
+      "entity": "kennzahlen",
+      "field": "bereich"
+     }
+    },
+    {
+     "type": "stat",
+     "width": 4,
+     "props": {
+      "label": "S · Sicherheitsereignisse heute",
+      "entity": "kennzahlen",
+      "aggregate": "sum",
+      "field": "s",
+      "where": "Datum = heute",
+      "alarm_at": "1",
+      "compare_field": "datum",
+      "compare_days": 7
+     }
+    },
+    {
+     "type": "stat",
+     "width": 4,
+     "props": {
+      "label": "Q · Ausschuss heute (ppm, Ziel ≤ 80)",
+      "entity": "kennzahlen",
+      "aggregate": "avg",
+      "field": "q",
+      "where": "Datum = heute",
+      "warn_at": "80",
+      "alarm_at": "100"
+     }
+    },
+    {
+     "type": "stat",
+     "width": 4,
+     "props": {
+      "label": "D · Liefertreue heute (%, Ziel ≥ 97)",
+      "entity": "kennzahlen",
+      "aggregate": "avg",
+      "field": "d",
+      "where": "Datum = heute",
+      "direction": "lower_worse",
+      "warn_at": "97",
+      "alarm_at": "95"
+     }
+    },
+    {
+     "type": "stat",
+     "width": 6,
+     "props": {
+      "label": "C · Produktivität heute (%, Ziel ≥ 95)",
+      "entity": "kennzahlen",
+      "aggregate": "avg",
+      "field": "c",
+      "where": "Datum = heute",
+      "direction": "lower_worse",
+      "warn_at": "95",
+      "alarm_at": "90"
+     }
+    },
+    {
+     "type": "stat",
+     "width": 6,
+     "props": {
+      "label": "P · Anwesenheit heute (%, Ziel ≥ 92)",
+      "entity": "kennzahlen",
+      "aggregate": "avg",
+      "field": "p",
+      "where": "Datum = heute",
+      "direction": "lower_worse",
+      "warn_at": "92",
+      "alarm_at": "89"
+     }
+    },
+    {
+     "type": "stat",
+     "width": 4,
+     "props": {
+      "label": "Offene Themen",
+      "entity": "themen",
+      "where": "Status != Erledigt"
+     }
+    },
+    {
+     "type": "stat",
+     "width": 4,
+     "props": {
+      "label": "Überfällig",
+      "entity": "themen",
+      "where": "Status != Erledigt\nFällig < heute",
+      "warn_at": "1",
+      "alarm_at": "10"
+     }
+    },
+    {
+     "type": "stat",
+     "width": 4,
+     "props": {
+      "label": "Bei der Werksleitung",
+      "entity": "themen",
+      "where": "Status != Erledigt\nEskalationsstufe = 4 Werksleitung",
+      "warn_at": "1",
+      "alarm_at": "3"
+     }
+    },
+    {
+     "type": "table",
+     "width": 12,
+     "props": {
+      "title": "Überfällige Themen",
+      "entity": "themen",
+      "where": "Status != Erledigt\nFällig < heute"
+     }
+    },
+    {
+     "type": "button",
+     "width": 12,
+     "props": {
+      "label": "Eskalation jetzt prüfen",
+      "target": "script",
+      "script": "eskalation",
+      "style": "secondary"
+     }
+    }
+   ]
+  },
+  {
+   "title": "Themenspeicher",
+   "slug": "themen",
+   "layout": [
+    {
+     "type": "filter",
+     "width": 12,
+     "props": {
+      "entity": "themen",
+      "field": "bereich",
+      "field2": "kategorie",
+      "field3": "stufe"
+     }
+    },
+    {
+     "type": "kanban",
+     "width": 12,
+     "props": {
+      "title": "Nach Eskalationsstufe",
+      "entity": "themen",
+      "field": "stufe",
+      "detail": "verantwortlich",
+      "limit": 6
+     }
+    },
+    {
+     "type": "kanban",
+     "width": 12,
+     "props": {
+      "title": "Nach Status",
+      "entity": "themen",
+      "field": "status",
+      "detail": "bereich",
+      "limit": 6
+     }
+    },
+    {
+     "type": "table",
+     "width": 12,
+     "props": {
+      "entity": "themen",
+      "searchable": true
+     }
+    },
+    {
+     "type": "form",
+     "width": 12,
+     "props": {
+      "entity": "themen",
+      "submit_label": "Thema aufnehmen"
+     }
+    }
+   ]
+  },
+  {
+   "title": "Thema",
+   "slug": "thema",
+   "layout": [
+    {
+     "type": "stepper",
+     "width": 12,
+     "props": {
+      "title": "Status",
+      "entity": "themen",
+      "field": "status"
+     }
+    },
+    {
+     "type": "stepper",
+     "width": 12,
+     "props": {
+      "title": "Eskalationsstufe",
+      "entity": "themen",
+      "field": "stufe"
+     }
+    },
+    {
+     "type": "detail",
+     "width": 6,
+     "props": {
+      "entity": "themen"
+     }
+    },
+    {
+     "type": "related_list",
+     "width": 6,
+     "props": {
+      "title": "Eskalationsverlauf",
+      "entity": "eskalationen",
+      "ref_field": "thema",
+      "show_add": false
+     }
+    }
+   ],
+   "show_in_nav": false
+  },
+  {
+   "title": "Trends",
+   "slug": "trends",
+   "layout": [
+    {
+     "type": "filter",
+     "width": 12,
+     "props": {
+      "entity": "kennzahlen",
+      "field": "bereich",
+      "field2": "datum"
+     }
+    },
+    {
+     "type": "line",
+     "width": 6,
+     "props": {
+      "label": "Q · Ausschuss (ppm)",
+      "entity": "kennzahlen",
+      "date_field": "datum",
+      "aggregate": "avg",
+      "field": "q",
+      "period": "day",
+      "count": 30,
+      "threshold": "80"
+     }
+    },
+    {
+     "type": "line",
+     "width": 6,
+     "props": {
+      "label": "D · Liefertreue (%)",
+      "entity": "kennzahlen",
+      "date_field": "datum",
+      "aggregate": "avg",
+      "field": "d",
+      "period": "day",
+      "count": 30,
+      "threshold": "97"
+     }
+    },
+    {
+     "type": "line",
+     "width": 6,
+     "props": {
+      "label": "C · Produktivität (%)",
+      "entity": "kennzahlen",
+      "date_field": "datum",
+      "aggregate": "avg",
+      "field": "c",
+      "period": "day",
+      "count": 30,
+      "threshold": "95"
+     }
+    },
+    {
+     "type": "line",
+     "width": 6,
+     "props": {
+      "label": "P · Anwesenheit (%)",
+      "entity": "kennzahlen",
+      "date_field": "datum",
+      "aggregate": "avg",
+      "field": "p",
+      "period": "day",
+      "count": 30,
+      "threshold": "92"
+     }
+    },
+    {
+     "type": "heatmap",
+     "width": 12,
+     "props": {
+      "title": "Ø Ausschuss Bereich × Tag",
+      "entity": "kennzahlen",
+      "mode": "crosstab",
+      "row_field": "bereich",
+      "col_field": "datum",
+      "value_field": "q",
+      "agg": "avg"
+     }
+    }
+   ]
+  },
+  {
+   "title": "Kennzahlen melden",
+   "slug": "melden",
+   "layout": [
+    {
+     "type": "form",
+     "width": 6,
+     "props": {
+      "entity": "kennzahlen",
+      "submit_label": "Tageswerte speichern"
+     }
+    },
+    {
+     "type": "csv_import",
+     "width": 6,
+     "props": {
+      "entity": "kennzahlen"
+     }
+    },
+    {
+     "type": "table",
+     "width": 12,
+     "props": {
+      "entity": "kennzahlen",
+      "page_size": 15
+     }
+    }
+   ]
+  },
+  {
+   "title": "Eskalationen",
+   "slug": "eskalationen",
+   "layout": [
+    {
+     "type": "table",
+     "width": 12,
+     "props": {
+      "entity": "eskalationen",
+      "title": "Protokoll"
+     }
+    },
+    {
+     "type": "chart",
+     "width": 6,
+     "props": {
+      "label": "Eskalationen nach Zielstufe",
+      "entity": "eskalationen",
+      "field": "nach"
+     }
+    }
+   ]
+  }
+ ],
+ "scripts": [
+  {
+   "name": "Eskalation",
+   "language": "python",
+   "trigger": "button",
+   "code": "import datetime\nheute = datetime.date.today()\nstufen = [\"1 Linie\", \"2 Meister\", \"3 Abteilung\", \"4 Werksleitung\"]\nn = 0\nfor t in app.table(\"themen\").all():\n    if t[\"status\"] == \"Erledigt\" or not t[\"faellig\"] or t[\"stufe\"] not in stufen:\n        continue\n    verzug = (heute - datetime.date.fromisoformat(t[\"faellig\"])).days\n    if verzug > 3 and t[\"stufe\"] != stufen[-1] and t.get(\"eskaliert_am\") != heute.isoformat():\n        neu = stufen[stufen.index(t[\"stufe\"]) + 1]\n        app.table(\"themen\").update(t[\"id\"], stufe=neu, eskaliert_am=heute.isoformat())\n        app.table(\"eskalationen\").create(thema=t[\"id\"], von=t[\"stufe\"], nach=neu, datum=heute.isoformat(),\n                                         grund=f\"{verzug} Tage überfällig\")\n        n += 1\nmessage(f\"{n} Thema/Themen eskaliert\" if n else \"Nichts zu eskalieren – kein Thema länger als 3 Tage überfällig.\")\n"
+  },
+  {
+   "name": "Eskalation stündlich",
+   "language": "python",
+   "trigger": "schedule",
+   "code": "import datetime\nheute = datetime.date.today()\nstufen = [\"1 Linie\", \"2 Meister\", \"3 Abteilung\", \"4 Werksleitung\"]\nn = 0\nfor t in app.table(\"themen\").all():\n    if t[\"status\"] == \"Erledigt\" or not t[\"faellig\"] or t[\"stufe\"] not in stufen:\n        continue\n    verzug = (heute - datetime.date.fromisoformat(t[\"faellig\"])).days\n    if verzug > 3 and t[\"stufe\"] != stufen[-1] and t.get(\"eskaliert_am\") != heute.isoformat():\n        neu = stufen[stufen.index(t[\"stufe\"]) + 1]\n        app.table(\"themen\").update(t[\"id\"], stufe=neu, eskaliert_am=heute.isoformat())\n        app.table(\"eskalationen\").create(thema=t[\"id\"], von=t[\"stufe\"], nach=neu, datum=heute.isoformat(),\n                                         grund=f\"{verzug} Tage überfällig\")\n        n += 1\nmessage(f\"{n} Thema/Themen eskaliert\" if n else \"Nichts zu eskalieren – kein Thema länger als 3 Tage überfällig.\")\n",
+   "interval_minutes": 60
+  }
+ ],
+ "beispieldaten": {
+  "kennzahlen": [
+   {
+    "datum": "@-29",
+    "bereich": "Zerspanung",
+    "s": 0,
+    "q": 137,
+    "d": 97.0,
+    "c": 91.0,
+    "p": 90.4
+   },
+   {
+    "datum": "@-29",
+    "bereich": "Montage LG",
+    "s": 0,
+    "q": 55,
+    "d": 95.9,
+    "c": 92.0,
+    "p": 97.2
+   },
+   {
+    "datum": "@-29",
+    "bereich": "Montage EPS",
+    "s": 1,
+    "q": 88,
+    "d": 97.4,
+    "c": 87.5,
+    "p": 98.4
+   },
+   {
+    "datum": "@-29",
+    "bereich": "Prüffeld",
+    "s": 0,
+    "q": 116,
+    "d": 98.5,
+    "c": 85.0,
+    "p": 87.3
+   },
+   {
+    "datum": "@-29",
+    "bereich": "Logistik",
+    "s": 0,
+    "q": 118,
+    "d": 96.6,
+    "c": 94.3,
+    "p": 94.6
+   },
+   {
+    "datum": "@-28",
+    "bereich": "Zerspanung",
+    "s": 0,
+    "q": 27,
+    "d": 99.3,
+    "c": 82.2,
+    "p": 91.0
+   },
+   {
+    "datum": "@-28",
+    "bereich": "Montage LG",
+    "s": 0,
+    "q": 86,
+    "d": 94.0,
+    "c": 97.2,
+    "p": 96.7
+   },
+   {
+    "datum": "@-28",
+    "bereich": "Montage EPS",
+    "s": 0,
+    "q": 26,
+    "d": 96.4,
+    "c": 99.6,
+    "p": 94.9
+   },
+   {
+    "datum": "@-28",
+    "bereich": "Prüffeld",
+    "s": 1,
+    "q": 102,
+    "d": 98.1,
+    "c": 84.7,
+    "p": 96.0
+   },
+   {
+    "datum": "@-28",
+    "bereich": "Logistik",
+    "s": 0,
+    "q": 140,
+    "d": 99.1,
+    "c": 85.4,
+    "p": 91.4
+   },
+   {
+    "datum": "@-27",
+    "bereich": "Zerspanung",
+    "s": 0,
+    "q": 115,
+    "d": 96.4,
+    "c": 85.1,
+    "p": 93.1
+   },
+   {
+    "datum": "@-27",
+    "bereich": "Montage LG",
+    "s": 0,
+    "q": 90,
+    "d": 97.9,
+    "c": 80.8,
+    "p": 95.2
+   },
+   {
+    "datum": "@-27",
+    "bereich": "Montage EPS",
+    "s": 0,
+    "q": 89,
+    "d": 98.1,
+    "c": 94.2,
+    "p": 93.3
+   },
+   {
+    "datum": "@-27",
+    "bereich": "Prüffeld",
+    "s": 0,
+    "q": 99,
+    "d": 94.4,
+    "c": 94.9,
+    "p": 91.5
+   },
+   {
+    "datum": "@-27",
+    "bereich": "Logistik",
+    "s": 0,
+    "q": 34,
+    "d": 98.4,
+    "c": 98.6,
+    "p": 95.1
+   },
+   {
+    "datum": "@-26",
+    "bereich": "Zerspanung",
+    "s": 0,
+    "q": 104,
+    "d": 93.3,
+    "c": 95.0,
+    "p": 98.5
+   },
+   {
+    "datum": "@-26",
+    "bereich": "Montage LG",
+    "s": 0,
+    "q": 101,
+    "d": 98.8,
+    "c": 80.2,
+    "p": 87.6
+   },
+   {
+    "datum": "@-26",
+    "bereich": "Montage EPS",
+    "s": 0,
+    "q": 21,
+    "d": 99.5,
+    "c": 86.6,
+    "p": 98.9
+   },
+   {
+    "datum": "@-26",
+    "bereich": "Prüffeld",
+    "s": 0,
+    "q": 131,
+    "d": 97.7,
+    "c": 103.8,
+    "p": 92.9
+   },
+   {
+    "datum": "@-26",
+    "bereich": "Logistik",
+    "s": 1,
+    "q": 132,
+    "d": 94.1,
+    "c": 85.9,
+    "p": 92.5
+   },
+   {
+    "datum": "@-25",
+    "bereich": "Zerspanung",
+    "s": 0,
+    "q": 120,
+    "d": 98.2,
+    "c": 81.6,
+    "p": 93.0
+   },
+   {
+    "datum": "@-25",
+    "bereich": "Montage LG",
+    "s": 0,
+    "q": 53,
+    "d": 99.8,
+    "c": 81.3,
+    "p": 91.8
+   },
+   {
+    "datum": "@-25",
+    "bereich": "Montage EPS",
+    "s": 0,
+    "q": 48,
+    "d": 94.0,
+    "c": 102.7,
+    "p": 98.1
+   },
+   {
+    "datum": "@-25",
+    "bereich": "Prüffeld",
+    "s": 0,
+    "q": 122,
+    "d": 93.1,
+    "c": 103.8,
+    "p": 93.6
+   },
+   {
+    "datum": "@-25",
+    "bereich": "Logistik",
+    "s": 0,
+    "q": 105,
+    "d": 98.1,
+    "c": 81.6,
+    "p": 93.2
+   },
+   {
+    "datum": "@-24",
+    "bereich": "Zerspanung",
+    "s": 0,
+    "q": 119,
+    "d": 95.9,
+    "c": 94.6,
+    "p": 93.7
+   },
+   {
+    "datum": "@-24",
+    "bereich": "Montage LG",
+    "s": 0,
+    "q": 81,
+    "d": 99.0,
+    "c": 86.4,
+    "p": 94.6
+   },
+   {
+    "datum": "@-24",
+    "bereich": "Montage EPS",
+    "s": 0,
+    "q": 90,
+    "d": 99.0,
+    "c": 85.9,
+    "p": 98.6
+   },
+   {
+    "datum": "@-24",
+    "bereich": "Prüffeld",
+    "s": 0,
+    "q": 36,
+    "d": 98.0,
+    "c": 81.1,
+    "p": 94.5
+   },
+   {
+    "datum": "@-24",
+    "bereich": "Logistik",
+    "s": 0,
+    "q": 47,
+    "d": 98.0,
+    "c": 80.3,
+    "p": 86.1
+   },
+   {
+    "datum": "@-23",
+    "bereich": "Zerspanung",
+    "s": 0,
+    "q": 108,
+    "d": 97.3,
+    "c": 83.8,
+    "p": 93.2
+   },
+   {
+    "datum": "@-23",
+    "bereich": "Montage LG",
+    "s": 1,
+    "q": 26,
+    "d": 99.9,
+    "c": 97.4,
+    "p": 91.7
+   },
+   {
+    "datum": "@-23",
+    "bereich": "Montage EPS",
+    "s": 0,
+    "q": 94,
+    "d": 98.0,
+    "c": 81.4,
+    "p": 93.1
+   },
+   {
+    "datum": "@-23",
+    "bereich": "Prüffeld",
+    "s": 0,
+    "q": 100,
+    "d": 96.6,
+    "c": 84.8,
+    "p": 94.9
+   },
+   {
+    "datum": "@-23",
+    "bereich": "Logistik",
+    "s": 0,
+    "q": 78,
+    "d": 98.5,
+    "c": 91.4,
+    "p": 96.9
+   },
+   {
+    "datum": "@-22",
+    "bereich": "Zerspanung",
+    "s": 0,
+    "q": 102,
+    "d": 98.8,
+    "c": 90.8,
+    "p": 93.9
+   },
+   {
+    "datum": "@-22",
+    "bereich": "Montage LG",
+    "s": 0,
+    "q": 45,
+    "d": 97.8,
+    "c": 88.8,
+    "p": 94.7
+   },
+   {
+    "datum": "@-22",
+    "bereich": "Montage EPS",
+    "s": 0,
+    "q": 132,
+    "d": 95.0,
+    "c": 93.2,
+    "p": 96.3
+   },
+   {
+    "datum": "@-22",
+    "bereich": "Prüffeld",
+    "s": 0,
+    "q": 26,
+    "d": 97.4,
+    "c": 89.4,
+    "p": 98.8
+   },
+   {
+    "datum": "@-22",
+    "bereich": "Logistik",
+    "s": 0,
+    "q": 86,
+    "d": 99.0,
+    "c": 93.3,
+    "p": 94.8
+   },
+   {
+    "datum": "@-21",
+    "bereich": "Zerspanung",
+    "s": 0,
+    "q": 58,
+    "d": 96.5,
+    "c": 98.1,
+    "p": 97.8
+   },
+   {
+    "datum": "@-21",
+    "bereich": "Montage LG",
+    "s": 0,
+    "q": 35,
+    "d": 98.3,
+    "c": 102.7,
+    "p": 90.1
+   },
+   {
+    "datum": "@-21",
+    "bereich": "Montage EPS",
+    "s": 0,
+    "q": 83,
+    "d": 98.3,
+    "c": 99.6,
+    "p": 88.6
+   },
+   {
+    "datum": "@-21",
+    "bereich": "Prüffeld",
+    "s": 0,
+    "q": 128,
+    "d": 98.4,
+    "c": 90.1,
+    "p": 87.4
+   },
+   {
+    "datum": "@-21",
+    "bereich": "Logistik",
+    "s": 0,
+    "q": 114,
+    "d": 95.2,
+    "c": 96.0,
+    "p": 93.9
+   },
+   {
+    "datum": "@-20",
+    "bereich": "Zerspanung",
+    "s": 0,
+    "q": 99,
+    "d": 99.5,
+    "c": 101.1,
+    "p": 93.4
+   },
+   {
+    "datum": "@-20",
+    "bereich": "Montage LG",
+    "s": 0,
+    "q": 75,
+    "d": 93.7,
+    "c": 90.4,
+    "p": 89.4
+   },
+   {
+    "datum": "@-20",
+    "bereich": "Montage EPS",
+    "s": 0,
+    "q": 133,
+    "d": 93.9,
+    "c": 87.7,
+    "p": 93.4
+   },
+   {
+    "datum": "@-20",
+    "bereich": "Prüffeld",
+    "s": 0,
+    "q": 134,
+    "d": 94.7,
+    "c": 101.1,
+    "p": 95.9
+   },
+   {
+    "datum": "@-20",
+    "bereich": "Logistik",
+    "s": 0,
+    "q": 70,
+    "d": 94.8,
+    "c": 84.0,
+    "p": 88.7
+   },
+   {
+    "datum": "@-19",
+    "bereich": "Zerspanung",
+    "s": 0,
+    "q": 60,
+    "d": 96.6,
+    "c": 90.3,
+    "p": 98.0
+   },
+   {
+    "datum": "@-19",
+    "bereich": "Montage LG",
+    "s": 0,
+    "q": 84,
+    "d": 96.2,
+    "c": 87.2,
+    "p": 90.9
+   },
+   {
+    "datum": "@-19",
+    "bereich": "Montage EPS",
+    "s": 0,
+    "q": 101,
+    "d": 99.8,
+    "c": 94.4,
+    "p": 96.4
+   },
+   {
+    "datum": "@-19",
+    "bereich": "Prüffeld",
+    "s": 0,
+    "q": 131,
+    "d": 95.1,
+    "c": 98.6,
+    "p": 95.9
+   },
+   {
+    "datum": "@-19",
+    "bereich": "Logistik",
+    "s": 0,
+    "q": 20,
+    "d": 95.7,
+    "c": 92.0,
+    "p": 90.7
+   },
+   {
+    "datum": "@-18",
+    "bereich": "Zerspanung",
+    "s": 0,
+    "q": 36,
+    "d": 96.9,
+    "c": 94.0,
+    "p": 94.2
+   },
+   {
+    "datum": "@-18",
+    "bereich": "Montage LG",
+    "s": 0,
+    "q": 33,
+    "d": 97.4,
+    "c": 87.4,
+    "p": 86.6
+   },
+   {
+    "datum": "@-18",
+    "bereich": "Montage EPS",
+    "s": 0,
+    "q": 140,
+    "d": 97.3,
+    "c": 97.9,
+    "p": 94.8
+   },
+   {
+    "datum": "@-18",
+    "bereich": "Prüffeld",
+    "s": 0,
+    "q": 33,
+    "d": 94.7,
+    "c": 103.0,
+    "p": 98.9
+   },
+   {
+    "datum": "@-18",
+    "bereich": "Logistik",
+    "s": 0,
+    "q": 76,
+    "d": 94.8,
+    "c": 85.0,
+    "p": 90.9
+   },
+   {
+    "datum": "@-17",
+    "bereich": "Zerspanung",
+    "s": 0,
+    "q": 107,
+    "d": 97.8,
+    "c": 83.1,
+    "p": 91.9
+   },
+   {
+    "datum": "@-17",
+    "bereich": "Montage LG",
+    "s": 0,
+    "q": 98,
+    "d": 95.2,
+    "c": 81.3,
+    "p": 87.3
+   },
+   {
+    "datum": "@-17",
+    "bereich": "Montage EPS",
+    "s": 0,
+    "q": 125,
+    "d": 97.5,
+    "c": 85.0,
+    "p": 98.3
+   },
+   {
+    "datum": "@-17",
+    "bereich": "Prüffeld",
+    "s": 0,
+    "q": 79,
+    "d": 97.9,
+    "c": 94.5,
+    "p": 90.3
+   },
+   {
+    "datum": "@-17",
+    "bereich": "Logistik",
+    "s": 0,
+    "q": 133,
+    "d": 95.0,
+    "c": 89.0,
+    "p": 94.1
+   },
+   {
+    "datum": "@-16",
+    "bereich": "Zerspanung",
+    "s": 0,
+    "q": 70,
+    "d": 98.0,
+    "c": 83.0,
+    "p": 88.4
+   },
+   {
+    "datum": "@-16",
+    "bereich": "Montage LG",
+    "s": 0,
+    "q": 78,
+    "d": 98.1,
+    "c": 94.3,
+    "p": 94.1
+   },
+   {
+    "datum": "@-16",
+    "bereich": "Montage EPS",
+    "s": 0,
+    "q": 67,
+    "d": 93.8,
+    "c": 100.5,
+    "p": 94.4
+   },
+   {
+    "datum": "@-16",
+    "bereich": "Prüffeld",
+    "s": 1,
+    "q": 110,
+    "d": 97.5,
+    "c": 88.9,
+    "p": 86.2
+   },
+   {
+    "datum": "@-16",
+    "bereich": "Logistik",
+    "s": 0,
+    "q": 26,
+    "d": 97.0,
+    "c": 86.3,
+    "p": 87.3
+   },
+   {
+    "datum": "@-15",
+    "bereich": "Zerspanung",
+    "s": 0,
+    "q": 128,
+    "d": 97.6,
+    "c": 99.8,
+    "p": 89.5
+   },
+   {
+    "datum": "@-15",
+    "bereich": "Montage LG",
+    "s": 0,
+    "q": 71,
+    "d": 98.3,
+    "c": 100.4,
+    "p": 90.5
+   },
+   {
+    "datum": "@-15",
+    "bereich": "Montage EPS",
+    "s": 0,
+    "q": 23,
+    "d": 96.1,
+    "c": 88.0,
+    "p": 90.7
+   },
+   {
+    "datum": "@-15",
+    "bereich": "Prüffeld",
+    "s": 0,
+    "q": 134,
+    "d": 93.8,
+    "c": 96.8,
+    "p": 97.6
+   },
+   {
+    "datum": "@-15",
+    "bereich": "Logistik",
+    "s": 1,
+    "q": 116,
+    "d": 97.4,
+    "c": 101.4,
+    "p": 87.5
+   },
+   {
+    "datum": "@-14",
+    "bereich": "Zerspanung",
+    "s": 0,
+    "q": 76,
+    "d": 99.6,
+    "c": 91.5,
+    "p": 93.6
+   },
+   {
+    "datum": "@-14",
+    "bereich": "Montage LG",
+    "s": 0,
+    "q": 110,
+    "d": 94.6,
+    "c": 89.9,
+    "p": 95.7
+   },
+   {
+    "datum": "@-14",
+    "bereich": "Montage EPS",
+    "s": 0,
+    "q": 88,
+    "d": 99.6,
+    "c": 92.0,
+    "p": 96.3
+   },
+   {
+    "datum": "@-14",
+    "bereich": "Prüffeld",
+    "s": 1,
+    "q": 132,
+    "d": 93.6,
+    "c": 90.6,
+    "p": 90.7
+   },
+   {
+    "datum": "@-14",
+    "bereich": "Logistik",
+    "s": 0,
+    "q": 38,
+    "d": 93.0,
+    "c": 99.7,
+    "p": 94.9
+   },
+   {
+    "datum": "@-13",
+    "bereich": "Zerspanung",
+    "s": 0,
+    "q": 56,
+    "d": 97.8,
+    "c": 98.8,
+    "p": 95.7
+   },
+   {
+    "datum": "@-13",
+    "bereich": "Montage LG",
+    "s": 0,
+    "q": 30,
+    "d": 99.8,
+    "c": 94.5,
+    "p": 93.8
+   },
+   {
+    "datum": "@-13",
+    "bereich": "Montage EPS",
+    "s": 0,
+    "q": 53,
+    "d": 96.1,
+    "c": 89.7,
+    "p": 86.9
+   },
+   {
+    "datum": "@-13",
+    "bereich": "Prüffeld",
+    "s": 0,
+    "q": 117,
+    "d": 94.1,
+    "c": 81.4,
+    "p": 96.9
+   },
+   {
+    "datum": "@-13",
+    "bereich": "Logistik",
+    "s": 0,
+    "q": 61,
+    "d": 94.0,
+    "c": 88.7,
+    "p": 91.3
+   },
+   {
+    "datum": "@-12",
+    "bereich": "Zerspanung",
+    "s": 1,
+    "q": 98,
+    "d": 94.0,
+    "c": 91.9,
+    "p": 98.9
+   },
+   {
+    "datum": "@-12",
+    "bereich": "Montage LG",
+    "s": 0,
+    "q": 126,
+    "d": 96.4,
+    "c": 96.4,
+    "p": 93.8
+   },
+   {
+    "datum": "@-12",
+    "bereich": "Montage EPS",
+    "s": 0,
+    "q": 58,
+    "d": 94.8,
+    "c": 92.9,
+    "p": 98.3
+   },
+   {
+    "datum": "@-12",
+    "bereich": "Prüffeld",
+    "s": 0,
+    "q": 20,
+    "d": 97.9,
+    "c": 98.8,
+    "p": 95.8
+   },
+   {
+    "datum": "@-12",
+    "bereich": "Logistik",
+    "s": 0,
+    "q": 132,
+    "d": 93.7,
+    "c": 86.4,
+    "p": 88.8
+   },
+   {
+    "datum": "@-11",
+    "bereich": "Zerspanung",
+    "s": 0,
+    "q": 48,
+    "d": 95.7,
+    "c": 102.9,
+    "p": 97.8
+   },
+   {
+    "datum": "@-11",
+    "bereich": "Montage LG",
+    "s": 0,
+    "q": 131,
+    "d": 96.3,
+    "c": 96.8,
+    "p": 94.6
+   },
+   {
+    "datum": "@-11",
+    "bereich": "Montage EPS",
+    "s": 0,
+    "q": 77,
+    "d": 97.4,
+    "c": 86.9,
+    "p": 93.3
+   },
+   {
+    "datum": "@-11",
+    "bereich": "Prüffeld",
+    "s": 0,
+    "q": 89,
+    "d": 96.2,
+    "c": 103.0,
+    "p": 89.4
+   },
+   {
+    "datum": "@-11",
+    "bereich": "Logistik",
+    "s": 0,
+    "q": 72,
+    "d": 96.7,
+    "c": 102.8,
+    "p": 92.4
+   },
+   {
+    "datum": "@-10",
+    "bereich": "Zerspanung",
+    "s": 0,
+    "q": 94,
+    "d": 95.4,
+    "c": 96.5,
+    "p": 93.2
+   },
+   {
+    "datum": "@-10",
+    "bereich": "Montage LG",
+    "s": 0,
+    "q": 21,
+    "d": 96.1,
+    "c": 82.1,
+    "p": 89.4
+   },
+   {
+    "datum": "@-10",
+    "bereich": "Montage EPS",
+    "s": 0,
+    "q": 98,
+    "d": 97.7,
+    "c": 97.8,
+    "p": 89.4
+   },
+   {
+    "datum": "@-10",
+    "bereich": "Prüffeld",
+    "s": 0,
+    "q": 31,
+    "d": 99.0,
+    "c": 94.4,
+    "p": 87.3
+   },
+   {
+    "datum": "@-10",
+    "bereich": "Logistik",
+    "s": 0,
+    "q": 85,
+    "d": 94.1,
+    "c": 88.9,
+    "p": 87.6
+   },
+   {
+    "datum": "@-9",
+    "bereich": "Zerspanung",
+    "s": 0,
+    "q": 113,
+    "d": 95.7,
+    "c": 84.6,
+    "p": 86.7
+   },
+   {
+    "datum": "@-9",
+    "bereich": "Montage LG",
+    "s": 0,
+    "q": 68,
+    "d": 98.5,
+    "c": 84.0,
+    "p": 89.4
+   },
+   {
+    "datum": "@-9",
+    "bereich": "Montage EPS",
+    "s": 0,
+    "q": 113,
+    "d": 99.8,
+    "c": 97.8,
+    "p": 98.0
+   },
+   {
+    "datum": "@-9",
+    "bereich": "Prüffeld",
+    "s": 0,
+    "q": 37,
+    "d": 93.2,
+    "c": 93.2,
+    "p": 96.6
+   },
+   {
+    "datum": "@-9",
+    "bereich": "Logistik",
+    "s": 0,
+    "q": 90,
+    "d": 99.4,
+    "c": 92.5,
+    "p": 89.7
+   },
+   {
+    "datum": "@-8",
+    "bereich": "Zerspanung",
+    "s": 0,
+    "q": 118,
+    "d": 95.8,
+    "c": 86.1,
+    "p": 96.5
+   },
+   {
+    "datum": "@-8",
+    "bereich": "Montage LG",
+    "s": 0,
+    "q": 110,
+    "d": 94.8,
+    "c": 97.4,
+    "p": 87.1
+   },
+   {
+    "datum": "@-8",
+    "bereich": "Montage EPS",
+    "s": 0,
+    "q": 108,
+    "d": 96.7,
+    "c": 87.3,
+    "p": 96.0
+   },
+   {
+    "datum": "@-8",
+    "bereich": "Prüffeld",
+    "s": 0,
+    "q": 97,
+    "d": 97.1,
+    "c": 101.3,
+    "p": 96.8
+   },
+   {
+    "datum": "@-8",
+    "bereich": "Logistik",
+    "s": 1,
+    "q": 106,
+    "d": 99.7,
+    "c": 87.4,
+    "p": 86.2
+   },
+   {
+    "datum": "@-7",
+    "bereich": "Zerspanung",
+    "s": 0,
+    "q": 50,
+    "d": 97.8,
+    "c": 82.6,
+    "p": 89.6
+   },
+   {
+    "datum": "@-7",
+    "bereich": "Montage LG",
+    "s": 0,
+    "q": 35,
+    "d": 99.5,
+    "c": 91.0,
+    "p": 86.5
+   },
+   {
+    "datum": "@-7",
+    "bereich": "Montage EPS",
+    "s": 1,
+    "q": 39,
+    "d": 99.2,
+    "c": 81.0,
+    "p": 92.0
+   },
+   {
+    "datum": "@-7",
+    "bereich": "Prüffeld",
+    "s": 0,
+    "q": 77,
+    "d": 94.0,
+    "c": 100.0,
+    "p": 88.6
+   },
+   {
+    "datum": "@-7",
+    "bereich": "Logistik",
+    "s": 1,
+    "q": 64,
+    "d": 95.0,
+    "c": 91.5,
+    "p": 94.4
+   },
+   {
+    "datum": "@-6",
+    "bereich": "Zerspanung",
+    "s": 0,
+    "q": 72,
+    "d": 97.4,
+    "c": 86.5,
+    "p": 92.7
+   },
+   {
+    "datum": "@-6",
+    "bereich": "Montage LG",
+    "s": 0,
+    "q": 33,
+    "d": 94.2,
+    "c": 86.8,
+    "p": 92.5
+   },
+   {
+    "datum": "@-6",
+    "bereich": "Montage EPS",
+    "s": 0,
+    "q": 106,
+    "d": 93.2,
+    "c": 87.9,
+    "p": 91.5
+   },
+   {
+    "datum": "@-6",
+    "bereich": "Prüffeld",
+    "s": 0,
+    "q": 49,
+    "d": 99.1,
+    "c": 88.4,
+    "p": 93.7
+   },
+   {
+    "datum": "@-6",
+    "bereich": "Logistik",
+    "s": 0,
+    "q": 59,
+    "d": 96.2,
+    "c": 101.6,
+    "p": 89.5
+   },
+   {
+    "datum": "@-5",
+    "bereich": "Zerspanung",
+    "s": 0,
+    "q": 64,
+    "d": 99.7,
+    "c": 93.7,
+    "p": 91.2
+   },
+   {
+    "datum": "@-5",
+    "bereich": "Montage LG",
+    "s": 0,
+    "q": 75,
+    "d": 98.3,
+    "c": 103.7,
+    "p": 87.3
+   },
+   {
+    "datum": "@-5",
+    "bereich": "Montage EPS",
+    "s": 0,
+    "q": 124,
+    "d": 97.3,
+    "c": 88.5,
+    "p": 96.6
+   },
+   {
+    "datum": "@-5",
+    "bereich": "Prüffeld",
+    "s": 0,
+    "q": 133,
+    "d": 93.6,
+    "c": 94.4,
+    "p": 93.9
+   },
+   {
+    "datum": "@-5",
+    "bereich": "Logistik",
+    "s": 0,
+    "q": 63,
+    "d": 97.7,
+    "c": 88.1,
+    "p": 89.0
+   },
+   {
+    "datum": "@-4",
+    "bereich": "Zerspanung",
+    "s": 0,
+    "q": 48,
+    "d": 96.4,
+    "c": 85.3,
+    "p": 88.0
+   },
+   {
+    "datum": "@-4",
+    "bereich": "Montage LG",
+    "s": 0,
+    "q": 22,
+    "d": 95.8,
+    "c": 98.4,
+    "p": 87.3
+   },
+   {
+    "datum": "@-4",
+    "bereich": "Montage EPS",
+    "s": 0,
+    "q": 137,
+    "d": 93.8,
+    "c": 95.2,
+    "p": 96.3
+   },
+   {
+    "datum": "@-4",
+    "bereich": "Prüffeld",
+    "s": 0,
+    "q": 94,
+    "d": 97.3,
+    "c": 91.5,
+    "p": 95.8
+   },
+   {
+    "datum": "@-4",
+    "bereich": "Logistik",
+    "s": 0,
+    "q": 93,
+    "d": 98.5,
+    "c": 101.3,
+    "p": 91.1
+   },
+   {
+    "datum": "@-3",
+    "bereich": "Zerspanung",
+    "s": 0,
+    "q": 86,
+    "d": 98.8,
+    "c": 90.7,
+    "p": 88.1
+   },
+   {
+    "datum": "@-3",
+    "bereich": "Montage LG",
+    "s": 2,
+    "q": 64,
+    "d": 97.5,
+    "c": 99.3,
+    "p": 96.5
+   },
+   {
+    "datum": "@-3",
+    "bereich": "Montage EPS",
+    "s": 1,
+    "q": 131,
+    "d": 94.7,
+    "c": 101.0,
+    "p": 89.1
+   },
+   {
+    "datum": "@-3",
+    "bereich": "Prüffeld",
+    "s": 0,
+    "q": 103,
+    "d": 95.0,
+    "c": 92.5,
+    "p": 90.8
+   },
+   {
+    "datum": "@-3",
+    "bereich": "Logistik",
+    "s": 0,
+    "q": 57,
+    "d": 99.5,
+    "c": 84.7,
+    "p": 92.5
+   },
+   {
+    "datum": "@-2",
+    "bereich": "Zerspanung",
+    "s": 0,
+    "q": 87,
+    "d": 97.1,
+    "c": 85.2,
+    "p": 93.9
+   },
+   {
+    "datum": "@-2",
+    "bereich": "Montage LG",
+    "s": 0,
+    "q": 124,
+    "d": 97.0,
+    "c": 90.2,
+    "p": 96.0
+   },
+   {
+    "datum": "@-2",
+    "bereich": "Montage EPS",
+    "s": 0,
+    "q": 200,
+    "d": 95.0,
+    "c": 91.6,
+    "p": 97.6
+   },
+   {
+    "datum": "@-2",
+    "bereich": "Prüffeld",
+    "s": 0,
+    "q": 123,
+    "d": 98.5,
+    "c": 80.9,
+    "p": 87.1
+   },
+   {
+    "datum": "@-2",
+    "bereich": "Logistik",
+    "s": 1,
+    "q": 48,
+    "d": 96.4,
+    "c": 101.5,
+    "p": 88.6
+   },
+   {
+    "datum": "@-1",
+    "bereich": "Zerspanung",
+    "s": 0,
+    "q": 57,
+    "d": 99.8,
+    "c": 94.2,
+    "p": 87.1
+   },
+   {
+    "datum": "@-1",
+    "bereich": "Montage LG",
+    "s": 0,
+    "q": 129,
+    "d": 95.9,
+    "c": 83.4,
+    "p": 92.0
+   },
+   {
+    "datum": "@-1",
+    "bereich": "Montage EPS",
+    "s": 0,
+    "q": 101,
+    "d": 95.6,
+    "c": 81.1,
+    "p": 96.8
+   },
+   {
+    "datum": "@-1",
+    "bereich": "Prüffeld",
+    "s": 0,
+    "q": 108,
+    "d": 99.3,
+    "c": 103.8,
+    "p": 98.8
+   },
+   {
+    "datum": "@-1",
+    "bereich": "Logistik",
+    "s": 0,
+    "q": 138,
+    "d": 94.3,
+    "c": 89.4,
+    "p": 94.2
+   },
+   {
+    "datum": "@+0",
+    "bereich": "Zerspanung",
+    "s": 1,
+    "q": 109,
+    "d": 97.5,
+    "c": 80.8,
+    "p": 93.0
+   },
+   {
+    "datum": "@+0",
+    "bereich": "Montage LG",
+    "s": 0,
+    "q": 54,
+    "d": 94.5,
+    "c": 95.5,
+    "p": 98.0
+   },
+   {
+    "datum": "@+0",
+    "bereich": "Montage EPS",
+    "s": 0,
+    "q": 133,
+    "d": 98.3,
+    "c": 103.5,
+    "p": 97.6
+   },
+   {
+    "datum": "@+0",
+    "bereich": "Prüffeld",
+    "s": 0,
+    "q": 135,
+    "d": 94.7,
+    "c": 97.2,
+    "p": 97.1
+   },
+   {
+    "datum": "@+0",
+    "bereich": "Logistik",
+    "s": 0,
+    "q": 68,
+    "d": 97.7,
+    "c": 84.0,
+    "p": 91.9
+   }
+  ],
+  "themen": [
+   {
+    "thema": "Personalmangel Spätschicht",
+    "bereich": "Prüffeld",
+    "kategorie": "P Personal",
+    "stufe": "1 Linie",
+    "verantwortlich": "Thomas Kaya",
+    "faellig": "@+12",
+    "status": "Offen",
+    "eskaliert_am": ""
+   },
+   {
+    "thema": "Leergut fehlt Linie 2",
+    "bereich": "Prüffeld",
+    "kategorie": "Q Qualität",
+    "stufe": "3 Abteilung",
+    "verantwortlich": "Selin Vogel",
+    "faellig": "@+2",
+    "status": "Erledigt",
+    "eskaliert_am": ""
+   },
+   {
+    "thema": "Ergonomie Station 40",
+    "bereich": "Montage LG",
+    "kategorie": "S Sicherheit",
+    "stufe": "1 Linie",
+    "verantwortlich": "Petra Bauer",
+    "faellig": "@+8",
+    "status": "In Arbeit",
+    "eskaliert_am": ""
+   },
+   {
+    "thema": "Leergut fehlt Linie 2",
+    "bereich": "Zerspanung",
+    "kategorie": "C Kosten",
+    "stufe": "2 Meister",
+    "verantwortlich": "Frank Ilić",
+    "faellig": "@-5",
+    "status": "In Arbeit",
+    "eskaliert_am": ""
+   },
+   {
+    "thema": "Leergut fehlt Linie 2",
+    "bereich": "Logistik",
+    "kategorie": "P Personal",
+    "stufe": "2 Meister",
+    "verantwortlich": "Chiara Gruber",
+    "faellig": "@-10",
+    "status": "Erledigt",
+    "eskaliert_am": ""
+   },
+   {
+    "thema": "Ausschuss Dichtheit EPS steigt",
+    "bereich": "Montage EPS",
+    "kategorie": "Q Qualität",
+    "stufe": "1 Linie",
+    "verantwortlich": "Heike Jäger",
+    "faellig": "@-1",
+    "status": "In Arbeit",
+    "eskaliert_am": ""
+   },
+   {
+    "thema": "Liefertreue OEM Süd < 95 %",
+    "bereich": "Montage LG",
+    "kategorie": "D Lieferung",
+    "stufe": "2 Meister",
+    "verantwortlich": "Vesna Rapp",
+    "faellig": "@+7",
+    "status": "In Arbeit",
+    "eskaliert_am": ""
+   },
+   {
+    "thema": "Liefertreue OEM Süd < 95 %",
+    "bereich": "Logistik",
+    "kategorie": "P Personal",
+    "stufe": "1 Linie",
+    "verantwortlich": "Frank Ilić",
+    "faellig": "@-3",
+    "status": "In Arbeit",
+    "eskaliert_am": ""
+   },
+   {
+    "thema": "Kran Halle 1 defekt",
+    "bereich": "Montage LG",
+    "kategorie": "C Kosten",
+    "stufe": "1 Linie",
+    "verantwortlich": "Yusuf Gruber",
+    "faellig": "@-12",
+    "status": "In Arbeit",
+    "eskaliert_am": ""
+   },
+   {
+    "thema": "Lieferant Gehäuse in Verzug",
+    "bereich": "Prüffeld",
+    "kategorie": "D Lieferung",
+    "stufe": "2 Meister",
+    "verantwortlich": "Kemal Ott",
+    "faellig": "@-1",
+    "status": "Erledigt",
+    "eskaliert_am": ""
+   },
+   {
+    "thema": "Leergut fehlt Linie 2",
+    "bereich": "Prüffeld",
+    "kategorie": "S Sicherheit",
+    "stufe": "3 Abteilung",
+    "verantwortlich": "Elif Fuchs",
+    "faellig": "@-2",
+    "status": "Erledigt",
+    "eskaliert_am": ""
+   },
+   {
+    "thema": "Leergut fehlt Linie 2",
+    "bereich": "Prüffeld",
+    "kategorie": "Q Qualität",
+    "stufe": "2 Meister",
+    "verantwortlich": "Kemal Hahn",
+    "faellig": "@-12",
+    "status": "Offen",
+    "eskaliert_am": ""
+   },
+   {
+    "thema": "Liefertreue OEM Süd < 95 %",
+    "bereich": "Zerspanung",
+    "kategorie": "Q Qualität",
+    "stufe": "3 Abteilung",
+    "verantwortlich": "Oleksandr Rapp",
+    "faellig": "@+8",
+    "status": "Erledigt",
+    "eskaliert_am": ""
+   },
+   {
+    "thema": "Prüfstand 2 instabil",
+    "bereich": "Prüffeld",
+    "kategorie": "C Kosten",
+    "stufe": "1 Linie",
+    "verantwortlich": "Heike Engel",
+    "faellig": "@-8",
+    "status": "In Arbeit",
+    "eskaliert_am": ""
+   },
+   {
+    "thema": "Prüfstand 2 instabil",
+    "bereich": "Montage LG",
+    "kategorie": "Q Qualität",
+    "stufe": "2 Meister",
+    "verantwortlich": "Chiara Kaya",
+    "faellig": "@+8",
+    "status": "Erledigt",
+    "eskaliert_am": ""
+   },
+   {
+    "thema": "Lieferant Gehäuse in Verzug",
+    "bereich": "Prüffeld",
+    "kategorie": "D Lieferung",
+    "stufe": "3 Abteilung",
+    "verantwortlich": "Yusuf Ulrich",
+    "faellig": "@+12",
+    "status": "Offen",
+    "eskaliert_am": ""
+   },
+   {
+    "thema": "Kran Halle 1 defekt",
+    "bereich": "Montage LG",
+    "kategorie": "S Sicherheit",
+    "stufe": "2 Meister",
+    "verantwortlich": "Selin Ott",
+    "faellig": "@-2",
+    "status": "In Arbeit",
+    "eskaliert_am": ""
+   },
+   {
+    "thema": "Ergonomie Station 40",
+    "bereich": "Montage LG",
+    "kategorie": "P Personal",
+    "stufe": "1 Linie",
+    "verantwortlich": "Bernd Ott",
+    "faellig": "@-8",
+    "status": "Erledigt",
+    "eskaliert_am": ""
+   },
+   {
+    "thema": "Ausschuss Dichtheit EPS steigt",
+    "bereich": "Montage EPS",
+    "kategorie": "C Kosten",
+    "stufe": "1 Linie",
+    "verantwortlich": "Vesna Ulrich",
+    "faellig": "@+3",
+    "status": "In Arbeit",
+    "eskaliert_am": ""
+   },
+   {
+    "thema": "Leergut fehlt Linie 2",
+    "bereich": "Montage LG",
+    "kategorie": "S Sicherheit",
+    "stufe": "2 Meister",
+    "verantwortlich": "Jana Kaya",
+    "faellig": "@-9",
+    "status": "Erledigt",
+    "eskaliert_am": ""
+   },
+   {
+    "thema": "Ergonomie Station 40",
+    "bereich": "Montage LG",
+    "kategorie": "D Lieferung",
+    "stufe": "4 Werksleitung",
+    "verantwortlich": "Gül Fuchs",
+    "faellig": "@-7",
+    "status": "Offen",
+    "eskaliert_am": ""
+   },
+   {
+    "thema": "Leergut fehlt Linie 2",
+    "bereich": "Montage EPS",
+    "kategorie": "S Sicherheit",
+    "stufe": "1 Linie",
+    "verantwortlich": "Gül Bauer",
+    "faellig": "@+2",
+    "status": "Offen",
+    "eskaliert_am": ""
+   },
+   {
+    "thema": "Prüfstand 2 instabil",
+    "bereich": "Montage EPS",
+    "kategorie": "P Personal",
+    "stufe": "2 Meister",
+    "verantwortlich": "Uwe Engel",
+    "faellig": "@+9",
+    "status": "Offen",
+    "eskaliert_am": ""
+   },
+   {
+    "thema": "Liefertreue OEM Süd < 95 %",
+    "bereich": "Prüffeld",
+    "kategorie": "S Sicherheit",
+    "stufe": "4 Werksleitung",
+    "verantwortlich": "Bernd Bauer",
+    "faellig": "@-10",
+    "status": "Erledigt",
+    "eskaliert_am": ""
+   },
+   {
+    "thema": "Prüfstand 2 instabil",
+    "bereich": "Zerspanung",
+    "kategorie": "D Lieferung",
+    "stufe": "1 Linie",
+    "verantwortlich": "Thomas Ilić",
+    "faellig": "@+1",
+    "status": "In Arbeit",
+    "eskaliert_am": ""
+   },
+   {
+    "thema": "Leergut fehlt Linie 2",
+    "bereich": "Logistik",
+    "kategorie": "Q Qualität",
+    "stufe": "3 Abteilung",
+    "verantwortlich": "Elif Fuchs",
+    "faellig": "@-11",
+    "status": "In Arbeit",
+    "eskaliert_am": ""
+   },
+   {
+    "thema": "Prüfstand 2 instabil",
+    "bereich": "Montage EPS",
+    "kategorie": "C Kosten",
+    "stufe": "1 Linie",
+    "verantwortlich": "Yusuf Maier",
+    "faellig": "@-10",
+    "status": "Offen",
+    "eskaliert_am": ""
+   },
+   {
+    "thema": "Ergonomie Station 40",
+    "bereich": "Prüffeld",
+    "kategorie": "D Lieferung",
+    "stufe": "3 Abteilung",
+    "verantwortlich": "Selin Bauer",
+    "faellig": "@-1",
+    "status": "Offen",
+    "eskaliert_am": ""
+   },
+   {
+    "thema": "Lieferant Gehäuse in Verzug",
+    "bereich": "Montage LG",
+    "kategorie": "S Sicherheit",
+    "stufe": "1 Linie",
+    "verantwortlich": "Zoe Engel",
+    "faellig": "@+14",
+    "status": "In Arbeit",
+    "eskaliert_am": ""
+   },
+   {
+    "thema": "Lieferant Gehäuse in Verzug",
+    "bereich": "Montage LG",
+    "kategorie": "S Sicherheit",
+    "stufe": "4 Werksleitung",
+    "verantwortlich": "Bernd Engel",
+    "faellig": "@-8",
+    "status": "Offen",
+    "eskaliert_am": ""
+   },
+   {
+    "thema": "Ergonomie Station 40",
+    "bereich": "Logistik",
+    "kategorie": "Q Qualität",
+    "stufe": "3 Abteilung",
+    "verantwortlich": "Yusuf Jäger",
+    "faellig": "@+3",
+    "status": "In Arbeit",
+    "eskaliert_am": ""
+   },
+   {
+    "thema": "Personalmangel Spätschicht",
+    "bereich": "Zerspanung",
+    "kategorie": "Q Qualität",
+    "stufe": "1 Linie",
+    "verantwortlich": "Vesna Schäfer",
+    "faellig": "@-7",
+    "status": "In Arbeit",
+    "eskaliert_am": ""
+   },
+   {
+    "thema": "Werkzeugstandzeit Räumnadel sinkt",
+    "bereich": "Logistik",
+    "kategorie": "C Kosten",
+    "stufe": "2 Meister",
+    "verantwortlich": "Rüdiger Maier",
+    "faellig": "@+8",
+    "status": "Offen",
+    "eskaliert_am": ""
+   },
+   {
+    "thema": "Leergut fehlt Linie 2",
+    "bereich": "Montage EPS",
+    "kategorie": "P Personal",
+    "stufe": "2 Meister",
+    "verantwortlich": "Thomas Bauer",
+    "faellig": "@+0",
+    "status": "Erledigt",
+    "eskaliert_am": ""
+   },
+   {
+    "thema": "Liefertreue OEM Süd < 95 %",
+    "bereich": "Montage EPS",
+    "kategorie": "Q Qualität",
+    "stufe": "2 Meister",
+    "verantwortlich": "Wolfgang Dietrich",
+    "faellig": "@-1",
+    "status": "Erledigt",
+    "eskaliert_am": ""
+   },
+   {
+    "thema": "Ergonomie Station 40",
+    "bereich": "Montage EPS",
+    "kategorie": "C Kosten",
+    "stufe": "2 Meister",
+    "verantwortlich": "Kemal Abele",
+    "faellig": "@-4",
+    "status": "Offen",
+    "eskaliert_am": ""
+   }
+  ],
+  "eskalationen": []
+ },
+ "nachbauten": [
+  {
+   "baustein": "ampel",
+   "ersatz": "5 SQDCP-Ampeln mit Zielwert je Kennzahl als Hinweis-Bausteine, Farbe per Skript.",
+   "geloest": true,
+   "jetzt": "5 Kennzahlen mit „Datum = heute“ und Ampel-Schwellen; die Filterleiste „Bereich“ wirkt auf sie."
+  },
+  {
+   "baustein": "kennzahl_bedingung",
+   "ersatz": "3 Kennzahlen (offen, überfällig, Werksleitung) per Skript.",
+   "geloest": true,
+   "jetzt": "Kennzahlen mit Bedingung und Ampel – das ganze Tafel-Skript ist weg."
+  },
+  {
+   "baustein": "liste_bedingung",
+   "ersatz": "Überfällige Themen als Ausgabe-Baustein – kein Klick ins Thema.",
+   "geloest": true,
+   "jetzt": "Liste mit Bedingung, mit Bearbeiten."
+  },
+  {
+   "baustein": "buchstabentafel",
+   "ersatz": "Die klassische SQDCP-Buchstabentafel (S/Q/D/C/P als Monatsraster) fehlt.",
+   "geloest": false
+  }
+ ]
+}
