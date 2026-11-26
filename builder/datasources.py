@@ -475,7 +475,7 @@ def column_key(column):
 @transaction.atomic
 def sync(query):
     """Spiegelt das Ergebnis in eine Tabelle der App. Gibt die Anzahl der Zeilen zurück."""
-    from .models import Entity, Field, Record
+    from .models import Entity, Field
 
     result = run(query.source, query.sql, limit=SYNC_LIMIT, timeout=sync_timeout())
     if result["truncated"]:

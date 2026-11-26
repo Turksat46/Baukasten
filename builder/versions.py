@@ -189,7 +189,7 @@ def _apply_snapshot(app, data):
             wanted[slug] = (entity, item.get("fields") or [])
 
         # Felder erst anlegen, wenn alle Tabellen existieren (Verweise zeigen auf Tabellen).
-        for slug, (entity, fields) in wanted.items():
+        for entity, fields in wanted.values():
             existing = {f.key: f for f in entity.fields.all()}
             keep = set()
             for position, item in enumerate(fields, start=1):

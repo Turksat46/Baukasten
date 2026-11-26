@@ -13,7 +13,7 @@ Sekunden.
 Eine zweite App-Art „Automatisierung“ ohne Seiten. Ihre Skripte laufen mit echtem Python,
 aber **nur im Worker-Pod**, nie im Web-Pod, und anlegen dürfen sie nur Mitglieder der Gruppe
 „Automatisierer“ (Recht `automate_apps`). Alle teilen sich eine Umgebung
-(`requirements-automation.txt`), keine eigenen Pakete je Skript. Geheimnisse kommen über
+(`requirements-automation.in`), keine eigenen Pakete je Skript. Geheimnisse kommen über
 `secret("NAME")` aus einem eigenen Secret, das nur der Worker bekommt. Der Worker macht sich
 „nicht auslesbar“ (`PR_SET_DUMPABLE`), damit Skripte nicht an seine Zugangsdaten kommen.
 

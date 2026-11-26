@@ -29,7 +29,7 @@ from django.utils.translation import gettext_lazy as _
 
 from . import app_i18n, conditions, hooks
 from .forms import RecordForm
-from .models import CustomBlock, DataQuery, Field, Record, Script
+from .models import CustomBlock, Field, Record, Script
 from .page_path import page_url
 from .sanitize import fill_placeholders, sanitize_html, sanitize_html_report
 from .services import HttpNotAllowed, http_json
@@ -576,7 +576,7 @@ def prep_timeline(request, app, block):
     today = timezone.localdate()
     months = []
     year, month = today.year, today.month
-    for _ in range(min(max(int(props.get("months") or 12), 3), 24)):
+    for _month in range(min(max(int(props.get("months") or 12), 3), 24)):
         months.append((year, month))
         year, month = (year, month - 1) if month > 1 else (year - 1, 12)
     months.reverse()

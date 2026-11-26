@@ -16,11 +16,12 @@ der Datenbank, in der API und in Skripten und wird nur in der Anzeige übersetzt
 import contextvars
 import csv
 import io
+from types import MappingProxyType
 
 from django.conf import settings
 from django.utils.translation import get_language, gettext
 
-_current = contextvars.ContextVar("baukasten_app_translations", default={})
+_current = contextvars.ContextVar("baukasten_app_translations", default=MappingProxyType({}))
 
 # Einstellungen von Bausteinen, die Adressen oder Pfade enthalten, nie Text für Menschen.
 NOT_TEXT = {"url", "path", "param", "filters"}

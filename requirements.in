@@ -1,0 +1,13 @@
+Django>=5.2,<7.0
+gunicorn>=22,<28
+whitenoise>=6,<7
+dj-database-url>=2,<4
+psycopg[binary]>=3.1,<4
+requests>=2.31,<3
+mozilla-django-oidc>=4,<6
+cryptography>=42,<51
+RestrictedPython>=8.0,<9
+databricks-sql-connector>=4,<5
+markdown>=3.5,<4
+redis>=5,<7
+tzdata>=2024.1

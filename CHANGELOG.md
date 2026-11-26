@@ -109,6 +109,15 @@ Test prüft, dass die neueste Version hier und `BAUKASTEN_VERSION` übereinstimm
   nächsten Besuch einmalig übernommen. Gäste ohne Konto merken es sich weiter im Browser, und das
   Fragezeichen startet die Führung wie bisher erneut.
 
+### Entwicklung
+- **Lockdatei:** `requirements.txt` hält jetzt genaue Versionen mit Prüfsummen und wird aus
+  `requirements.in` und `requirements-automation.in` erzeugt (früher standen dort Bereiche). Das
+  Image installiert nur noch aus der Lockdatei, derselbe Commit baut also immer dasselbe Image.
+  Lokal installieren: `pip install -r requirements.in -r requirements-automation.in`.
+- **Codeprüfung mit ruff** (Regeln in `pyproject.toml`) und Prüfung der Lockdatei als eigener CI-Job.
+- **Tests aufgeteilt:** `builder/tests.py` ist jetzt das Paket `builder/tests/` mit einer Datei je Bereich.
+- **CONTRIBUTING.md:** Einrichten, Prüfungen vor dem Pull Request, Abhängigkeiten pflegen.
+
 ### Behoben
 - Histogramm und Boxplot: Bei kleinen Bereichen (Messwerte 24,001–24,012 mm) hießen alle Klassen
   „24,00–24,00“. Die Nachkommastellen richten sich jetzt nach der Spannweite; ebenso bei der

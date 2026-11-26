@@ -1,7 +1,7 @@
 """Führt Skripte von Automatisierungen aus: echtes Python, nur im Hintergrunddienst (worker.py).
 
 Unterschiede zu den Skripten normaler Apps (python.py):
-- kein RestrictedPython: alle installierten Bibliotheken (requirements-automation.txt), Dateien
+- kein RestrictedPython: alle installierten Bibliotheken (requirements-automation.in), Dateien
   im eigenen Arbeitsordner, Threads, Unterprozesse
 - Zeitlimit in Minuten statt Sekunden, „läuft ständig“ ganz ohne Zeitlimit
 - Ausgaben kommen laufend an (Live-Protokoll), Stoppen per SIGTERM
