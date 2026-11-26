@@ -137,8 +137,6 @@ SECURE_SSL_REDIRECT=true
 SECURE_HSTS_SECONDS=2592000
 HTTPS
     BIND=127.0.0.1:8000
-    systemctl enable caddy >/dev/null
-    systemctl restart caddy
 else
     : >"$KONF/https.env"
     # [::] nimmt unter Linux IPv6 und IPv4 an (bindv6only=0). Wichtig, wenn Rechner im Heimnetz den Pi
@@ -250,6 +248,11 @@ systemctl daemon-reload
 systemctl enable baukasten-web baukasten-worker >/dev/null
 # Bestehende Installation: geänderte Dienst-Einstellungen (z. B. Port, HTTPS) sofort übernehmen.
 [ -f "$ZUSTAND/ausgerollt" ] && systemctl restart baukasten-web baukasten-worker
+# Caddy erst jetzt starten: vorher kann gunicorn noch Port 80 belegen.
+if [ -n "$DOMAIN" ]; then
+    systemctl enable caddy >/dev/null
+    systemctl restart caddy || fehler "Caddy startet nicht (journalctl -u caddy -n 30)."
+fi
 systemctl enable --now baukasten-aktualisieren.timer baukasten-sichern.timer >/dev/null
 
 # DuckDNS (nur mit DUCKDNS_TOKEN in pi.env)
