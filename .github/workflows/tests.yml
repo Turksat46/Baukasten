@@ -5,7 +5,8 @@ name: Tests
 
 on:
   push:
-    branches: [main]
+    # feature/compassionate-hopper-tec05a: Branch, dem der Raspberry Pi folgt (pi-zero/)
+    branches: [main, feature/compassionate-hopper-tec05a]
   pull_request:
   workflow_dispatch:
 
