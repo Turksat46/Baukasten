@@ -97,6 +97,9 @@ SCRIPT_TIMEOUT=20
 QUERY_TIMEOUT=60
 QUERY_PARALLEL=1
 LOG_LEVEL=INFO
+# Beispiel-Datenquelle der Inventar-Demo (python manage.py demo)
+DEMO_DATASOURCE_FILE=$ZUSTAND/demo-datenquelle.sqlite3
+DATASOURCE_DEMO=sqlite:///$ZUSTAND/demo-datenquelle.sqlite3
 EOF
 fi
 chown root:baukasten "$KONF/baukasten.env"

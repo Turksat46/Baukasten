@@ -58,7 +58,28 @@ Ist das Repository privat: beim `git clone` ein Token in die Adresse schreiben
 | Logs der App | `journalctl -u baukasten-web -u baukasten-worker -f` |
 | Neu starten | `sudo systemctl restart baukasten-web baukasten-worker` |
 | Sicherung jetzt | `sudo systemctl start baukasten-sichern` (täglich 3:30, in `/var/backups/baukasten`) |
-| Verwalter/Beispiele nachträglich anlegen | `sudo -u baukasten bash -c 'set -a; . /etc/baukasten/baukasten.env; . /var/lib/baukasten/netz.env; cd /opt/baukasten/app; /opt/baukasten/venv/bin/python manage.py lokal_einrichten --ohne-beispiele'` |
+| Befehle von `manage.py` ausführen | `sudo /opt/baukasten/app/pi-zero/manage.sh <befehl>` |
+
+## Beispiel-Apps
+
+Jede Beispiel-App ist ein eigener Befehl und darf mehrmals laufen (vorhandene bleibt, `--neu` ersetzt sie):
+
+| App | Befehl |
+|---|---|
+| Inventar (mit Beispiel-Datenquelle) | `sudo /opt/baukasten/app/pi-zero/manage.sh demo` |
+| Aufnahme-Einwilligung | `sudo /opt/baukasten/app/pi-zero/manage.sh beispiel_einwilligung` |
+| Personaleinsatz (Planung, Kanban) | `sudo /opt/baukasten/app/pi-zero/manage.sh beispiel_einsatzplanung` |
+| Agenten-Berichte | `sudo /opt/baukasten/app/pi-zero/manage.sh beispiel_berichte` |
+| Data Science & Model Monitoring | `sudo /opt/baukasten/app/pi-zero/manage.sh beispiel_datascience` |
+| Werks-Apps (20 Stück, auf dem Pi Zero langsam) | `sudo /opt/baukasten/app/pi-zero/manage.sh beispiel_werk` |
+
+Die Inventar-Demo braucht in `/etc/baukasten/baukasten.env` diese zwei Zeilen (bei neuen Installationen
+schon drin), danach `sudo systemctl restart baukasten-web baukasten-worker`:
+
+```
+DEMO_DATASOURCE_FILE=/var/lib/baukasten/demo-datenquelle.sqlite3
+DATASOURCE_DEMO=sqlite:////var/lib/baukasten/demo-datenquelle.sqlite3
+```
 
 ## Einstellungen
 
