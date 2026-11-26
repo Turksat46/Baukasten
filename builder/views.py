@@ -46,6 +46,22 @@ def deny(request):
     raise PermissionDenied
 
 
+def permission_denied(request, exception=None):
+    """Eigene Seite für Fehler 403: sagt, was fehlt, wer helfen kann, und führt zurück."""
+    context = {}
+    match = getattr(request, "resolver_match", None)
+    slug = match.kwargs.get("app") if match else None
+    app = App.objects.filter(slug=slug).select_related("created_by").first() if isinstance(slug, str) else None
+    if app is not None and request.user.is_authenticated:
+        owner = app.created_by
+        context["app"] = app
+        context["owner"] = (owner.get_full_name() or owner.get_username()) if owner else ""
+        start = reverse("page", args=[app.slug]) if app.kind == App.APP else ""
+        if start and start != request.path and app.user_can_use(request.user):
+            context["app_url"] = start
+    return render(request, "403.html", context, status=403)
+
+
 def runtime_access(request, slug):
     """App für die Laufzeit: (app, guest) oder eine Antwort (Anmeldung, zu viele Anfragen).
 

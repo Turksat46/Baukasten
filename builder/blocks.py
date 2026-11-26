@@ -1256,7 +1256,7 @@ def render_block(request, app, block, types=None, overrides=None):
     token = _READ_ONLY.set(read_only or frozenset())
     try:
         if denied:
-            ctx = {"error": denied}
+            ctx = {"locked": denied}  # kein Fehler: ruhiger Hinweis statt rotem Kasten
         else:
             with conditions.active(request, app, block):
                 ctx = block_type.prepare(request, app, block) if block_type.prepare else {}

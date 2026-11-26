@@ -396,6 +396,9 @@ die Seite „Kosten“ nur die Gruppe „Controlling“.
 - Für alle anderen fehlt die Seite im Menü, in Seitenlinks und bei den
   Widgets der Startseite; ein direkter Aufruf wird abgelehnt (Fehler 403). Ist die
   erste Seite gesperrt, öffnet die App mit der ersten Seite, die man sehen darf.
+- Wer abgelehnt wird, sieht die Seite „Dafür fehlt dir die Berechtigung“. Sie
+  nennt die App und wer sie betreut, und führt zurück zur App (wenn man sie
+  benutzen darf) oder zur Startseite.
 - Eigentümerin, Mitbearbeiter und Verwalter sehen immer alle Seiten.
 - Eine öffentliche Seite („Ohne Anmeldung erreichbar“) sieht jeder; die
   Gruppen spielen dann keine Rolle.

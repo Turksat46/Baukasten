@@ -137,6 +137,7 @@ tbody tr:hover td { background: var(--surface-2); }
 .badge-warn { background: var(--warn-soft); color: var(--warn); border-color: transparent; }
 .step-no { display: inline-grid; place-items: center; width: 1.6rem; height: 1.6rem; border-radius: 50%; background: var(--accent); color: var(--accent-ink); font-size: .85rem; margin-right: .35rem; }
 .block-error { border: 1px dashed var(--danger); color: var(--danger); border-radius: var(--radius); padding: .7rem .9rem; background: var(--surface); }
+.block-locked { border: 1px solid var(--line); color: var(--muted); border-radius: var(--radius); padding: .7rem .9rem; background: var(--surface-2); }
 .text-block { margin: 0; max-width: 72ch; }
 .edit-link { display: inline-block; margin-top: 1.8rem; font-size: .88rem; }
 pre.json { margin: 0; overflow: auto; max-height: 320px; font-size: .82rem; background: var(--surface-2); padding: .7rem; border-radius: var(--radius); }
@@ -908,6 +909,10 @@ html:not([data-theme="light"]):not([data-theme="dark"]) .theme-toggle .i-auto { 
 .install-help::backdrop { background: rgba(0, 0, 0, .45); }
 .install-help h3 { margin-top: 0; }
 .offline-page { max-width: 32rem; margin: 18vh auto 0; text-align: center; }
+/* Fehlerseite 403 (templates/403.html) */
+.error-page { max-width: 34rem; margin: 10vh auto 0; text-align: center; }
+.error-code { font-size: 3rem; font-weight: 700; color: var(--muted); margin: 0; letter-spacing: .05em; }
+.error-actions { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-top: 1.5rem; }
 /* Als installierte App: Platz für eine Statusleiste, die über der Seite liegt (iPhone mit Notch).
    Nur der tatsächliche Abstand (safe-area-inset-top, sonst 0) und die Kopfzeile wird um genau so
    viel höher. Ein fester Mindestabstand schob unter Windows und Android den Inhalt der 58 px hohen
