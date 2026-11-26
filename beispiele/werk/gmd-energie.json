@@ -1,0 +1,8273 @@
+{
+ "slug": "gmd-energie",
+ "name": "Energiemonitoring",
+ "icon": "⚡",
+ "description": "Verbrauch je Halle und Medium, Kosten, Grundlast am Wochenende, Einspar-Simulation",
+ "rolle": "Facility Management / Werksleitung",
+ "komplexitaet": "komplex",
+ "entities": [
+  {
+   "name": "Verbrauch",
+   "slug": "verbrauch",
+   "fields": [
+    {
+     "label": "Datum",
+     "key": "datum",
+     "type": "date",
+     "required": true
+    },
+    {
+     "label": "Halle",
+     "key": "halle",
+     "type": "choice",
+     "choices": [
+      "Halle 1",
+      "Halle 2",
+      "Halle 3",
+      "Härterei",
+      "Verwaltung"
+     ],
+     "required": true
+    },
+    {
+     "label": "Medium",
+     "key": "medium",
+     "type": "choice",
+     "choices": [
+      "Strom",
+      "Druckluft",
+      "Erdgas",
+      "Wasser"
+     ],
+     "required": true
+    },
+    {
+     "label": "Menge",
+     "key": "menge",
+     "type": "decimal"
+    },
+    {
+     "label": "Preis je Einheit (€)",
+     "key": "preis",
+     "type": "decimal"
+    },
+    {
+     "label": "Kosten (€)",
+     "key": "kosten",
+     "type": "decimal",
+     "formula": "round(menge * preis, 2)",
+     "show_in_form": false
+    }
+   ]
+  },
+  {
+   "name": "Maßnahmen",
+   "slug": "massnahmen",
+   "fields": [
+    {
+     "label": "Maßnahme",
+     "key": "name",
+     "type": "text",
+     "required": true
+    },
+    {
+     "label": "Einsparung (%)",
+     "key": "prozent",
+     "type": "number"
+    },
+    {
+     "label": "Medium",
+     "key": "medium",
+     "type": "choice",
+     "choices": [
+      "Strom",
+      "Druckluft",
+      "Erdgas",
+      "Wasser"
+     ]
+    }
+   ]
+  }
+ ],
+ "pages": [
+  {
+   "title": "Übersicht",
+   "slug": "uebersicht",
+   "layout": [
+    {
+     "type": "heading",
+     "width": 12,
+     "props": {
+      "text": "Energiemonitoring",
+      "level": "1"
+     }
+    },
+    {
+     "type": "filter",
+     "width": 12,
+     "props": {
+      "entity": "verbrauch",
+      "field": "halle",
+      "field2": "medium",
+      "field3": "datum"
+     }
+    },
+    {
+     "type": "stat",
+     "width": 4,
+     "props": {
+      "label": "Energiekosten",
+      "entity": "verbrauch",
+      "aggregate": "sum",
+      "field": "kosten",
+      "unit": "€"
+     }
+    },
+    {
+     "type": "stat",
+     "width": 4,
+     "props": {
+      "label": "Grundlast Wochenende (Strom)"
+     },
+     "name": "k_wochenende"
+    },
+    {
+     "type": "stat",
+     "width": 4,
+     "props": {
+      "label": "CO₂ (Strom + Gas)"
+     },
+     "name": "k_co2"
+    },
+    {
+     "type": "line",
+     "width": 12,
+     "props": {
+      "label": "Kosten je Tag",
+      "entity": "verbrauch",
+      "date_field": "datum",
+      "aggregate": "sum",
+      "field": "kosten",
+      "period": "day",
+      "count": 60,
+      "unit": "€"
+     }
+    },
+    {
+     "type": "pivot",
+     "width": 12,
+     "props": {
+      "title": "Kosten Halle × Medium (€)",
+      "entity": "verbrauch",
+      "row_field": "halle",
+      "col_field": "medium",
+      "agg": "sum",
+      "value_field": "kosten"
+     }
+    },
+    {
+     "type": "spec_chart",
+     "width": 12,
+     "props": {
+      "title": "Kosten je Halle und Medium",
+      "entity": "verbrauch",
+      "spec": "{\"mark\": \"bar\", \"encoding\": {\"x\": {\"field\": \"halle\", \"type\": \"nominal\"}, \"y\": {\"field\": \"kosten\", \"aggregate\": \"sum\", \"type\": \"quantitative\"}, \"color\": {\"field\": \"medium\", \"type\": \"nominal\"}}}"
+     }
+    }
+   ]
+  },
+  {
+   "title": "Einsparung",
+   "slug": "einsparung",
+   "layout": [
+    {
+     "type": "heading",
+     "width": 12,
+     "props": {
+      "text": "Was bringt welche Maßnahme?",
+      "level": "2"
+     }
+    },
+    {
+     "type": "sliders",
+     "width": 6,
+     "props": {
+      "title": "Einsparung je Maßnahme",
+      "entity": "massnahmen",
+      "field": "prozent",
+      "label_field": "name",
+      "min": 0,
+      "max": 40,
+      "step": 1,
+      "unit": "%"
+     }
+    },
+    {
+     "type": "output",
+     "width": 6,
+     "props": {
+      "label": "Hochgerechnete Einsparung pro Jahr"
+     },
+     "name": "ergebnis"
+    }
+   ]
+  },
+  {
+   "title": "Daten",
+   "slug": "daten",
+   "layout": [
+    {
+     "type": "csv_import",
+     "width": 12,
+     "props": {
+      "entity": "verbrauch",
+      "label": "Zählerdaten (CSV) laden"
+     }
+    },
+    {
+     "type": "table",
+     "width": 12,
+     "props": {
+      "entity": "verbrauch",
+      "page_size": 30,
+      "searchable": true
+     }
+    }
+   ]
+  }
+ ],
+ "scripts": [
+  {
+   "name": "Energie-Kennzahlen",
+   "language": "python",
+   "trigger": "page",
+   "code": "import datetime\nrows = app.table(\"verbrauch\").all(limit=10000)\nstrom_we = [r[\"menge\"] for r in rows if r[\"medium\"] == \"Strom\" and r[\"datum\"] and datetime.date.fromisoformat(r[\"datum\"]).weekday() >= 5]\nstrom_wt = [r[\"menge\"] for r in rows if r[\"medium\"] == \"Strom\" and r[\"datum\"] and datetime.date.fromisoformat(r[\"datum\"]).weekday() < 5]\nif strom_we and strom_wt:\n    ui.set(\"k_wochenende\", value=round(100 * (sum(strom_we) / len(strom_we)) / (sum(strom_wt) / len(strom_wt))), unit=\"% der Werktagslast\")\nco2 = sum((r[\"menge\"] or 0) * (0.38 if r[\"medium\"] == \"Strom\" else 0.2) for r in rows if r[\"medium\"] in (\"Strom\", \"Erdgas\"))\nui.set(\"k_co2\", value=round(co2 / 1000, 1), unit=\"t (Zeitraum)\")\n",
+   "page": "uebersicht"
+  },
+  {
+   "name": "Einspar-Simulation",
+   "language": "python",
+   "trigger": "page",
+   "code": "rows = app.table(\"verbrauch\").all(limit=10000)\ntage = len({r[\"datum\"] for r in rows}) or 1\nkosten = {}\nfor r in rows:\n    kosten[r[\"medium\"]] = kosten.get(r[\"medium\"], 0) + (r[\"kosten\"] or 0)\nzeilen, summe = [], 0\nfor m in app.table(\"massnahmen\").all():\n    jahr = kosten.get(m[\"medium\"], 0) / tage * 365 * (m[\"prozent\"] or 0) / 100\n    summe += jahr\n    zeilen.append({\"Maßnahme\": m[\"name\"], \"Medium\": m[\"medium\"], \"Einsparung\": f\"{m['prozent']} %\", \"€ / Jahr\": f\"{jahr:,.0f}\".replace(\",\", \".\")})\nzeilen.append({\"Maßnahme\": \"Summe\", \"Medium\": \"\", \"Einsparung\": \"\", \"€ / Jahr\": f\"{summe:,.0f}\".replace(\",\", \".\")})\nui.set(\"ergebnis\", rows=zeilen)\n",
+   "page": "einsparung"
+  }
+ ],
+ "beispieldaten": {
+  "verbrauch": [
+   {
+    "datum": "@-59",
+    "halle": "Halle 1",
+    "medium": "Strom",
+    "menge": 7503.1,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-59",
+    "halle": "Halle 1",
+    "medium": "Druckluft",
+    "menge": 27434.9,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-59",
+    "halle": "Halle 1",
+    "medium": "Erdgas",
+    "menge": 3474.7,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-59",
+    "halle": "Halle 1",
+    "medium": "Wasser",
+    "menge": 36.9,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-59",
+    "halle": "Halle 2",
+    "medium": "Strom",
+    "menge": 7854.5,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-59",
+    "halle": "Halle 2",
+    "medium": "Druckluft",
+    "menge": 34108.3,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-59",
+    "halle": "Halle 2",
+    "medium": "Erdgas",
+    "menge": 3855.0,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-59",
+    "halle": "Halle 2",
+    "medium": "Wasser",
+    "menge": 34.2,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-59",
+    "halle": "Halle 3",
+    "medium": "Strom",
+    "menge": 7168.7,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-59",
+    "halle": "Halle 3",
+    "medium": "Druckluft",
+    "menge": 33281.3,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-59",
+    "halle": "Halle 3",
+    "medium": "Erdgas",
+    "menge": 4447.3,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-59",
+    "halle": "Halle 3",
+    "medium": "Wasser",
+    "menge": 43.3,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-59",
+    "halle": "Härterei",
+    "medium": "Strom",
+    "menge": 21312.5,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-59",
+    "halle": "Härterei",
+    "medium": "Druckluft",
+    "menge": 74297.0,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-59",
+    "halle": "Härterei",
+    "medium": "Erdgas",
+    "menge": 11172.9,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-59",
+    "halle": "Härterei",
+    "medium": "Wasser",
+    "menge": 112.7,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-59",
+    "halle": "Verwaltung",
+    "medium": "Strom",
+    "menge": 8768.9,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-59",
+    "halle": "Verwaltung",
+    "medium": "Erdgas",
+    "menge": 3468.3,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-59",
+    "halle": "Verwaltung",
+    "medium": "Wasser",
+    "menge": 40.1,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-58",
+    "halle": "Halle 1",
+    "medium": "Strom",
+    "menge": 3178.7,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-58",
+    "halle": "Halle 1",
+    "medium": "Druckluft",
+    "menge": 9890.4,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-58",
+    "halle": "Halle 1",
+    "medium": "Erdgas",
+    "menge": 1597.9,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-58",
+    "halle": "Halle 1",
+    "medium": "Wasser",
+    "menge": 14.1,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-58",
+    "halle": "Halle 2",
+    "medium": "Strom",
+    "menge": 2541.2,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-58",
+    "halle": "Halle 2",
+    "medium": "Druckluft",
+    "menge": 11414.1,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-58",
+    "halle": "Halle 2",
+    "medium": "Erdgas",
+    "menge": 1583.6,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-58",
+    "halle": "Halle 2",
+    "medium": "Wasser",
+    "menge": 12.9,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-58",
+    "halle": "Halle 3",
+    "medium": "Strom",
+    "menge": 2766.6,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-58",
+    "halle": "Halle 3",
+    "medium": "Druckluft",
+    "menge": 10444.2,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-58",
+    "halle": "Halle 3",
+    "medium": "Erdgas",
+    "menge": 1462.5,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-58",
+    "halle": "Halle 3",
+    "medium": "Wasser",
+    "menge": 12.6,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-58",
+    "halle": "Härterei",
+    "medium": "Strom",
+    "menge": 6455.1,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-58",
+    "halle": "Härterei",
+    "medium": "Druckluft",
+    "menge": 24595.5,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-58",
+    "halle": "Härterei",
+    "medium": "Erdgas",
+    "menge": 3607.2,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-58",
+    "halle": "Härterei",
+    "medium": "Wasser",
+    "menge": 37.5,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-58",
+    "halle": "Verwaltung",
+    "medium": "Strom",
+    "menge": 2696.5,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-58",
+    "halle": "Verwaltung",
+    "medium": "Erdgas",
+    "menge": 1475.5,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-58",
+    "halle": "Verwaltung",
+    "medium": "Wasser",
+    "menge": 12.5,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-57",
+    "halle": "Halle 1",
+    "medium": "Strom",
+    "menge": 2410.7,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-57",
+    "halle": "Halle 1",
+    "medium": "Druckluft",
+    "menge": 11004.6,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-57",
+    "halle": "Halle 1",
+    "medium": "Erdgas",
+    "menge": 1593.8,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-57",
+    "halle": "Halle 1",
+    "medium": "Wasser",
+    "menge": 15.5,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-57",
+    "halle": "Halle 2",
+    "medium": "Strom",
+    "menge": 2843.8,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-57",
+    "halle": "Halle 2",
+    "medium": "Druckluft",
+    "menge": 11037.8,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-57",
+    "halle": "Halle 2",
+    "medium": "Erdgas",
+    "menge": 1340.9,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-57",
+    "halle": "Halle 2",
+    "medium": "Wasser",
+    "menge": 15.3,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-57",
+    "halle": "Halle 3",
+    "medium": "Strom",
+    "menge": 2747.3,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-57",
+    "halle": "Halle 3",
+    "medium": "Druckluft",
+    "menge": 9553.3,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-57",
+    "halle": "Halle 3",
+    "medium": "Erdgas",
+    "menge": 1443.3,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-57",
+    "halle": "Halle 3",
+    "medium": "Wasser",
+    "menge": 13.9,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-57",
+    "halle": "Härterei",
+    "medium": "Strom",
+    "menge": 6502.1,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-57",
+    "halle": "Härterei",
+    "medium": "Druckluft",
+    "menge": 24592.7,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-57",
+    "halle": "Härterei",
+    "medium": "Erdgas",
+    "menge": 3952.2,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-57",
+    "halle": "Härterei",
+    "medium": "Wasser",
+    "menge": 33.3,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-57",
+    "halle": "Verwaltung",
+    "medium": "Strom",
+    "menge": 2468.0,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-57",
+    "halle": "Verwaltung",
+    "medium": "Erdgas",
+    "menge": 1419.9,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-57",
+    "halle": "Verwaltung",
+    "medium": "Wasser",
+    "menge": 12.2,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-56",
+    "halle": "Halle 1",
+    "medium": "Strom",
+    "menge": 8978.2,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-56",
+    "halle": "Halle 1",
+    "medium": "Druckluft",
+    "menge": 32801.2,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-56",
+    "halle": "Halle 1",
+    "medium": "Erdgas",
+    "menge": 4021.3,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-56",
+    "halle": "Halle 1",
+    "medium": "Wasser",
+    "menge": 38.4,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-56",
+    "halle": "Halle 2",
+    "medium": "Strom",
+    "menge": 8354.1,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-56",
+    "halle": "Halle 2",
+    "medium": "Druckluft",
+    "menge": 26133.1,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-56",
+    "halle": "Halle 2",
+    "medium": "Erdgas",
+    "menge": 3561.3,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-56",
+    "halle": "Halle 2",
+    "medium": "Wasser",
+    "menge": 39.5,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-56",
+    "halle": "Halle 3",
+    "medium": "Strom",
+    "menge": 7912.6,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-56",
+    "halle": "Halle 3",
+    "medium": "Druckluft",
+    "menge": 32251.7,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-56",
+    "halle": "Halle 3",
+    "medium": "Erdgas",
+    "menge": 3645.2,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-56",
+    "halle": "Halle 3",
+    "medium": "Wasser",
+    "menge": 42.6,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-56",
+    "halle": "Härterei",
+    "medium": "Strom",
+    "menge": 19807.8,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-56",
+    "halle": "Härterei",
+    "medium": "Druckluft",
+    "menge": 75137.4,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-56",
+    "halle": "Härterei",
+    "medium": "Erdgas",
+    "menge": 8567.6,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-56",
+    "halle": "Härterei",
+    "medium": "Wasser",
+    "menge": 107.5,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-56",
+    "halle": "Verwaltung",
+    "medium": "Strom",
+    "menge": 9053.6,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-56",
+    "halle": "Verwaltung",
+    "medium": "Erdgas",
+    "menge": 4082.6,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-56",
+    "halle": "Verwaltung",
+    "medium": "Wasser",
+    "menge": 34.8,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-55",
+    "halle": "Halle 1",
+    "medium": "Strom",
+    "menge": 8469.0,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-55",
+    "halle": "Halle 1",
+    "medium": "Druckluft",
+    "menge": 28211.9,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-55",
+    "halle": "Halle 1",
+    "medium": "Erdgas",
+    "menge": 4004.8,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-55",
+    "halle": "Halle 1",
+    "medium": "Wasser",
+    "menge": 40.4,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-55",
+    "halle": "Halle 2",
+    "medium": "Strom",
+    "menge": 7822.1,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-55",
+    "halle": "Halle 2",
+    "medium": "Druckluft",
+    "menge": 27430.7,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-55",
+    "halle": "Halle 2",
+    "medium": "Erdgas",
+    "menge": 3757.6,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-55",
+    "halle": "Halle 2",
+    "medium": "Wasser",
+    "menge": 45.3,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-55",
+    "halle": "Halle 3",
+    "medium": "Strom",
+    "menge": 9117.0,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-55",
+    "halle": "Halle 3",
+    "medium": "Druckluft",
+    "menge": 30025.1,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-55",
+    "halle": "Halle 3",
+    "medium": "Erdgas",
+    "menge": 4033.2,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-55",
+    "halle": "Halle 3",
+    "medium": "Wasser",
+    "menge": 34.7,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-55",
+    "halle": "Härterei",
+    "medium": "Strom",
+    "menge": 19024.6,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-55",
+    "halle": "Härterei",
+    "medium": "Druckluft",
+    "menge": 83278.0,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-55",
+    "halle": "Härterei",
+    "medium": "Erdgas",
+    "menge": 9070.2,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-55",
+    "halle": "Härterei",
+    "medium": "Wasser",
+    "menge": 92.5,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-55",
+    "halle": "Verwaltung",
+    "medium": "Strom",
+    "menge": 8169.0,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-55",
+    "halle": "Verwaltung",
+    "medium": "Erdgas",
+    "menge": 3913.8,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-55",
+    "halle": "Verwaltung",
+    "medium": "Wasser",
+    "menge": 42.8,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-54",
+    "halle": "Halle 1",
+    "medium": "Strom",
+    "menge": 9052.9,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-54",
+    "halle": "Halle 1",
+    "medium": "Druckluft",
+    "menge": 26368.3,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-54",
+    "halle": "Halle 1",
+    "medium": "Erdgas",
+    "menge": 4247.5,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-54",
+    "halle": "Halle 1",
+    "medium": "Wasser",
+    "menge": 35.8,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-54",
+    "halle": "Halle 2",
+    "medium": "Strom",
+    "menge": 7662.4,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-54",
+    "halle": "Halle 2",
+    "medium": "Druckluft",
+    "menge": 28020.6,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-54",
+    "halle": "Halle 2",
+    "medium": "Erdgas",
+    "menge": 3582.0,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-54",
+    "halle": "Halle 2",
+    "medium": "Wasser",
+    "menge": 43.7,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-54",
+    "halle": "Halle 3",
+    "medium": "Strom",
+    "menge": 8498.8,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-54",
+    "halle": "Halle 3",
+    "medium": "Druckluft",
+    "menge": 32142.7,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-54",
+    "halle": "Halle 3",
+    "medium": "Erdgas",
+    "menge": 3551.7,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-54",
+    "halle": "Halle 3",
+    "medium": "Wasser",
+    "menge": 43.2,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-54",
+    "halle": "Härterei",
+    "medium": "Strom",
+    "menge": 20565.0,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-54",
+    "halle": "Härterei",
+    "medium": "Druckluft",
+    "menge": 81957.3,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-54",
+    "halle": "Härterei",
+    "medium": "Erdgas",
+    "menge": 10927.9,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-54",
+    "halle": "Härterei",
+    "medium": "Wasser",
+    "menge": 91.1,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-54",
+    "halle": "Verwaltung",
+    "medium": "Strom",
+    "menge": 8786.4,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-54",
+    "halle": "Verwaltung",
+    "medium": "Erdgas",
+    "menge": 4585.9,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-54",
+    "halle": "Verwaltung",
+    "medium": "Wasser",
+    "menge": 40.8,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-53",
+    "halle": "Halle 1",
+    "medium": "Strom",
+    "menge": 6942.7,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-53",
+    "halle": "Halle 1",
+    "medium": "Druckluft",
+    "menge": 28756.2,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-53",
+    "halle": "Halle 1",
+    "medium": "Erdgas",
+    "menge": 3563.3,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-53",
+    "halle": "Halle 1",
+    "medium": "Wasser",
+    "menge": 45.3,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-53",
+    "halle": "Halle 2",
+    "medium": "Strom",
+    "menge": 8799.9,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-53",
+    "halle": "Halle 2",
+    "medium": "Druckluft",
+    "menge": 33644.5,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-53",
+    "halle": "Halle 2",
+    "medium": "Erdgas",
+    "menge": 4367.0,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-53",
+    "halle": "Halle 2",
+    "medium": "Wasser",
+    "menge": 37.7,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-53",
+    "halle": "Halle 3",
+    "medium": "Strom",
+    "menge": 7702.4,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-53",
+    "halle": "Halle 3",
+    "medium": "Druckluft",
+    "menge": 30415.8,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-53",
+    "halle": "Halle 3",
+    "medium": "Erdgas",
+    "menge": 3909.9,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-53",
+    "halle": "Halle 3",
+    "medium": "Wasser",
+    "menge": 44.6,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-53",
+    "halle": "Härterei",
+    "medium": "Strom",
+    "menge": 21062.7,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-53",
+    "halle": "Härterei",
+    "medium": "Druckluft",
+    "menge": 65747.4,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-53",
+    "halle": "Härterei",
+    "medium": "Erdgas",
+    "menge": 10210.7,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-53",
+    "halle": "Härterei",
+    "medium": "Wasser",
+    "menge": 104.0,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-53",
+    "halle": "Verwaltung",
+    "medium": "Strom",
+    "menge": 6875.8,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-53",
+    "halle": "Verwaltung",
+    "medium": "Erdgas",
+    "menge": 4484.9,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-53",
+    "halle": "Verwaltung",
+    "medium": "Wasser",
+    "menge": 41.4,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-52",
+    "halle": "Halle 1",
+    "medium": "Strom",
+    "menge": 8704.3,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-52",
+    "halle": "Halle 1",
+    "medium": "Druckluft",
+    "menge": 30563.9,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-52",
+    "halle": "Halle 1",
+    "medium": "Erdgas",
+    "menge": 4235.7,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-52",
+    "halle": "Halle 1",
+    "medium": "Wasser",
+    "menge": 38.6,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-52",
+    "halle": "Halle 2",
+    "medium": "Strom",
+    "menge": 7318.9,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-52",
+    "halle": "Halle 2",
+    "medium": "Druckluft",
+    "menge": 26344.8,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-52",
+    "halle": "Halle 2",
+    "medium": "Erdgas",
+    "menge": 3494.2,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-52",
+    "halle": "Halle 2",
+    "medium": "Wasser",
+    "menge": 44.1,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-52",
+    "halle": "Halle 3",
+    "medium": "Strom",
+    "menge": 8957.4,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-52",
+    "halle": "Halle 3",
+    "medium": "Druckluft",
+    "menge": 34484.8,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-52",
+    "halle": "Halle 3",
+    "medium": "Erdgas",
+    "menge": 3401.3,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-52",
+    "halle": "Halle 3",
+    "medium": "Wasser",
+    "menge": 37.1,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-52",
+    "halle": "Härterei",
+    "medium": "Strom",
+    "menge": 22262.1,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-52",
+    "halle": "Härterei",
+    "medium": "Druckluft",
+    "menge": 73594.5,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-52",
+    "halle": "Härterei",
+    "medium": "Erdgas",
+    "menge": 8895.3,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-52",
+    "halle": "Härterei",
+    "medium": "Wasser",
+    "menge": 86.3,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-52",
+    "halle": "Verwaltung",
+    "medium": "Strom",
+    "menge": 7391.1,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-52",
+    "halle": "Verwaltung",
+    "medium": "Erdgas",
+    "menge": 4314.9,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-52",
+    "halle": "Verwaltung",
+    "medium": "Wasser",
+    "menge": 43.2,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-51",
+    "halle": "Halle 1",
+    "medium": "Strom",
+    "menge": 2447.7,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-51",
+    "halle": "Halle 1",
+    "medium": "Druckluft",
+    "menge": 9935.9,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-51",
+    "halle": "Halle 1",
+    "medium": "Erdgas",
+    "menge": 1251.2,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-51",
+    "halle": "Halle 1",
+    "medium": "Wasser",
+    "menge": 12.9,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-51",
+    "halle": "Halle 2",
+    "medium": "Strom",
+    "menge": 2512.2,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-51",
+    "halle": "Halle 2",
+    "medium": "Druckluft",
+    "menge": 10483.8,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-51",
+    "halle": "Halle 2",
+    "medium": "Erdgas",
+    "menge": 1455.0,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-51",
+    "halle": "Halle 2",
+    "medium": "Wasser",
+    "menge": 14.5,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-51",
+    "halle": "Halle 3",
+    "medium": "Strom",
+    "menge": 2567.4,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-51",
+    "halle": "Halle 3",
+    "medium": "Druckluft",
+    "menge": 10186.8,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-51",
+    "halle": "Halle 3",
+    "medium": "Erdgas",
+    "menge": 1242.0,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-51",
+    "halle": "Halle 3",
+    "medium": "Wasser",
+    "menge": 14.7,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-51",
+    "halle": "Härterei",
+    "medium": "Strom",
+    "menge": 7972.9,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-51",
+    "halle": "Härterei",
+    "medium": "Druckluft",
+    "menge": 22599.6,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-51",
+    "halle": "Härterei",
+    "medium": "Erdgas",
+    "menge": 3876.9,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-51",
+    "halle": "Härterei",
+    "medium": "Wasser",
+    "menge": 30.5,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-51",
+    "halle": "Verwaltung",
+    "medium": "Strom",
+    "menge": 2901.2,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-51",
+    "halle": "Verwaltung",
+    "medium": "Erdgas",
+    "menge": 1346.6,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-51",
+    "halle": "Verwaltung",
+    "medium": "Wasser",
+    "menge": 13.3,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-50",
+    "halle": "Halle 1",
+    "medium": "Strom",
+    "menge": 2530.5,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-50",
+    "halle": "Halle 1",
+    "medium": "Druckluft",
+    "menge": 9908.7,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-50",
+    "halle": "Halle 1",
+    "medium": "Erdgas",
+    "menge": 1384.4,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-50",
+    "halle": "Halle 1",
+    "medium": "Wasser",
+    "menge": 15.2,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-50",
+    "halle": "Halle 2",
+    "medium": "Strom",
+    "menge": 2434.4,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-50",
+    "halle": "Halle 2",
+    "medium": "Druckluft",
+    "menge": 9699.4,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-50",
+    "halle": "Halle 2",
+    "medium": "Erdgas",
+    "menge": 1376.1,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-50",
+    "halle": "Halle 2",
+    "medium": "Wasser",
+    "menge": 15.5,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-50",
+    "halle": "Halle 3",
+    "medium": "Strom",
+    "menge": 2495.4,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-50",
+    "halle": "Halle 3",
+    "medium": "Druckluft",
+    "menge": 10012.3,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-50",
+    "halle": "Halle 3",
+    "medium": "Erdgas",
+    "menge": 1418.2,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-50",
+    "halle": "Halle 3",
+    "medium": "Wasser",
+    "menge": 13.0,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-50",
+    "halle": "Härterei",
+    "medium": "Strom",
+    "menge": 6607.6,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-50",
+    "halle": "Härterei",
+    "medium": "Druckluft",
+    "menge": 27568.4,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-50",
+    "halle": "Härterei",
+    "medium": "Erdgas",
+    "menge": 3045.0,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-50",
+    "halle": "Härterei",
+    "medium": "Wasser",
+    "menge": 36.5,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-50",
+    "halle": "Verwaltung",
+    "medium": "Strom",
+    "menge": 2885.8,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-50",
+    "halle": "Verwaltung",
+    "medium": "Erdgas",
+    "menge": 1397.8,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-50",
+    "halle": "Verwaltung",
+    "medium": "Wasser",
+    "menge": 15.3,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-49",
+    "halle": "Halle 1",
+    "medium": "Strom",
+    "menge": 7605.9,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-49",
+    "halle": "Halle 1",
+    "medium": "Druckluft",
+    "menge": 34192.0,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-49",
+    "halle": "Halle 1",
+    "medium": "Erdgas",
+    "menge": 3418.3,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-49",
+    "halle": "Halle 1",
+    "medium": "Wasser",
+    "menge": 36.2,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-49",
+    "halle": "Halle 2",
+    "medium": "Strom",
+    "menge": 7565.7,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-49",
+    "halle": "Halle 2",
+    "medium": "Druckluft",
+    "menge": 32444.1,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-49",
+    "halle": "Halle 2",
+    "medium": "Erdgas",
+    "menge": 4133.2,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-49",
+    "halle": "Halle 2",
+    "medium": "Wasser",
+    "menge": 40.4,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-49",
+    "halle": "Halle 3",
+    "medium": "Strom",
+    "menge": 9008.1,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-49",
+    "halle": "Halle 3",
+    "medium": "Druckluft",
+    "menge": 28940.1,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-49",
+    "halle": "Halle 3",
+    "medium": "Erdgas",
+    "menge": 4581.0,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-49",
+    "halle": "Halle 3",
+    "medium": "Wasser",
+    "menge": 39.5,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-49",
+    "halle": "Härterei",
+    "medium": "Strom",
+    "menge": 21174.3,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-49",
+    "halle": "Härterei",
+    "medium": "Druckluft",
+    "menge": 72646.3,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-49",
+    "halle": "Härterei",
+    "medium": "Erdgas",
+    "menge": 11023.7,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-49",
+    "halle": "Härterei",
+    "medium": "Wasser",
+    "menge": 113.8,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-49",
+    "halle": "Verwaltung",
+    "medium": "Strom",
+    "menge": 8935.0,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-49",
+    "halle": "Verwaltung",
+    "medium": "Erdgas",
+    "menge": 4550.8,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-49",
+    "halle": "Verwaltung",
+    "medium": "Wasser",
+    "menge": 34.1,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-48",
+    "halle": "Halle 1",
+    "medium": "Strom",
+    "menge": 8224.7,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-48",
+    "halle": "Halle 1",
+    "medium": "Druckluft",
+    "menge": 30452.2,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-48",
+    "halle": "Halle 1",
+    "medium": "Erdgas",
+    "menge": 4061.2,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-48",
+    "halle": "Halle 1",
+    "medium": "Wasser",
+    "menge": 44.8,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-48",
+    "halle": "Halle 2",
+    "medium": "Strom",
+    "menge": 8909.9,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-48",
+    "halle": "Halle 2",
+    "medium": "Druckluft",
+    "menge": 30774.5,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-48",
+    "halle": "Halle 2",
+    "medium": "Erdgas",
+    "menge": 4425.9,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-48",
+    "halle": "Halle 2",
+    "medium": "Wasser",
+    "menge": 38.8,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-48",
+    "halle": "Halle 3",
+    "medium": "Strom",
+    "menge": 9190.4,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-48",
+    "halle": "Halle 3",
+    "medium": "Druckluft",
+    "menge": 33027.4,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-48",
+    "halle": "Halle 3",
+    "medium": "Erdgas",
+    "menge": 4359.6,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-48",
+    "halle": "Halle 3",
+    "medium": "Wasser",
+    "menge": 44.9,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-48",
+    "halle": "Härterei",
+    "medium": "Strom",
+    "menge": 19104.1,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-48",
+    "halle": "Härterei",
+    "medium": "Druckluft",
+    "menge": 72169.3,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-48",
+    "halle": "Härterei",
+    "medium": "Erdgas",
+    "menge": 9230.8,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-48",
+    "halle": "Härterei",
+    "medium": "Wasser",
+    "menge": 96.1,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-48",
+    "halle": "Verwaltung",
+    "medium": "Strom",
+    "menge": 7250.0,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-48",
+    "halle": "Verwaltung",
+    "medium": "Erdgas",
+    "menge": 3446.0,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-48",
+    "halle": "Verwaltung",
+    "medium": "Wasser",
+    "menge": 38.7,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-47",
+    "halle": "Halle 1",
+    "medium": "Strom",
+    "menge": 7237.3,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-47",
+    "halle": "Halle 1",
+    "medium": "Druckluft",
+    "menge": 30229.6,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-47",
+    "halle": "Halle 1",
+    "medium": "Erdgas",
+    "menge": 3989.2,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-47",
+    "halle": "Halle 1",
+    "medium": "Wasser",
+    "menge": 42.6,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-47",
+    "halle": "Halle 2",
+    "medium": "Strom",
+    "menge": 8931.4,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-47",
+    "halle": "Halle 2",
+    "medium": "Druckluft",
+    "menge": 26444.6,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-47",
+    "halle": "Halle 2",
+    "medium": "Erdgas",
+    "menge": 3590.7,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-47",
+    "halle": "Halle 2",
+    "medium": "Wasser",
+    "menge": 38.9,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-47",
+    "halle": "Halle 3",
+    "medium": "Strom",
+    "menge": 7894.4,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-47",
+    "halle": "Halle 3",
+    "medium": "Druckluft",
+    "menge": 26614.3,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-47",
+    "halle": "Halle 3",
+    "medium": "Erdgas",
+    "menge": 3769.2,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-47",
+    "halle": "Halle 3",
+    "medium": "Wasser",
+    "menge": 44.0,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-47",
+    "halle": "Härterei",
+    "medium": "Strom",
+    "menge": 18985.4,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-47",
+    "halle": "Härterei",
+    "medium": "Druckluft",
+    "menge": 81115.7,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-47",
+    "halle": "Härterei",
+    "medium": "Erdgas",
+    "menge": 8889.4,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-47",
+    "halle": "Härterei",
+    "medium": "Wasser",
+    "menge": 89.5,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-47",
+    "halle": "Verwaltung",
+    "medium": "Strom",
+    "menge": 7705.2,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-47",
+    "halle": "Verwaltung",
+    "medium": "Erdgas",
+    "menge": 4329.4,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-47",
+    "halle": "Verwaltung",
+    "medium": "Wasser",
+    "menge": 39.3,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-46",
+    "halle": "Halle 1",
+    "medium": "Strom",
+    "menge": 8090.2,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-46",
+    "halle": "Halle 1",
+    "medium": "Druckluft",
+    "menge": 29417.0,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-46",
+    "halle": "Halle 1",
+    "medium": "Erdgas",
+    "menge": 4344.4,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-46",
+    "halle": "Halle 1",
+    "medium": "Wasser",
+    "menge": 39.7,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-46",
+    "halle": "Halle 2",
+    "medium": "Strom",
+    "menge": 6985.3,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-46",
+    "halle": "Halle 2",
+    "medium": "Druckluft",
+    "menge": 27583.3,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-46",
+    "halle": "Halle 2",
+    "medium": "Erdgas",
+    "menge": 3621.4,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-46",
+    "halle": "Halle 2",
+    "medium": "Wasser",
+    "menge": 38.4,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-46",
+    "halle": "Halle 3",
+    "medium": "Strom",
+    "menge": 7378.2,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-46",
+    "halle": "Halle 3",
+    "medium": "Druckluft",
+    "menge": 33220.4,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-46",
+    "halle": "Halle 3",
+    "medium": "Erdgas",
+    "menge": 3624.1,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-46",
+    "halle": "Halle 3",
+    "medium": "Wasser",
+    "menge": 41.8,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-46",
+    "halle": "Härterei",
+    "medium": "Strom",
+    "menge": 22052.9,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-46",
+    "halle": "Härterei",
+    "medium": "Druckluft",
+    "menge": 67707.9,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-46",
+    "halle": "Härterei",
+    "medium": "Erdgas",
+    "menge": 8654.7,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-46",
+    "halle": "Härterei",
+    "medium": "Wasser",
+    "menge": 102.7,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-46",
+    "halle": "Verwaltung",
+    "medium": "Strom",
+    "menge": 9045.9,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-46",
+    "halle": "Verwaltung",
+    "medium": "Erdgas",
+    "menge": 3899.6,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-46",
+    "halle": "Verwaltung",
+    "medium": "Wasser",
+    "menge": 41.7,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-45",
+    "halle": "Halle 1",
+    "medium": "Strom",
+    "menge": 8356.8,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-45",
+    "halle": "Halle 1",
+    "medium": "Druckluft",
+    "menge": 28345.9,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-45",
+    "halle": "Halle 1",
+    "medium": "Erdgas",
+    "menge": 3603.1,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-45",
+    "halle": "Halle 1",
+    "medium": "Wasser",
+    "menge": 38.7,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-45",
+    "halle": "Halle 2",
+    "medium": "Strom",
+    "menge": 7209.9,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-45",
+    "halle": "Halle 2",
+    "medium": "Druckluft",
+    "menge": 30976.8,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-45",
+    "halle": "Halle 2",
+    "medium": "Erdgas",
+    "menge": 4022.6,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-45",
+    "halle": "Halle 2",
+    "medium": "Wasser",
+    "menge": 40.5,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-45",
+    "halle": "Halle 3",
+    "medium": "Strom",
+    "menge": 7114.2,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-45",
+    "halle": "Halle 3",
+    "medium": "Druckluft",
+    "menge": 31351.6,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-45",
+    "halle": "Halle 3",
+    "medium": "Erdgas",
+    "menge": 4495.9,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-45",
+    "halle": "Halle 3",
+    "medium": "Wasser",
+    "menge": 42.6,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-45",
+    "halle": "Härterei",
+    "medium": "Strom",
+    "menge": 17004.7,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-45",
+    "halle": "Härterei",
+    "medium": "Druckluft",
+    "menge": 71432.9,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-45",
+    "halle": "Härterei",
+    "medium": "Erdgas",
+    "menge": 10574.7,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-45",
+    "halle": "Härterei",
+    "medium": "Wasser",
+    "menge": 111.2,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-45",
+    "halle": "Verwaltung",
+    "medium": "Strom",
+    "menge": 8188.1,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-45",
+    "halle": "Verwaltung",
+    "medium": "Erdgas",
+    "menge": 3883.3,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-45",
+    "halle": "Verwaltung",
+    "medium": "Wasser",
+    "menge": 44.6,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-44",
+    "halle": "Halle 1",
+    "medium": "Strom",
+    "menge": 2711.7,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-44",
+    "halle": "Halle 1",
+    "medium": "Druckluft",
+    "menge": 11681.7,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-44",
+    "halle": "Halle 1",
+    "medium": "Erdgas",
+    "menge": 1357.2,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-44",
+    "halle": "Halle 1",
+    "medium": "Wasser",
+    "menge": 12.4,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-44",
+    "halle": "Halle 2",
+    "medium": "Strom",
+    "menge": 2889.0,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-44",
+    "halle": "Halle 2",
+    "medium": "Druckluft",
+    "menge": 8926.0,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-44",
+    "halle": "Halle 2",
+    "medium": "Erdgas",
+    "menge": 1520.8,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-44",
+    "halle": "Halle 2",
+    "medium": "Wasser",
+    "menge": 12.0,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-44",
+    "halle": "Halle 3",
+    "medium": "Strom",
+    "menge": 2524.4,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-44",
+    "halle": "Halle 3",
+    "medium": "Druckluft",
+    "menge": 11230.8,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-44",
+    "halle": "Halle 3",
+    "medium": "Erdgas",
+    "menge": 1286.7,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-44",
+    "halle": "Halle 3",
+    "medium": "Wasser",
+    "menge": 15.7,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-44",
+    "halle": "Härterei",
+    "medium": "Strom",
+    "menge": 6003.6,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-44",
+    "halle": "Härterei",
+    "medium": "Druckluft",
+    "menge": 29185.0,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-44",
+    "halle": "Härterei",
+    "medium": "Erdgas",
+    "menge": 3876.5,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-44",
+    "halle": "Härterei",
+    "medium": "Wasser",
+    "menge": 38.6,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-44",
+    "halle": "Verwaltung",
+    "medium": "Strom",
+    "menge": 3128.3,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-44",
+    "halle": "Verwaltung",
+    "medium": "Erdgas",
+    "menge": 1225.3,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-44",
+    "halle": "Verwaltung",
+    "medium": "Wasser",
+    "menge": 15.7,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-43",
+    "halle": "Halle 1",
+    "medium": "Strom",
+    "menge": 2806.1,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-43",
+    "halle": "Halle 1",
+    "medium": "Druckluft",
+    "menge": 9277.8,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-43",
+    "halle": "Halle 1",
+    "medium": "Erdgas",
+    "menge": 1445.9,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-43",
+    "halle": "Halle 1",
+    "medium": "Wasser",
+    "menge": 12.1,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-43",
+    "halle": "Halle 2",
+    "medium": "Strom",
+    "menge": 2567.3,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-43",
+    "halle": "Halle 2",
+    "medium": "Druckluft",
+    "menge": 10164.2,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-43",
+    "halle": "Halle 2",
+    "medium": "Erdgas",
+    "menge": 1471.7,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-43",
+    "halle": "Halle 2",
+    "medium": "Wasser",
+    "menge": 15.7,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-43",
+    "halle": "Halle 3",
+    "medium": "Strom",
+    "menge": 3079.3,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-43",
+    "halle": "Halle 3",
+    "medium": "Druckluft",
+    "menge": 11704.1,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-43",
+    "halle": "Halle 3",
+    "medium": "Erdgas",
+    "menge": 1544.8,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-43",
+    "halle": "Halle 3",
+    "medium": "Wasser",
+    "menge": 13.0,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-43",
+    "halle": "Härterei",
+    "medium": "Strom",
+    "menge": 6036.2,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-43",
+    "halle": "Härterei",
+    "medium": "Druckluft",
+    "menge": 23222.4,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-43",
+    "halle": "Härterei",
+    "medium": "Erdgas",
+    "menge": 3675.5,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-43",
+    "halle": "Härterei",
+    "medium": "Wasser",
+    "menge": 38.4,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-43",
+    "halle": "Verwaltung",
+    "medium": "Strom",
+    "menge": 3152.0,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-43",
+    "halle": "Verwaltung",
+    "medium": "Erdgas",
+    "menge": 1221.1,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-43",
+    "halle": "Verwaltung",
+    "medium": "Wasser",
+    "menge": 14.8,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-42",
+    "halle": "Halle 1",
+    "medium": "Strom",
+    "menge": 8552.5,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-42",
+    "halle": "Halle 1",
+    "medium": "Druckluft",
+    "menge": 31139.2,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-42",
+    "halle": "Halle 1",
+    "medium": "Erdgas",
+    "menge": 3943.9,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-42",
+    "halle": "Halle 1",
+    "medium": "Wasser",
+    "menge": 41.5,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-42",
+    "halle": "Halle 2",
+    "medium": "Strom",
+    "menge": 6886.1,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-42",
+    "halle": "Halle 2",
+    "medium": "Druckluft",
+    "menge": 33114.1,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-42",
+    "halle": "Halle 2",
+    "medium": "Erdgas",
+    "menge": 3927.0,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-42",
+    "halle": "Halle 2",
+    "medium": "Wasser",
+    "menge": 39.8,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-42",
+    "halle": "Halle 3",
+    "medium": "Strom",
+    "menge": 7929.2,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-42",
+    "halle": "Halle 3",
+    "medium": "Druckluft",
+    "menge": 32540.9,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-42",
+    "halle": "Halle 3",
+    "medium": "Erdgas",
+    "menge": 3888.6,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-42",
+    "halle": "Halle 3",
+    "medium": "Wasser",
+    "menge": 43.1,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-42",
+    "halle": "Härterei",
+    "medium": "Strom",
+    "menge": 19801.3,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-42",
+    "halle": "Härterei",
+    "medium": "Druckluft",
+    "menge": 83478.2,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-42",
+    "halle": "Härterei",
+    "medium": "Erdgas",
+    "menge": 10294.2,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-42",
+    "halle": "Härterei",
+    "medium": "Wasser",
+    "menge": 100.8,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-42",
+    "halle": "Verwaltung",
+    "medium": "Strom",
+    "menge": 7750.5,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-42",
+    "halle": "Verwaltung",
+    "medium": "Erdgas",
+    "menge": 4404.5,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-42",
+    "halle": "Verwaltung",
+    "medium": "Wasser",
+    "menge": 38.6,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-41",
+    "halle": "Halle 1",
+    "medium": "Strom",
+    "menge": 9110.2,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-41",
+    "halle": "Halle 1",
+    "medium": "Druckluft",
+    "menge": 26690.9,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-41",
+    "halle": "Halle 1",
+    "medium": "Erdgas",
+    "menge": 3701.1,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-41",
+    "halle": "Halle 1",
+    "medium": "Wasser",
+    "menge": 42.1,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-41",
+    "halle": "Halle 2",
+    "medium": "Strom",
+    "menge": 8426.9,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-41",
+    "halle": "Halle 2",
+    "medium": "Druckluft",
+    "menge": 25807.2,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-41",
+    "halle": "Halle 2",
+    "medium": "Erdgas",
+    "menge": 4568.0,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-41",
+    "halle": "Halle 2",
+    "medium": "Wasser",
+    "menge": 34.6,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-41",
+    "halle": "Halle 3",
+    "medium": "Strom",
+    "menge": 7514.2,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-41",
+    "halle": "Halle 3",
+    "medium": "Druckluft",
+    "menge": 30575.8,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-41",
+    "halle": "Halle 3",
+    "medium": "Erdgas",
+    "menge": 3839.8,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-41",
+    "halle": "Halle 3",
+    "medium": "Wasser",
+    "menge": 43.0,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-41",
+    "halle": "Härterei",
+    "medium": "Strom",
+    "menge": 19482.4,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-41",
+    "halle": "Härterei",
+    "medium": "Druckluft",
+    "menge": 81627.5,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-41",
+    "halle": "Härterei",
+    "medium": "Erdgas",
+    "menge": 11445.9,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-41",
+    "halle": "Härterei",
+    "medium": "Wasser",
+    "menge": 109.5,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-41",
+    "halle": "Verwaltung",
+    "medium": "Strom",
+    "menge": 7825.1,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-41",
+    "halle": "Verwaltung",
+    "medium": "Erdgas",
+    "menge": 4575.4,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-41",
+    "halle": "Verwaltung",
+    "medium": "Wasser",
+    "menge": 45.6,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-40",
+    "halle": "Halle 1",
+    "medium": "Strom",
+    "menge": 7569.4,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-40",
+    "halle": "Halle 1",
+    "medium": "Druckluft",
+    "menge": 28750.6,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-40",
+    "halle": "Halle 1",
+    "medium": "Erdgas",
+    "menge": 4234.0,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-40",
+    "halle": "Halle 1",
+    "medium": "Wasser",
+    "menge": 39.2,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-40",
+    "halle": "Halle 2",
+    "medium": "Strom",
+    "menge": 7631.6,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-40",
+    "halle": "Halle 2",
+    "medium": "Druckluft",
+    "menge": 31212.5,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-40",
+    "halle": "Halle 2",
+    "medium": "Erdgas",
+    "menge": 4454.3,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-40",
+    "halle": "Halle 2",
+    "medium": "Wasser",
+    "menge": 43.9,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-40",
+    "halle": "Halle 3",
+    "medium": "Strom",
+    "menge": 8349.5,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-40",
+    "halle": "Halle 3",
+    "medium": "Druckluft",
+    "menge": 33355.7,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-40",
+    "halle": "Halle 3",
+    "medium": "Erdgas",
+    "menge": 4345.1,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-40",
+    "halle": "Halle 3",
+    "medium": "Wasser",
+    "menge": 35.6,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-40",
+    "halle": "Härterei",
+    "medium": "Strom",
+    "menge": 20056.1,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-40",
+    "halle": "Härterei",
+    "medium": "Druckluft",
+    "menge": 86217.4,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-40",
+    "halle": "Härterei",
+    "medium": "Erdgas",
+    "menge": 9556.3,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-40",
+    "halle": "Härterei",
+    "medium": "Wasser",
+    "menge": 98.8,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-40",
+    "halle": "Verwaltung",
+    "medium": "Strom",
+    "menge": 7971.9,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-40",
+    "halle": "Verwaltung",
+    "medium": "Erdgas",
+    "menge": 3473.8,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-40",
+    "halle": "Verwaltung",
+    "medium": "Wasser",
+    "menge": 44.5,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-39",
+    "halle": "Halle 1",
+    "medium": "Strom",
+    "menge": 7865.9,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-39",
+    "halle": "Halle 1",
+    "medium": "Druckluft",
+    "menge": 33777.2,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-39",
+    "halle": "Halle 1",
+    "medium": "Erdgas",
+    "menge": 4068.1,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-39",
+    "halle": "Halle 1",
+    "medium": "Wasser",
+    "menge": 41.3,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-39",
+    "halle": "Halle 2",
+    "medium": "Strom",
+    "menge": 7179.8,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-39",
+    "halle": "Halle 2",
+    "medium": "Druckluft",
+    "menge": 29383.7,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-39",
+    "halle": "Halle 2",
+    "medium": "Erdgas",
+    "menge": 4222.4,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-39",
+    "halle": "Halle 2",
+    "medium": "Wasser",
+    "menge": 39.3,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-39",
+    "halle": "Halle 3",
+    "medium": "Strom",
+    "menge": 8678.2,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-39",
+    "halle": "Halle 3",
+    "medium": "Druckluft",
+    "menge": 33740.8,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-39",
+    "halle": "Halle 3",
+    "medium": "Erdgas",
+    "menge": 4286.8,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-39",
+    "halle": "Halle 3",
+    "medium": "Wasser",
+    "menge": 40.3,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-39",
+    "halle": "Härterei",
+    "medium": "Strom",
+    "menge": 20226.5,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-39",
+    "halle": "Härterei",
+    "medium": "Druckluft",
+    "menge": 85255.1,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-39",
+    "halle": "Härterei",
+    "medium": "Erdgas",
+    "menge": 10086.7,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-39",
+    "halle": "Härterei",
+    "medium": "Wasser",
+    "menge": 111.1,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-39",
+    "halle": "Verwaltung",
+    "medium": "Strom",
+    "menge": 6854.7,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-39",
+    "halle": "Verwaltung",
+    "medium": "Erdgas",
+    "menge": 3913.0,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-39",
+    "halle": "Verwaltung",
+    "medium": "Wasser",
+    "menge": 43.5,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-38",
+    "halle": "Halle 1",
+    "medium": "Strom",
+    "menge": 8659.6,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-38",
+    "halle": "Halle 1",
+    "medium": "Druckluft",
+    "menge": 33833.8,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-38",
+    "halle": "Halle 1",
+    "medium": "Erdgas",
+    "menge": 3481.1,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-38",
+    "halle": "Halle 1",
+    "medium": "Wasser",
+    "menge": 41.7,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-38",
+    "halle": "Halle 2",
+    "medium": "Strom",
+    "menge": 7874.1,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-38",
+    "halle": "Halle 2",
+    "medium": "Druckluft",
+    "menge": 28572.5,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-38",
+    "halle": "Halle 2",
+    "medium": "Erdgas",
+    "menge": 3577.6,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-38",
+    "halle": "Halle 2",
+    "medium": "Wasser",
+    "menge": 45.3,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-38",
+    "halle": "Halle 3",
+    "medium": "Strom",
+    "menge": 8761.7,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-38",
+    "halle": "Halle 3",
+    "medium": "Druckluft",
+    "menge": 30511.4,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-38",
+    "halle": "Halle 3",
+    "medium": "Erdgas",
+    "menge": 3825.9,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-38",
+    "halle": "Halle 3",
+    "medium": "Wasser",
+    "menge": 43.7,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-38",
+    "halle": "Härterei",
+    "medium": "Strom",
+    "menge": 22613.0,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-38",
+    "halle": "Härterei",
+    "medium": "Druckluft",
+    "menge": 65337.3,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-38",
+    "halle": "Härterei",
+    "medium": "Erdgas",
+    "menge": 10115.3,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-38",
+    "halle": "Härterei",
+    "medium": "Wasser",
+    "menge": 114.2,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-38",
+    "halle": "Verwaltung",
+    "medium": "Strom",
+    "menge": 7788.1,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-38",
+    "halle": "Verwaltung",
+    "medium": "Erdgas",
+    "menge": 4004.6,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-38",
+    "halle": "Verwaltung",
+    "medium": "Wasser",
+    "menge": 34.6,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-37",
+    "halle": "Halle 1",
+    "medium": "Strom",
+    "menge": 2417.9,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-37",
+    "halle": "Halle 1",
+    "medium": "Druckluft",
+    "menge": 10124.2,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-37",
+    "halle": "Halle 1",
+    "medium": "Erdgas",
+    "menge": 1208.6,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-37",
+    "halle": "Halle 1",
+    "medium": "Wasser",
+    "menge": 14.0,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-37",
+    "halle": "Halle 2",
+    "medium": "Strom",
+    "menge": 2436.0,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-37",
+    "halle": "Halle 2",
+    "medium": "Druckluft",
+    "menge": 9030.1,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-37",
+    "halle": "Halle 2",
+    "medium": "Erdgas",
+    "menge": 1311.2,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-37",
+    "halle": "Halle 2",
+    "medium": "Wasser",
+    "menge": 14.5,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-37",
+    "halle": "Halle 3",
+    "medium": "Strom",
+    "menge": 2694.2,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-37",
+    "halle": "Halle 3",
+    "medium": "Druckluft",
+    "menge": 9407.6,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-37",
+    "halle": "Halle 3",
+    "medium": "Erdgas",
+    "menge": 1216.0,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-37",
+    "halle": "Halle 3",
+    "medium": "Wasser",
+    "menge": 12.7,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-37",
+    "halle": "Härterei",
+    "medium": "Strom",
+    "menge": 6885.6,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-37",
+    "halle": "Härterei",
+    "medium": "Druckluft",
+    "menge": 24567.5,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-37",
+    "halle": "Härterei",
+    "medium": "Erdgas",
+    "menge": 3039.4,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-37",
+    "halle": "Härterei",
+    "medium": "Wasser",
+    "menge": 39.0,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-37",
+    "halle": "Verwaltung",
+    "medium": "Strom",
+    "menge": 2533.8,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-37",
+    "halle": "Verwaltung",
+    "medium": "Erdgas",
+    "menge": 1466.6,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-37",
+    "halle": "Verwaltung",
+    "medium": "Wasser",
+    "menge": 12.9,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-36",
+    "halle": "Halle 1",
+    "medium": "Strom",
+    "menge": 3018.8,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-36",
+    "halle": "Halle 1",
+    "medium": "Druckluft",
+    "menge": 10567.9,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-36",
+    "halle": "Halle 1",
+    "medium": "Erdgas",
+    "menge": 1200.5,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-36",
+    "halle": "Halle 1",
+    "medium": "Wasser",
+    "menge": 12.1,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-36",
+    "halle": "Halle 2",
+    "medium": "Strom",
+    "menge": 3015.3,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-36",
+    "halle": "Halle 2",
+    "medium": "Druckluft",
+    "menge": 9529.7,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-36",
+    "halle": "Halle 2",
+    "medium": "Erdgas",
+    "menge": 1345.6,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-36",
+    "halle": "Halle 2",
+    "medium": "Wasser",
+    "menge": 16.1,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-36",
+    "halle": "Halle 3",
+    "medium": "Strom",
+    "menge": 2761.9,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-36",
+    "halle": "Halle 3",
+    "medium": "Druckluft",
+    "menge": 9151.0,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-36",
+    "halle": "Halle 3",
+    "medium": "Erdgas",
+    "menge": 1374.4,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-36",
+    "halle": "Halle 3",
+    "medium": "Wasser",
+    "menge": 13.2,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-36",
+    "halle": "Härterei",
+    "medium": "Strom",
+    "menge": 7028.7,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-36",
+    "halle": "Härterei",
+    "medium": "Druckluft",
+    "menge": 27378.6,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-36",
+    "halle": "Härterei",
+    "medium": "Erdgas",
+    "menge": 3134.2,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-36",
+    "halle": "Härterei",
+    "medium": "Wasser",
+    "menge": 38.7,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-36",
+    "halle": "Verwaltung",
+    "medium": "Strom",
+    "menge": 2737.5,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-36",
+    "halle": "Verwaltung",
+    "medium": "Erdgas",
+    "menge": 1464.7,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-36",
+    "halle": "Verwaltung",
+    "medium": "Wasser",
+    "menge": 12.8,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-35",
+    "halle": "Halle 1",
+    "medium": "Strom",
+    "menge": 8354.0,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-35",
+    "halle": "Halle 1",
+    "medium": "Druckluft",
+    "menge": 32913.4,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-35",
+    "halle": "Halle 1",
+    "medium": "Erdgas",
+    "menge": 3964.4,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-35",
+    "halle": "Halle 1",
+    "medium": "Wasser",
+    "menge": 36.1,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-35",
+    "halle": "Halle 2",
+    "medium": "Strom",
+    "menge": 6907.9,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-35",
+    "halle": "Halle 2",
+    "medium": "Druckluft",
+    "menge": 27749.9,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-35",
+    "halle": "Halle 2",
+    "medium": "Erdgas",
+    "menge": 3666.1,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-35",
+    "halle": "Halle 2",
+    "medium": "Wasser",
+    "menge": 40.4,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-35",
+    "halle": "Halle 3",
+    "medium": "Strom",
+    "menge": 8730.8,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-35",
+    "halle": "Halle 3",
+    "medium": "Druckluft",
+    "menge": 31633.2,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-35",
+    "halle": "Halle 3",
+    "medium": "Erdgas",
+    "menge": 3579.2,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-35",
+    "halle": "Halle 3",
+    "medium": "Wasser",
+    "menge": 37.5,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-35",
+    "halle": "Härterei",
+    "medium": "Strom",
+    "menge": 18525.1,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-35",
+    "halle": "Härterei",
+    "medium": "Druckluft",
+    "menge": 70152.6,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-35",
+    "halle": "Härterei",
+    "medium": "Erdgas",
+    "menge": 10973.8,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-35",
+    "halle": "Härterei",
+    "medium": "Wasser",
+    "menge": 104.5,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-35",
+    "halle": "Verwaltung",
+    "medium": "Strom",
+    "menge": 7077.0,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-35",
+    "halle": "Verwaltung",
+    "medium": "Erdgas",
+    "menge": 3991.4,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-35",
+    "halle": "Verwaltung",
+    "medium": "Wasser",
+    "menge": 34.2,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-34",
+    "halle": "Halle 1",
+    "medium": "Strom",
+    "menge": 7911.6,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-34",
+    "halle": "Halle 1",
+    "medium": "Druckluft",
+    "menge": 26851.5,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-34",
+    "halle": "Halle 1",
+    "medium": "Erdgas",
+    "menge": 3448.5,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-34",
+    "halle": "Halle 1",
+    "medium": "Wasser",
+    "menge": 44.3,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-34",
+    "halle": "Halle 2",
+    "medium": "Strom",
+    "menge": 7616.1,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-34",
+    "halle": "Halle 2",
+    "medium": "Druckluft",
+    "menge": 26866.1,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-34",
+    "halle": "Halle 2",
+    "medium": "Erdgas",
+    "menge": 3602.1,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-34",
+    "halle": "Halle 2",
+    "medium": "Wasser",
+    "menge": 42.5,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-34",
+    "halle": "Halle 3",
+    "medium": "Strom",
+    "menge": 8478.6,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-34",
+    "halle": "Halle 3",
+    "medium": "Druckluft",
+    "menge": 28686.3,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-34",
+    "halle": "Halle 3",
+    "medium": "Erdgas",
+    "menge": 3727.7,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-34",
+    "halle": "Halle 3",
+    "medium": "Wasser",
+    "menge": 36.1,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-34",
+    "halle": "Härterei",
+    "medium": "Strom",
+    "menge": 21861.5,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-34",
+    "halle": "Härterei",
+    "medium": "Druckluft",
+    "menge": 81636.2,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-34",
+    "halle": "Härterei",
+    "medium": "Erdgas",
+    "menge": 9832.6,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-34",
+    "halle": "Härterei",
+    "medium": "Wasser",
+    "menge": 112.4,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-34",
+    "halle": "Verwaltung",
+    "medium": "Strom",
+    "menge": 7343.0,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-34",
+    "halle": "Verwaltung",
+    "medium": "Erdgas",
+    "menge": 4443.6,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-34",
+    "halle": "Verwaltung",
+    "medium": "Wasser",
+    "menge": 41.7,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-33",
+    "halle": "Halle 1",
+    "medium": "Strom",
+    "menge": 6876.5,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-33",
+    "halle": "Halle 1",
+    "medium": "Druckluft",
+    "menge": 34322.9,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-33",
+    "halle": "Halle 1",
+    "medium": "Erdgas",
+    "menge": 4201.6,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-33",
+    "halle": "Halle 1",
+    "medium": "Wasser",
+    "menge": 36.5,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-33",
+    "halle": "Halle 2",
+    "medium": "Strom",
+    "menge": 7160.1,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-33",
+    "halle": "Halle 2",
+    "medium": "Druckluft",
+    "menge": 26925.4,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-33",
+    "halle": "Halle 2",
+    "medium": "Erdgas",
+    "menge": 3970.6,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-33",
+    "halle": "Halle 2",
+    "medium": "Wasser",
+    "menge": 36.8,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-33",
+    "halle": "Halle 3",
+    "medium": "Strom",
+    "menge": 8327.7,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-33",
+    "halle": "Halle 3",
+    "medium": "Druckluft",
+    "menge": 27063.0,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-33",
+    "halle": "Halle 3",
+    "medium": "Erdgas",
+    "menge": 3453.2,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-33",
+    "halle": "Halle 3",
+    "medium": "Wasser",
+    "menge": 43.1,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-33",
+    "halle": "Härterei",
+    "medium": "Strom",
+    "menge": 21059.6,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-33",
+    "halle": "Härterei",
+    "medium": "Druckluft",
+    "menge": 82576.9,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-33",
+    "halle": "Härterei",
+    "medium": "Erdgas",
+    "menge": 10601.5,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-33",
+    "halle": "Härterei",
+    "medium": "Wasser",
+    "menge": 85.9,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-33",
+    "halle": "Verwaltung",
+    "medium": "Strom",
+    "menge": 6839.9,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-33",
+    "halle": "Verwaltung",
+    "medium": "Erdgas",
+    "menge": 4315.4,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-33",
+    "halle": "Verwaltung",
+    "medium": "Wasser",
+    "menge": 34.9,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-32",
+    "halle": "Halle 1",
+    "medium": "Strom",
+    "menge": 9176.3,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-32",
+    "halle": "Halle 1",
+    "medium": "Druckluft",
+    "menge": 29696.0,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-32",
+    "halle": "Halle 1",
+    "medium": "Erdgas",
+    "menge": 3973.9,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-32",
+    "halle": "Halle 1",
+    "medium": "Wasser",
+    "menge": 35.0,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-32",
+    "halle": "Halle 2",
+    "medium": "Strom",
+    "menge": 8553.7,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-32",
+    "halle": "Halle 2",
+    "medium": "Druckluft",
+    "menge": 27294.1,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-32",
+    "halle": "Halle 2",
+    "medium": "Erdgas",
+    "menge": 4205.0,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-32",
+    "halle": "Halle 2",
+    "medium": "Wasser",
+    "menge": 35.7,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-32",
+    "halle": "Halle 3",
+    "medium": "Strom",
+    "menge": 7282.6,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-32",
+    "halle": "Halle 3",
+    "medium": "Druckluft",
+    "menge": 26775.9,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-32",
+    "halle": "Halle 3",
+    "medium": "Erdgas",
+    "menge": 3575.7,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-32",
+    "halle": "Halle 3",
+    "medium": "Wasser",
+    "menge": 35.8,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-32",
+    "halle": "Härterei",
+    "medium": "Strom",
+    "menge": 17544.5,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-32",
+    "halle": "Härterei",
+    "medium": "Druckluft",
+    "menge": 69740.1,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-32",
+    "halle": "Härterei",
+    "medium": "Erdgas",
+    "menge": 9401.7,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-32",
+    "halle": "Härterei",
+    "medium": "Wasser",
+    "menge": 99.3,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-32",
+    "halle": "Verwaltung",
+    "medium": "Strom",
+    "menge": 8060.2,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-32",
+    "halle": "Verwaltung",
+    "medium": "Erdgas",
+    "menge": 3478.6,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-32",
+    "halle": "Verwaltung",
+    "medium": "Wasser",
+    "menge": 37.9,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-31",
+    "halle": "Halle 1",
+    "medium": "Strom",
+    "menge": 7981.2,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-31",
+    "halle": "Halle 1",
+    "medium": "Druckluft",
+    "menge": 31018.2,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-31",
+    "halle": "Halle 1",
+    "medium": "Erdgas",
+    "menge": 4159.1,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-31",
+    "halle": "Halle 1",
+    "medium": "Wasser",
+    "menge": 44.3,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-31",
+    "halle": "Halle 2",
+    "medium": "Strom",
+    "menge": 7721.3,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-31",
+    "halle": "Halle 2",
+    "medium": "Druckluft",
+    "menge": 30006.1,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-31",
+    "halle": "Halle 2",
+    "medium": "Erdgas",
+    "menge": 3996.6,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-31",
+    "halle": "Halle 2",
+    "medium": "Wasser",
+    "menge": 40.1,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-31",
+    "halle": "Halle 3",
+    "medium": "Strom",
+    "menge": 7395.8,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-31",
+    "halle": "Halle 3",
+    "medium": "Druckluft",
+    "menge": 29085.8,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-31",
+    "halle": "Halle 3",
+    "medium": "Erdgas",
+    "menge": 3624.0,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-31",
+    "halle": "Halle 3",
+    "medium": "Wasser",
+    "menge": 45.8,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-31",
+    "halle": "Härterei",
+    "medium": "Strom",
+    "menge": 21740.1,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-31",
+    "halle": "Härterei",
+    "medium": "Druckluft",
+    "menge": 81407.5,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-31",
+    "halle": "Härterei",
+    "medium": "Erdgas",
+    "menge": 9272.3,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-31",
+    "halle": "Härterei",
+    "medium": "Wasser",
+    "menge": 93.5,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-31",
+    "halle": "Verwaltung",
+    "medium": "Strom",
+    "menge": 7724.9,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-31",
+    "halle": "Verwaltung",
+    "medium": "Erdgas",
+    "menge": 3528.3,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-31",
+    "halle": "Verwaltung",
+    "medium": "Wasser",
+    "menge": 41.2,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-30",
+    "halle": "Halle 1",
+    "medium": "Strom",
+    "menge": 3199.9,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-30",
+    "halle": "Halle 1",
+    "medium": "Druckluft",
+    "menge": 9069.0,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-30",
+    "halle": "Halle 1",
+    "medium": "Erdgas",
+    "menge": 1297.2,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-30",
+    "halle": "Halle 1",
+    "medium": "Wasser",
+    "menge": 14.9,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-30",
+    "halle": "Halle 2",
+    "medium": "Strom",
+    "menge": 2525.2,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-30",
+    "halle": "Halle 2",
+    "medium": "Druckluft",
+    "menge": 10213.4,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-30",
+    "halle": "Halle 2",
+    "medium": "Erdgas",
+    "menge": 1583.9,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-30",
+    "halle": "Halle 2",
+    "medium": "Wasser",
+    "menge": 15.8,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-30",
+    "halle": "Halle 3",
+    "medium": "Strom",
+    "menge": 3100.5,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-30",
+    "halle": "Halle 3",
+    "medium": "Druckluft",
+    "menge": 9797.6,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-30",
+    "halle": "Halle 3",
+    "medium": "Erdgas",
+    "menge": 1590.9,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-30",
+    "halle": "Halle 3",
+    "medium": "Wasser",
+    "menge": 15.5,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-30",
+    "halle": "Härterei",
+    "medium": "Strom",
+    "menge": 7272.8,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-30",
+    "halle": "Härterei",
+    "medium": "Druckluft",
+    "menge": 28685.2,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-30",
+    "halle": "Härterei",
+    "medium": "Erdgas",
+    "menge": 3380.9,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-30",
+    "halle": "Härterei",
+    "medium": "Wasser",
+    "menge": 31.5,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-30",
+    "halle": "Verwaltung",
+    "medium": "Strom",
+    "menge": 3210.6,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-30",
+    "halle": "Verwaltung",
+    "medium": "Erdgas",
+    "menge": 1453.8,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-30",
+    "halle": "Verwaltung",
+    "medium": "Wasser",
+    "menge": 14.5,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-29",
+    "halle": "Halle 1",
+    "medium": "Strom",
+    "menge": 3046.1,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-29",
+    "halle": "Halle 1",
+    "medium": "Druckluft",
+    "menge": 11948.4,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-29",
+    "halle": "Halle 1",
+    "medium": "Erdgas",
+    "menge": 1220.6,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-29",
+    "halle": "Halle 1",
+    "medium": "Wasser",
+    "menge": 14.5,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-29",
+    "halle": "Halle 2",
+    "medium": "Strom",
+    "menge": 3065.4,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-29",
+    "halle": "Halle 2",
+    "medium": "Druckluft",
+    "menge": 10196.6,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-29",
+    "halle": "Halle 2",
+    "medium": "Erdgas",
+    "menge": 1446.8,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-29",
+    "halle": "Halle 2",
+    "medium": "Wasser",
+    "menge": 13.2,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-29",
+    "halle": "Halle 3",
+    "medium": "Strom",
+    "menge": 3037.4,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-29",
+    "halle": "Halle 3",
+    "medium": "Druckluft",
+    "menge": 10034.0,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-29",
+    "halle": "Halle 3",
+    "medium": "Erdgas",
+    "menge": 1412.5,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-29",
+    "halle": "Halle 3",
+    "medium": "Wasser",
+    "menge": 14.4,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-29",
+    "halle": "Härterei",
+    "medium": "Strom",
+    "menge": 7418.9,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-29",
+    "halle": "Härterei",
+    "medium": "Druckluft",
+    "menge": 24976.1,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-29",
+    "halle": "Härterei",
+    "medium": "Erdgas",
+    "menge": 3186.3,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-29",
+    "halle": "Härterei",
+    "medium": "Wasser",
+    "menge": 39.2,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-29",
+    "halle": "Verwaltung",
+    "medium": "Strom",
+    "menge": 3179.4,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-29",
+    "halle": "Verwaltung",
+    "medium": "Erdgas",
+    "menge": 1301.1,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-29",
+    "halle": "Verwaltung",
+    "medium": "Wasser",
+    "menge": 15.0,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-28",
+    "halle": "Halle 1",
+    "medium": "Strom",
+    "menge": 8342.9,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-28",
+    "halle": "Halle 1",
+    "medium": "Druckluft",
+    "menge": 27575.6,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-28",
+    "halle": "Halle 1",
+    "medium": "Erdgas",
+    "menge": 4389.6,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-28",
+    "halle": "Halle 1",
+    "medium": "Wasser",
+    "menge": 38.1,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-28",
+    "halle": "Halle 2",
+    "medium": "Strom",
+    "menge": 6946.4,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-28",
+    "halle": "Halle 2",
+    "medium": "Druckluft",
+    "menge": 31327.0,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-28",
+    "halle": "Halle 2",
+    "medium": "Erdgas",
+    "menge": 4054.2,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-28",
+    "halle": "Halle 2",
+    "medium": "Wasser",
+    "menge": 38.0,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-28",
+    "halle": "Halle 3",
+    "medium": "Strom",
+    "menge": 7098.0,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-28",
+    "halle": "Halle 3",
+    "medium": "Druckluft",
+    "menge": 30708.6,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-28",
+    "halle": "Halle 3",
+    "medium": "Erdgas",
+    "menge": 4087.0,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-28",
+    "halle": "Halle 3",
+    "medium": "Wasser",
+    "menge": 37.2,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-28",
+    "halle": "Härterei",
+    "medium": "Strom",
+    "menge": 17231.3,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-28",
+    "halle": "Härterei",
+    "medium": "Druckluft",
+    "menge": 68228.2,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-28",
+    "halle": "Härterei",
+    "medium": "Erdgas",
+    "menge": 9258.7,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-28",
+    "halle": "Härterei",
+    "medium": "Wasser",
+    "menge": 98.0,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-28",
+    "halle": "Verwaltung",
+    "medium": "Strom",
+    "menge": 7037.2,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-28",
+    "halle": "Verwaltung",
+    "medium": "Erdgas",
+    "menge": 3882.0,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-28",
+    "halle": "Verwaltung",
+    "medium": "Wasser",
+    "menge": 35.1,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-27",
+    "halle": "Halle 1",
+    "medium": "Strom",
+    "menge": 8975.7,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-27",
+    "halle": "Halle 1",
+    "medium": "Druckluft",
+    "menge": 31736.4,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-27",
+    "halle": "Halle 1",
+    "medium": "Erdgas",
+    "menge": 4421.7,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-27",
+    "halle": "Halle 1",
+    "medium": "Wasser",
+    "menge": 42.1,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-27",
+    "halle": "Halle 2",
+    "medium": "Strom",
+    "menge": 7886.1,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-27",
+    "halle": "Halle 2",
+    "medium": "Druckluft",
+    "menge": 27775.8,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-27",
+    "halle": "Halle 2",
+    "medium": "Erdgas",
+    "menge": 4048.3,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-27",
+    "halle": "Halle 2",
+    "medium": "Wasser",
+    "menge": 35.2,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-27",
+    "halle": "Halle 3",
+    "medium": "Strom",
+    "menge": 8955.2,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-27",
+    "halle": "Halle 3",
+    "medium": "Druckluft",
+    "menge": 30112.7,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-27",
+    "halle": "Halle 3",
+    "medium": "Erdgas",
+    "menge": 3525.3,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-27",
+    "halle": "Halle 3",
+    "medium": "Wasser",
+    "menge": 38.6,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-27",
+    "halle": "Härterei",
+    "medium": "Strom",
+    "menge": 21309.5,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-27",
+    "halle": "Härterei",
+    "medium": "Druckluft",
+    "menge": 70411.1,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-27",
+    "halle": "Härterei",
+    "medium": "Erdgas",
+    "menge": 8696.1,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-27",
+    "halle": "Härterei",
+    "medium": "Wasser",
+    "menge": 101.8,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-27",
+    "halle": "Verwaltung",
+    "medium": "Strom",
+    "menge": 8422.6,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-27",
+    "halle": "Verwaltung",
+    "medium": "Erdgas",
+    "menge": 4020.8,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-27",
+    "halle": "Verwaltung",
+    "medium": "Wasser",
+    "menge": 39.4,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-26",
+    "halle": "Halle 1",
+    "medium": "Strom",
+    "menge": 7674.1,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-26",
+    "halle": "Halle 1",
+    "medium": "Druckluft",
+    "menge": 26163.4,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-26",
+    "halle": "Halle 1",
+    "medium": "Erdgas",
+    "menge": 3832.8,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-26",
+    "halle": "Halle 1",
+    "medium": "Wasser",
+    "menge": 35.3,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-26",
+    "halle": "Halle 2",
+    "medium": "Strom",
+    "menge": 7869.7,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-26",
+    "halle": "Halle 2",
+    "medium": "Druckluft",
+    "menge": 25734.4,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-26",
+    "halle": "Halle 2",
+    "medium": "Erdgas",
+    "menge": 4479.8,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-26",
+    "halle": "Halle 2",
+    "medium": "Wasser",
+    "menge": 43.9,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-26",
+    "halle": "Halle 3",
+    "medium": "Strom",
+    "menge": 8266.7,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-26",
+    "halle": "Halle 3",
+    "medium": "Druckluft",
+    "menge": 32660.5,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-26",
+    "halle": "Halle 3",
+    "medium": "Erdgas",
+    "menge": 4401.7,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-26",
+    "halle": "Halle 3",
+    "medium": "Wasser",
+    "menge": 40.7,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-26",
+    "halle": "Härterei",
+    "medium": "Strom",
+    "menge": 17408.0,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-26",
+    "halle": "Härterei",
+    "medium": "Druckluft",
+    "menge": 79232.5,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-26",
+    "halle": "Härterei",
+    "medium": "Erdgas",
+    "menge": 10409.7,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-26",
+    "halle": "Härterei",
+    "medium": "Wasser",
+    "menge": 89.9,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-26",
+    "halle": "Verwaltung",
+    "medium": "Strom",
+    "menge": 7417.5,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-26",
+    "halle": "Verwaltung",
+    "medium": "Erdgas",
+    "menge": 4287.1,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-26",
+    "halle": "Verwaltung",
+    "medium": "Wasser",
+    "menge": 40.6,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-25",
+    "halle": "Halle 1",
+    "medium": "Strom",
+    "menge": 7187.6,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-25",
+    "halle": "Halle 1",
+    "medium": "Druckluft",
+    "menge": 33163.0,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-25",
+    "halle": "Halle 1",
+    "medium": "Erdgas",
+    "menge": 3522.7,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-25",
+    "halle": "Halle 1",
+    "medium": "Wasser",
+    "menge": 39.4,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-25",
+    "halle": "Halle 2",
+    "medium": "Strom",
+    "menge": 9170.4,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-25",
+    "halle": "Halle 2",
+    "medium": "Druckluft",
+    "menge": 32626.0,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-25",
+    "halle": "Halle 2",
+    "medium": "Erdgas",
+    "menge": 3808.5,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-25",
+    "halle": "Halle 2",
+    "medium": "Wasser",
+    "menge": 45.5,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-25",
+    "halle": "Halle 3",
+    "medium": "Strom",
+    "menge": 7141.2,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-25",
+    "halle": "Halle 3",
+    "medium": "Druckluft",
+    "menge": 29237.6,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-25",
+    "halle": "Halle 3",
+    "medium": "Erdgas",
+    "menge": 3400.5,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-25",
+    "halle": "Halle 3",
+    "medium": "Wasser",
+    "menge": 39.4,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-25",
+    "halle": "Härterei",
+    "medium": "Strom",
+    "menge": 22040.1,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-25",
+    "halle": "Härterei",
+    "medium": "Druckluft",
+    "menge": 81794.9,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-25",
+    "halle": "Härterei",
+    "medium": "Erdgas",
+    "menge": 9438.6,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-25",
+    "halle": "Härterei",
+    "medium": "Wasser",
+    "menge": 111.0,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-25",
+    "halle": "Verwaltung",
+    "medium": "Strom",
+    "menge": 7717.1,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-25",
+    "halle": "Verwaltung",
+    "medium": "Erdgas",
+    "menge": 4372.7,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-25",
+    "halle": "Verwaltung",
+    "medium": "Wasser",
+    "menge": 37.6,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-24",
+    "halle": "Halle 1",
+    "medium": "Strom",
+    "menge": 9093.5,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-24",
+    "halle": "Halle 1",
+    "medium": "Druckluft",
+    "menge": 31875.8,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-24",
+    "halle": "Halle 1",
+    "medium": "Erdgas",
+    "menge": 4197.2,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-24",
+    "halle": "Halle 1",
+    "medium": "Wasser",
+    "menge": 34.5,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-24",
+    "halle": "Halle 2",
+    "medium": "Strom",
+    "menge": 8263.8,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-24",
+    "halle": "Halle 2",
+    "medium": "Druckluft",
+    "menge": 26633.6,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-24",
+    "halle": "Halle 2",
+    "medium": "Erdgas",
+    "menge": 4458.9,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-24",
+    "halle": "Halle 2",
+    "medium": "Wasser",
+    "menge": 43.7,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-24",
+    "halle": "Halle 3",
+    "medium": "Strom",
+    "menge": 8881.5,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-24",
+    "halle": "Halle 3",
+    "medium": "Druckluft",
+    "menge": 28551.5,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-24",
+    "halle": "Halle 3",
+    "medium": "Erdgas",
+    "menge": 4226.5,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-24",
+    "halle": "Halle 3",
+    "medium": "Wasser",
+    "menge": 41.8,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-24",
+    "halle": "Härterei",
+    "medium": "Strom",
+    "menge": 22072.5,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-24",
+    "halle": "Härterei",
+    "medium": "Druckluft",
+    "menge": 79656.0,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-24",
+    "halle": "Härterei",
+    "medium": "Erdgas",
+    "menge": 9937.5,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-24",
+    "halle": "Härterei",
+    "medium": "Wasser",
+    "menge": 112.4,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-24",
+    "halle": "Verwaltung",
+    "medium": "Strom",
+    "menge": 6835.2,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-24",
+    "halle": "Verwaltung",
+    "medium": "Erdgas",
+    "menge": 3791.6,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-24",
+    "halle": "Verwaltung",
+    "medium": "Wasser",
+    "menge": 39.3,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-23",
+    "halle": "Halle 1",
+    "medium": "Strom",
+    "menge": 2769.0,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-23",
+    "halle": "Halle 1",
+    "medium": "Druckluft",
+    "menge": 9013.8,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-23",
+    "halle": "Halle 1",
+    "medium": "Erdgas",
+    "menge": 1436.4,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-23",
+    "halle": "Halle 1",
+    "medium": "Wasser",
+    "menge": 12.7,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-23",
+    "halle": "Halle 2",
+    "medium": "Strom",
+    "menge": 2827.6,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-23",
+    "halle": "Halle 2",
+    "medium": "Druckluft",
+    "menge": 9299.4,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-23",
+    "halle": "Halle 2",
+    "medium": "Erdgas",
+    "menge": 1294.6,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-23",
+    "halle": "Halle 2",
+    "medium": "Wasser",
+    "menge": 14.3,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-23",
+    "halle": "Halle 3",
+    "medium": "Strom",
+    "menge": 2901.8,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-23",
+    "halle": "Halle 3",
+    "medium": "Druckluft",
+    "menge": 10499.1,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-23",
+    "halle": "Halle 3",
+    "medium": "Erdgas",
+    "menge": 1316.7,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-23",
+    "halle": "Halle 3",
+    "medium": "Wasser",
+    "menge": 12.4,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-23",
+    "halle": "Härterei",
+    "medium": "Strom",
+    "menge": 7147.6,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-23",
+    "halle": "Härterei",
+    "medium": "Druckluft",
+    "menge": 25735.0,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-23",
+    "halle": "Härterei",
+    "medium": "Erdgas",
+    "menge": 3754.6,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-23",
+    "halle": "Härterei",
+    "medium": "Wasser",
+    "menge": 33.4,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-23",
+    "halle": "Verwaltung",
+    "medium": "Strom",
+    "menge": 2839.4,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-23",
+    "halle": "Verwaltung",
+    "medium": "Erdgas",
+    "menge": 1414.1,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-23",
+    "halle": "Verwaltung",
+    "medium": "Wasser",
+    "menge": 15.7,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-22",
+    "halle": "Halle 1",
+    "medium": "Strom",
+    "menge": 2488.0,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-22",
+    "halle": "Halle 1",
+    "medium": "Druckluft",
+    "menge": 11376.1,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-22",
+    "halle": "Halle 1",
+    "medium": "Erdgas",
+    "menge": 1305.6,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-22",
+    "halle": "Halle 1",
+    "medium": "Wasser",
+    "menge": 15.1,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-22",
+    "halle": "Halle 2",
+    "medium": "Strom",
+    "menge": 2728.2,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-22",
+    "halle": "Halle 2",
+    "medium": "Druckluft",
+    "menge": 11702.3,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-22",
+    "halle": "Halle 2",
+    "medium": "Erdgas",
+    "menge": 1326.2,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-22",
+    "halle": "Halle 2",
+    "medium": "Wasser",
+    "menge": 15.6,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-22",
+    "halle": "Halle 3",
+    "medium": "Strom",
+    "menge": 2588.1,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-22",
+    "halle": "Halle 3",
+    "medium": "Druckluft",
+    "menge": 9363.9,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-22",
+    "halle": "Halle 3",
+    "medium": "Erdgas",
+    "menge": 1219.2,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-22",
+    "halle": "Halle 3",
+    "medium": "Wasser",
+    "menge": 13.7,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-22",
+    "halle": "Härterei",
+    "medium": "Strom",
+    "menge": 7905.7,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-22",
+    "halle": "Härterei",
+    "medium": "Druckluft",
+    "menge": 28877.1,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-22",
+    "halle": "Härterei",
+    "medium": "Erdgas",
+    "menge": 3935.4,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-22",
+    "halle": "Härterei",
+    "medium": "Wasser",
+    "menge": 30.5,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-22",
+    "halle": "Verwaltung",
+    "medium": "Strom",
+    "menge": 2930.8,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-22",
+    "halle": "Verwaltung",
+    "medium": "Erdgas",
+    "menge": 1203.6,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-22",
+    "halle": "Verwaltung",
+    "medium": "Wasser",
+    "menge": 13.8,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-21",
+    "halle": "Halle 1",
+    "medium": "Strom",
+    "menge": 7051.8,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-21",
+    "halle": "Halle 1",
+    "medium": "Druckluft",
+    "menge": 25613.7,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-21",
+    "halle": "Halle 1",
+    "medium": "Erdgas",
+    "menge": 4092.0,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-21",
+    "halle": "Halle 1",
+    "medium": "Wasser",
+    "menge": 37.5,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-21",
+    "halle": "Halle 2",
+    "medium": "Strom",
+    "menge": 8517.3,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-21",
+    "halle": "Halle 2",
+    "medium": "Druckluft",
+    "menge": 27056.5,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-21",
+    "halle": "Halle 2",
+    "medium": "Erdgas",
+    "menge": 4252.9,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-21",
+    "halle": "Halle 2",
+    "medium": "Wasser",
+    "menge": 41.3,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-21",
+    "halle": "Halle 3",
+    "medium": "Strom",
+    "menge": 7931.6,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-21",
+    "halle": "Halle 3",
+    "medium": "Druckluft",
+    "menge": 27751.9,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-21",
+    "halle": "Halle 3",
+    "medium": "Erdgas",
+    "menge": 4299.7,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-21",
+    "halle": "Halle 3",
+    "medium": "Wasser",
+    "menge": 36.0,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-21",
+    "halle": "Härterei",
+    "medium": "Strom",
+    "menge": 21820.2,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-21",
+    "halle": "Härterei",
+    "medium": "Druckluft",
+    "menge": 68585.6,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-21",
+    "halle": "Härterei",
+    "medium": "Erdgas",
+    "menge": 9274.3,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-21",
+    "halle": "Härterei",
+    "medium": "Wasser",
+    "menge": 105.8,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-21",
+    "halle": "Verwaltung",
+    "medium": "Strom",
+    "menge": 8371.9,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-21",
+    "halle": "Verwaltung",
+    "medium": "Erdgas",
+    "menge": 3426.4,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-21",
+    "halle": "Verwaltung",
+    "medium": "Wasser",
+    "menge": 37.4,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-20",
+    "halle": "Halle 1",
+    "medium": "Strom",
+    "menge": 7367.3,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-20",
+    "halle": "Halle 1",
+    "medium": "Druckluft",
+    "menge": 29580.9,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-20",
+    "halle": "Halle 1",
+    "medium": "Erdgas",
+    "menge": 3650.2,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-20",
+    "halle": "Halle 1",
+    "medium": "Wasser",
+    "menge": 40.1,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-20",
+    "halle": "Halle 2",
+    "medium": "Strom",
+    "menge": 8192.8,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-20",
+    "halle": "Halle 2",
+    "medium": "Druckluft",
+    "menge": 29783.6,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-20",
+    "halle": "Halle 2",
+    "medium": "Erdgas",
+    "menge": 3511.0,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-20",
+    "halle": "Halle 2",
+    "medium": "Wasser",
+    "menge": 39.4,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-20",
+    "halle": "Halle 3",
+    "medium": "Strom",
+    "menge": 8246.4,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-20",
+    "halle": "Halle 3",
+    "medium": "Druckluft",
+    "menge": 33762.1,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-20",
+    "halle": "Halle 3",
+    "medium": "Erdgas",
+    "menge": 4364.0,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-20",
+    "halle": "Halle 3",
+    "medium": "Wasser",
+    "menge": 42.7,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-20",
+    "halle": "Härterei",
+    "medium": "Strom",
+    "menge": 20751.3,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-20",
+    "halle": "Härterei",
+    "medium": "Druckluft",
+    "menge": 81640.5,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-20",
+    "halle": "Härterei",
+    "medium": "Erdgas",
+    "menge": 11351.7,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-20",
+    "halle": "Härterei",
+    "medium": "Wasser",
+    "menge": 108.7,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-20",
+    "halle": "Verwaltung",
+    "medium": "Strom",
+    "menge": 8694.7,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-20",
+    "halle": "Verwaltung",
+    "medium": "Erdgas",
+    "menge": 3455.3,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-20",
+    "halle": "Verwaltung",
+    "medium": "Wasser",
+    "menge": 45.2,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-19",
+    "halle": "Halle 1",
+    "medium": "Strom",
+    "menge": 7207.2,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-19",
+    "halle": "Halle 1",
+    "medium": "Druckluft",
+    "menge": 32350.1,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-19",
+    "halle": "Halle 1",
+    "medium": "Erdgas",
+    "menge": 3763.6,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-19",
+    "halle": "Halle 1",
+    "medium": "Wasser",
+    "menge": 38.3,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-19",
+    "halle": "Halle 2",
+    "medium": "Strom",
+    "menge": 9149.7,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-19",
+    "halle": "Halle 2",
+    "medium": "Druckluft",
+    "menge": 27769.7,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-19",
+    "halle": "Halle 2",
+    "medium": "Erdgas",
+    "menge": 3758.3,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-19",
+    "halle": "Halle 2",
+    "medium": "Wasser",
+    "menge": 40.7,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-19",
+    "halle": "Halle 3",
+    "medium": "Strom",
+    "menge": 8604.9,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-19",
+    "halle": "Halle 3",
+    "medium": "Druckluft",
+    "menge": 26840.7,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-19",
+    "halle": "Halle 3",
+    "medium": "Erdgas",
+    "menge": 4429.8,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-19",
+    "halle": "Halle 3",
+    "medium": "Wasser",
+    "menge": 46.0,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-19",
+    "halle": "Härterei",
+    "medium": "Strom",
+    "menge": 20855.5,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-19",
+    "halle": "Härterei",
+    "medium": "Druckluft",
+    "menge": 72829.6,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-19",
+    "halle": "Härterei",
+    "medium": "Erdgas",
+    "menge": 9402.0,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-19",
+    "halle": "Härterei",
+    "medium": "Wasser",
+    "menge": 102.4,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-19",
+    "halle": "Verwaltung",
+    "medium": "Strom",
+    "menge": 6910.0,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-19",
+    "halle": "Verwaltung",
+    "medium": "Erdgas",
+    "menge": 4287.2,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-19",
+    "halle": "Verwaltung",
+    "medium": "Wasser",
+    "menge": 34.4,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-18",
+    "halle": "Halle 1",
+    "medium": "Strom",
+    "menge": 7133.8,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-18",
+    "halle": "Halle 1",
+    "medium": "Druckluft",
+    "menge": 26326.9,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-18",
+    "halle": "Halle 1",
+    "medium": "Erdgas",
+    "menge": 3891.2,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-18",
+    "halle": "Halle 1",
+    "medium": "Wasser",
+    "menge": 37.3,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-18",
+    "halle": "Halle 2",
+    "medium": "Strom",
+    "menge": 7569.3,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-18",
+    "halle": "Halle 2",
+    "medium": "Druckluft",
+    "menge": 28097.1,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-18",
+    "halle": "Halle 2",
+    "medium": "Erdgas",
+    "menge": 4124.1,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-18",
+    "halle": "Halle 2",
+    "medium": "Wasser",
+    "menge": 37.9,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-18",
+    "halle": "Halle 3",
+    "medium": "Strom",
+    "menge": 8938.3,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-18",
+    "halle": "Halle 3",
+    "medium": "Druckluft",
+    "menge": 26813.7,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-18",
+    "halle": "Halle 3",
+    "medium": "Erdgas",
+    "menge": 3871.4,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-18",
+    "halle": "Halle 3",
+    "medium": "Wasser",
+    "menge": 35.2,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-18",
+    "halle": "Härterei",
+    "medium": "Strom",
+    "menge": 19508.7,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-18",
+    "halle": "Härterei",
+    "medium": "Druckluft",
+    "menge": 68731.6,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-18",
+    "halle": "Härterei",
+    "medium": "Erdgas",
+    "menge": 10943.7,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-18",
+    "halle": "Härterei",
+    "medium": "Wasser",
+    "menge": 100.2,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-18",
+    "halle": "Verwaltung",
+    "medium": "Strom",
+    "menge": 7522.6,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-18",
+    "halle": "Verwaltung",
+    "medium": "Erdgas",
+    "menge": 4272.9,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-18",
+    "halle": "Verwaltung",
+    "medium": "Wasser",
+    "menge": 42.4,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-17",
+    "halle": "Halle 1",
+    "medium": "Strom",
+    "menge": 7774.9,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-17",
+    "halle": "Halle 1",
+    "medium": "Druckluft",
+    "menge": 31879.3,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-17",
+    "halle": "Halle 1",
+    "medium": "Erdgas",
+    "menge": 4165.6,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-17",
+    "halle": "Halle 1",
+    "medium": "Wasser",
+    "menge": 41.8,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-17",
+    "halle": "Halle 2",
+    "medium": "Strom",
+    "menge": 7634.2,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-17",
+    "halle": "Halle 2",
+    "medium": "Druckluft",
+    "menge": 32894.9,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-17",
+    "halle": "Halle 2",
+    "medium": "Erdgas",
+    "menge": 3402.3,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-17",
+    "halle": "Halle 2",
+    "medium": "Wasser",
+    "menge": 43.2,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-17",
+    "halle": "Halle 3",
+    "medium": "Strom",
+    "menge": 8863.7,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-17",
+    "halle": "Halle 3",
+    "medium": "Druckluft",
+    "menge": 29926.8,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-17",
+    "halle": "Halle 3",
+    "medium": "Erdgas",
+    "menge": 4147.9,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-17",
+    "halle": "Halle 3",
+    "medium": "Wasser",
+    "menge": 45.0,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-17",
+    "halle": "Härterei",
+    "medium": "Strom",
+    "menge": 19176.9,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-17",
+    "halle": "Härterei",
+    "medium": "Druckluft",
+    "menge": 80764.9,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-17",
+    "halle": "Härterei",
+    "medium": "Erdgas",
+    "menge": 11275.1,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-17",
+    "halle": "Härterei",
+    "medium": "Wasser",
+    "menge": 104.6,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-17",
+    "halle": "Verwaltung",
+    "medium": "Strom",
+    "menge": 8163.3,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-17",
+    "halle": "Verwaltung",
+    "medium": "Erdgas",
+    "menge": 3924.1,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-17",
+    "halle": "Verwaltung",
+    "medium": "Wasser",
+    "menge": 43.8,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-16",
+    "halle": "Halle 1",
+    "medium": "Strom",
+    "menge": 2855.8,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-16",
+    "halle": "Halle 1",
+    "medium": "Druckluft",
+    "menge": 9063.6,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-16",
+    "halle": "Halle 1",
+    "medium": "Erdgas",
+    "menge": 1281.1,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-16",
+    "halle": "Halle 1",
+    "medium": "Wasser",
+    "menge": 13.4,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-16",
+    "halle": "Halle 2",
+    "medium": "Strom",
+    "menge": 3076.6,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-16",
+    "halle": "Halle 2",
+    "medium": "Druckluft",
+    "menge": 10277.5,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-16",
+    "halle": "Halle 2",
+    "medium": "Erdgas",
+    "menge": 1411.3,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-16",
+    "halle": "Halle 2",
+    "medium": "Wasser",
+    "menge": 14.2,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-16",
+    "halle": "Halle 3",
+    "medium": "Strom",
+    "menge": 3135.1,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-16",
+    "halle": "Halle 3",
+    "medium": "Druckluft",
+    "menge": 11510.3,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-16",
+    "halle": "Halle 3",
+    "medium": "Erdgas",
+    "menge": 1343.8,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-16",
+    "halle": "Halle 3",
+    "medium": "Wasser",
+    "menge": 14.7,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-16",
+    "halle": "Härterei",
+    "medium": "Strom",
+    "menge": 7951.7,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-16",
+    "halle": "Härterei",
+    "medium": "Druckluft",
+    "menge": 29373.1,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-16",
+    "halle": "Härterei",
+    "medium": "Erdgas",
+    "menge": 3172.9,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-16",
+    "halle": "Härterei",
+    "medium": "Wasser",
+    "menge": 30.7,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-16",
+    "halle": "Verwaltung",
+    "medium": "Strom",
+    "menge": 2763.4,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-16",
+    "halle": "Verwaltung",
+    "medium": "Erdgas",
+    "menge": 1339.2,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-16",
+    "halle": "Verwaltung",
+    "medium": "Wasser",
+    "menge": 14.2,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-15",
+    "halle": "Halle 1",
+    "medium": "Strom",
+    "menge": 3128.1,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-15",
+    "halle": "Halle 1",
+    "medium": "Druckluft",
+    "menge": 9254.0,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-15",
+    "halle": "Halle 1",
+    "medium": "Erdgas",
+    "menge": 1560.4,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-15",
+    "halle": "Halle 1",
+    "medium": "Wasser",
+    "menge": 13.9,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-15",
+    "halle": "Halle 2",
+    "medium": "Strom",
+    "menge": 3055.5,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-15",
+    "halle": "Halle 2",
+    "medium": "Druckluft",
+    "menge": 11228.2,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-15",
+    "halle": "Halle 2",
+    "medium": "Erdgas",
+    "menge": 1217.9,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-15",
+    "halle": "Halle 2",
+    "medium": "Wasser",
+    "menge": 14.4,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-15",
+    "halle": "Halle 3",
+    "medium": "Strom",
+    "menge": 2791.8,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-15",
+    "halle": "Halle 3",
+    "medium": "Druckluft",
+    "menge": 9860.1,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-15",
+    "halle": "Halle 3",
+    "medium": "Erdgas",
+    "menge": 1397.3,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-15",
+    "halle": "Halle 3",
+    "medium": "Wasser",
+    "menge": 14.2,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-15",
+    "halle": "Härterei",
+    "medium": "Strom",
+    "menge": 7765.7,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-15",
+    "halle": "Härterei",
+    "medium": "Druckluft",
+    "menge": 24291.1,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-15",
+    "halle": "Härterei",
+    "medium": "Erdgas",
+    "menge": 3896.5,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-15",
+    "halle": "Härterei",
+    "medium": "Wasser",
+    "menge": 33.2,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-15",
+    "halle": "Verwaltung",
+    "medium": "Strom",
+    "menge": 2812.4,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-15",
+    "halle": "Verwaltung",
+    "medium": "Erdgas",
+    "menge": 1523.3,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-15",
+    "halle": "Verwaltung",
+    "medium": "Wasser",
+    "menge": 12.8,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-14",
+    "halle": "Halle 1",
+    "medium": "Strom",
+    "menge": 8092.2,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-14",
+    "halle": "Halle 1",
+    "medium": "Druckluft",
+    "menge": 27421.8,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-14",
+    "halle": "Halle 1",
+    "medium": "Erdgas",
+    "menge": 4397.9,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-14",
+    "halle": "Halle 1",
+    "medium": "Wasser",
+    "menge": 34.0,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-14",
+    "halle": "Halle 2",
+    "medium": "Strom",
+    "menge": 7796.6,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-14",
+    "halle": "Halle 2",
+    "medium": "Druckluft",
+    "menge": 32045.5,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-14",
+    "halle": "Halle 2",
+    "medium": "Erdgas",
+    "menge": 4521.0,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-14",
+    "halle": "Halle 2",
+    "medium": "Wasser",
+    "menge": 38.9,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-14",
+    "halle": "Halle 3",
+    "medium": "Strom",
+    "menge": 7735.0,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-14",
+    "halle": "Halle 3",
+    "medium": "Druckluft",
+    "menge": 25788.7,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-14",
+    "halle": "Halle 3",
+    "medium": "Erdgas",
+    "menge": 4020.8,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-14",
+    "halle": "Halle 3",
+    "medium": "Wasser",
+    "menge": 44.1,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-14",
+    "halle": "Härterei",
+    "medium": "Strom",
+    "menge": 19513.8,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-14",
+    "halle": "Härterei",
+    "medium": "Druckluft",
+    "menge": 73290.7,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-14",
+    "halle": "Härterei",
+    "medium": "Erdgas",
+    "menge": 11229.1,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-14",
+    "halle": "Härterei",
+    "medium": "Wasser",
+    "menge": 103.7,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-14",
+    "halle": "Verwaltung",
+    "medium": "Strom",
+    "menge": 8966.9,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-14",
+    "halle": "Verwaltung",
+    "medium": "Erdgas",
+    "menge": 4180.1,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-14",
+    "halle": "Verwaltung",
+    "medium": "Wasser",
+    "menge": 35.2,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-13",
+    "halle": "Halle 1",
+    "medium": "Strom",
+    "menge": 7286.6,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-13",
+    "halle": "Halle 1",
+    "medium": "Druckluft",
+    "menge": 30779.6,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-13",
+    "halle": "Halle 1",
+    "medium": "Erdgas",
+    "menge": 3728.7,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-13",
+    "halle": "Halle 1",
+    "medium": "Wasser",
+    "menge": 42.9,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-13",
+    "halle": "Halle 2",
+    "medium": "Strom",
+    "menge": 7166.2,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-13",
+    "halle": "Halle 2",
+    "medium": "Druckluft",
+    "menge": 34222.0,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-13",
+    "halle": "Halle 2",
+    "medium": "Erdgas",
+    "menge": 3989.5,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-13",
+    "halle": "Halle 2",
+    "medium": "Wasser",
+    "menge": 36.0,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-13",
+    "halle": "Halle 3",
+    "medium": "Strom",
+    "menge": 8071.7,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-13",
+    "halle": "Halle 3",
+    "medium": "Druckluft",
+    "menge": 30207.1,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-13",
+    "halle": "Halle 3",
+    "medium": "Erdgas",
+    "menge": 3636.1,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-13",
+    "halle": "Halle 3",
+    "medium": "Wasser",
+    "menge": 35.0,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-13",
+    "halle": "Härterei",
+    "medium": "Strom",
+    "menge": 19459.7,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-13",
+    "halle": "Härterei",
+    "medium": "Druckluft",
+    "menge": 74340.4,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-13",
+    "halle": "Härterei",
+    "medium": "Erdgas",
+    "menge": 8518.9,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-13",
+    "halle": "Härterei",
+    "medium": "Wasser",
+    "menge": 106.3,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-13",
+    "halle": "Verwaltung",
+    "medium": "Strom",
+    "menge": 8387.1,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-13",
+    "halle": "Verwaltung",
+    "medium": "Erdgas",
+    "menge": 3648.3,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-13",
+    "halle": "Verwaltung",
+    "medium": "Wasser",
+    "menge": 37.8,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-12",
+    "halle": "Halle 1",
+    "medium": "Strom",
+    "menge": 8196.1,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-12",
+    "halle": "Halle 1",
+    "medium": "Druckluft",
+    "menge": 30774.2,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-12",
+    "halle": "Halle 1",
+    "medium": "Erdgas",
+    "menge": 4400.6,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-12",
+    "halle": "Halle 1",
+    "medium": "Wasser",
+    "menge": 36.0,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-12",
+    "halle": "Halle 2",
+    "medium": "Strom",
+    "menge": 8810.1,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-12",
+    "halle": "Halle 2",
+    "medium": "Druckluft",
+    "menge": 27200.2,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-12",
+    "halle": "Halle 2",
+    "medium": "Erdgas",
+    "menge": 3714.8,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-12",
+    "halle": "Halle 2",
+    "medium": "Wasser",
+    "menge": 35.7,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-12",
+    "halle": "Halle 3",
+    "medium": "Strom",
+    "menge": 7445.9,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-12",
+    "halle": "Halle 3",
+    "medium": "Druckluft",
+    "menge": 32482.7,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-12",
+    "halle": "Halle 3",
+    "medium": "Erdgas",
+    "menge": 3642.8,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-12",
+    "halle": "Halle 3",
+    "medium": "Wasser",
+    "menge": 38.7,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-12",
+    "halle": "Härterei",
+    "medium": "Strom",
+    "menge": 21262.4,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-12",
+    "halle": "Härterei",
+    "medium": "Druckluft",
+    "menge": 78122.5,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-12",
+    "halle": "Härterei",
+    "medium": "Erdgas",
+    "menge": 11374.5,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-12",
+    "halle": "Härterei",
+    "medium": "Wasser",
+    "menge": 95.8,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-12",
+    "halle": "Verwaltung",
+    "medium": "Strom",
+    "menge": 7240.0,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-12",
+    "halle": "Verwaltung",
+    "medium": "Erdgas",
+    "menge": 3600.6,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-12",
+    "halle": "Verwaltung",
+    "medium": "Wasser",
+    "menge": 43.0,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-11",
+    "halle": "Halle 1",
+    "medium": "Strom",
+    "menge": 8811.5,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-11",
+    "halle": "Halle 1",
+    "medium": "Druckluft",
+    "menge": 29339.5,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-11",
+    "halle": "Halle 1",
+    "medium": "Erdgas",
+    "menge": 4096.8,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-11",
+    "halle": "Halle 1",
+    "medium": "Wasser",
+    "menge": 42.7,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-11",
+    "halle": "Halle 2",
+    "medium": "Strom",
+    "menge": 9038.9,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-11",
+    "halle": "Halle 2",
+    "medium": "Druckluft",
+    "menge": 31107.1,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-11",
+    "halle": "Halle 2",
+    "medium": "Erdgas",
+    "menge": 3905.0,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-11",
+    "halle": "Halle 2",
+    "medium": "Wasser",
+    "menge": 34.8,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-11",
+    "halle": "Halle 3",
+    "medium": "Strom",
+    "menge": 7275.7,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-11",
+    "halle": "Halle 3",
+    "medium": "Druckluft",
+    "menge": 32909.8,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-11",
+    "halle": "Halle 3",
+    "medium": "Erdgas",
+    "menge": 3945.9,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-11",
+    "halle": "Halle 3",
+    "medium": "Wasser",
+    "menge": 34.9,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-11",
+    "halle": "Härterei",
+    "medium": "Strom",
+    "menge": 21668.2,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-11",
+    "halle": "Härterei",
+    "medium": "Druckluft",
+    "menge": 68598.6,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-11",
+    "halle": "Härterei",
+    "medium": "Erdgas",
+    "menge": 10054.2,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-11",
+    "halle": "Härterei",
+    "medium": "Wasser",
+    "menge": 91.6,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-11",
+    "halle": "Verwaltung",
+    "medium": "Strom",
+    "menge": 7998.8,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-11",
+    "halle": "Verwaltung",
+    "medium": "Erdgas",
+    "menge": 4015.5,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-11",
+    "halle": "Verwaltung",
+    "medium": "Wasser",
+    "menge": 43.5,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-10",
+    "halle": "Halle 1",
+    "medium": "Strom",
+    "menge": 8921.3,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-10",
+    "halle": "Halle 1",
+    "medium": "Druckluft",
+    "menge": 29411.0,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-10",
+    "halle": "Halle 1",
+    "medium": "Erdgas",
+    "menge": 3440.7,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-10",
+    "halle": "Halle 1",
+    "medium": "Wasser",
+    "menge": 40.2,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-10",
+    "halle": "Halle 2",
+    "medium": "Strom",
+    "menge": 8163.5,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-10",
+    "halle": "Halle 2",
+    "medium": "Druckluft",
+    "menge": 32924.6,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-10",
+    "halle": "Halle 2",
+    "medium": "Erdgas",
+    "menge": 4369.7,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-10",
+    "halle": "Halle 2",
+    "medium": "Wasser",
+    "menge": 39.1,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-10",
+    "halle": "Halle 3",
+    "medium": "Strom",
+    "menge": 8642.4,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-10",
+    "halle": "Halle 3",
+    "medium": "Druckluft",
+    "menge": 30136.6,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-10",
+    "halle": "Halle 3",
+    "medium": "Erdgas",
+    "menge": 3955.2,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-10",
+    "halle": "Halle 3",
+    "medium": "Wasser",
+    "menge": 38.9,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-10",
+    "halle": "Härterei",
+    "medium": "Strom",
+    "menge": 18345.6,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-10",
+    "halle": "Härterei",
+    "medium": "Druckluft",
+    "menge": 76235.7,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-10",
+    "halle": "Härterei",
+    "medium": "Erdgas",
+    "menge": 10380.6,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-10",
+    "halle": "Härterei",
+    "medium": "Wasser",
+    "menge": 100.8,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-10",
+    "halle": "Verwaltung",
+    "medium": "Strom",
+    "menge": 7779.3,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-10",
+    "halle": "Verwaltung",
+    "medium": "Erdgas",
+    "menge": 3869.9,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-10",
+    "halle": "Verwaltung",
+    "medium": "Wasser",
+    "menge": 35.1,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-9",
+    "halle": "Halle 1",
+    "medium": "Strom",
+    "menge": 2800.8,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-9",
+    "halle": "Halle 1",
+    "medium": "Druckluft",
+    "menge": 9341.7,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-9",
+    "halle": "Halle 1",
+    "medium": "Erdgas",
+    "menge": 1280.3,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-9",
+    "halle": "Halle 1",
+    "medium": "Wasser",
+    "menge": 12.2,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-9",
+    "halle": "Halle 2",
+    "medium": "Strom",
+    "menge": 3012.9,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-9",
+    "halle": "Halle 2",
+    "medium": "Druckluft",
+    "menge": 10615.8,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-9",
+    "halle": "Halle 2",
+    "medium": "Erdgas",
+    "menge": 1225.0,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-9",
+    "halle": "Halle 2",
+    "medium": "Wasser",
+    "menge": 12.7,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-9",
+    "halle": "Halle 3",
+    "medium": "Strom",
+    "menge": 3167.1,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-9",
+    "halle": "Halle 3",
+    "medium": "Druckluft",
+    "menge": 9165.0,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-9",
+    "halle": "Halle 3",
+    "medium": "Erdgas",
+    "menge": 1196.7,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-9",
+    "halle": "Halle 3",
+    "medium": "Wasser",
+    "menge": 14.6,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-9",
+    "halle": "Härterei",
+    "medium": "Strom",
+    "menge": 7067.0,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-9",
+    "halle": "Härterei",
+    "medium": "Druckluft",
+    "menge": 26748.9,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-9",
+    "halle": "Härterei",
+    "medium": "Erdgas",
+    "menge": 3952.7,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-9",
+    "halle": "Härterei",
+    "medium": "Wasser",
+    "menge": 30.5,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-9",
+    "halle": "Verwaltung",
+    "medium": "Strom",
+    "menge": 2668.3,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-9",
+    "halle": "Verwaltung",
+    "medium": "Erdgas",
+    "menge": 1212.2,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-9",
+    "halle": "Verwaltung",
+    "medium": "Wasser",
+    "menge": 13.8,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-8",
+    "halle": "Halle 1",
+    "medium": "Strom",
+    "menge": 3100.1,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-8",
+    "halle": "Halle 1",
+    "medium": "Druckluft",
+    "menge": 8943.7,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-8",
+    "halle": "Halle 1",
+    "medium": "Erdgas",
+    "menge": 1263.9,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-8",
+    "halle": "Halle 1",
+    "medium": "Wasser",
+    "menge": 14.1,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-8",
+    "halle": "Halle 2",
+    "medium": "Strom",
+    "menge": 3198.6,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-8",
+    "halle": "Halle 2",
+    "medium": "Druckluft",
+    "menge": 10711.1,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-8",
+    "halle": "Halle 2",
+    "medium": "Erdgas",
+    "menge": 1365.5,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-8",
+    "halle": "Halle 2",
+    "medium": "Wasser",
+    "menge": 13.3,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-8",
+    "halle": "Halle 3",
+    "medium": "Strom",
+    "menge": 2785.6,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-8",
+    "halle": "Halle 3",
+    "medium": "Druckluft",
+    "menge": 9765.6,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-8",
+    "halle": "Halle 3",
+    "medium": "Erdgas",
+    "menge": 1403.0,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-8",
+    "halle": "Halle 3",
+    "medium": "Wasser",
+    "menge": 14.6,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-8",
+    "halle": "Härterei",
+    "medium": "Strom",
+    "menge": 7821.7,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-8",
+    "halle": "Härterei",
+    "medium": "Druckluft",
+    "menge": 24238.7,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-8",
+    "halle": "Härterei",
+    "medium": "Erdgas",
+    "menge": 3558.5,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-8",
+    "halle": "Härterei",
+    "medium": "Wasser",
+    "menge": 39.8,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-8",
+    "halle": "Verwaltung",
+    "medium": "Strom",
+    "menge": 2864.3,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-8",
+    "halle": "Verwaltung",
+    "medium": "Erdgas",
+    "menge": 1481.6,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-8",
+    "halle": "Verwaltung",
+    "medium": "Wasser",
+    "menge": 13.2,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-7",
+    "halle": "Halle 1",
+    "medium": "Strom",
+    "menge": 7709.3,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-7",
+    "halle": "Halle 1",
+    "medium": "Druckluft",
+    "menge": 33306.5,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-7",
+    "halle": "Halle 1",
+    "medium": "Erdgas",
+    "menge": 3861.5,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-7",
+    "halle": "Halle 1",
+    "medium": "Wasser",
+    "menge": 45.9,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-7",
+    "halle": "Halle 2",
+    "medium": "Strom",
+    "menge": 8678.9,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-7",
+    "halle": "Halle 2",
+    "medium": "Druckluft",
+    "menge": 33923.1,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-7",
+    "halle": "Halle 2",
+    "medium": "Erdgas",
+    "menge": 3715.2,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-7",
+    "halle": "Halle 2",
+    "medium": "Wasser",
+    "menge": 35.8,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-7",
+    "halle": "Halle 3",
+    "medium": "Strom",
+    "menge": 8442.9,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-7",
+    "halle": "Halle 3",
+    "medium": "Druckluft",
+    "menge": 33431.0,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-7",
+    "halle": "Halle 3",
+    "medium": "Erdgas",
+    "menge": 4307.7,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-7",
+    "halle": "Halle 3",
+    "medium": "Wasser",
+    "menge": 38.4,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-7",
+    "halle": "Härterei",
+    "medium": "Strom",
+    "menge": 17577.3,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-7",
+    "halle": "Härterei",
+    "medium": "Druckluft",
+    "menge": 76030.3,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-7",
+    "halle": "Härterei",
+    "medium": "Erdgas",
+    "menge": 8675.0,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-7",
+    "halle": "Härterei",
+    "medium": "Wasser",
+    "menge": 98.0,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-7",
+    "halle": "Verwaltung",
+    "medium": "Strom",
+    "menge": 6880.8,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-7",
+    "halle": "Verwaltung",
+    "medium": "Erdgas",
+    "menge": 4175.7,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-7",
+    "halle": "Verwaltung",
+    "medium": "Wasser",
+    "menge": 37.9,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-6",
+    "halle": "Halle 1",
+    "medium": "Strom",
+    "menge": 7243.0,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-6",
+    "halle": "Halle 1",
+    "medium": "Druckluft",
+    "menge": 25952.6,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-6",
+    "halle": "Halle 1",
+    "medium": "Erdgas",
+    "menge": 4361.3,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-6",
+    "halle": "Halle 1",
+    "medium": "Wasser",
+    "menge": 42.0,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-6",
+    "halle": "Halle 2",
+    "medium": "Strom",
+    "menge": 7601.8,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-6",
+    "halle": "Halle 2",
+    "medium": "Druckluft",
+    "menge": 30555.3,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-6",
+    "halle": "Halle 2",
+    "medium": "Erdgas",
+    "menge": 3487.5,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-6",
+    "halle": "Halle 2",
+    "medium": "Wasser",
+    "menge": 35.9,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-6",
+    "halle": "Halle 3",
+    "medium": "Strom",
+    "menge": 8919.7,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-6",
+    "halle": "Halle 3",
+    "medium": "Druckluft",
+    "menge": 28361.7,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-6",
+    "halle": "Halle 3",
+    "medium": "Erdgas",
+    "menge": 4304.1,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-6",
+    "halle": "Halle 3",
+    "medium": "Wasser",
+    "menge": 39.7,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-6",
+    "halle": "Härterei",
+    "medium": "Strom",
+    "menge": 17831.7,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-6",
+    "halle": "Härterei",
+    "medium": "Druckluft",
+    "menge": 65494.8,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-6",
+    "halle": "Härterei",
+    "medium": "Erdgas",
+    "menge": 8724.1,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-6",
+    "halle": "Härterei",
+    "medium": "Wasser",
+    "menge": 109.8,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-6",
+    "halle": "Verwaltung",
+    "medium": "Strom",
+    "menge": 8458.9,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-6",
+    "halle": "Verwaltung",
+    "medium": "Erdgas",
+    "menge": 4007.8,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-6",
+    "halle": "Verwaltung",
+    "medium": "Wasser",
+    "menge": 37.7,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-5",
+    "halle": "Halle 1",
+    "medium": "Strom",
+    "menge": 8101.6,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-5",
+    "halle": "Halle 1",
+    "medium": "Druckluft",
+    "menge": 34178.2,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-5",
+    "halle": "Halle 1",
+    "medium": "Erdgas",
+    "menge": 4036.3,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-5",
+    "halle": "Halle 1",
+    "medium": "Wasser",
+    "menge": 45.7,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-5",
+    "halle": "Halle 2",
+    "medium": "Strom",
+    "menge": 8495.5,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-5",
+    "halle": "Halle 2",
+    "medium": "Druckluft",
+    "menge": 33023.2,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-5",
+    "halle": "Halle 2",
+    "medium": "Erdgas",
+    "menge": 4402.6,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-5",
+    "halle": "Halle 2",
+    "medium": "Wasser",
+    "menge": 38.3,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-5",
+    "halle": "Halle 3",
+    "medium": "Strom",
+    "menge": 7842.8,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-5",
+    "halle": "Halle 3",
+    "medium": "Druckluft",
+    "menge": 26768.9,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-5",
+    "halle": "Halle 3",
+    "medium": "Erdgas",
+    "menge": 3735.5,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-5",
+    "halle": "Halle 3",
+    "medium": "Wasser",
+    "menge": 36.3,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-5",
+    "halle": "Härterei",
+    "medium": "Strom",
+    "menge": 21682.9,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-5",
+    "halle": "Härterei",
+    "medium": "Druckluft",
+    "menge": 77717.1,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-5",
+    "halle": "Härterei",
+    "medium": "Erdgas",
+    "menge": 10323.2,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-5",
+    "halle": "Härterei",
+    "medium": "Wasser",
+    "menge": 101.3,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-5",
+    "halle": "Verwaltung",
+    "medium": "Strom",
+    "menge": 7970.7,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-5",
+    "halle": "Verwaltung",
+    "medium": "Erdgas",
+    "menge": 4510.8,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-5",
+    "halle": "Verwaltung",
+    "medium": "Wasser",
+    "menge": 36.2,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-4",
+    "halle": "Halle 1",
+    "medium": "Strom",
+    "menge": 7763.0,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-4",
+    "halle": "Halle 1",
+    "medium": "Druckluft",
+    "menge": 33097.8,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-4",
+    "halle": "Halle 1",
+    "medium": "Erdgas",
+    "menge": 3548.1,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-4",
+    "halle": "Halle 1",
+    "medium": "Wasser",
+    "menge": 40.1,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-4",
+    "halle": "Halle 2",
+    "medium": "Strom",
+    "menge": 7610.5,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-4",
+    "halle": "Halle 2",
+    "medium": "Druckluft",
+    "menge": 29063.6,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-4",
+    "halle": "Halle 2",
+    "medium": "Erdgas",
+    "menge": 4099.2,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-4",
+    "halle": "Halle 2",
+    "medium": "Wasser",
+    "menge": 39.1,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-4",
+    "halle": "Halle 3",
+    "medium": "Strom",
+    "menge": 9073.8,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-4",
+    "halle": "Halle 3",
+    "medium": "Druckluft",
+    "menge": 26640.1,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-4",
+    "halle": "Halle 3",
+    "medium": "Erdgas",
+    "menge": 3655.8,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-4",
+    "halle": "Halle 3",
+    "medium": "Wasser",
+    "menge": 45.5,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-4",
+    "halle": "Härterei",
+    "medium": "Strom",
+    "menge": 22765.5,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-4",
+    "halle": "Härterei",
+    "medium": "Druckluft",
+    "menge": 71484.8,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-4",
+    "halle": "Härterei",
+    "medium": "Erdgas",
+    "menge": 8536.8,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-4",
+    "halle": "Härterei",
+    "medium": "Wasser",
+    "menge": 113.2,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-4",
+    "halle": "Verwaltung",
+    "medium": "Strom",
+    "menge": 8557.9,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-4",
+    "halle": "Verwaltung",
+    "medium": "Erdgas",
+    "menge": 4007.6,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-4",
+    "halle": "Verwaltung",
+    "medium": "Wasser",
+    "menge": 43.4,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-3",
+    "halle": "Halle 1",
+    "medium": "Strom",
+    "menge": 7437.9,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-3",
+    "halle": "Halle 1",
+    "medium": "Druckluft",
+    "menge": 27938.3,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-3",
+    "halle": "Halle 1",
+    "medium": "Erdgas",
+    "menge": 3454.4,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-3",
+    "halle": "Halle 1",
+    "medium": "Wasser",
+    "menge": 45.7,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-3",
+    "halle": "Halle 2",
+    "medium": "Strom",
+    "menge": 7596.1,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-3",
+    "halle": "Halle 2",
+    "medium": "Druckluft",
+    "menge": 26747.5,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-3",
+    "halle": "Halle 2",
+    "medium": "Erdgas",
+    "menge": 3818.2,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-3",
+    "halle": "Halle 2",
+    "medium": "Wasser",
+    "menge": 41.1,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-3",
+    "halle": "Halle 3",
+    "medium": "Strom",
+    "menge": 8741.7,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-3",
+    "halle": "Halle 3",
+    "medium": "Druckluft",
+    "menge": 32450.2,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-3",
+    "halle": "Halle 3",
+    "medium": "Erdgas",
+    "menge": 3506.3,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-3",
+    "halle": "Halle 3",
+    "medium": "Wasser",
+    "menge": 40.5,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-3",
+    "halle": "Härterei",
+    "medium": "Strom",
+    "menge": 18190.5,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-3",
+    "halle": "Härterei",
+    "medium": "Druckluft",
+    "menge": 84199.3,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-3",
+    "halle": "Härterei",
+    "medium": "Erdgas",
+    "menge": 9990.6,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-3",
+    "halle": "Härterei",
+    "medium": "Wasser",
+    "menge": 88.0,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-3",
+    "halle": "Verwaltung",
+    "medium": "Strom",
+    "menge": 8685.6,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-3",
+    "halle": "Verwaltung",
+    "medium": "Erdgas",
+    "menge": 3473.2,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-3",
+    "halle": "Verwaltung",
+    "medium": "Wasser",
+    "menge": 34.9,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-2",
+    "halle": "Halle 1",
+    "medium": "Strom",
+    "menge": 2587.5,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-2",
+    "halle": "Halle 1",
+    "medium": "Druckluft",
+    "menge": 9776.9,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-2",
+    "halle": "Halle 1",
+    "medium": "Erdgas",
+    "menge": 1237.0,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-2",
+    "halle": "Halle 1",
+    "medium": "Wasser",
+    "menge": 14.8,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-2",
+    "halle": "Halle 2",
+    "medium": "Strom",
+    "menge": 2896.5,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-2",
+    "halle": "Halle 2",
+    "medium": "Druckluft",
+    "menge": 9263.3,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-2",
+    "halle": "Halle 2",
+    "medium": "Erdgas",
+    "menge": 1428.5,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-2",
+    "halle": "Halle 2",
+    "medium": "Wasser",
+    "menge": 15.4,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-2",
+    "halle": "Halle 3",
+    "medium": "Strom",
+    "menge": 2699.1,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-2",
+    "halle": "Halle 3",
+    "medium": "Druckluft",
+    "menge": 11296.9,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-2",
+    "halle": "Halle 3",
+    "medium": "Erdgas",
+    "menge": 1553.8,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-2",
+    "halle": "Halle 3",
+    "medium": "Wasser",
+    "menge": 15.8,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-2",
+    "halle": "Härterei",
+    "medium": "Strom",
+    "menge": 7831.1,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-2",
+    "halle": "Härterei",
+    "medium": "Druckluft",
+    "menge": 25462.8,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-2",
+    "halle": "Härterei",
+    "medium": "Erdgas",
+    "menge": 3366.2,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-2",
+    "halle": "Härterei",
+    "medium": "Wasser",
+    "menge": 31.9,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-2",
+    "halle": "Verwaltung",
+    "medium": "Strom",
+    "menge": 2412.8,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-2",
+    "halle": "Verwaltung",
+    "medium": "Erdgas",
+    "menge": 1322.6,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-2",
+    "halle": "Verwaltung",
+    "medium": "Wasser",
+    "menge": 14.1,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-1",
+    "halle": "Halle 1",
+    "medium": "Strom",
+    "menge": 2518.5,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-1",
+    "halle": "Halle 1",
+    "medium": "Druckluft",
+    "menge": 11505.4,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-1",
+    "halle": "Halle 1",
+    "medium": "Erdgas",
+    "menge": 1298.4,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-1",
+    "halle": "Halle 1",
+    "medium": "Wasser",
+    "menge": 13.5,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-1",
+    "halle": "Halle 2",
+    "medium": "Strom",
+    "menge": 3053.2,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-1",
+    "halle": "Halle 2",
+    "medium": "Druckluft",
+    "menge": 10776.1,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-1",
+    "halle": "Halle 2",
+    "medium": "Erdgas",
+    "menge": 1331.7,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-1",
+    "halle": "Halle 2",
+    "medium": "Wasser",
+    "menge": 15.8,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-1",
+    "halle": "Halle 3",
+    "medium": "Strom",
+    "menge": 2576.0,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-1",
+    "halle": "Halle 3",
+    "medium": "Druckluft",
+    "menge": 12058.7,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-1",
+    "halle": "Halle 3",
+    "medium": "Erdgas",
+    "menge": 1410.8,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-1",
+    "halle": "Halle 3",
+    "medium": "Wasser",
+    "menge": 13.1,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-1",
+    "halle": "Härterei",
+    "medium": "Strom",
+    "menge": 7932.1,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-1",
+    "halle": "Härterei",
+    "medium": "Druckluft",
+    "menge": 28957.6,
+    "preis": 0.025
+   },
+   {
+    "datum": "@-1",
+    "halle": "Härterei",
+    "medium": "Erdgas",
+    "menge": 3424.2,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-1",
+    "halle": "Härterei",
+    "medium": "Wasser",
+    "menge": 32.6,
+    "preis": 3.2
+   },
+   {
+    "datum": "@-1",
+    "halle": "Verwaltung",
+    "medium": "Strom",
+    "menge": 2895.0,
+    "preis": 0.21
+   },
+   {
+    "datum": "@-1",
+    "halle": "Verwaltung",
+    "medium": "Erdgas",
+    "menge": 1567.2,
+    "preis": 0.08
+   },
+   {
+    "datum": "@-1",
+    "halle": "Verwaltung",
+    "medium": "Wasser",
+    "menge": 16.0,
+    "preis": 3.2
+   },
+   {
+    "datum": "@+0",
+    "halle": "Halle 1",
+    "medium": "Strom",
+    "menge": 8090.4,
+    "preis": 0.21
+   },
+   {
+    "datum": "@+0",
+    "halle": "Halle 1",
+    "medium": "Druckluft",
+    "menge": 30709.4,
+    "preis": 0.025
+   },
+   {
+    "datum": "@+0",
+    "halle": "Halle 1",
+    "medium": "Erdgas",
+    "menge": 4067.7,
+    "preis": 0.08
+   },
+   {
+    "datum": "@+0",
+    "halle": "Halle 1",
+    "medium": "Wasser",
+    "menge": 45.5,
+    "preis": 3.2
+   },
+   {
+    "datum": "@+0",
+    "halle": "Halle 2",
+    "medium": "Strom",
+    "menge": 8909.9,
+    "preis": 0.21
+   },
+   {
+    "datum": "@+0",
+    "halle": "Halle 2",
+    "medium": "Druckluft",
+    "menge": 30741.6,
+    "preis": 0.025
+   },
+   {
+    "datum": "@+0",
+    "halle": "Halle 2",
+    "medium": "Erdgas",
+    "menge": 4453.5,
+    "preis": 0.08
+   },
+   {
+    "datum": "@+0",
+    "halle": "Halle 2",
+    "medium": "Wasser",
+    "menge": 36.3,
+    "preis": 3.2
+   },
+   {
+    "datum": "@+0",
+    "halle": "Halle 3",
+    "medium": "Strom",
+    "menge": 7600.7,
+    "preis": 0.21
+   },
+   {
+    "datum": "@+0",
+    "halle": "Halle 3",
+    "medium": "Druckluft",
+    "menge": 34490.7,
+    "preis": 0.025
+   },
+   {
+    "datum": "@+0",
+    "halle": "Halle 3",
+    "medium": "Erdgas",
+    "menge": 3606.7,
+    "preis": 0.08
+   },
+   {
+    "datum": "@+0",
+    "halle": "Halle 3",
+    "medium": "Wasser",
+    "menge": 36.1,
+    "preis": 3.2
+   },
+   {
+    "datum": "@+0",
+    "halle": "Härterei",
+    "medium": "Strom",
+    "menge": 21667.9,
+    "preis": 0.21
+   },
+   {
+    "datum": "@+0",
+    "halle": "Härterei",
+    "medium": "Druckluft",
+    "menge": 73351.9,
+    "preis": 0.025
+   },
+   {
+    "datum": "@+0",
+    "halle": "Härterei",
+    "medium": "Erdgas",
+    "menge": 8998.7,
+    "preis": 0.08
+   },
+   {
+    "datum": "@+0",
+    "halle": "Härterei",
+    "medium": "Wasser",
+    "menge": 93.9,
+    "preis": 3.2
+   },
+   {
+    "datum": "@+0",
+    "halle": "Verwaltung",
+    "medium": "Strom",
+    "menge": 8850.7,
+    "preis": 0.21
+   },
+   {
+    "datum": "@+0",
+    "halle": "Verwaltung",
+    "medium": "Erdgas",
+    "menge": 4469.3,
+    "preis": 0.08
+   },
+   {
+    "datum": "@+0",
+    "halle": "Verwaltung",
+    "medium": "Wasser",
+    "menge": 35.7,
+    "preis": 3.2
+   }
+  ],
+  "massnahmen": [
+   {
+    "name": "Druckluft-Leckagen beheben",
+    "prozent": 15,
+    "medium": "Druckluft"
+   },
+   {
+    "name": "Grundlast Wochenende abschalten",
+    "prozent": 8,
+    "medium": "Strom"
+   },
+   {
+    "name": "Wärmerückgewinnung Härterei",
+    "prozent": 12,
+    "medium": "Erdgas"
+   },
+   {
+    "name": "Kühlwasser im Kreislauf",
+    "prozent": 20,
+    "medium": "Wasser"
+   }
+  ]
+ },
+ "nachbauten": [
+  {
+   "baustein": "kennzahl_berechnet",
+   "ersatz": "Grundlast Wochenende und CO₂ per Skript (Wochentag-Bedingung, Umrechnungsfaktor).",
+   "geloest": false
+  },
+  {
+   "baustein": "diagramm_summe",
+   "ersatz": "Gestapelte Kosten je Halle nur per Spec-Chart.",
+   "geloest": false
+  }
+ ]
+}

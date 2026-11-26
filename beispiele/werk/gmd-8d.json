@@ -1,0 +1,827 @@
+{
+ "slug": "gmd-8d",
+ "name": "8D-Reklamationen",
+ "icon": "🧾",
+ "description": "Kundenreklamationen nach 8D: Status je Disziplin, Maßnahmen, Kosten, Alter",
+ "rolle": "Qualitätsingenieur",
+ "komplexitaet": "komplex",
+ "entities": [
+  {
+   "name": "Reklamationen",
+   "slug": "reklamationen",
+   "fields": [
+    {
+     "label": "Nummer",
+     "key": "nr",
+     "type": "text",
+     "required": true
+    },
+    {
+     "label": "Kunde",
+     "key": "kunde",
+     "type": "choice",
+     "choices": [
+      "OEM Nord",
+      "OEM Süd",
+      "OEM Premium",
+      "Nutzfahrzeug AG",
+      "Ersatzteilgeschäft"
+     ]
+    },
+    {
+     "label": "Teil",
+     "key": "teil",
+     "type": "text"
+    },
+    {
+     "label": "Fehlerbild",
+     "key": "fehlerbild",
+     "type": "text"
+    },
+    {
+     "label": "Eingang",
+     "key": "eingang",
+     "type": "date"
+    },
+    {
+     "label": "8D-Status",
+     "key": "status",
+     "type": "choice",
+     "choices": [
+      "D1 Team",
+      "D2 Problem",
+      "D3 Sofortmaßnahme",
+      "D4 Ursache",
+      "D5 Abstellmaßnahme",
+      "D6 Umsetzung",
+      "D7 Vorbeugung",
+      "D8 Abschluss"
+     ]
+    },
+    {
+     "label": "Verantwortlich",
+     "key": "verantwortlich",
+     "type": "text"
+    },
+    {
+     "label": "Kosten (€)",
+     "key": "kosten",
+     "type": "decimal"
+    },
+    {
+     "label": "Betroffene Teile",
+     "key": "anzahl",
+     "type": "number"
+    },
+    {
+     "label": "Alter (Tage)",
+     "key": "alter",
+     "type": "number",
+     "show_in_form": false
+    }
+   ]
+  },
+  {
+   "name": "Maßnahmen",
+   "slug": "massnahmen",
+   "fields": [
+    {
+     "label": "Reklamation",
+     "key": "reklamation",
+     "type": "reference",
+     "reference": "reklamationen",
+     "required": true
+    },
+    {
+     "label": "Maßnahme",
+     "key": "massnahme",
+     "type": "text",
+     "required": true
+    },
+    {
+     "label": "Typ",
+     "key": "typ",
+     "type": "choice",
+     "choices": [
+      "Sofortmaßnahme",
+      "Abstellmaßnahme",
+      "Vorbeugemaßnahme"
+     ]
+    },
+    {
+     "label": "Verantwortlich",
+     "key": "verantwortlich",
+     "type": "text"
+    },
+    {
+     "label": "Fällig",
+     "key": "faellig",
+     "type": "date"
+    },
+    {
+     "label": "Erledigt",
+     "key": "erledigt",
+     "type": "bool"
+    }
+   ]
+  }
+ ],
+ "pages": [
+  {
+   "title": "Übersicht",
+   "slug": "uebersicht",
+   "layout": [
+    {
+     "type": "heading",
+     "width": 12,
+     "props": {
+      "text": "8D-Reklamationen",
+      "level": "1"
+     }
+    },
+    {
+     "type": "filter",
+     "width": 12,
+     "props": {
+      "entity": "reklamationen",
+      "field": "kunde",
+      "field2": "status",
+      "field3": "teil"
+     }
+    },
+    {
+     "type": "stat",
+     "width": 3,
+     "props": {
+      "label": "Reklamationen",
+      "entity": "reklamationen"
+     }
+    },
+    {
+     "type": "stat",
+     "width": 3,
+     "props": {
+      "label": "Kosten gesamt",
+      "entity": "reklamationen",
+      "aggregate": "sum",
+      "field": "kosten",
+      "unit": "€"
+     }
+    },
+    {
+     "type": "stat",
+     "width": 3,
+     "props": {
+      "label": "Offen (vor D8)",
+      "entity": "reklamationen",
+      "where": "8D-Status != D8 Abschluss"
+     }
+    },
+    {
+     "type": "stat",
+     "width": 3,
+     "props": {
+      "label": "Älter als 60 Tage, offen",
+      "entity": "reklamationen",
+      "where": "8D-Status != D8 Abschluss\nEingang < heute-60",
+      "warn_at": "1",
+      "alarm_at": "4"
+     }
+    },
+    {
+     "type": "kanban",
+     "width": 12,
+     "props": {
+      "title": "Nach 8D-Status",
+      "entity": "reklamationen",
+      "field": "status",
+      "detail": "kunde",
+      "limit": 6
+     }
+    },
+    {
+     "type": "table",
+     "width": 12,
+     "props": {
+      "entity": "reklamationen",
+      "searchable": true
+     }
+    }
+   ]
+  },
+  {
+   "title": "Reklamation",
+   "slug": "reklamation",
+   "layout": [
+    {
+     "type": "stepper",
+     "width": 12,
+     "props": {
+      "title": "8D-Fortschritt",
+      "entity": "reklamationen",
+      "field": "status"
+     }
+    },
+    {
+     "type": "detail",
+     "width": 6,
+     "props": {
+      "entity": "reklamationen"
+     }
+    },
+    {
+     "type": "related_list",
+     "width": 6,
+     "props": {
+      "title": "Maßnahmen",
+      "entity": "massnahmen",
+      "ref_field": "reklamation"
+     }
+    }
+   ],
+   "show_in_nav": false
+  },
+  {
+   "title": "Auswertung",
+   "slug": "auswertung",
+   "layout": [
+    {
+     "type": "donut",
+     "width": 6,
+     "props": {
+      "label": "Nach Kunde",
+      "entity": "reklamationen",
+      "field": "kunde"
+     }
+    },
+    {
+     "type": "chart",
+     "width": 6,
+     "props": {
+      "label": "Nach Teil (Anzahl)",
+      "entity": "reklamationen",
+      "field": "teil"
+     }
+    },
+    {
+     "type": "chart",
+     "width": 6,
+     "props": {
+      "label": "Kosten je Kunde (€)",
+      "entity": "reklamationen",
+      "field": "kunde",
+      "agg": "sum",
+      "value_field": "kosten",
+      "pareto": true
+     }
+    },
+    {
+     "type": "pivot",
+     "width": 6,
+     "props": {
+      "title": "Kosten Kunde × Teil",
+      "entity": "reklamationen",
+      "row_field": "kunde",
+      "col_field": "teil",
+      "agg": "sum",
+      "value_field": "kosten"
+     }
+    },
+    {
+     "type": "line",
+     "width": 12,
+     "props": {
+      "label": "Eingänge pro Woche",
+      "entity": "reklamationen",
+      "date_field": "eingang",
+      "period": "week",
+      "count": 13
+     }
+    }
+   ]
+  },
+  {
+   "title": "Maßnahmen",
+   "slug": "massnahmen",
+   "layout": [
+    {
+     "type": "filter",
+     "width": 12,
+     "props": {
+      "entity": "massnahmen",
+      "field": "typ",
+      "field2": "erledigt"
+     }
+    },
+    {
+     "type": "checklist",
+     "width": 12,
+     "props": {
+      "entity": "massnahmen",
+      "field": "erledigt",
+      "label_field": "massnahme",
+      "detail": "reklamation"
+     }
+    },
+    {
+     "type": "form",
+     "width": 12,
+     "props": {
+      "entity": "massnahmen",
+      "submit_label": "Maßnahme anlegen"
+     }
+    }
+   ]
+  }
+ ],
+ "scripts": [
+  {
+   "name": "Alter berechnen",
+   "language": "python",
+   "trigger": "save",
+   "code": "import datetime\nif record.get(\"eingang\"):\n    alter = (datetime.date.today() - datetime.date.fromisoformat(record[\"eingang\"])).days\n    record[\"alter\"] = alter\n",
+   "entity": "reklamationen"
+  }
+ ],
+ "beispieldaten": {
+  "reklamationen": [
+   {
+    "nr": "Q-2026-100",
+    "kunde": "Ersatzteilgeschäft",
+    "teil": "Zahnstange 7.8",
+    "fehlerbild": "Undichtigkeit",
+    "eingang": "@-65",
+    "status": "D2 Problem",
+    "verantwortlich": "Gül Ulrich",
+    "kosten": 19552.78,
+    "anzahl": 114
+   },
+   {
+    "nr": "Q-2026-101",
+    "kunde": "Ersatzteilgeschäft",
+    "teil": "Ventilkolben",
+    "fehlerbild": "Korrosion",
+    "eingang": "@-7",
+    "status": "D4 Ursache",
+    "verantwortlich": "Heike Traub",
+    "kosten": 40056.05,
+    "anzahl": 384
+   },
+   {
+    "nr": "Q-2026-102",
+    "kunde": "Ersatzteilgeschäft",
+    "teil": "Servoeinheit Gen4",
+    "fehlerbild": "Fehlercode Steuergerät",
+    "eingang": "@-10",
+    "status": "D8 Abschluss",
+    "verantwortlich": "Gül Bauer",
+    "kosten": 10689.16,
+    "anzahl": 236
+   },
+   {
+    "nr": "Q-2026-103",
+    "kunde": "OEM Nord",
+    "teil": "Lenkgetriebe EPSapa",
+    "fehlerbild": "Undichtigkeit",
+    "eingang": "@-77",
+    "status": "D3 Sofortmaßnahme",
+    "verantwortlich": "Jana Wolf",
+    "kosten": 25918.65,
+    "anzahl": 339
+   },
+   {
+    "nr": "Q-2026-104",
+    "kunde": "OEM Süd",
+    "teil": "Ventilkolben",
+    "fehlerbild": "Undichtigkeit",
+    "eingang": "@-54",
+    "status": "D1 Team",
+    "verantwortlich": "Zoe Maier",
+    "kosten": 29588.89,
+    "anzahl": 74
+   },
+   {
+    "nr": "Q-2026-105",
+    "kunde": "OEM Premium",
+    "teil": "Lenkgetriebe EPSapa",
+    "fehlerbild": "Lenkmoment zu hoch",
+    "eingang": "@-47",
+    "status": "D7 Vorbeugung",
+    "verantwortlich": "Zoe Ilić",
+    "kosten": 3428.52,
+    "anzahl": 165
+   },
+   {
+    "nr": "Q-2026-106",
+    "kunde": "OEM Nord",
+    "teil": "Zahnstange 7.8",
+    "fehlerbild": "Geräusch beim Lenken",
+    "eingang": "@-10",
+    "status": "D2 Problem",
+    "verantwortlich": "Petra Schäfer",
+    "kosten": 40758.45,
+    "anzahl": 4
+   },
+   {
+    "nr": "Q-2026-107",
+    "kunde": "OEM Premium",
+    "teil": "Ritzelwelle",
+    "fehlerbild": "Korrosion",
+    "eingang": "@-9",
+    "status": "D7 Vorbeugung",
+    "verantwortlich": "Ayşe Hahn",
+    "kosten": 28415.96,
+    "anzahl": 265
+   },
+   {
+    "nr": "Q-2026-108",
+    "kunde": "Ersatzteilgeschäft",
+    "teil": "Ritzelwelle",
+    "fehlerbild": "Undichtigkeit",
+    "eingang": "@-31",
+    "status": "D8 Abschluss",
+    "verantwortlich": "Oleksandr Ilić",
+    "kosten": 37441.8,
+    "anzahl": 98
+   },
+   {
+    "nr": "Q-2026-109",
+    "kunde": "OEM Nord",
+    "teil": "Ritzelwelle",
+    "fehlerbild": "Gratbildung Verzahnung",
+    "eingang": "@-46",
+    "status": "D8 Abschluss",
+    "verantwortlich": "Selin Rapp",
+    "kosten": 13939.82,
+    "anzahl": 371
+   },
+   {
+    "nr": "Q-2026-110",
+    "kunde": "OEM Süd",
+    "teil": "Servoeinheit Gen4",
+    "fehlerbild": "Fehlercode Steuergerät",
+    "eingang": "@-80",
+    "status": "D3 Sofortmaßnahme",
+    "verantwortlich": "Yusuf Rapp",
+    "kosten": 13064.31,
+    "anzahl": 204
+   },
+   {
+    "nr": "Q-2026-111",
+    "kunde": "Ersatzteilgeschäft",
+    "teil": "Ventilkolben",
+    "fehlerbild": "Geräusch beim Lenken",
+    "eingang": "@-70",
+    "status": "D5 Abstellmaßnahme",
+    "verantwortlich": "Dragan Traub",
+    "kosten": 46911.11,
+    "anzahl": 214
+   },
+   {
+    "nr": "Q-2026-112",
+    "kunde": "Ersatzteilgeschäft",
+    "teil": "Ritzelwelle",
+    "fehlerbild": "Geräusch beim Lenken",
+    "eingang": "@-39",
+    "status": "D1 Team",
+    "verantwortlich": "Elif Nowak",
+    "kosten": 1279.14,
+    "anzahl": 298
+   },
+   {
+    "nr": "Q-2026-113",
+    "kunde": "Ersatzteilgeschäft",
+    "teil": "Ritzelwelle",
+    "fehlerbild": "Korrosion",
+    "eingang": "@-50",
+    "status": "D7 Vorbeugung",
+    "verantwortlich": "Ivan Nowak",
+    "kosten": 37579.51,
+    "anzahl": 166
+   },
+   {
+    "nr": "Q-2026-114",
+    "kunde": "OEM Süd",
+    "teil": "Ventilkolben",
+    "fehlerbild": "Fehlercode Steuergerät",
+    "eingang": "@-17",
+    "status": "D4 Ursache",
+    "verantwortlich": "Bernd Dietrich",
+    "kosten": 28485.28,
+    "anzahl": 167
+   },
+   {
+    "nr": "Q-2026-115",
+    "kunde": "Ersatzteilgeschäft",
+    "teil": "Servoeinheit Gen4",
+    "fehlerbild": "Falsche Variante verbaut",
+    "eingang": "@-84",
+    "status": "D4 Ursache",
+    "verantwortlich": "Vesna Schäfer",
+    "kosten": 5099.26,
+    "anzahl": 41
+   },
+   {
+    "nr": "Q-2026-116",
+    "kunde": "Nutzfahrzeug AG",
+    "teil": "Lenkgetriebe EPSapa",
+    "fehlerbild": "Falsche Variante verbaut",
+    "eingang": "@-53",
+    "status": "D6 Umsetzung",
+    "verantwortlich": "Kemal Traub",
+    "kosten": 18361.69,
+    "anzahl": 273
+   },
+   {
+    "nr": "Q-2026-117",
+    "kunde": "OEM Nord",
+    "teil": "Servoeinheit Gen4",
+    "fehlerbild": "Geräusch beim Lenken",
+    "eingang": "@-74",
+    "status": "D8 Abschluss",
+    "verantwortlich": "Ivan Kaya",
+    "kosten": 47471.26,
+    "anzahl": 305
+   },
+   {
+    "nr": "Q-2026-118",
+    "kunde": "OEM Süd",
+    "teil": "Lenkgetriebe EPSapa",
+    "fehlerbild": "Korrosion",
+    "eingang": "@-3",
+    "status": "D8 Abschluss",
+    "verantwortlich": "Ivan Celik",
+    "kosten": 37844.8,
+    "anzahl": 201
+   },
+   {
+    "nr": "Q-2026-119",
+    "kunde": "OEM Nord",
+    "teil": "Lenkgetriebe EPSapa",
+    "fehlerbild": "Korrosion",
+    "eingang": "@-90",
+    "status": "D2 Problem",
+    "verantwortlich": "Chiara Rapp",
+    "kosten": 22748.22,
+    "anzahl": 228
+   },
+   {
+    "nr": "Q-2026-120",
+    "kunde": "OEM Nord",
+    "teil": "Ritzelwelle",
+    "fehlerbild": "Falsche Variante verbaut",
+    "eingang": "@-77",
+    "status": "D7 Vorbeugung",
+    "verantwortlich": "Vesna Kaya",
+    "kosten": 10210.98,
+    "anzahl": 128
+   },
+   {
+    "nr": "Q-2026-121",
+    "kunde": "OEM Süd",
+    "teil": "Ritzelwelle",
+    "fehlerbild": "Korrosion",
+    "eingang": "@-49",
+    "status": "D1 Team",
+    "verantwortlich": "Rüdiger Traub",
+    "kosten": 14295.95,
+    "anzahl": 46
+   },
+   {
+    "nr": "Q-2026-122",
+    "kunde": "Ersatzteilgeschäft",
+    "teil": "Ritzelwelle",
+    "fehlerbild": "Geräusch beim Lenken",
+    "eingang": "@-47",
+    "status": "D5 Abstellmaßnahme",
+    "verantwortlich": "Lena Dietrich",
+    "kosten": 11111.2,
+    "anzahl": 163
+   },
+   {
+    "nr": "Q-2026-123",
+    "kunde": "OEM Premium",
+    "teil": "Ritzelwelle",
+    "fehlerbild": "Undichtigkeit",
+    "eingang": "@-76",
+    "status": "D4 Ursache",
+    "verantwortlich": "Rüdiger Rapp",
+    "kosten": 4157.31,
+    "anzahl": 284
+   }
+  ],
+  "massnahmen": [
+   {
+    "reklamation": "#17",
+    "massnahme": "100%-Prüfung Lager",
+    "typ": "Sofortmaßnahme",
+    "verantwortlich": "Petra Engel",
+    "faellig": "@+4",
+    "erledigt": false
+   },
+   {
+    "reklamation": "#12",
+    "massnahme": "Sortieraktion beim Kunden",
+    "typ": "Vorbeugemaßnahme",
+    "verantwortlich": "Gül Pfeiffer",
+    "faellig": "@+29",
+    "erledigt": false
+   },
+   {
+    "reklamation": "#1",
+    "massnahme": "Poka-Yoke Variantenabfrage",
+    "typ": "Abstellmaßnahme",
+    "verantwortlich": "Dragan Kaya",
+    "faellig": "@-7",
+    "erledigt": false
+   },
+   {
+    "reklamation": "#19",
+    "massnahme": "Werkzeugwechselintervall verkürzen",
+    "typ": "Vorbeugemaßnahme",
+    "verantwortlich": "Petra Pfeiffer",
+    "faellig": "@+0",
+    "erledigt": false
+   },
+   {
+    "reklamation": "#23",
+    "massnahme": "FMEA aktualisieren",
+    "typ": "Abstellmaßnahme",
+    "verantwortlich": "Yusuf Nowak",
+    "faellig": "@+5",
+    "erledigt": false
+   },
+   {
+    "reklamation": "#18",
+    "massnahme": "Lieferant auditieren",
+    "typ": "Abstellmaßnahme",
+    "verantwortlich": "Ivan Jäger",
+    "faellig": "@+12",
+    "erledigt": false
+   },
+   {
+    "reklamation": "#11",
+    "massnahme": "Prüfplan Merkmal 12 ergänzen",
+    "typ": "Vorbeugemaßnahme",
+    "verantwortlich": "Heike Pfeiffer",
+    "faellig": "@+13",
+    "erledigt": false
+   },
+   {
+    "reklamation": "#23",
+    "massnahme": "Schulung Werker Station 30",
+    "typ": "Abstellmaßnahme",
+    "verantwortlich": "Ivan Wolf",
+    "faellig": "@+22",
+    "erledigt": true
+   },
+   {
+    "reklamation": "#23",
+    "massnahme": "Korrosionsschutz erhöhen",
+    "typ": "Sofortmaßnahme",
+    "verantwortlich": "Rüdiger Kaya",
+    "faellig": "@+1",
+    "erledigt": false
+   },
+   {
+    "reklamation": "#18",
+    "massnahme": "Ishikawa-Workshop",
+    "typ": "Abstellmaßnahme",
+    "verantwortlich": "Wolfgang Lutz",
+    "faellig": "@+20",
+    "erledigt": true
+   },
+   {
+    "reklamation": "#12",
+    "massnahme": "Bauteilanalyse Labor",
+    "typ": "Sofortmaßnahme",
+    "verantwortlich": "Lena Pfeiffer",
+    "faellig": "@-2",
+    "erledigt": true
+   },
+   {
+    "reklamation": "#1",
+    "massnahme": "Lessons Learned verteilen",
+    "typ": "Abstellmaßnahme",
+    "verantwortlich": "Zoe Jäger",
+    "faellig": "@+19",
+    "erledigt": true
+   },
+   {
+    "reklamation": "#24",
+    "massnahme": "100%-Prüfung Lager",
+    "typ": "Abstellmaßnahme",
+    "verantwortlich": "Heike Ilić",
+    "faellig": "@+24",
+    "erledigt": true
+   },
+   {
+    "reklamation": "#18",
+    "massnahme": "Sortieraktion beim Kunden",
+    "typ": "Sofortmaßnahme",
+    "verantwortlich": "Yusuf Kaya",
+    "faellig": "@+4",
+    "erledigt": true
+   },
+   {
+    "reklamation": "#16",
+    "massnahme": "Poka-Yoke Variantenabfrage",
+    "typ": "Abstellmaßnahme",
+    "verantwortlich": "Selin Jäger",
+    "faellig": "@-5",
+    "erledigt": false
+   },
+   {
+    "reklamation": "#18",
+    "massnahme": "Werkzeugwechselintervall verkürzen",
+    "typ": "Abstellmaßnahme",
+    "verantwortlich": "Oleksandr Abele",
+    "faellig": "@+29",
+    "erledigt": true
+   },
+   {
+    "reklamation": "#9",
+    "massnahme": "FMEA aktualisieren",
+    "typ": "Sofortmaßnahme",
+    "verantwortlich": "Nadine Wolf",
+    "faellig": "@+1",
+    "erledigt": false
+   },
+   {
+    "reklamation": "#21",
+    "massnahme": "Lieferant auditieren",
+    "typ": "Sofortmaßnahme",
+    "verantwortlich": "Lena Dietrich",
+    "faellig": "@-5",
+    "erledigt": false
+   },
+   {
+    "reklamation": "#6",
+    "massnahme": "Prüfplan Merkmal 12 ergänzen",
+    "typ": "Sofortmaßnahme",
+    "verantwortlich": "Nadine Lutz",
+    "faellig": "@+29",
+    "erledigt": true
+   },
+   {
+    "reklamation": "#7",
+    "massnahme": "Schulung Werker Station 30",
+    "typ": "Abstellmaßnahme",
+    "verantwortlich": "Bernd Celik",
+    "faellig": "@-10",
+    "erledigt": true
+   },
+   {
+    "reklamation": "#13",
+    "massnahme": "Korrosionsschutz erhöhen",
+    "typ": "Sofortmaßnahme",
+    "verantwortlich": "Nadine Bauer",
+    "faellig": "@+30",
+    "erledigt": true
+   },
+   {
+    "reklamation": "#22",
+    "massnahme": "Ishikawa-Workshop",
+    "typ": "Abstellmaßnahme",
+    "verantwortlich": "Wolfgang Pfeiffer",
+    "faellig": "@+4",
+    "erledigt": true
+   },
+   {
+    "reklamation": "#22",
+    "massnahme": "Bauteilanalyse Labor",
+    "typ": "Sofortmaßnahme",
+    "verantwortlich": "Zoe Gruber",
+    "faellig": "@+22",
+    "erledigt": true
+   },
+   {
+    "reklamation": "#11",
+    "massnahme": "Lessons Learned verteilen",
+    "typ": "Abstellmaßnahme",
+    "verantwortlich": "Dragan Schäfer",
+    "faellig": "@+15",
+    "erledigt": false
+   }
+  ]
+ },
+ "nachbauten": [
+  {
+   "baustein": "kennzahl_bedingung",
+   "ersatz": "„Offen“ und „älter als 60 Tage“ per Skript.",
+   "geloest": true,
+   "jetzt": "Kennzahlen mit Bedingung, „älter als 60 Tage“ mit Ampel."
+  },
+  {
+   "baustein": "diagramm_summe",
+   "ersatz": "Kosten je Kunde absteigend: Balkendiagramm summiert nicht – Tabelle aus dem Skript.",
+   "geloest": true,
+   "jetzt": "Balkendiagramm mit Summe der Kosten und Pareto-Anteil."
+  },
+  {
+   "baustein": "datumsformel",
+   "ersatz": "„Alter (Tage)“ = heute − Eingang: per Skript beim Speichern (veraltet ohne erneutes Speichern).",
+   "geloest": false
+  }
+ ]
+}

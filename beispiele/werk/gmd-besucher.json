@@ -1,0 +1,452 @@
+{
+ "slug": "gmd-besucher",
+ "name": "Fremdfirmen & Besucher",
+ "icon": "🪪",
+ "description": "Voranmeldung, Sicherheitsunterweisung, wer ist gerade im Werk (Evakuierungsliste)",
+ "rolle": "Pforte / Ansprechpartner",
+ "komplexitaet": "mittel",
+ "entities": [
+  {
+   "name": "Besuche",
+   "slug": "besuche",
+   "fields": [
+    {
+     "label": "Name",
+     "key": "name",
+     "type": "text",
+     "required": true
+    },
+    {
+     "label": "Firma",
+     "key": "firma",
+     "type": "text",
+     "required": true
+    },
+    {
+     "label": "Ansprechpartner/in",
+     "key": "ansprechpartner",
+     "type": "text"
+    },
+    {
+     "label": "Datum",
+     "key": "datum",
+     "type": "date",
+     "required": true
+    },
+    {
+     "label": "Bereich",
+     "key": "bereich",
+     "type": "choice",
+     "choices": [
+      "Halle 1 Zerspanung",
+      "Halle 2 Montage",
+      "Halle 3 Prüffeld",
+      "Logistik Wareneingang",
+      "Werkstatt IH",
+      "Härterei"
+     ]
+    },
+    {
+     "label": "Sicherheitsunterweisung erhalten",
+     "key": "unterweisung",
+     "type": "bool"
+    },
+    {
+     "label": "Status",
+     "key": "status",
+     "type": "choice",
+     "choices": [
+      "Angemeldet",
+      "Vor Ort",
+      "Abgemeldet"
+     ]
+    },
+    {
+     "label": "Besucherausweis",
+     "key": "ausweis",
+     "type": "text"
+    }
+   ]
+  }
+ ],
+ "pages": [
+  {
+   "title": "Voranmeldung",
+   "slug": "anmeldung",
+   "layout": [
+    {
+     "type": "heading",
+     "width": 12,
+     "props": {
+      "text": "Besuch voranmelden",
+      "level": "1"
+     }
+    },
+    {
+     "type": "form",
+     "width": 12,
+     "props": {
+      "entity": "besuche",
+      "submit_label": "Anmelden"
+     }
+    }
+   ]
+  },
+  {
+   "title": "Pforte",
+   "slug": "pforte",
+   "layout": [
+    {
+     "type": "stat",
+     "width": 4,
+     "props": {
+      "label": "Jetzt im Werk",
+      "entity": "besuche",
+      "where": "Status = Vor Ort"
+     }
+    },
+    {
+     "type": "stat",
+     "width": 4,
+     "props": {
+      "label": "Heute angemeldet",
+      "entity": "besuche",
+      "where": "Datum = heute"
+     }
+    },
+    {
+     "type": "stat",
+     "width": 4,
+     "props": {
+      "label": "Vor Ort ohne Unterweisung",
+      "entity": "besuche",
+      "where": "Status = Vor Ort\nSicherheitsunterweisung erhalten = nein",
+      "alarm_at": "1"
+     }
+    },
+    {
+     "type": "search",
+     "width": 12,
+     "props": {
+      "entity": "besuche",
+      "field": "name"
+     }
+    },
+    {
+     "type": "table",
+     "width": 12,
+     "props": {
+      "title": "Evakuierungsliste (Status „Vor Ort“)",
+      "entity": "besuche",
+      "where": "Status = Vor Ort",
+      "page_size": 100
+     }
+    },
+    {
+     "type": "kanban",
+     "width": 12,
+     "props": {
+      "entity": "besuche",
+      "field": "status",
+      "detail": "firma"
+     }
+    }
+   ]
+  },
+  {
+   "title": "Kalender",
+   "slug": "kalender",
+   "layout": [
+    {
+     "type": "calendar",
+     "width": 12,
+     "props": {
+      "entity": "besuche",
+      "date_field": "datum",
+      "label_field": "firma",
+      "color_field": "status"
+     }
+    }
+   ]
+  }
+ ],
+ "scripts": [],
+ "beispieldaten": {
+  "besuche": [
+   {
+    "name": "Marco Ilić",
+    "firma": "Roboter-Service Süd",
+    "ansprechpartner": "Rüdiger Hahn",
+    "datum": "@+4",
+    "bereich": "Logistik Wareneingang",
+    "unterweisung": true,
+    "status": "Vor Ort",
+    "ausweis": "G-174"
+   },
+   {
+    "name": "Uwe Pfeiffer",
+    "firma": "Auditor OEM Nord",
+    "ansprechpartner": "Ayşe Dietrich",
+    "datum": "@+0",
+    "bereich": "Härterei",
+    "unterweisung": true,
+    "status": "Angemeldet",
+    "ausweis": "G-113"
+   },
+   {
+    "name": "Dragan Nowak",
+    "firma": "Kältetechnik Rems",
+    "ansprechpartner": "Jana Ott",
+    "datum": "@+0",
+    "bereich": "Werkstatt IH",
+    "unterweisung": true,
+    "status": "Angemeldet",
+    "ausweis": "G-118"
+   },
+   {
+    "name": "Kemal Ilić",
+    "firma": "Roboter-Service Süd",
+    "ansprechpartner": "Ivan Rapp",
+    "datum": "@+0",
+    "bereich": "Halle 3 Prüffeld",
+    "unterweisung": true,
+    "status": "Abgemeldet",
+    "ausweis": "G-176"
+   },
+   {
+    "name": "Bernd Pfeiffer",
+    "firma": "Elektro Kurz GmbH",
+    "ansprechpartner": "Chiara Vogel",
+    "datum": "@-2",
+    "bereich": "Härterei",
+    "unterweisung": true,
+    "status": "Vor Ort",
+    "ausweis": "G-184"
+   },
+   {
+    "name": "Nadine Abele",
+    "firma": "Gerüstbau Ostalb",
+    "ansprechpartner": "Selin Ilić",
+    "datum": "@+4",
+    "bereich": "Halle 2 Montage",
+    "unterweisung": true,
+    "status": "Vor Ort",
+    "ausweis": "G-196"
+   },
+   {
+    "name": "Jana Wolf",
+    "firma": "Kältetechnik Rems",
+    "ansprechpartner": "Bernd Bauer",
+    "datum": "@+1",
+    "bereich": "Halle 3 Prüffeld",
+    "unterweisung": true,
+    "status": "Angemeldet",
+    "ausweis": "G-144"
+   },
+   {
+    "name": "Rüdiger Ott",
+    "firma": "Kältetechnik Rems",
+    "ansprechpartner": "Rüdiger Ulrich",
+    "datum": "@+1",
+    "bereich": "Logistik Wareneingang",
+    "unterweisung": false,
+    "status": "Abgemeldet",
+    "ausweis": "G-108"
+   },
+   {
+    "name": "Gül Ott",
+    "firma": "Kältetechnik Rems",
+    "ansprechpartner": "Yusuf Abele",
+    "datum": "@-2",
+    "bereich": "Halle 2 Montage",
+    "unterweisung": false,
+    "status": "Angemeldet",
+    "ausweis": "G-148"
+   },
+   {
+    "name": "Kemal Vogel",
+    "firma": "Auditor OEM Nord",
+    "ansprechpartner": "Wolfgang Abele",
+    "datum": "@-2",
+    "bereich": "Halle 3 Prüffeld",
+    "unterweisung": true,
+    "status": "Angemeldet",
+    "ausweis": "G-161"
+   },
+   {
+    "name": "Marco Celik",
+    "firma": "Elektro Kurz GmbH",
+    "ansprechpartner": "Oleksandr Ott",
+    "datum": "@+4",
+    "bereich": "Halle 3 Prüffeld",
+    "unterweisung": true,
+    "status": "Angemeldet",
+    "ausweis": "G-118"
+   },
+   {
+    "name": "Kemal Schäfer",
+    "firma": "Kältetechnik Rems",
+    "ansprechpartner": "Dragan Wolf",
+    "datum": "@-1",
+    "bereich": "Werkstatt IH",
+    "unterweisung": true,
+    "status": "Angemeldet",
+    "ausweis": "G-194"
+   },
+   {
+    "name": "Uwe Kaya",
+    "firma": "Auditor OEM Nord",
+    "ansprechpartner": "Heike Abele",
+    "datum": "@-2",
+    "bereich": "Halle 2 Montage",
+    "unterweisung": true,
+    "status": "Abgemeldet",
+    "ausweis": "G-111"
+   },
+   {
+    "name": "Frank Maier",
+    "firma": "Elektro Kurz GmbH",
+    "ansprechpartner": "Frank Celik",
+    "datum": "@+1",
+    "bereich": "Logistik Wareneingang",
+    "unterweisung": true,
+    "status": "Vor Ort",
+    "ausweis": "G-160"
+   },
+   {
+    "name": "Ayşe Ott",
+    "firma": "Roboter-Service Süd",
+    "ansprechpartner": "Ayşe Gruber",
+    "datum": "@+5",
+    "bereich": "Halle 3 Prüffeld",
+    "unterweisung": true,
+    "status": "Vor Ort",
+    "ausweis": "G-197"
+   },
+   {
+    "name": "Nadine Wolf",
+    "firma": "Elektro Kurz GmbH",
+    "ansprechpartner": "Wolfgang Ott",
+    "datum": "@-1",
+    "bereich": "Logistik Wareneingang",
+    "unterweisung": true,
+    "status": "Vor Ort",
+    "ausweis": "G-142"
+   },
+   {
+    "name": "Rüdiger Traub",
+    "firma": "Gerüstbau Ostalb",
+    "ansprechpartner": "Zoe Gruber",
+    "datum": "@+1",
+    "bereich": "Halle 3 Prüffeld",
+    "unterweisung": true,
+    "status": "Vor Ort",
+    "ausweis": "G-182"
+   },
+   {
+    "name": "Elif Kaya",
+    "firma": "Gerüstbau Ostalb",
+    "ansprechpartner": "Heike Vogel",
+    "datum": "@+4",
+    "bereich": "Härterei",
+    "unterweisung": true,
+    "status": "Vor Ort",
+    "ausweis": "G-157"
+   },
+   {
+    "name": "Kemal Rapp",
+    "firma": "Kältetechnik Rems",
+    "ansprechpartner": "Elif Kaya",
+    "datum": "@+5",
+    "bereich": "Halle 3 Prüffeld",
+    "unterweisung": false,
+    "status": "Angemeldet",
+    "ausweis": "G-104"
+   },
+   {
+    "name": "Vesna Vogel",
+    "firma": "Elektro Kurz GmbH",
+    "ansprechpartner": "Elif Fuchs",
+    "datum": "@-2",
+    "bereich": "Halle 3 Prüffeld",
+    "unterweisung": true,
+    "status": "Abgemeldet",
+    "ausweis": "G-140"
+   },
+   {
+    "name": "Jana Ilić",
+    "firma": "Elektro Kurz GmbH",
+    "ansprechpartner": "Zoe Maier",
+    "datum": "@-3",
+    "bereich": "Halle 3 Prüffeld",
+    "unterweisung": true,
+    "status": "Vor Ort",
+    "ausweis": "G-180"
+   },
+   {
+    "name": "Uwe Jäger",
+    "firma": "Kältetechnik Rems",
+    "ansprechpartner": "Ivan Wolf",
+    "datum": "@+4",
+    "bereich": "Halle 1 Zerspanung",
+    "unterweisung": false,
+    "status": "Abgemeldet",
+    "ausweis": "G-190"
+   },
+   {
+    "name": "Uwe Fuchs",
+    "firma": "Gerüstbau Ostalb",
+    "ansprechpartner": "Yusuf Pfeiffer",
+    "datum": "@+5",
+    "bereich": "Halle 1 Zerspanung",
+    "unterweisung": true,
+    "status": "Vor Ort",
+    "ausweis": "G-130"
+   },
+   {
+    "name": "Oleksandr Abele",
+    "firma": "Auditor OEM Nord",
+    "ansprechpartner": "Heike Pfeiffer",
+    "datum": "@-2",
+    "bereich": "Halle 2 Montage",
+    "unterweisung": true,
+    "status": "Abgemeldet",
+    "ausweis": "G-127"
+   },
+   {
+    "name": "Wolfgang Nowak",
+    "firma": "Gerüstbau Ostalb",
+    "ansprechpartner": "Selin Abele",
+    "datum": "@+0",
+    "bereich": "Halle 2 Montage",
+    "unterweisung": true,
+    "status": "Angemeldet",
+    "ausweis": "G-151"
+   },
+   {
+    "name": "Vesna Fuchs",
+    "firma": "Elektro Kurz GmbH",
+    "ansprechpartner": "Wolfgang Celik",
+    "datum": "@-2",
+    "bereich": "Halle 2 Montage",
+    "unterweisung": false,
+    "status": "Angemeldet",
+    "ausweis": "G-183"
+   }
+  ]
+ },
+ "nachbauten": [
+  {
+   "baustein": "kennzahl_bedingung",
+   "ersatz": "3 Kennzahlen mit Bedingung per Skript.",
+   "geloest": true,
+   "jetzt": "3 Kennzahlen mit Bedingung, kein Skript mehr."
+  },
+  {
+   "baustein": "liste_bedingung",
+   "ersatz": "Evakuierungsliste (nur „Vor Ort“) als Ausgabe-Baustein – druckbar, aber ohne Abmelde-Klick.",
+   "geloest": true,
+   "jetzt": "Liste mit Bedingung „Status = Vor Ort“, mit Bearbeiten."
+  }
+ ]
+}

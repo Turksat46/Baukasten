@@ -4,8 +4,11 @@ Eine App besteht aus Tabellen (Entity) mit Feldern (Field) und aus Seiten (Page)
 Datensätze (Record) liegen als JSON in einer gemeinsamen Tabelle. Dadurch braucht
 eine im Designer geänderte Tabelle keine Datenbank-Migration.
 """
+import calendar
+import datetime
 import hashlib
 import math
+import re
 import secrets
 
 from django.conf import settings
@@ -289,6 +292,28 @@ class Record(models.Model):
 
 
 FORMULA_FUNCS = {"round": round, "abs": abs, "min": min, "max": max}
+# Datumsfelder rechnen in Formeln als Tageszahl: faellig - start sind Tage, letzte + intervall ein Datum.
+FORMULA_DATE = re.compile(r"^(\d{4})-(\d{2})-(\d{2})$")
+
+
+def _date_number(raw):
+    """„2026-11-26“ → Tageszahl (date.toordinal), sonst None."""
+    m = FORMULA_DATE.match(str(raw)) if isinstance(raw, str) else None
+    if not m:
+        return None
+    try:
+        return float(datetime.date(*map(int, m.groups())).toordinal())
+    except ValueError:
+        return None
+
+
+def _add_months(day_number, months):
+    """Tageszahl plus n Monate; der 31. wird im kürzeren Monat zum letzten Tag."""
+    day = datetime.date.fromordinal(int(day_number))
+    total = day.year * 12 + day.month - 1 + int(months)
+    year, month = divmod(total, 12)
+    last = calendar.monthrange(year, month + 1)[1]
+    return float(datetime.date(year, month + 1, min(day.day, last)).toordinal())
 
 
 def formula_problem(expr, allowed_keys):
@@ -305,11 +330,12 @@ def formula_problem(expr, allowed_keys):
     calls = {n.func.id for n in ast.walk(tree) if isinstance(n, ast.Call) and isinstance(n.func, ast.Name)}
     unknown = sorted(names - set(allowed_keys) - calls)
     if unknown:
-        return gettext("Diese Zahlenfelder gibt es in der Tabelle nicht: %(names)s") % {"names": ", ".join(unknown)}
+        return gettext("Diese Zahlen- oder Datumsfelder gibt es in der Tabelle nicht: %(names)s") % {
+            "names": ", ".join(unknown)}
     # Probelauf mit verschiedenen Werten (gleiche Werte ergäben bei a / (a - b) eine Division durch 0):
-    # findet nicht erlaubte Zeichen wie ** oder Funktionen außer round/abs/min/max.
-    if evaluate_formula(expr, {key: 2.5 + 1.25 * i for i, key in enumerate(allowed_keys)}) is None:
-        return gettext("Erlaubt sind Zahlen, Zahlenfelder, + - * / und round, abs, min, max.")
+    # findet nicht erlaubte Zeichen wie ** oder Funktionen außer round/abs/min/max/add_months.
+    if evaluate_formula(expr, {key: 740000.5 + 1.25 * i for i, key in enumerate(allowed_keys)}) is None:
+        return gettext("Erlaubt sind Zahlen, Zahlen- und Datumsfelder, + - * / und round, abs, min, max, add_months.")
     return None
 
 
@@ -323,7 +349,7 @@ def evaluate_formula(expr, data):
         ast.Mult: operator.mul, ast.Div: operator.truediv,
     }
     UNARY = {ast.UAdd: operator.pos, ast.USub: operator.neg}
-    FUNCS = FORMULA_FUNCS
+    FUNCS = {**FORMULA_FUNCS, "add_months": _add_months}
 
     def _eval(node):
         if isinstance(node, ast.Expression):
@@ -334,7 +360,8 @@ def evaluate_formula(expr, data):
             raw = (data or {}).get(node.id)
             if raw is None or raw == "" or isinstance(raw, bool):
                 raise ValueError
-            return float(raw)
+            day = _date_number(raw)
+            return day if day is not None else float(raw)
         if isinstance(node, ast.BinOp) and type(node.op) in OPS:
             left, right = _eval(node.left), _eval(node.right)
             return OPS[type(node.op)](left, right)
@@ -344,6 +371,8 @@ def evaluate_formula(expr, data):
             args = [_eval(a) for a in node.args]
             if node.func.id == "round" and len(args) == 2:
                 return float(round(args[0], int(args[1])))
+            if node.func.id == "add_months":
+                return _add_months(*args)
             return float(FUNCS[node.func.id](*args))
         raise ValueError
 
@@ -373,6 +402,11 @@ def apply_formulas(entity, data, fields=None):
             val = evaluate_formula(f.formula, data)
             if val is not None and f.type == Field.NUMBER:
                 val = int(round(val))
+            elif val is not None and f.type == Field.DATE:
+                try:
+                    val = datetime.date.fromordinal(int(round(val))).isoformat()
+                except (ValueError, OverflowError):
+                    val = None
             if val is None and f.key not in data:
                 continue
             # Lässt sich nicht rechnen (Feld geleert, Division durch 0): Wert leeren statt den alten stehen lassen.

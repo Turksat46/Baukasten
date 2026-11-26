@@ -1,0 +1,671 @@
+{
+ "slug": "gmd-quali",
+ "name": "Qualifikationsmatrix",
+ "icon": "🎓",
+ "description": "Wer kann welche Station? ILUO-Stufen, ablaufende Qualifikationen, Springer-Planung",
+ "rolle": "Meister / Personal",
+ "komplexitaet": "mittel",
+ "entities": [
+  {
+   "name": "Mitarbeitende",
+   "slug": "mitarbeitende",
+   "fields": [
+    {
+     "label": "Name",
+     "key": "name",
+     "type": "text",
+     "required": true
+    },
+    {
+     "label": "Schicht",
+     "key": "schicht",
+     "type": "choice",
+     "choices": [
+      "Früh",
+      "Spät",
+      "Nacht"
+     ]
+    },
+    {
+     "label": "Kostenstelle",
+     "key": "kst",
+     "type": "choice",
+     "choices": [
+      "4711 Montage",
+      "4712 Zerspanung",
+      "4713 Prüffeld"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Stationen",
+   "slug": "stationen",
+   "fields": [
+    {
+     "label": "Station",
+     "key": "name",
+     "type": "text",
+     "required": true
+    },
+    {
+     "label": "Linie",
+     "key": "linie",
+     "type": "choice",
+     "choices": [
+      "ZS-1 Zahnstange",
+      "LG-2 Lenkgetriebe",
+      "EPS-3 Servoeinheit",
+      "PR-4 Endprüfung",
+      "HT-5 Härterei",
+      "VM-6 Ventilmontage"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Qualifikationen",
+   "slug": "qualifikationen",
+   "fields": [
+    {
+     "label": "Mitarbeiter/in",
+     "key": "mitarbeiter",
+     "type": "reference",
+     "reference": "mitarbeitende",
+     "required": true
+    },
+    {
+     "label": "Station",
+     "key": "station",
+     "type": "reference",
+     "reference": "stationen",
+     "required": true
+    },
+    {
+     "label": "Stufe (1=I angelernt … 4=O Trainer)",
+     "key": "stufe",
+     "type": "number"
+    },
+    {
+     "label": "Gültig bis",
+     "key": "gueltig",
+     "type": "date"
+    }
+   ]
+  }
+ ],
+ "pages": [
+  {
+   "title": "Matrix",
+   "slug": "matrix",
+   "layout": [
+    {
+     "type": "heading",
+     "width": 12,
+     "props": {
+      "text": "Qualifikationsmatrix",
+      "subtitle": "1 = I (in Ausbildung) · 2 = L (unter Aufsicht) · 3 = U (selbstständig) · 4 = O (Trainer)",
+      "level": "1"
+     }
+    },
+    {
+     "type": "filter",
+     "width": 12,
+     "props": {
+      "entity": "qualifikationen",
+      "field": "station"
+     }
+    },
+    {
+     "type": "heatmap",
+     "width": 12,
+     "props": {
+      "title": "Stufe je Person und Station",
+      "entity": "qualifikationen",
+      "mode": "crosstab",
+      "row_field": "mitarbeiter",
+      "col_field": "station",
+      "value_field": "stufe",
+      "agg": "avg"
+     }
+    },
+    {
+     "type": "output",
+     "width": 6,
+     "props": {
+      "label": "Stationen mit weniger als 3 selbstständigen Personen"
+     },
+     "name": "engpass"
+    },
+    {
+     "type": "table",
+     "width": 6,
+     "props": {
+      "title": "Läuft in den nächsten 60 Tagen ab",
+      "entity": "qualifikationen",
+      "where": "Gültig bis <= heute+60"
+     }
+    }
+   ]
+  },
+  {
+   "title": "Pflegen",
+   "slug": "pflegen",
+   "layout": [
+    {
+     "type": "form",
+     "width": 6,
+     "props": {
+      "entity": "qualifikationen",
+      "submit_label": "Qualifikation speichern"
+     }
+    },
+    {
+     "type": "table",
+     "width": 6,
+     "props": {
+      "entity": "mitarbeitende"
+     }
+    },
+    {
+     "type": "table",
+     "width": 12,
+     "props": {
+      "entity": "qualifikationen",
+      "searchable": true
+     }
+    }
+   ]
+  }
+ ],
+ "scripts": [
+  {
+   "name": "Engpässe",
+   "language": "python",
+   "trigger": "page",
+   "code": "import datetime\nheute = datetime.date.today()\nleute = {p[\"id\"]: p[\"name\"] for p in app.table(\"mitarbeitende\").all()}\nstationen = {s[\"id\"]: s[\"name\"] for s in app.table(\"stationen\").all()}\nq = app.table(\"qualifikationen\").all()\nzeilen = []\nfor sid, name in stationen.items():\n    n = len([x for x in q if int(x[\"station\"] or 0) == sid and (x[\"stufe\"] or 0) >= 3])\n    if n < 3:\n        zeilen.append({\"Station\": name, \"selbstständig\": n, \"fehlen\": 3 - n})\nui.set(\"engpass\", rows=zeilen)\n",
+   "page": "matrix"
+  }
+ ],
+ "beispieldaten": {
+  "mitarbeitende": [
+   {
+    "name": "Heike Celik",
+    "schicht": "Spät",
+    "kst": "4713 Prüffeld"
+   },
+   {
+    "name": "Elif Dietrich",
+    "schicht": "Früh",
+    "kst": "4712 Zerspanung"
+   },
+   {
+    "name": "Jana Hahn",
+    "schicht": "Nacht",
+    "kst": "4711 Montage"
+   },
+   {
+    "name": "Thomas Engel",
+    "schicht": "Früh",
+    "kst": "4713 Prüffeld"
+   },
+   {
+    "name": "Zoe Hahn",
+    "schicht": "Nacht",
+    "kst": "4713 Prüffeld"
+   },
+   {
+    "name": "Bernd Fuchs",
+    "schicht": "Früh",
+    "kst": "4711 Montage"
+   },
+   {
+    "name": "Nadine Maier",
+    "schicht": "Früh",
+    "kst": "4712 Zerspanung"
+   },
+   {
+    "name": "Nadine Vogel",
+    "schicht": "Früh",
+    "kst": "4712 Zerspanung"
+   },
+   {
+    "name": "Elif Schäfer",
+    "schicht": "Früh",
+    "kst": "4712 Zerspanung"
+   },
+   {
+    "name": "Petra Rapp",
+    "schicht": "Früh",
+    "kst": "4713 Prüffeld"
+   },
+   {
+    "name": "Jana Celik",
+    "schicht": "Nacht",
+    "kst": "4711 Montage"
+   },
+   {
+    "name": "Bernd Ilić",
+    "schicht": "Früh",
+    "kst": "4712 Zerspanung"
+   },
+   {
+    "name": "Thomas Nowak",
+    "schicht": "Früh",
+    "kst": "4712 Zerspanung"
+   },
+   {
+    "name": "Vesna Dietrich",
+    "schicht": "Nacht",
+    "kst": "4713 Prüffeld"
+   }
+  ],
+  "stationen": [
+   {
+    "name": "ST10 Rohr einlegen",
+    "linie": "ZS-1 Zahnstange"
+   },
+   {
+    "name": "ST20 Verzahnen",
+    "linie": "ZS-1 Zahnstange"
+   },
+   {
+    "name": "ST30 Härten",
+    "linie": "ZS-1 Zahnstange"
+   },
+   {
+    "name": "ST40 Schrauben",
+    "linie": "LG-2 Lenkgetriebe"
+   },
+   {
+    "name": "ST50 Fügen",
+    "linie": "LG-2 Lenkgetriebe"
+   },
+   {
+    "name": "ST60 Prüfstand",
+    "linie": "LG-2 Lenkgetriebe"
+   }
+  ],
+  "qualifikationen": [
+   {
+    "mitarbeiter": "#1",
+    "station": "#1",
+    "stufe": 2,
+    "gueltig": "@+325"
+   },
+   {
+    "mitarbeiter": "#1",
+    "station": "#2",
+    "stufe": 2,
+    "gueltig": "@+269"
+   },
+   {
+    "mitarbeiter": "#1",
+    "station": "#3",
+    "stufe": 1,
+    "gueltig": "@+90"
+   },
+   {
+    "mitarbeiter": "#1",
+    "station": "#6",
+    "stufe": 1,
+    "gueltig": "@-9"
+   },
+   {
+    "mitarbeiter": "#2",
+    "station": "#1",
+    "stufe": 4,
+    "gueltig": "@+267"
+   },
+   {
+    "mitarbeiter": "#2",
+    "station": "#2",
+    "stufe": 1,
+    "gueltig": "@+348"
+   },
+   {
+    "mitarbeiter": "#2",
+    "station": "#3",
+    "stufe": 1,
+    "gueltig": "@+319"
+   },
+   {
+    "mitarbeiter": "#2",
+    "station": "#4",
+    "stufe": 1,
+    "gueltig": "@+354"
+   },
+   {
+    "mitarbeiter": "#2",
+    "station": "#5",
+    "stufe": 4,
+    "gueltig": "@+321"
+   },
+   {
+    "mitarbeiter": "#3",
+    "station": "#1",
+    "stufe": 3,
+    "gueltig": "@+324"
+   },
+   {
+    "mitarbeiter": "#3",
+    "station": "#4",
+    "stufe": 3,
+    "gueltig": "@+324"
+   },
+   {
+    "mitarbeiter": "#3",
+    "station": "#5",
+    "stufe": 1,
+    "gueltig": "@+362"
+   },
+   {
+    "mitarbeiter": "#4",
+    "station": "#1",
+    "stufe": 3,
+    "gueltig": "@+315"
+   },
+   {
+    "mitarbeiter": "#4",
+    "station": "#2",
+    "stufe": 3,
+    "gueltig": "@+46"
+   },
+   {
+    "mitarbeiter": "#4",
+    "station": "#3",
+    "stufe": 3,
+    "gueltig": "@+75"
+   },
+   {
+    "mitarbeiter": "#4",
+    "station": "#4",
+    "stufe": 2,
+    "gueltig": "@+372"
+   },
+   {
+    "mitarbeiter": "#4",
+    "station": "#6",
+    "stufe": 3,
+    "gueltig": "@+75"
+   },
+   {
+    "mitarbeiter": "#5",
+    "station": "#2",
+    "stufe": 2,
+    "gueltig": "@+290"
+   },
+   {
+    "mitarbeiter": "#5",
+    "station": "#3",
+    "stufe": 1,
+    "gueltig": "@+280"
+   },
+   {
+    "mitarbeiter": "#5",
+    "station": "#4",
+    "stufe": 1,
+    "gueltig": "@+362"
+   },
+   {
+    "mitarbeiter": "#5",
+    "station": "#5",
+    "stufe": 3,
+    "gueltig": "@+386"
+   },
+   {
+    "mitarbeiter": "#6",
+    "station": "#1",
+    "stufe": 3,
+    "gueltig": "@+49"
+   },
+   {
+    "mitarbeiter": "#6",
+    "station": "#2",
+    "stufe": 3,
+    "gueltig": "@+217"
+   },
+   {
+    "mitarbeiter": "#6",
+    "station": "#3",
+    "stufe": 1,
+    "gueltig": "@+77"
+   },
+   {
+    "mitarbeiter": "#6",
+    "station": "#4",
+    "stufe": 3,
+    "gueltig": "@+320"
+   },
+   {
+    "mitarbeiter": "#6",
+    "station": "#5",
+    "stufe": 1,
+    "gueltig": "@+89"
+   },
+   {
+    "mitarbeiter": "#6",
+    "station": "#6",
+    "stufe": 3,
+    "gueltig": "@+178"
+   },
+   {
+    "mitarbeiter": "#7",
+    "station": "#1",
+    "stufe": 1,
+    "gueltig": "@+100"
+   },
+   {
+    "mitarbeiter": "#7",
+    "station": "#2",
+    "stufe": 1,
+    "gueltig": "@+147"
+   },
+   {
+    "mitarbeiter": "#7",
+    "station": "#3",
+    "stufe": 2,
+    "gueltig": "@-9"
+   },
+   {
+    "mitarbeiter": "#7",
+    "station": "#5",
+    "stufe": 1,
+    "gueltig": "@+380"
+   },
+   {
+    "mitarbeiter": "#8",
+    "station": "#1",
+    "stufe": 3,
+    "gueltig": "@+44"
+   },
+   {
+    "mitarbeiter": "#8",
+    "station": "#3",
+    "stufe": 4,
+    "gueltig": "@+164"
+   },
+   {
+    "mitarbeiter": "#8",
+    "station": "#5",
+    "stufe": 2,
+    "gueltig": "@+104"
+   },
+   {
+    "mitarbeiter": "#8",
+    "station": "#6",
+    "stufe": 2,
+    "gueltig": "@+49"
+   },
+   {
+    "mitarbeiter": "#9",
+    "station": "#1",
+    "stufe": 3,
+    "gueltig": "@+235"
+   },
+   {
+    "mitarbeiter": "#9",
+    "station": "#2",
+    "stufe": 3,
+    "gueltig": "@+399"
+   },
+   {
+    "mitarbeiter": "#9",
+    "station": "#3",
+    "stufe": 3,
+    "gueltig": "@+88"
+   },
+   {
+    "mitarbeiter": "#9",
+    "station": "#4",
+    "stufe": 3,
+    "gueltig": "@+206"
+   },
+   {
+    "mitarbeiter": "#9",
+    "station": "#5",
+    "stufe": 3,
+    "gueltig": "@+307"
+   },
+   {
+    "mitarbeiter": "#10",
+    "station": "#1",
+    "stufe": 1,
+    "gueltig": "@+348"
+   },
+   {
+    "mitarbeiter": "#10",
+    "station": "#2",
+    "stufe": 3,
+    "gueltig": "@+87"
+   },
+   {
+    "mitarbeiter": "#10",
+    "station": "#4",
+    "stufe": 2,
+    "gueltig": "@+339"
+   },
+   {
+    "mitarbeiter": "#10",
+    "station": "#5",
+    "stufe": 2,
+    "gueltig": "@+112"
+   },
+   {
+    "mitarbeiter": "#10",
+    "station": "#6",
+    "stufe": 2,
+    "gueltig": "@+365"
+   },
+   {
+    "mitarbeiter": "#11",
+    "station": "#2",
+    "stufe": 2,
+    "gueltig": "@+314"
+   },
+   {
+    "mitarbeiter": "#11",
+    "station": "#3",
+    "stufe": 1,
+    "gueltig": "@+260"
+   },
+   {
+    "mitarbeiter": "#11",
+    "station": "#4",
+    "stufe": 3,
+    "gueltig": "@+176"
+   },
+   {
+    "mitarbeiter": "#11",
+    "station": "#5",
+    "stufe": 1,
+    "gueltig": "@+210"
+   },
+   {
+    "mitarbeiter": "#12",
+    "station": "#1",
+    "stufe": 2,
+    "gueltig": "@+391"
+   },
+   {
+    "mitarbeiter": "#12",
+    "station": "#3",
+    "stufe": 3,
+    "gueltig": "@+134"
+   },
+   {
+    "mitarbeiter": "#12",
+    "station": "#4",
+    "stufe": 2,
+    "gueltig": "@+379"
+   },
+   {
+    "mitarbeiter": "#12",
+    "station": "#6",
+    "stufe": 3,
+    "gueltig": "@+239"
+   },
+   {
+    "mitarbeiter": "#13",
+    "station": "#1",
+    "stufe": 1,
+    "gueltig": "@+112"
+   },
+   {
+    "mitarbeiter": "#13",
+    "station": "#2",
+    "stufe": 2,
+    "gueltig": "@+178"
+   },
+   {
+    "mitarbeiter": "#13",
+    "station": "#3",
+    "stufe": 3,
+    "gueltig": "@+182"
+   },
+   {
+    "mitarbeiter": "#13",
+    "station": "#4",
+    "stufe": 3,
+    "gueltig": "@+89"
+   },
+   {
+    "mitarbeiter": "#13",
+    "station": "#6",
+    "stufe": 1,
+    "gueltig": "@+261"
+   },
+   {
+    "mitarbeiter": "#14",
+    "station": "#3",
+    "stufe": 4,
+    "gueltig": "@+223"
+   },
+   {
+    "mitarbeiter": "#14",
+    "station": "#5",
+    "stufe": 3,
+    "gueltig": "@+280"
+   },
+   {
+    "mitarbeiter": "#14",
+    "station": "#6",
+    "stufe": 1,
+    "gueltig": "@+155"
+   }
+  ]
+ },
+ "nachbauten": [
+  {
+   "baustein": "matrix_symbole",
+   "ersatz": "ILUO-Matrix: Heatmap zeigt Zahlen statt Symbole (Viertelkreis I/L/U/O).",
+   "geloest": false
+  },
+  {
+   "baustein": "liste_bedingung",
+   "ersatz": "„Läuft in 60 Tagen ab“ und Engpass-Stationen per Skript.",
+   "geloest": true,
+   "jetzt": "„Läuft ab“ als Liste mit Bedingung. Engpässe (zählen je Station mit Schwelle) bleiben Skript."
+  }
+ ]
+}

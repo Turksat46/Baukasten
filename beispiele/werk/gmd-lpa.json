@@ -1,0 +1,832 @@
+{
+ "slug": "gmd-lpa",
+ "name": "Layered Process Audit",
+ "icon": "🧅",
+ "description": "Prozessaudits auf drei Ebenen, Erfüllungsquote, Abweichungen mit Maßnahmen",
+ "rolle": "Meister · Abteilungsleiter · Werksleiter",
+ "komplexitaet": "mittel",
+ "entities": [
+  {
+   "name": "Audits",
+   "slug": "audits",
+   "fields": [
+    {
+     "label": "Datum",
+     "key": "datum",
+     "type": "date",
+     "required": true
+    },
+    {
+     "label": "Ebene",
+     "key": "ebene",
+     "type": "choice",
+     "choices": [
+      "Meister (täglich)",
+      "Abteilungsleiter (wöchentlich)",
+      "Werksleiter (monatlich)"
+     ],
+     "required": true
+    },
+    {
+     "label": "Linie",
+     "key": "linie",
+     "type": "choice",
+     "choices": [
+      "ZS-1 Zahnstange",
+      "LG-2 Lenkgetriebe",
+      "EPS-3 Servoeinheit",
+      "PR-4 Endprüfung",
+      "HT-5 Härterei",
+      "VM-6 Ventilmontage"
+     ]
+    },
+    {
+     "label": "Auditor/in",
+     "key": "auditor",
+     "type": "text"
+    },
+    {
+     "label": "Fragen i. O.",
+     "key": "ok",
+     "type": "number"
+    },
+    {
+     "label": "Fragen n. i. O.",
+     "key": "nok",
+     "type": "number"
+    },
+    {
+     "label": "Erfüllung (%)",
+     "key": "quote",
+     "type": "decimal",
+     "formula": "round(ok / (ok + nok) * 100, 1)",
+     "show_in_form": false
+    }
+   ]
+  },
+  {
+   "name": "Abweichungen",
+   "slug": "abweichungen",
+   "fields": [
+    {
+     "label": "Audit",
+     "key": "audit",
+     "type": "reference",
+     "reference": "audits"
+    },
+    {
+     "label": "Abweichung",
+     "key": "text",
+     "type": "text",
+     "required": true
+    },
+    {
+     "label": "Maßnahme",
+     "key": "massnahme",
+     "type": "text"
+    },
+    {
+     "label": "Erledigt",
+     "key": "erledigt",
+     "type": "bool"
+    }
+   ]
+  }
+ ],
+ "pages": [
+  {
+   "title": "Durchführen",
+   "slug": "durchfuehren",
+   "layout": [
+    {
+     "type": "heading",
+     "width": 12,
+     "props": {
+      "text": "LPA durchführen",
+      "subtitle": "10 Fragen · Abweichungen sofort mit Maßnahme anlegen",
+      "level": "1"
+     }
+    },
+    {
+     "type": "form",
+     "width": 6,
+     "props": {
+      "entity": "audits",
+      "submit_label": "Audit speichern"
+     }
+    },
+    {
+     "type": "form",
+     "width": 6,
+     "props": {
+      "entity": "abweichungen",
+      "submit_label": "Abweichung anlegen"
+     }
+    }
+   ]
+  },
+  {
+   "title": "Auswertung",
+   "slug": "auswertung",
+   "layout": [
+    {
+     "type": "filter",
+     "width": 12,
+     "props": {
+      "entity": "audits",
+      "field": "ebene",
+      "field2": "linie",
+      "field3": "datum"
+     }
+    },
+    {
+     "type": "stat",
+     "width": 4,
+     "props": {
+      "label": "Ø Erfüllung",
+      "entity": "audits",
+      "aggregate": "avg",
+      "field": "quote",
+      "unit": "%"
+     }
+    },
+    {
+     "type": "stat",
+     "width": 4,
+     "props": {
+      "label": "Audits",
+      "entity": "audits"
+     }
+    },
+    {
+     "type": "output",
+     "width": 4,
+     "props": {
+      "label": "Soll/Ist Audits diesen Monat"
+     },
+     "name": "plan"
+    },
+    {
+     "type": "pivot",
+     "width": 12,
+     "props": {
+      "title": "Erfüllung Linie × Ebene",
+      "entity": "audits",
+      "row_field": "linie",
+      "col_field": "ebene",
+      "agg": "avg",
+      "value_field": "quote"
+     }
+    },
+    {
+     "type": "line",
+     "width": 12,
+     "props": {
+      "label": "Ø Erfüllung je Woche",
+      "entity": "audits",
+      "date_field": "datum",
+      "aggregate": "avg",
+      "field": "quote",
+      "period": "week",
+      "count": 9,
+      "threshold": "90"
+     }
+    },
+    {
+     "type": "checklist",
+     "width": 12,
+     "props": {
+      "title": "Abweichungen",
+      "entity": "abweichungen",
+      "field": "erledigt",
+      "label_field": "text",
+      "detail": "massnahme"
+     }
+    }
+   ]
+  }
+ ],
+ "scripts": [
+  {
+   "name": "Plan-Erfüllung",
+   "language": "python",
+   "trigger": "page",
+   "code": "import datetime\nheute = datetime.date.today()\nmonat = heute.isoformat()[:7]\nrows = [r for r in app.table(\"audits\").all() if (r[\"datum\"] or \"\").startswith(monat)]\nsoll = {\"Meister (täglich)\": 22 * 6, \"Abteilungsleiter (wöchentlich)\": 4 * 6, \"Werksleiter (monatlich)\": 1}\nanteil = heute.day / 30\nui.set(\"plan\", rows=[{\"Ebene\": e, \"Ist\": len([r for r in rows if r[\"ebene\"] == e]), \"Soll bis heute\": round(s * anteil)}\n                     for e, s in soll.items()])\n",
+   "page": "auswertung"
+  }
+ ],
+ "beispieldaten": {
+  "audits": [
+   {
+    "datum": "@-45",
+    "ebene": "Meister (täglich)",
+    "linie": "ZS-1 Zahnstange",
+    "auditor": "Chiara Ott",
+    "ok": 10,
+    "nok": 0
+   },
+   {
+    "datum": "@-53",
+    "ebene": "Meister (täglich)",
+    "linie": "PR-4 Endprüfung",
+    "auditor": "Frank Abele",
+    "ok": 10,
+    "nok": 0
+   },
+   {
+    "datum": "@-31",
+    "ebene": "Werksleiter (monatlich)",
+    "linie": "HT-5 Härterei",
+    "auditor": "Wolfgang Bauer",
+    "ok": 7,
+    "nok": 3
+   },
+   {
+    "datum": "@-34",
+    "ebene": "Meister (täglich)",
+    "linie": "PR-4 Endprüfung",
+    "auditor": "Oleksandr Abele",
+    "ok": 9,
+    "nok": 1
+   },
+   {
+    "datum": "@-11",
+    "ebene": "Meister (täglich)",
+    "linie": "LG-2 Lenkgetriebe",
+    "auditor": "Bernd Ilić",
+    "ok": 9,
+    "nok": 1
+   },
+   {
+    "datum": "@-36",
+    "ebene": "Meister (täglich)",
+    "linie": "VM-6 Ventilmontage",
+    "auditor": "Elif Nowak",
+    "ok": 10,
+    "nok": 0
+   },
+   {
+    "datum": "@-53",
+    "ebene": "Werksleiter (monatlich)",
+    "linie": "ZS-1 Zahnstange",
+    "auditor": "Nadine Bauer",
+    "ok": 10,
+    "nok": 0
+   },
+   {
+    "datum": "@-34",
+    "ebene": "Meister (täglich)",
+    "linie": "ZS-1 Zahnstange",
+    "auditor": "Ivan Pfeiffer",
+    "ok": 9,
+    "nok": 1
+   },
+   {
+    "datum": "@-20",
+    "ebene": "Meister (täglich)",
+    "linie": "LG-2 Lenkgetriebe",
+    "auditor": "Vesna Hahn",
+    "ok": 10,
+    "nok": 0
+   },
+   {
+    "datum": "@-10",
+    "ebene": "Meister (täglich)",
+    "linie": "EPS-3 Servoeinheit",
+    "auditor": "Kemal Kaya",
+    "ok": 10,
+    "nok": 0
+   },
+   {
+    "datum": "@-34",
+    "ebene": "Abteilungsleiter (wöchentlich)",
+    "linie": "ZS-1 Zahnstange",
+    "auditor": "Chiara Ulrich",
+    "ok": 8,
+    "nok": 2
+   },
+   {
+    "datum": "@-25",
+    "ebene": "Meister (täglich)",
+    "linie": "LG-2 Lenkgetriebe",
+    "auditor": "Zoe Pfeiffer",
+    "ok": 9,
+    "nok": 1
+   },
+   {
+    "datum": "@-31",
+    "ebene": "Meister (täglich)",
+    "linie": "LG-2 Lenkgetriebe",
+    "auditor": "Elif Schäfer",
+    "ok": 10,
+    "nok": 0
+   },
+   {
+    "datum": "@-11",
+    "ebene": "Meister (täglich)",
+    "linie": "LG-2 Lenkgetriebe",
+    "auditor": "Selin Ilić",
+    "ok": 10,
+    "nok": 0
+   },
+   {
+    "datum": "@-27",
+    "ebene": "Meister (täglich)",
+    "linie": "VM-6 Ventilmontage",
+    "auditor": "Vesna Traub",
+    "ok": 10,
+    "nok": 0
+   },
+   {
+    "datum": "@-45",
+    "ebene": "Meister (täglich)",
+    "linie": "HT-5 Härterei",
+    "auditor": "Marco Gruber",
+    "ok": 10,
+    "nok": 0
+   },
+   {
+    "datum": "@-29",
+    "ebene": "Meister (täglich)",
+    "linie": "VM-6 Ventilmontage",
+    "auditor": "Elif Rapp",
+    "ok": 10,
+    "nok": 0
+   },
+   {
+    "datum": "@-1",
+    "ebene": "Meister (täglich)",
+    "linie": "HT-5 Härterei",
+    "auditor": "Jana Fuchs",
+    "ok": 9,
+    "nok": 1
+   },
+   {
+    "datum": "@-56",
+    "ebene": "Meister (täglich)",
+    "linie": "EPS-3 Servoeinheit",
+    "auditor": "Bernd Engel",
+    "ok": 10,
+    "nok": 0
+   },
+   {
+    "datum": "@-8",
+    "ebene": "Meister (täglich)",
+    "linie": "ZS-1 Zahnstange",
+    "auditor": "Vesna Vogel",
+    "ok": 10,
+    "nok": 0
+   },
+   {
+    "datum": "@-25",
+    "ebene": "Abteilungsleiter (wöchentlich)",
+    "linie": "PR-4 Endprüfung",
+    "auditor": "Bernd Gruber",
+    "ok": 9,
+    "nok": 1
+   },
+   {
+    "datum": "@-48",
+    "ebene": "Abteilungsleiter (wöchentlich)",
+    "linie": "EPS-3 Servoeinheit",
+    "auditor": "Bernd Kaya",
+    "ok": 10,
+    "nok": 0
+   },
+   {
+    "datum": "@-51",
+    "ebene": "Meister (täglich)",
+    "linie": "VM-6 Ventilmontage",
+    "auditor": "Petra Ulrich",
+    "ok": 10,
+    "nok": 0
+   },
+   {
+    "datum": "@-36",
+    "ebene": "Werksleiter (monatlich)",
+    "linie": "HT-5 Härterei",
+    "auditor": "Ivan Gruber",
+    "ok": 10,
+    "nok": 0
+   },
+   {
+    "datum": "@-27",
+    "ebene": "Abteilungsleiter (wöchentlich)",
+    "linie": "HT-5 Härterei",
+    "auditor": "Wolfgang Maier",
+    "ok": 9,
+    "nok": 1
+   },
+   {
+    "datum": "@-59",
+    "ebene": "Werksleiter (monatlich)",
+    "linie": "VM-6 Ventilmontage",
+    "auditor": "Marco Celik",
+    "ok": 8,
+    "nok": 2
+   },
+   {
+    "datum": "@-6",
+    "ebene": "Werksleiter (monatlich)",
+    "linie": "PR-4 Endprüfung",
+    "auditor": "Marco Ulrich",
+    "ok": 10,
+    "nok": 0
+   },
+   {
+    "datum": "@-32",
+    "ebene": "Meister (täglich)",
+    "linie": "PR-4 Endprüfung",
+    "auditor": "Heike Lutz",
+    "ok": 10,
+    "nok": 0
+   },
+   {
+    "datum": "@-52",
+    "ebene": "Meister (täglich)",
+    "linie": "ZS-1 Zahnstange",
+    "auditor": "Selin Gruber",
+    "ok": 8,
+    "nok": 2
+   },
+   {
+    "datum": "@-53",
+    "ebene": "Meister (täglich)",
+    "linie": "VM-6 Ventilmontage",
+    "auditor": "Lena Ott",
+    "ok": 10,
+    "nok": 0
+   },
+   {
+    "datum": "@-35",
+    "ebene": "Meister (täglich)",
+    "linie": "VM-6 Ventilmontage",
+    "auditor": "Kemal Schäfer",
+    "ok": 9,
+    "nok": 1
+   },
+   {
+    "datum": "@-31",
+    "ebene": "Meister (täglich)",
+    "linie": "ZS-1 Zahnstange",
+    "auditor": "Thomas Celik",
+    "ok": 10,
+    "nok": 0
+   },
+   {
+    "datum": "@-11",
+    "ebene": "Meister (täglich)",
+    "linie": "EPS-3 Servoeinheit",
+    "auditor": "Wolfgang Rapp",
+    "ok": 10,
+    "nok": 0
+   },
+   {
+    "datum": "@-60",
+    "ebene": "Meister (täglich)",
+    "linie": "ZS-1 Zahnstange",
+    "auditor": "Frank Maier",
+    "ok": 10,
+    "nok": 0
+   },
+   {
+    "datum": "@-48",
+    "ebene": "Meister (täglich)",
+    "linie": "HT-5 Härterei",
+    "auditor": "Heike Ott",
+    "ok": 8,
+    "nok": 2
+   },
+   {
+    "datum": "@-44",
+    "ebene": "Meister (täglich)",
+    "linie": "ZS-1 Zahnstange",
+    "auditor": "Thomas Maier",
+    "ok": 7,
+    "nok": 3
+   },
+   {
+    "datum": "@-53",
+    "ebene": "Meister (täglich)",
+    "linie": "ZS-1 Zahnstange",
+    "auditor": "Zoe Ulrich",
+    "ok": 10,
+    "nok": 0
+   },
+   {
+    "datum": "@-56",
+    "ebene": "Meister (täglich)",
+    "linie": "EPS-3 Servoeinheit",
+    "auditor": "Thomas Rapp",
+    "ok": 8,
+    "nok": 2
+   },
+   {
+    "datum": "@-6",
+    "ebene": "Meister (täglich)",
+    "linie": "LG-2 Lenkgetriebe",
+    "auditor": "Ivan Traub",
+    "ok": 10,
+    "nok": 0
+   },
+   {
+    "datum": "@-20",
+    "ebene": "Meister (täglich)",
+    "linie": "ZS-1 Zahnstange",
+    "auditor": "Petra Gruber",
+    "ok": 9,
+    "nok": 1
+   },
+   {
+    "datum": "@-9",
+    "ebene": "Meister (täglich)",
+    "linie": "HT-5 Härterei",
+    "auditor": "Oleksandr Engel",
+    "ok": 8,
+    "nok": 2
+   },
+   {
+    "datum": "@-19",
+    "ebene": "Meister (täglich)",
+    "linie": "ZS-1 Zahnstange",
+    "auditor": "Rüdiger Engel",
+    "ok": 9,
+    "nok": 1
+   },
+   {
+    "datum": "@-26",
+    "ebene": "Abteilungsleiter (wöchentlich)",
+    "linie": "HT-5 Härterei",
+    "auditor": "Wolfgang Gruber",
+    "ok": 10,
+    "nok": 0
+   },
+   {
+    "datum": "@-16",
+    "ebene": "Abteilungsleiter (wöchentlich)",
+    "linie": "VM-6 Ventilmontage",
+    "auditor": "Wolfgang Schäfer",
+    "ok": 10,
+    "nok": 0
+   },
+   {
+    "datum": "@-10",
+    "ebene": "Werksleiter (monatlich)",
+    "linie": "LG-2 Lenkgetriebe",
+    "auditor": "Lena Bauer",
+    "ok": 10,
+    "nok": 0
+   },
+   {
+    "datum": "@-25",
+    "ebene": "Abteilungsleiter (wöchentlich)",
+    "linie": "ZS-1 Zahnstange",
+    "auditor": "Wolfgang Kaya",
+    "ok": 10,
+    "nok": 0
+   },
+   {
+    "datum": "@-22",
+    "ebene": "Abteilungsleiter (wöchentlich)",
+    "linie": "HT-5 Härterei",
+    "auditor": "Elif Kaya",
+    "ok": 10,
+    "nok": 0
+   },
+   {
+    "datum": "@-15",
+    "ebene": "Meister (täglich)",
+    "linie": "VM-6 Ventilmontage",
+    "auditor": "Bernd Jäger",
+    "ok": 10,
+    "nok": 0
+   },
+   {
+    "datum": "@-30",
+    "ebene": "Abteilungsleiter (wöchentlich)",
+    "linie": "VM-6 Ventilmontage",
+    "auditor": "Ivan Vogel",
+    "ok": 10,
+    "nok": 0
+   },
+   {
+    "datum": "@-35",
+    "ebene": "Meister (täglich)",
+    "linie": "LG-2 Lenkgetriebe",
+    "auditor": "Uwe Schäfer",
+    "ok": 10,
+    "nok": 0
+   },
+   {
+    "datum": "@+0",
+    "ebene": "Meister (täglich)",
+    "linie": "PR-4 Endprüfung",
+    "auditor": "Lena Kaya",
+    "ok": 10,
+    "nok": 0
+   },
+   {
+    "datum": "@-35",
+    "ebene": "Meister (täglich)",
+    "linie": "PR-4 Endprüfung",
+    "auditor": "Thomas Abele",
+    "ok": 7,
+    "nok": 3
+   },
+   {
+    "datum": "@-12",
+    "ebene": "Werksleiter (monatlich)",
+    "linie": "PR-4 Endprüfung",
+    "auditor": "Vesna Kaya",
+    "ok": 8,
+    "nok": 2
+   },
+   {
+    "datum": "@-29",
+    "ebene": "Meister (täglich)",
+    "linie": "ZS-1 Zahnstange",
+    "auditor": "Heike Schäfer",
+    "ok": 10,
+    "nok": 0
+   },
+   {
+    "datum": "@-53",
+    "ebene": "Abteilungsleiter (wöchentlich)",
+    "linie": "VM-6 Ventilmontage",
+    "auditor": "Ayşe Bauer",
+    "ok": 10,
+    "nok": 0
+   },
+   {
+    "datum": "@-1",
+    "ebene": "Abteilungsleiter (wöchentlich)",
+    "linie": "EPS-3 Servoeinheit",
+    "auditor": "Heike Lutz",
+    "ok": 10,
+    "nok": 0
+   },
+   {
+    "datum": "@-42",
+    "ebene": "Meister (täglich)",
+    "linie": "LG-2 Lenkgetriebe",
+    "auditor": "Jana Celik",
+    "ok": 10,
+    "nok": 0
+   },
+   {
+    "datum": "@-33",
+    "ebene": "Meister (täglich)",
+    "linie": "VM-6 Ventilmontage",
+    "auditor": "Wolfgang Vogel",
+    "ok": 10,
+    "nok": 0
+   },
+   {
+    "datum": "@-17",
+    "ebene": "Meister (täglich)",
+    "linie": "PR-4 Endprüfung",
+    "auditor": "Yusuf Wolf",
+    "ok": 10,
+    "nok": 0
+   },
+   {
+    "datum": "@-7",
+    "ebene": "Meister (täglich)",
+    "linie": "HT-5 Härterei",
+    "auditor": "Chiara Rapp",
+    "ok": 10,
+    "nok": 0
+   },
+   {
+    "datum": "@-30",
+    "ebene": "Abteilungsleiter (wöchentlich)",
+    "linie": "ZS-1 Zahnstange",
+    "auditor": "Chiara Abele",
+    "ok": 10,
+    "nok": 0
+   },
+   {
+    "datum": "@-40",
+    "ebene": "Meister (täglich)",
+    "linie": "ZS-1 Zahnstange",
+    "auditor": "Frank Bauer",
+    "ok": 10,
+    "nok": 0
+   },
+   {
+    "datum": "@-38",
+    "ebene": "Meister (täglich)",
+    "linie": "ZS-1 Zahnstange",
+    "auditor": "Lena Hahn",
+    "ok": 10,
+    "nok": 0
+   },
+   {
+    "datum": "@-24",
+    "ebene": "Meister (täglich)",
+    "linie": "HT-5 Härterei",
+    "auditor": "Frank Nowak",
+    "ok": 8,
+    "nok": 2
+   },
+   {
+    "datum": "@-56",
+    "ebene": "Meister (täglich)",
+    "linie": "HT-5 Härterei",
+    "auditor": "Petra Hahn",
+    "ok": 7,
+    "nok": 3
+   },
+   {
+    "datum": "@+0",
+    "ebene": "Meister (täglich)",
+    "linie": "VM-6 Ventilmontage",
+    "auditor": "Oleksandr Ott",
+    "ok": 7,
+    "nok": 3
+   },
+   {
+    "datum": "@-60",
+    "ebene": "Meister (täglich)",
+    "linie": "PR-4 Endprüfung",
+    "auditor": "Kemal Bauer",
+    "ok": 10,
+    "nok": 0
+   },
+   {
+    "datum": "@-30",
+    "ebene": "Abteilungsleiter (wöchentlich)",
+    "linie": "EPS-3 Servoeinheit",
+    "auditor": "Gül Vogel",
+    "ok": 9,
+    "nok": 1
+   },
+   {
+    "datum": "@-35",
+    "ebene": "Meister (täglich)",
+    "linie": "VM-6 Ventilmontage",
+    "auditor": "Gül Vogel",
+    "ok": 10,
+    "nok": 0
+   },
+   {
+    "datum": "@-10",
+    "ebene": "Meister (täglich)",
+    "linie": "VM-6 Ventilmontage",
+    "auditor": "Ivan Engel",
+    "ok": 9,
+    "nok": 1
+   }
+  ],
+  "abweichungen": [
+   {
+    "audit": "#25",
+    "text": "Arbeitsanweisung nicht aktuell",
+    "massnahme": "Neue Version aushängen",
+    "erledigt": true
+   },
+   {
+    "audit": "#30",
+    "text": "Werker kennt Reaktionsplan nicht",
+    "massnahme": "Unterweisung",
+    "erledigt": true
+   },
+   {
+    "audit": "#9",
+    "text": "Prüfmittel ohne Plakette",
+    "massnahme": "Sperren und kalibrieren",
+    "erledigt": true
+   },
+   {
+    "audit": "#8",
+    "text": "Ausschussbehälter nicht gekennzeichnet",
+    "massnahme": "Rote Kiste beschaffen",
+    "erledigt": true
+   },
+   {
+    "audit": "#13",
+    "text": "Erstteilfreigabe fehlt",
+    "massnahme": "Freigabe nachholen",
+    "erledigt": true
+   },
+   {
+    "audit": "#53",
+    "text": "Drehmoment-Protokoll lückenhaft",
+    "massnahme": "Schrauber-Datenexport prüfen",
+    "erledigt": true
+   }
+  ]
+ },
+ "nachbauten": [
+  {
+   "baustein": "kennzahl_bedingung",
+   "ersatz": "Soll/Ist je Ebene im laufenden Monat per Skript.",
+   "geloest": false
+  },
+  {
+   "baustein": "checkliste_im_formular",
+   "ersatz": "Die 10 Auditfragen als Checkliste im Formular fehlen – nur Zähler i. O./n. i. O.",
+   "geloest": false
+  }
+ ]
+}

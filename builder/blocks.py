@@ -16,7 +16,7 @@ from pathlib import Path
 from django.conf import settings
 from django.core.cache import cache
 from django.core.paginator import Paginator
-from django.db.models import Avg, Count, FloatField, Sum, TextField
+from django.db.models import Avg, Count, F, FloatField, Max, Min, Sum, TextField
 from django.db.models.fields.json import KeyTextTransform
 from django.db.models.functions import Cast, Substr, TruncMonth
 from django.template.loader import render_to_string
@@ -27,7 +27,7 @@ from django.utils.safestring import mark_safe
 from django.utils.translation import gettext
 from django.utils.translation import gettext_lazy as _
 
-from . import app_i18n, hooks
+from . import app_i18n, conditions, hooks
 from .forms import RecordForm
 from .models import CustomBlock, DataQuery, Field, Record, Script
 from .page_path import page_url
@@ -87,7 +87,17 @@ def _call_hook_block(fn, request, app, props):
     return fn(request, app, props) if accepts_props else fn(request, app)
 
 
+def _attach_where():
+    """Alle Datenbausteine bekommen die Einstellung „Bedingung“ (einmalig, auch für die erst in
+    datascience.py registrierten Bausteine)."""
+    for key in conditions.WHERE_TYPES:
+        block_type = REGISTRY.get(key)
+        if block_type and not any(spec["key"] == "where" for spec in block_type.fields):
+            block_type.fields.append(conditions.WHERE_SPEC)
+
+
 def all_types():
+    _attach_where()
     types = dict(REGISTRY)
     for key, custom in hooks.CUSTOM_BLOCKS.items():
         fn = custom["fn"]
@@ -212,6 +222,7 @@ def filtered(request, entity, records=None):
     Gilt für alle Bausteine derselben Tabelle auf der Seite. Text sucht enthalten, Ja/Nein
     nimmt 1/0, Datum nimmt Grenzen über .von und .bis, alles andere vergleicht genau."""
     records = entity.records.all() if records is None else records
+    records = conditions.apply(records, entity, conditions.current(request, entity))
     params = getattr(request, "GET", None)
     if not params:
         return records
@@ -292,60 +303,106 @@ def _number(entity, props, records=None):
     aggregate = props.get("aggregate") or "count"
     if aggregate == "count":
         return records.count(), None
+    if aggregate in ("days_since", "days_until"):
+        return _days(entity, props, records, aggregate)
     f = entity.fields.filter(key=props.get("field"), type__in=[Field.NUMBER, Field.DECIMAL]).first()
     if not f:
         return None, gettext("Summe und Durchschnitt brauchen ein Zahlenfeld.")
     expr = Cast(KeyTextTransform(f.key, "data"), FloatField())
     func = Sum if aggregate == "sum" else Avg
-    return records.aggregate(v=func(expr))["v"] or 0, None
+    value = records.aggregate(v=func(expr))["v"] or 0
+    return _whole(value, f) if aggregate == "sum" else value, None
 
 
-def _decimal2(value):
-    """Zahl mit zwei Nachkommastellen, kaufmännisch gerundet. Djangos number_format schneidet
-    nur ab (2,999 → 2,99); über str() rundet 19,995 auch wirklich auf 20,00."""
+def _days(entity, props, records, aggregate):
+    """Tage seit dem letzten Datum bis heute („Tage ohne Unfall“) oder von heute bis zum nächsten
+    Datum („Tage bis SOP“). Gibt (Zahl oder None, Fehlertext) zurück; None heißt: kein passendes Datum."""
+    f = entity.fields.filter(key=props.get("field"), type=Field.DATE).first()
+    if not f:
+        return None, gettext("„Tage seit“ und „Tage bis“ brauchen ein Datumsfeld.")
+    today = timezone.localdate().isoformat()
+    values = records.annotate(_d=Cast(KeyTextTransform(f.key, "data"), TextField())).exclude(_d__isnull=True).exclude(_d="")
+    if aggregate == "days_since":
+        day = values.filter(_d__lte=today).order_by("-_d").values_list("_d", flat=True).first()
+    else:
+        day = values.filter(_d__gte=today).order_by("_d").values_list("_d", flat=True).first()
     try:
-        value = Decimal(str(value)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+        days = (date.fromisoformat(str(day)[:10]) - timezone.localdate()).days if day else None
+    except ValueError:
+        days = None
+    return (abs(days) if days is not None else None), None
+
+
+def _whole(value, f):
+    """Summe eines Ganzzahl-Felds als ganze Zahl („180“, nicht „180,00“)."""
+    if f is not None and f.type == Field.NUMBER and isinstance(value, float) and value.is_integer():
+        return int(value)
+    return value
+
+
+def _decimal2(value, decimals=2):
+    """Zahl mit zwei (oder decimals) Nachkommastellen, kaufmännisch gerundet. Djangos number_format
+    schneidet nur ab (2,999 → 2,99); über str() rundet 19,995 auch wirklich auf 20,00."""
+    try:
+        value = Decimal(str(value)).quantize(Decimal(1).scaleb(-decimals), rounding=ROUND_HALF_UP)
     except (InvalidOperation, ValueError):
         pass  # unendlich oder keine Zahl: unverändert ausgeben
-    return number_format(value, decimal_pos=2, use_l10n=True, force_grouping=True)
+    return number_format(value, decimal_pos=decimals, use_l10n=True, force_grouping=True)
 
 
-def _format_number(value):
-    if isinstance(value, int):
+def decimals_for(span):
+    """Nachkommastellen, mit denen sich Werte in einem Bereich der Breite span noch unterscheiden.
+
+    Standard sind zwei; Messwerte wie 24,000 bis 24,012 mm brauchen mehr, sonst heißt alles „24,00“."""
+    import math
+
+    try:
+        span = abs(float(span))
+    except (TypeError, ValueError):
+        return 2
+    if not span or span >= 1 or math.isinf(span) or math.isnan(span):
+        return 2
+    return min(6, max(2, math.ceil(-math.log10(span)) + 1))
+
+
+def _format_number(value, decimals=None):
+    if isinstance(value, int) and not decimals:
         return number_format(value, force_grouping=True, use_l10n=True)
-    return _decimal2(value)
+    return _decimal2(value, decimals or 2)
 
 
-def _groups(entity, f, limit=12, records=None):
-    """Zählt Einträge je Wert eines Feldes: Liste von (Beschriftung, Anzahl, Filterwert), häufigste zuerst.
+def _group_label(f, raw):
+    if raw in (None, ""):
+        return gettext("(leer)")
+    if f.type == Field.BOOL:
+        return gettext("Ja") if str(raw).lower() in ("1", "true") else gettext("Nein")
+    if f.type == Field.REFERENCE and str(raw).isdigit():
+        return str(Record.objects.filter(pk=int(raw)).first() or f"#{raw}")
+    if f.type in (Field.NUMBER, Field.DECIMAL) and isinstance(raw, str):
+        # PostgreSQL liefert den JSON-Wert hier als Text („1234.5“), SQLite als Zahl.
+        try:
+            number = float(raw)
+        except ValueError:
+            return raw
+        return display_value(f, int(number) if f.type == Field.NUMBER and number.is_integer() else number)
+    return display_value(f, raw)
 
+
+def _groups(entity, f, limit=12, records=None, agg="count", value_field=None):
+    """Zählt Einträge je Wert eines Feldes: Liste von (Beschriftung, Wert, Filterwert), größter Wert zuerst.
+
+    Mit agg „sum“ oder „avg“ und einem Zahlenfeld value_field ist der Wert dessen Summe oder Durchschnitt.
     Der Filterwert (siehe filter_value) ist None, wenn sich nach dem Wert nicht filtern lässt."""
     records = entity.records.all() if records is None else records
-    rows = (
-        records.annotate(v=KeyTextTransform(f.key, "data"))
-        .values("v").annotate(c=Count("id")).order_by("-c")[:limit]
-    )
-    result = []
-    for row in rows:
-        raw = row["v"]
-        if raw in (None, ""):
-            label = gettext("(leer)")
-        elif f.type == Field.BOOL:
-            label = gettext("Ja") if str(raw).lower() in ("1", "true") else gettext("Nein")
-        elif f.type == Field.REFERENCE and str(raw).isdigit():
-            label = str(Record.objects.filter(pk=int(raw)).first() or f"#{raw}")
-        elif f.type in (Field.NUMBER, Field.DECIMAL) and isinstance(raw, str):
-            # PostgreSQL liefert den JSON-Wert hier als Text („1234.5“), SQLite als Zahl.
-            try:
-                number = float(raw)
-            except ValueError:
-                label = raw
-            else:
-                label = display_value(f, int(number) if f.type == Field.NUMBER and number.is_integer() else number)
-        else:
-            label = display_value(f, raw)
-        result.append((label, row["c"], filter_value(f, raw)))
-    return result
+    rows = records.annotate(v=KeyTextTransform(f.key, "data")).values("v")
+    if agg in ("sum", "avg") and value_field is not None:
+        number = Cast(KeyTextTransform(value_field.key, "data"), FloatField())
+        rows = rows.annotate(c=Sum(number) if agg == "sum" else Avg(number))
+    else:
+        rows = rows.annotate(c=Count("id"))
+    rows = rows.order_by(F("c").desc(nulls_last=True))[:limit]
+    return [(_group_label(f, row["v"]), _whole(row["c"] or 0, value_field) if agg == "sum" else (row["c"] or 0),
+             filter_value(f, row["v"])) for row in rows]
 
 
 def _entity_and_field(app, props):
@@ -354,13 +411,80 @@ def _entity_and_field(app, props):
     return entity, f
 
 
+def _threshold(raw):
+    try:
+        return float(str(raw).replace(",", ".").strip()) if str(raw or "").strip() else None
+    except ValueError:
+        return None
+
+
+def stat_tone(value, props):
+    """Ampelfarbe einer Kennzahl aus „Gelb ab“/„Rot ab“. Leer, wenn keine Schwelle gesetzt ist."""
+    warn, alarm = _threshold(props.get("warn_at")), _threshold(props.get("alarm_at"))
+    if value is None or (warn is None and alarm is None):
+        return ""
+    lower_worse = props.get("direction") == "lower_worse"
+    worse = (lambda limit: value <= limit) if lower_worse else (lambda limit: value >= limit)
+    if alarm is not None and worse(alarm):
+        return "danger"
+    if warn is not None and worse(warn):
+        return "warning"
+    return "success"
+
+
+def _date_range(records, f, start, end):
+    """Einträge mit Datum in [start, end] (ISO-Texte)."""
+    key = f"_d_{f.key}"
+    return (records.annotate(**{key: Cast(KeyTextTransform(f.key, "data"), TextField())})
+            .filter(**{f"{key}__gte": start.isoformat(), f"{key}__lte": end.isoformat()}))
+
+
 def prep_stat(request, app, block):
     props = block["props"]
     entity = _entity(app, props.get("entity"))
     if not entity:
         return {"error": gettext("Für diese Kennzahl ist keine Tabelle ausgewählt.")}
-    value, error = _number(entity, props, filtered(request, entity))
-    return {"error": error} if error else {"value": _format_number(value)}
+    records = filtered(request, entity)
+    days = max(int(props.get("compare_days") or 0), 0)
+    date_field = entity.fields.filter(key=props.get("compare_field"), type=Field.DATE).first() if days else None
+    ctx = {}
+    if date_field:
+        today = timezone.localdate()
+        current = _date_range(records, date_field, today - timedelta(days=days - 1), today)
+        before = _date_range(records, date_field, today - timedelta(days=2 * days - 1), today - timedelta(days=days))
+        value, error = _number(entity, props, current)
+        previous, _err = _number(entity, props, before)
+        if not error and value is not None and previous is not None:
+            delta = value - previous
+            ctx["delta"] = ("+" if delta > 0 else ("−" if delta < 0 else "±")) + _format_number(
+                round(abs(delta), 2) if isinstance(delta, float) else abs(delta))
+            ctx["delta_dir"] = "up" if delta > 0 else ("down" if delta < 0 else "same")
+            better_up = props.get("direction") == "lower_worse"
+            ctx["delta_good"] = delta == 0 or (delta > 0) == better_up
+            ctx["delta_note"] = gettext("zu den %(days)s Tagen davor") % {"days": days}
+    else:
+        value, error = _number(entity, props, records)
+    if error:
+        return {"error": error}
+    if value is None:  # „Tage seit/bis“ ohne passendes Datum
+        return {"value": "–", "tone": "", **ctx}
+    return {"value": _format_number(value, _stat_digits(entity, props, records, value)),
+            "tone": stat_tone(value, props), **ctx}
+
+
+def _stat_digits(entity, props, records, value):
+    """Nachkommastellen eines Durchschnitts: Messwerte wie 24,001 bis 24,012 mm brauchen drei,
+    sonst zeigt die Kennzahl nur „24,00“."""
+    if props.get("aggregate") != "avg" or not isinstance(value, float):
+        return None
+    f = entity.fields.filter(key=props.get("field"), type=Field.DECIMAL).first()
+    if not f:
+        return None
+    expr = Cast(KeyTextTransform(f.key, "data"), FloatField())
+    span = records.aggregate(lo=Min(expr), hi=Max(expr))
+    if span["lo"] is None or span["hi"] is None:
+        return None
+    return decimals_for(span["hi"] - span["lo"])
 
 
 def prep_progress(request, app, block):
@@ -383,21 +507,32 @@ def prep_progress(request, app, block):
 def prep_chart(request, app, block):
     from .datascience import _filter_href
 
-    entity, f = _entity_and_field(app, block["props"])
+    props = block["props"]
+    entity, f = _entity_and_field(app, props)
     if not f:
         return {"error": gettext("Für dieses Diagramm fehlen Tabelle und Feld.")}
+    agg = props.get("agg") or "count"
+    value_field = None
+    if agg in ("sum", "avg"):
+        value_field = entity.fields.filter(key=props.get("value_field"), type__in=[Field.NUMBER, Field.DECIMAL]).first()
+        if not value_field:
+            return {"error": gettext("Summe und Durchschnitt brauchen ein Zahlenfeld.")}
     records = filtered(request, entity)
-    groups = _groups(entity, f, records=records)
-    top = max((count for _, count, _v in groups), default=0)
-    total = records.count()
+    groups = _groups(entity, f, records=records, agg=agg, value_field=value_field)
+    top = max((value for _, value, _v in groups), default=0)
+    total = records.count() if agg == "count" else sum(value for _, value, _v in groups)
     param = filter_param(entity, f)
-    return {"bars": [
-        {"label": label, "count": count,
-         "percent": round(100 * count / top) if top else 0,
-         "share": round(100 * count / total) if total else 0,
-         "href": _filter_href(request, param, value) if value is not None else ""}
-        for label, count, value in groups
-    ]}
+    bars, running = [], 0
+    for label, value, filter_val in groups:
+        running += value
+        bars.append({
+            "label": label, "count": _format_number(round(value, 2) if isinstance(value, float) else value),
+            "percent": round(100 * value / top) if top else 0,
+            "share": round(100 * value / total) if total and agg != "avg" else None,
+            "cumulative": round(100 * running / total) if total and agg != "avg" else None,
+            "href": _filter_href(request, param, filter_val) if filter_val is not None else "",
+        })
+    return {"bars": bars, "pareto": bool(props.get("pareto")) and agg != "avg"}
 
 
 def prep_donut(request, app, block):
@@ -536,29 +671,45 @@ def prep_line(request, app, block):
         else:
             values.append(sums.get(start, 0))
     known = [v for v in values if v is not None]
-    threshold_val = None
-    if str(props.get("threshold") or "").strip():
-        try:
-            threshold_val = float(props.get("threshold"))
-        except (TypeError, ValueError):
-            threshold_val = None
-    top = max(known + ([threshold_val] if threshold_val is not None else []), default=0) or 1
+    digits = decimals_for((max(known) - min(known)) if len(known) > 1 else 0)
+    # Obere und untere Grenze, z. B. OEG/UEG einer Regelkarte („24,03“ mit Komma geht auch)
+    threshold_val = _threshold(props.get("threshold"))
+    lower_val = _threshold(props.get("threshold_low"))
+    limits = [v for v in (threshold_val, lower_val) if v is not None]
+    top = max(known + limits, default=0) or 1
+    # Liegen alle Werte weit über 0 (Messwerte wie 24,00 mm), beginnt die Achse knapp unter dem
+    # kleinsten Wert – sonst wäre die Linie flach und Abweichungen unsichtbar.
+    low = min(known + limits, default=0)
+    floor = low - 0.1 * (top - low) if low > 0 and top > low and (top - low) < 0.5 * top else 0
     width, height = 600, 180
     step = width / len(values)  # jeder Punkt in der Mitte seiner Spalte, wie Beschriftung und Tooltip
-    points = [(round((i + .5) * step, 1), round(height - height * v / top, 1))
-              for i, v in enumerate(values) if v is not None]
+
+    def y_of(v):
+        return round(max(0.0, min(height, height - height * (v - floor) / ((top - floor) or 1))), 1)
+
+    points = [(round((i + .5) * step, 1), y_of(v)) for i, v in enumerate(values) if v is not None]
     line = " ".join(f"{x},{y}" for x, y in points)
     area = f"{points[0][0]},{height} {line} {points[-1][0]},{height}" if points else ""
 
     band_area = ""
     anomalies = []
-    if props.get("show_band") and len(known) >= 2:
+
+    def mark(i, v):
+        anomalies.append({"cx": f"{round((i + .5) * step, 1)}", "cy": f"{y_of(v)}",
+                          "value": _format_number(v, digits) if isinstance(v, float) else _format_number(v)})
+
+    if lower_val is not None:
+        # Regelkarte: jeder Punkt außerhalb der Grenzen wird markiert
+        for i, v in enumerate(values):
+            if v is not None and (v < lower_val or (threshold_val is not None and v > threshold_val)):
+                mark(i, v)
+    elif props.get("show_band") and len(known) >= 2:
         import math as _math
 
         mean = sum(known) / len(known)
         std = _math.sqrt(sum((v - mean) ** 2 for v in known) / len(known))
-        upper_y = round(max(0.0, min(height, height - height * (mean + std) / top)), 1)
-        lower_y = round(max(0.0, min(height, height - height * max(0.0, mean - std) / top)), 1)
+        upper_y = y_of(mean + std)
+        lower_y = y_of(max(floor, mean - std))
         if points:
             x0, x1 = points[0][0], points[-1][0]
             band_area = f"{x0},{upper_y} {x1},{upper_y} {x1},{lower_y} {x0},{lower_y}"
@@ -566,27 +717,37 @@ def prep_line(request, app, block):
         if limit_val is not None:
             for i, v in enumerate(values):
                 if v is not None and v > limit_val:
-                    anomalies.append({
-                        "cx": f"{round((i + .5) * step, 1)}",
-                        "cy": f"{round(height - height * v / top, 1)}",
-                        "value": _format_number(round(v, 2) if isinstance(v, float) else v),
-                    })
-    threshold_y = (f"{round(max(0.0, min(height, height - height * threshold_val / top)), 1)}"
-                   if threshold_val is not None else None)
+                    mark(i, v)
+    if props.get("show_band") and lower_val is not None and len(known) >= 2:
+        import math as _math
+
+        mean = sum(known) / len(known)
+        std = _math.sqrt(sum((v - mean) ** 2 for v in known) / len(known))
+        if points:
+            x0, x1 = points[0][0], points[-1][0]
+            upper_y, lower_y = y_of(mean + std), y_of(max(floor, mean - std))
+            band_area = f"{x0},{upper_y} {x1},{upper_y} {x1},{lower_y} {x0},{lower_y}"
+    threshold_y = f"{y_of(threshold_val)}" if threshold_val is not None else None
+    lower_y = f"{y_of(lower_val)}" if lower_val is not None else None
 
     every = max(1, round(len(starts) / 8))  # höchstens etwa 8 Beschriftungen unter der Achse
     unit = props.get("unit") or ""
     entries = []
     for i, (start, value) in enumerate(zip(starts, values)):
         short, full = _line_label(period, start)
-        shown = _format_number(round(value, 2) if isinstance(value, float) else value) if value is not None else "–"
-        entries.append({"label": short if i % every == 0 or i == len(starts) - 1 else "",
+        shown = (_format_number(value, digits) if isinstance(value, float) else _format_number(value)) if value is not None else "–"
+        last = len(starts) - 1
+        # Die letzte Beschriftung immer; eine regelmäßige direkt davor fällt weg, sonst kleben
+        # beide aneinander („25.11.26.11.“).
+        labelled = i == last or (i % every == 0 and last - i > every // 2)
+        entries.append({"label": short if labelled else "",
                         "title": f"{full}: {shown}{(' ' + unit) if unit and value is not None else ''}",
                         "value": shown, "full": full})
     return {
         "line": line, "area": area, "width": width, "height": height, "entries": entries,
-        "band_area": band_area, "threshold_y": threshold_y, "anomalies": anomalies,
-        "max": _format_number(round(top, 2) if isinstance(top, float) else top),
+        "band_area": band_area, "threshold_y": threshold_y, "lower_y": lower_y, "anomalies": anomalies,
+        "max": _format_number(top, digits) if isinstance(top, float) else _format_number(top),
+        "min": _format_number(floor, digits) if floor else "",
         "last": entries[-1]["value"], "basis": date_field.label if date_field else gettext("Erfassungsdatum"),
         "empty": not any(known),
     }
@@ -858,6 +1019,11 @@ ENTITY = {"key": "entity", "label": _("Tabelle"), "type": "entity"}
 AGGREGATE = {"key": "aggregate", "label": _("Berechnung"), "type": "select", "default": "count",
              "options": [["count", _("Anzahl")], ["sum", _("Summe")], ["avg", _("Durchschnitt")]]}
 NUMBER_FIELD = {"key": "field", "label": _("Feld (für Summe/Durchschnitt)"), "type": "field"}
+STAT_AGGREGATE = {**AGGREGATE, "options": AGGREGATE["options"] + [
+    ["days_since", _("Tage seit dem letzten Datum")], ["days_until", _("Tage bis zum nächsten Datum")]]}
+STAT_FIELD = {**NUMBER_FIELD, "label": _("Feld (für Summe, Durchschnitt oder Tage)"),
+              "help": _("„Tage seit“ zählt z. B. die Tage ohne Unfall seit der letzten Meldung, "
+                        "„Tage bis“ die Tage bis zum nächsten Termin. Beides braucht ein Datumsfeld.")}
 
 # Inhalt
 register("heading", _("Überschrift"), "🔤", [
@@ -908,9 +1074,17 @@ register("export", _("CSV-Export"), "⬇️", [
 # Auswertung
 register("stat", _("Kennzahl"), "🔢", [
     {"key": "label", "label": _("Beschriftung"), "type": "text", "default": _("Anzahl")},
-    ENTITY, AGGREGATE, NUMBER_FIELD,
+    ENTITY, STAT_AGGREGATE, STAT_FIELD,
     {"key": "unit", "label": _("Einheit (optional, z. B. €)"), "type": "text", "default": ""},
-], prep_stat, "Auswertung", _("Anzahl, Summe oder Durchschnitt"))
+    {"key": "direction", "label": _("Ampel: Was ist schlecht?"), "type": "select", "default": "higher_worse",
+     "options": [["higher_worse", _("Hohe Werte (z. B. Ausschuss, Störungen)")],
+                 ["lower_worse", _("Niedrige Werte (z. B. OEE, Liefertreue)")]]},
+    {"key": "warn_at", "label": _("Ampel gelb ab (optional)"), "type": "text", "default": ""},
+    {"key": "alarm_at", "label": _("Ampel rot ab (optional)"), "type": "text", "default": ""},
+    {"key": "compare_field", "label": _("Vergleich: Datumsfeld (optional)"), "type": "field"},
+    {"key": "compare_days", "label": _("Vergleich: Zeitraum in Tagen (0 = aus)"), "type": "number", "default": 0,
+     "help": _("Zeigt den Wert der letzten Tage und die Veränderung zu den Tagen davor, z. B. 7 = diese gegen letzte Woche.")},
+], prep_stat, "Auswertung", _("Anzahl, Summe oder Durchschnitt, optional mit Ampel und Trend"))
 register("progress", _("Fortschritt"), "🎯", [
     {"key": "label", "label": _("Beschriftung"), "type": "text", "default": _("Fortschritt")},
     ENTITY, AGGREGATE, NUMBER_FIELD,
@@ -921,7 +1095,12 @@ register("chart", _("Balkendiagramm"), "📊", [
     {"key": "label", "label": _("Beschriftung"), "type": "text", "default": _("Verteilung")},
     ENTITY,
     {"key": "field", "label": _("Gruppieren nach"), "type": "field"},
-], prep_chart, "Auswertung", _("Einträge je Wert als Rangliste"))
+    {"key": "agg", "label": _("Balkenlänge"), "type": "select", "default": "count",
+     "options": [["count", _("Anzahl Einträge")], ["sum", _("Summe eines Zahlenfelds")],
+                 ["avg", _("Durchschnitt eines Zahlenfelds")]]},
+    {"key": "value_field", "label": _("Zahlenfeld (für Summe/Durchschnitt)"), "type": "field"},
+    {"key": "pareto", "label": _("Pareto: kumulierten Anteil zeigen"), "type": "checkbox", "default": False},
+], prep_chart, "Auswertung", _("Rangliste je Wert: Anzahl, Summe oder Durchschnitt, optional als Pareto"))
 register("donut", _("Kreisdiagramm"), "🍩", [
     {"key": "label", "label": _("Beschriftung"), "type": "text", "default": _("Anteile")},
     ENTITY,
@@ -945,6 +1124,9 @@ register("line", _("Liniendiagramm"), "📉", [
     {"key": "unit", "label": _("Einheit (optional)"), "type": "text", "default": ""},
     {"key": "show_band", "label": _("Konfidenzband (±1σ) und Anomalien anzeigen"), "type": "checkbox", "default": False},
     {"key": "threshold", "label": _("Schwellenwert-Linie (optional)"), "type": "text", "default": ""},
+    {"key": "threshold_low", "label": _("Untere Grenze (optional)"), "type": "text", "default": "",
+     "help": _("Mit beiden Grenzen wird das Diagramm zur Regelkarte: Punkte über der oberen oder unter der "
+               "unteren Grenze (z. B. OEG/UEG) werden rot markiert.")},
 ], prep_line, "Auswertung", _("Werte je Tag, Woche oder Monat als Linie"))
 
 # Navigation
@@ -1036,7 +1218,10 @@ def render_block(request, app, block, types=None, overrides=None):
     if not block_type:
         return None
     try:
-        ctx = block_type.prepare(request, app, block) if block_type.prepare else {}
+        with conditions.active(request, app, block):
+            ctx = block_type.prepare(request, app, block) if block_type.prepare else {}
+    except conditions.ConditionError as exc:
+        ctx = {"error": str(exc)}
     except Exception:
         log.exception("Baustein %s fehlgeschlagen", block.get("type"))
         ctx = {"error": gettext("Dieser Baustein konnte nicht geladen werden.")}
@@ -1096,6 +1281,7 @@ CONTRACT_FILE = Path(__file__).resolve().parent / "bausteinvertrag.json"
 
 def block_contract():
     """{baustein: [einstellungen]} aller mitgelieferten Bausteine (ohne Erweiterungen)."""
+    _attach_where()
     return {key: sorted(spec["key"] for spec in block_type.fields) for key, block_type in sorted(REGISTRY.items())}
 
 

@@ -156,10 +156,10 @@ class FieldForm(forms.ModelForm):
         cleaned = super().clean()
         formula = (cleaned.get("formula") or "").strip()
         if formula:
-            if cleaned.get("type") not in (Field.NUMBER, Field.DECIMAL):
-                self.add_error("formula", _("Formeln gibt es nur für die Typen „Ganze Zahl“ und „Kommazahl“."))
+            if cleaned.get("type") not in (Field.NUMBER, Field.DECIMAL, Field.DATE):
+                self.add_error("formula", _("Formeln gibt es nur für die Typen „Ganze Zahl“, „Kommazahl“ und „Datum“."))
             elif self.entity is not None:
-                keys = [f.key for f in self.entity.fields.filter(type__in=[Field.NUMBER, Field.DECIMAL])
+                keys = [f.key for f in self.entity.fields.filter(type__in=[Field.NUMBER, Field.DECIMAL, Field.DATE])
                         if f.pk != self.instance.pk]
                 problem = formula_problem(formula, keys)
                 if problem:

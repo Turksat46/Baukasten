@@ -1,0 +1,561 @@
+{
+ "slug": "gmd-sicherheit",
+ "name": "Arbeitssicherheit & Sicherheitskreuz",
+ "icon": "🦺",
+ "description": "Beinahe-Unfälle anonym melden, Sicherheitskreuz, Schwerpunkte nach Bereich",
+ "rolle": "Arbeitssicherheit / alle",
+ "komplexitaet": "mittel",
+ "entities": [
+  {
+   "name": "Meldungen",
+   "slug": "meldungen",
+   "fields": [
+    {
+     "label": "Datum",
+     "key": "datum",
+     "type": "date",
+     "required": true
+    },
+    {
+     "label": "Bereich",
+     "key": "bereich",
+     "type": "choice",
+     "choices": [
+      "Halle 1 Zerspanung",
+      "Halle 2 Montage",
+      "Halle 3 Prüffeld",
+      "Logistik Wareneingang",
+      "Werkstatt IH",
+      "Härterei"
+     ],
+     "required": true
+    },
+    {
+     "label": "Art",
+     "key": "art",
+     "type": "choice",
+     "choices": [
+      "Unsichere Situation",
+      "Beinahe-Unfall",
+      "Erste-Hilfe-Fall",
+      "Unfall ohne Ausfall",
+      "Unfall mit Ausfall"
+     ],
+     "required": true
+    },
+    {
+     "label": "Was ist passiert?",
+     "key": "beschreibung",
+     "type": "longtext"
+    },
+    {
+     "label": "Sofortmaßnahme",
+     "key": "massnahme",
+     "type": "text"
+    },
+    {
+     "label": "Status",
+     "key": "status",
+     "type": "choice",
+     "choices": [
+      "Neu",
+      "In Bearbeitung",
+      "Erledigt"
+     ]
+    }
+   ]
+  }
+ ],
+ "pages": [
+  {
+   "title": "Melden",
+   "slug": "melden",
+   "layout": [
+    {
+     "type": "heading",
+     "width": 12,
+     "props": {
+      "text": "Gefahr gesehen? Melden!",
+      "subtitle": "Anonym – auch ohne Anmeldung über den QR-Code am Infoboard",
+      "level": "1"
+     }
+    },
+    {
+     "type": "form",
+     "width": 12,
+     "props": {
+      "entity": "meldungen",
+      "submit_label": "Meldung absenden"
+     }
+    }
+   ],
+   "public": true
+  },
+  {
+   "title": "Sicherheitskreuz",
+   "slug": "kreuz",
+   "layout": [
+    {
+     "type": "stat",
+     "width": 4,
+     "props": {
+      "label": "Tage ohne Unfall mit Ausfall",
+      "entity": "meldungen",
+      "aggregate": "days_since",
+      "field": "datum",
+      "where": "Art = Unfall mit Ausfall",
+      "direction": "lower_worse",
+      "warn_at": "30",
+      "alarm_at": "7"
+     }
+    },
+    {
+     "type": "stat",
+     "width": 4,
+     "props": {
+      "label": "Meldungen diesen Monat",
+      "entity": "meldungen",
+      "where": "Datum >= monatsanfang"
+     }
+    },
+    {
+     "type": "progress",
+     "width": 4,
+     "props": {
+      "label": "Meldungen (Ziel 40 im Quartal)",
+      "entity": "meldungen",
+      "target": 40,
+      "where": "Datum >= quartalsanfang"
+     }
+    },
+    {
+     "type": "output",
+     "width": 12,
+     "props": {
+      "label": "Sicherheitskreuz (aktueller Monat)"
+     },
+     "name": "kreuz"
+    },
+    {
+     "type": "calendar",
+     "width": 12,
+     "props": {
+      "title": "Meldungen im Kalender",
+      "entity": "meldungen",
+      "date_field": "datum",
+      "label_field": "art",
+      "color_field": "art",
+      "create_links": false
+     }
+    }
+   ]
+  },
+  {
+   "title": "Auswertung",
+   "slug": "auswertung",
+   "layout": [
+    {
+     "type": "filter",
+     "width": 12,
+     "props": {
+      "entity": "meldungen",
+      "field": "bereich",
+      "field2": "art",
+      "field3": "status"
+     }
+    },
+    {
+     "type": "heatmap",
+     "width": 12,
+     "props": {
+      "title": "Bereich × Art",
+      "entity": "meldungen",
+      "mode": "crosstab",
+      "row_field": "bereich",
+      "col_field": "art"
+     }
+    },
+    {
+     "type": "donut",
+     "width": 6,
+     "props": {
+      "label": "Nach Art",
+      "entity": "meldungen",
+      "field": "art"
+     }
+    },
+    {
+     "type": "chart",
+     "width": 6,
+     "props": {
+      "label": "Nach Bereich",
+      "entity": "meldungen",
+      "field": "bereich"
+     }
+    },
+    {
+     "type": "kanban",
+     "width": 12,
+     "props": {
+      "entity": "meldungen",
+      "field": "status",
+      "detail": "bereich"
+     }
+    }
+   ]
+  }
+ ],
+ "scripts": [
+  {
+   "name": "Sicherheitskreuz",
+   "language": "python",
+   "trigger": "page",
+   "code": "import datetime\nheute = datetime.date.today()\nrows = app.table(\"meldungen\").all()\nrang = {\"Unfall mit Ausfall\": \"🟥\", \"Unfall ohne Ausfall\": \"🟧\", \"Erste-Hilfe-Fall\": \"🟨\", \"Beinahe-Unfall\": \"🟦\", \"Unsichere Situation\": \"🟦\"}\nwoche = []\nzeilen = []\nfor tag in range(1, heute.day + 1):\n    d = heute.replace(day=tag).isoformat()\n    an = [r[\"art\"] for r in rows if r[\"datum\"] == d]\n    farbe = \"🟩\"\n    for art in [\"Unfall mit Ausfall\", \"Unfall ohne Ausfall\", \"Erste-Hilfe-Fall\"]:\n        if art in an:\n            farbe = rang[art]\n            break\n    woche.append(f\"{tag:02d} {farbe}\")\n    if len(woche) == 7:\n        zeilen.append({\"Tage\": \"  \".join(woche)}); woche = []\nif woche:\n    zeilen.append({\"Tage\": \"  \".join(woche)})\nui.set(\"kreuz\", rows=zeilen)\n",
+   "page": "kreuz"
+  }
+ ],
+ "beispieldaten": {
+  "meldungen": [
+   {
+    "datum": "@-29",
+    "bereich": "Halle 2 Montage",
+    "art": "Unsichere Situation",
+    "beschreibung": "Stapler zu schnell",
+    "status": "In Bearbeitung"
+   },
+   {
+    "datum": "@-52",
+    "bereich": "Halle 1 Zerspanung",
+    "art": "Unsichere Situation",
+    "beschreibung": "Fluchtweg zugestellt",
+    "status": "Neu"
+   },
+   {
+    "datum": "@-51",
+    "bereich": "Halle 2 Montage",
+    "art": "Beinahe-Unfall",
+    "beschreibung": "Schutztür überbrückt",
+    "status": "Erledigt"
+   },
+   {
+    "datum": "@-39",
+    "bereich": "Härterei",
+    "art": "Erste-Hilfe-Fall",
+    "beschreibung": "Schnittverletzung am Grat",
+    "status": "In Bearbeitung"
+   },
+   {
+    "datum": "@-34",
+    "bereich": "Halle 1 Zerspanung",
+    "art": "Beinahe-Unfall",
+    "beschreibung": "Schnittverletzung am Grat",
+    "status": "Neu"
+   },
+   {
+    "datum": "@-59",
+    "bereich": "Härterei",
+    "art": "Beinahe-Unfall",
+    "beschreibung": "Ölspur im Gang",
+    "status": "Erledigt"
+   },
+   {
+    "datum": "@-50",
+    "bereich": "Werkstatt IH",
+    "art": "Unsichere Situation",
+    "beschreibung": "Fluchtweg zugestellt",
+    "status": "Erledigt"
+   },
+   {
+    "datum": "@-18",
+    "bereich": "Halle 3 Prüffeld",
+    "art": "Unsichere Situation",
+    "beschreibung": "Stolperstelle Kabel",
+    "status": "Erledigt"
+   },
+   {
+    "datum": "@-47",
+    "bereich": "Halle 1 Zerspanung",
+    "art": "Beinahe-Unfall",
+    "beschreibung": "Fluchtweg zugestellt",
+    "status": "Erledigt"
+   },
+   {
+    "datum": "@-18",
+    "bereich": "Halle 2 Montage",
+    "art": "Unsichere Situation",
+    "beschreibung": "Stolperstelle Kabel",
+    "status": "Neu"
+   },
+   {
+    "datum": "@-27",
+    "bereich": "Härterei",
+    "art": "Unfall ohne Ausfall",
+    "beschreibung": "Last ungesichert",
+    "status": "Erledigt"
+   },
+   {
+    "datum": "@-14",
+    "bereich": "Logistik Wareneingang",
+    "art": "Unsichere Situation",
+    "beschreibung": "Ölspur im Gang",
+    "status": "Neu"
+   },
+   {
+    "datum": "@-12",
+    "bereich": "Logistik Wareneingang",
+    "art": "Beinahe-Unfall",
+    "beschreibung": "Schnittverletzung am Grat",
+    "status": "Erledigt"
+   },
+   {
+    "datum": "@-51",
+    "bereich": "Halle 1 Zerspanung",
+    "art": "Beinahe-Unfall",
+    "beschreibung": "Stolperstelle Kabel",
+    "status": "Neu"
+   },
+   {
+    "datum": "@-46",
+    "bereich": "Härterei",
+    "art": "Unsichere Situation",
+    "beschreibung": "Stolperstelle Kabel",
+    "status": "Neu"
+   },
+   {
+    "datum": "@-50",
+    "bereich": "Halle 2 Montage",
+    "art": "Unsichere Situation",
+    "beschreibung": "Stolperstelle Kabel",
+    "status": "Erledigt"
+   },
+   {
+    "datum": "@-4",
+    "bereich": "Halle 2 Montage",
+    "art": "Beinahe-Unfall",
+    "beschreibung": "Last ungesichert",
+    "status": "Erledigt"
+   },
+   {
+    "datum": "@-22",
+    "bereich": "Härterei",
+    "art": "Unsichere Situation",
+    "beschreibung": "Schutztür überbrückt",
+    "status": "Erledigt"
+   },
+   {
+    "datum": "@-11",
+    "bereich": "Halle 3 Prüffeld",
+    "art": "Erste-Hilfe-Fall",
+    "beschreibung": "Fluchtweg zugestellt",
+    "status": "In Bearbeitung"
+   },
+   {
+    "datum": "@-9",
+    "bereich": "Halle 2 Montage",
+    "art": "Erste-Hilfe-Fall",
+    "beschreibung": "Ölspur im Gang",
+    "status": "Neu"
+   },
+   {
+    "datum": "@-52",
+    "bereich": "Halle 2 Montage",
+    "art": "Unsichere Situation",
+    "beschreibung": "Schutztür überbrückt",
+    "status": "Erledigt"
+   },
+   {
+    "datum": "@-37",
+    "bereich": "Halle 3 Prüffeld",
+    "art": "Unsichere Situation",
+    "beschreibung": "Schnittverletzung am Grat",
+    "status": "Erledigt"
+   },
+   {
+    "datum": "@-42",
+    "bereich": "Logistik Wareneingang",
+    "art": "Erste-Hilfe-Fall",
+    "beschreibung": "Schnittverletzung am Grat",
+    "status": "Neu"
+   },
+   {
+    "datum": "@-14",
+    "bereich": "Halle 2 Montage",
+    "art": "Unsichere Situation",
+    "beschreibung": "Stapler zu schnell",
+    "status": "In Bearbeitung"
+   },
+   {
+    "datum": "@-20",
+    "bereich": "Halle 1 Zerspanung",
+    "art": "Unsichere Situation",
+    "beschreibung": "Schutztür überbrückt",
+    "status": "In Bearbeitung"
+   },
+   {
+    "datum": "@-34",
+    "bereich": "Werkstatt IH",
+    "art": "Unfall mit Ausfall",
+    "beschreibung": "Stolperstelle Kabel",
+    "status": "In Bearbeitung"
+   },
+   {
+    "datum": "@-50",
+    "bereich": "Härterei",
+    "art": "Unfall ohne Ausfall",
+    "beschreibung": "Stapler zu schnell",
+    "status": "Erledigt"
+   },
+   {
+    "datum": "@-55",
+    "bereich": "Werkstatt IH",
+    "art": "Unsichere Situation",
+    "beschreibung": "Schutztür überbrückt",
+    "status": "Erledigt"
+   },
+   {
+    "datum": "@-4",
+    "bereich": "Halle 1 Zerspanung",
+    "art": "Unsichere Situation",
+    "beschreibung": "Schutztür überbrückt",
+    "status": "Erledigt"
+   },
+   {
+    "datum": "@-16",
+    "bereich": "Logistik Wareneingang",
+    "art": "Beinahe-Unfall",
+    "beschreibung": "Schutztür überbrückt",
+    "status": "Neu"
+   },
+   {
+    "datum": "@-19",
+    "bereich": "Halle 2 Montage",
+    "art": "Erste-Hilfe-Fall",
+    "beschreibung": "Ölspur im Gang",
+    "status": "Neu"
+   },
+   {
+    "datum": "@-23",
+    "bereich": "Logistik Wareneingang",
+    "art": "Beinahe-Unfall",
+    "beschreibung": "Fluchtweg zugestellt",
+    "status": "In Bearbeitung"
+   },
+   {
+    "datum": "@-44",
+    "bereich": "Halle 1 Zerspanung",
+    "art": "Beinahe-Unfall",
+    "beschreibung": "Stolperstelle Kabel",
+    "status": "Neu"
+   },
+   {
+    "datum": "@-56",
+    "bereich": "Werkstatt IH",
+    "art": "Beinahe-Unfall",
+    "beschreibung": "Ölspur im Gang",
+    "status": "In Bearbeitung"
+   },
+   {
+    "datum": "@-13",
+    "bereich": "Halle 3 Prüffeld",
+    "art": "Unsichere Situation",
+    "beschreibung": "Ölspur im Gang",
+    "status": "Erledigt"
+   },
+   {
+    "datum": "@-57",
+    "bereich": "Härterei",
+    "art": "Erste-Hilfe-Fall",
+    "beschreibung": "Schnittverletzung am Grat",
+    "status": "Erledigt"
+   },
+   {
+    "datum": "@-5",
+    "bereich": "Halle 3 Prüffeld",
+    "art": "Unsichere Situation",
+    "beschreibung": "Fluchtweg zugestellt",
+    "status": "Erledigt"
+   },
+   {
+    "datum": "@-1",
+    "bereich": "Werkstatt IH",
+    "art": "Unsichere Situation",
+    "beschreibung": "Last ungesichert",
+    "status": "Erledigt"
+   },
+   {
+    "datum": "@-55",
+    "bereich": "Härterei",
+    "art": "Beinahe-Unfall",
+    "beschreibung": "Last ungesichert",
+    "status": "Erledigt"
+   },
+   {
+    "datum": "@-20",
+    "bereich": "Halle 2 Montage",
+    "art": "Unsichere Situation",
+    "beschreibung": "Schnittverletzung am Grat",
+    "status": "Erledigt"
+   },
+   {
+    "datum": "@-34",
+    "bereich": "Werkstatt IH",
+    "art": "Beinahe-Unfall",
+    "beschreibung": "Stapler zu schnell",
+    "status": "In Bearbeitung"
+   },
+   {
+    "datum": "@-45",
+    "bereich": "Halle 2 Montage",
+    "art": "Beinahe-Unfall",
+    "beschreibung": "Schutztür überbrückt",
+    "status": "In Bearbeitung"
+   },
+   {
+    "datum": "@-44",
+    "bereich": "Werkstatt IH",
+    "art": "Unsichere Situation",
+    "beschreibung": "Schnittverletzung am Grat",
+    "status": "Erledigt"
+   },
+   {
+    "datum": "@-34",
+    "bereich": "Härterei",
+    "art": "Unfall ohne Ausfall",
+    "beschreibung": "Fluchtweg zugestellt",
+    "status": "Erledigt"
+   },
+   {
+    "datum": "@-17",
+    "bereich": "Logistik Wareneingang",
+    "art": "Beinahe-Unfall",
+    "beschreibung": "Schutztür überbrückt",
+    "status": "Neu"
+   }
+  ]
+ },
+ "nachbauten": [
+  {
+   "baustein": "sicherheitskreuz",
+   "ersatz": "Grünes Kreuz (Tag je Feld, Farbe nach schwerstem Ereignis): Emoji-Tabelle aus dem Skript.",
+   "geloest": false
+  },
+  {
+   "baustein": "datumsformel",
+   "ersatz": "„Tage ohne Unfall“ per Skript.",
+   "geloest": true,
+   "jetzt": "Kennzahl „Tage seit dem letzten Datum“ mit Bedingung „Art = Unfall mit Ausfall“ und Ampel."
+  },
+  {
+   "baustein": "kennzahl_bedingung",
+   "ersatz": "„Meldungen diesen Monat“ per Skript.",
+   "geloest": true,
+   "jetzt": "Kennzahl mit „Datum >= monatsanfang“."
+  },
+  {
+   "baustein": "fortschritt_zeitraum",
+   "ersatz": "Fortschritt „im Quartal“ zählt alle Meldungen.",
+   "geloest": true,
+   "jetzt": "Fortschritt mit „Datum >= quartalsanfang“."
+  }
+ ]
+}

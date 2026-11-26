@@ -1,0 +1,1843 @@
+{
+ "slug": "gmd-controlling",
+ "name": "Kostenstellen-Controlling",
+ "icon": "💶",
+ "description": "Ist-Kosten gegen Budget je Kostenstelle, Kostenarten-Pivot, Hochrechnung",
+ "rolle": "Controller / Kostenstellenverantwortliche",
+ "komplexitaet": "mittel",
+ "entities": [
+  {
+   "name": "Buchungen",
+   "slug": "buchungen",
+   "fields": [
+    {
+     "label": "Datum",
+     "key": "datum",
+     "type": "date",
+     "required": true
+    },
+    {
+     "label": "Kostenstelle",
+     "key": "kst",
+     "type": "choice",
+     "choices": [
+      "4711 Montage",
+      "4712 Zerspanung",
+      "4713 Prüffeld",
+      "4720 Instandhaltung",
+      "4730 Logistik"
+     ],
+     "required": true
+    },
+    {
+     "label": "Kostenart",
+     "key": "kostenart",
+     "type": "choice",
+     "choices": [
+      "Personal",
+      "Hilfs- & Betriebsstoffe",
+      "Werkzeuge",
+      "Fremdleistung",
+      "Energie",
+      "Reparatur"
+     ]
+    },
+    {
+     "label": "Betrag (€)",
+     "key": "betrag",
+     "type": "decimal",
+     "required": true
+    },
+    {
+     "label": "Text",
+     "key": "text",
+     "type": "text"
+    }
+   ]
+  },
+  {
+   "name": "Budgets",
+   "slug": "budgets",
+   "fields": [
+    {
+     "label": "Kostenstelle",
+     "key": "kst",
+     "type": "choice",
+     "choices": [
+      "4711 Montage",
+      "4712 Zerspanung",
+      "4713 Prüffeld",
+      "4720 Instandhaltung",
+      "4730 Logistik"
+     ],
+     "required": true
+    },
+    {
+     "label": "Budget Jahr (€)",
+     "key": "budget",
+     "type": "decimal"
+    }
+   ]
+  }
+ ],
+ "pages": [
+  {
+   "title": "Cockpit",
+   "slug": "cockpit",
+   "layout": [
+    {
+     "type": "heading",
+     "width": 12,
+     "props": {
+      "text": "Kostenstellen-Cockpit",
+      "subtitle": "Geschäftsjahr laufend",
+      "level": "1"
+     }
+    },
+    {
+     "type": "filter",
+     "width": 12,
+     "props": {
+      "entity": "buchungen",
+      "field": "kst",
+      "field2": "kostenart",
+      "field3": "datum"
+     }
+    },
+    {
+     "type": "stat",
+     "width": 4,
+     "props": {
+      "label": "Ist-Kosten",
+      "entity": "buchungen",
+      "aggregate": "sum",
+      "field": "betrag",
+      "unit": "€"
+     }
+    },
+    {
+     "type": "progress",
+     "width": 8,
+     "props": {
+      "label": "Ausschöpfung Gesamtbudget",
+      "entity": "buchungen",
+      "aggregate": "sum",
+      "field": "betrag",
+      "target": 1000000,
+      "unit": "€"
+     },
+     "name": "budget"
+    },
+    {
+     "type": "notice",
+     "width": 4,
+     "props": {
+      "title": "4711 Montage",
+      "text": "…"
+     },
+     "name": "kst1"
+    },
+    {
+     "type": "notice",
+     "width": 4,
+     "props": {
+      "title": "4712 Zerspanung",
+      "text": "…"
+     },
+     "name": "kst2"
+    },
+    {
+     "type": "notice",
+     "width": 4,
+     "props": {
+      "title": "4713 Prüffeld",
+      "text": "…"
+     },
+     "name": "kst3"
+    },
+    {
+     "type": "notice",
+     "width": 4,
+     "props": {
+      "title": "4720 Instandhaltung",
+      "text": "…"
+     },
+     "name": "kst4"
+    },
+    {
+     "type": "notice",
+     "width": 4,
+     "props": {
+      "title": "4730 Logistik",
+      "text": "…"
+     },
+     "name": "kst5"
+    },
+    {
+     "type": "pivot",
+     "width": 12,
+     "props": {
+      "title": "Kostenstelle × Kostenart (Summe €)",
+      "entity": "buchungen",
+      "row_field": "kst",
+      "col_field": "kostenart",
+      "agg": "sum",
+      "value_field": "betrag"
+     }
+    },
+    {
+     "type": "line",
+     "width": 12,
+     "props": {
+      "label": "Kosten je Monat",
+      "entity": "buchungen",
+      "date_field": "datum",
+      "aggregate": "sum",
+      "field": "betrag",
+      "period": "month",
+      "count": 6,
+      "unit": "€"
+     }
+    }
+   ]
+  },
+  {
+   "title": "Buchungen",
+   "slug": "buchungen",
+   "layout": [
+    {
+     "type": "table",
+     "width": 12,
+     "props": {
+      "entity": "buchungen",
+      "searchable": true,
+      "page_size": 25
+     }
+    },
+    {
+     "type": "export",
+     "width": 12,
+     "props": {
+      "entity": "buchungen",
+      "label": "Als CSV für Excel"
+     }
+    },
+    {
+     "type": "csv_import",
+     "width": 12,
+     "props": {
+      "entity": "buchungen",
+      "label": "SAP-Export (CSV) laden"
+     }
+    }
+   ]
+  },
+  {
+   "title": "Budgets",
+   "slug": "budgets",
+   "layout": [
+    {
+     "type": "table",
+     "width": 12,
+     "props": {
+      "entity": "budgets"
+     }
+    },
+    {
+     "type": "form",
+     "width": 12,
+     "props": {
+      "entity": "budgets"
+     }
+    }
+   ]
+  }
+ ],
+ "scripts": [
+  {
+   "name": "Budget-Ampeln",
+   "language": "python",
+   "trigger": "page",
+   "code": "import datetime\nheute = datetime.date.today()\nanteil_jahr = (heute.timetuple().tm_yday) / 365\nbudgets = {b[\"kst\"]: b[\"budget\"] or 0 for b in app.table(\"budgets\").all()}\nist = {}\nfor r in app.table(\"buchungen\").all():\n    ist[r[\"kst\"]] = ist.get(r[\"kst\"], 0) + (r[\"betrag\"] or 0)\nkst = [\"4711 Montage\", \"4712 Zerspanung\", \"4713 Prüffeld\", \"4720 Instandhaltung\", \"4730 Logistik\"]\nfor i, k in enumerate(kst, start=1):\n    b = budgets.get(k, 0); x = ist.get(k, 0)\n    quote = 100 * x / b if b else 0\n    hoch = x / anteil_jahr if anteil_jahr else 0\n    ton = \"danger\" if hoch > b * 1.05 else (\"warning\" if hoch > b * 0.95 else \"success\")\n    ui.set(f\"kst{i}\", tone=ton, text=f\"Ist {x:,.0f} € von {b:,.0f} € ({quote:.0f} %) · Hochrechnung {hoch:,.0f} €\".replace(\",\", \".\"))\nui.set(\"budget\", label=f\"Ausschöpfung Gesamtbudget ({sum(budgets.values()):,.0f} €)\".replace(\",\", \".\"))\n",
+   "page": "cockpit"
+  }
+ ],
+ "beispieldaten": {
+  "buchungen": [
+   {
+    "datum": "@-137",
+    "kst": "4712 Zerspanung",
+    "kostenart": "Fremdleistung",
+    "betrag": 5739.08,
+    "text": "Umbuchung"
+   },
+   {
+    "datum": "@-73",
+    "kst": "4712 Zerspanung",
+    "kostenart": "Hilfs- & Betriebsstoffe",
+    "betrag": 10653.28,
+    "text": "Rahmenvertrag"
+   },
+   {
+    "datum": "@-137",
+    "kst": "4730 Logistik",
+    "kostenart": "Werkzeuge",
+    "betrag": 4319.74,
+    "text": "Rahmenvertrag"
+   },
+   {
+    "datum": "@-62",
+    "kst": "4720 Instandhaltung",
+    "kostenart": "Werkzeuge",
+    "betrag": 14019.75,
+    "text": "Umbuchung"
+   },
+   {
+    "datum": "@-128",
+    "kst": "4711 Montage",
+    "kostenart": "Fremdleistung",
+    "betrag": 10252.45,
+    "text": "Einzelbestellung"
+   },
+   {
+    "datum": "@-2",
+    "kst": "4713 Prüffeld",
+    "kostenart": "Energie",
+    "betrag": 5397.46,
+    "text": "Monatsabgrenzung"
+   },
+   {
+    "datum": "@-115",
+    "kst": "4720 Instandhaltung",
+    "kostenart": "Fremdleistung",
+    "betrag": 17350.61,
+    "text": "Umbuchung"
+   },
+   {
+    "datum": "@-128",
+    "kst": "4730 Logistik",
+    "kostenart": "Hilfs- & Betriebsstoffe",
+    "betrag": 1114.14,
+    "text": "Monatsabgrenzung"
+   },
+   {
+    "datum": "@-69",
+    "kst": "4713 Prüffeld",
+    "kostenart": "Energie",
+    "betrag": 2482.09,
+    "text": "Rahmenvertrag"
+   },
+   {
+    "datum": "@-80",
+    "kst": "4713 Prüffeld",
+    "kostenart": "Energie",
+    "betrag": 2404.91,
+    "text": "Rahmenvertrag"
+   },
+   {
+    "datum": "@-68",
+    "kst": "4730 Logistik",
+    "kostenart": "Werkzeuge",
+    "betrag": 2161.22,
+    "text": "Monatsabgrenzung"
+   },
+   {
+    "datum": "@-65",
+    "kst": "4713 Prüffeld",
+    "kostenart": "Energie",
+    "betrag": 12288.3,
+    "text": "Einzelbestellung"
+   },
+   {
+    "datum": "@-109",
+    "kst": "4720 Instandhaltung",
+    "kostenart": "Hilfs- & Betriebsstoffe",
+    "betrag": 5987.23,
+    "text": "Rahmenvertrag"
+   },
+   {
+    "datum": "@-128",
+    "kst": "4711 Montage",
+    "kostenart": "Energie",
+    "betrag": 12271.87,
+    "text": "Umbuchung"
+   },
+   {
+    "datum": "@-110",
+    "kst": "4730 Logistik",
+    "kostenart": "Hilfs- & Betriebsstoffe",
+    "betrag": 10371.05,
+    "text": "Rahmenvertrag"
+   },
+   {
+    "datum": "@-31",
+    "kst": "4712 Zerspanung",
+    "kostenart": "Werkzeuge",
+    "betrag": 4934.15,
+    "text": "Rahmenvertrag"
+   },
+   {
+    "datum": "@-135",
+    "kst": "4711 Montage",
+    "kostenart": "Reparatur",
+    "betrag": 731.05,
+    "text": "Rahmenvertrag"
+   },
+   {
+    "datum": "@-17",
+    "kst": "4712 Zerspanung",
+    "kostenart": "Energie",
+    "betrag": 4845.34,
+    "text": "Einzelbestellung"
+   },
+   {
+    "datum": "@-17",
+    "kst": "4713 Prüffeld",
+    "kostenart": "Werkzeuge",
+    "betrag": 3822.57,
+    "text": "Rahmenvertrag"
+   },
+   {
+    "datum": "@-53",
+    "kst": "4713 Prüffeld",
+    "kostenart": "Fremdleistung",
+    "betrag": 17862.98,
+    "text": "Umbuchung"
+   },
+   {
+    "datum": "@-4",
+    "kst": "4712 Zerspanung",
+    "kostenart": "Fremdleistung",
+    "betrag": 11131.43,
+    "text": "Rahmenvertrag"
+   },
+   {
+    "datum": "@-108",
+    "kst": "4720 Instandhaltung",
+    "kostenart": "Reparatur",
+    "betrag": 5509.11,
+    "text": "Umbuchung"
+   },
+   {
+    "datum": "@-118",
+    "kst": "4713 Prüffeld",
+    "kostenart": "Werkzeuge",
+    "betrag": 15695.58,
+    "text": "Monatsabgrenzung"
+   },
+   {
+    "datum": "@-39",
+    "kst": "4711 Montage",
+    "kostenart": "Energie",
+    "betrag": 14467.53,
+    "text": "Monatsabgrenzung"
+   },
+   {
+    "datum": "@-145",
+    "kst": "4720 Instandhaltung",
+    "kostenart": "Reparatur",
+    "betrag": 8480.79,
+    "text": "Einzelbestellung"
+   },
+   {
+    "datum": "@-150",
+    "kst": "4712 Zerspanung",
+    "kostenart": "Hilfs- & Betriebsstoffe",
+    "betrag": 12876.84,
+    "text": "Monatsabgrenzung"
+   },
+   {
+    "datum": "@-46",
+    "kst": "4730 Logistik",
+    "kostenart": "Energie",
+    "betrag": 16596.27,
+    "text": "Umbuchung"
+   },
+   {
+    "datum": "@-75",
+    "kst": "4713 Prüffeld",
+    "kostenart": "Reparatur",
+    "betrag": 5096.15,
+    "text": "Monatsabgrenzung"
+   },
+   {
+    "datum": "@-143",
+    "kst": "4730 Logistik",
+    "kostenart": "Reparatur",
+    "betrag": 16105.26,
+    "text": "Umbuchung"
+   },
+   {
+    "datum": "@-32",
+    "kst": "4712 Zerspanung",
+    "kostenart": "Werkzeuge",
+    "betrag": 7550.96,
+    "text": "Rahmenvertrag"
+   },
+   {
+    "datum": "@-52",
+    "kst": "4730 Logistik",
+    "kostenart": "Werkzeuge",
+    "betrag": 1577.76,
+    "text": "Monatsabgrenzung"
+   },
+   {
+    "datum": "@-117",
+    "kst": "4711 Montage",
+    "kostenart": "Reparatur",
+    "betrag": 1566.92,
+    "text": "Einzelbestellung"
+   },
+   {
+    "datum": "@-24",
+    "kst": "4720 Instandhaltung",
+    "kostenart": "Werkzeuge",
+    "betrag": 6895.57,
+    "text": "Monatsabgrenzung"
+   },
+   {
+    "datum": "@-126",
+    "kst": "4720 Instandhaltung",
+    "kostenart": "Personal",
+    "betrag": 13055.97,
+    "text": "Umbuchung"
+   },
+   {
+    "datum": "@-115",
+    "kst": "4720 Instandhaltung",
+    "kostenart": "Hilfs- & Betriebsstoffe",
+    "betrag": 3112.3,
+    "text": "Umbuchung"
+   },
+   {
+    "datum": "@-34",
+    "kst": "4712 Zerspanung",
+    "kostenart": "Hilfs- & Betriebsstoffe",
+    "betrag": 2675.96,
+    "text": "Monatsabgrenzung"
+   },
+   {
+    "datum": "@-63",
+    "kst": "4712 Zerspanung",
+    "kostenart": "Reparatur",
+    "betrag": 2525.11,
+    "text": "Umbuchung"
+   },
+   {
+    "datum": "@-122",
+    "kst": "4730 Logistik",
+    "kostenart": "Fremdleistung",
+    "betrag": 8195.54,
+    "text": "Rahmenvertrag"
+   },
+   {
+    "datum": "@-113",
+    "kst": "4711 Montage",
+    "kostenart": "Hilfs- & Betriebsstoffe",
+    "betrag": 15764.87,
+    "text": "Einzelbestellung"
+   },
+   {
+    "datum": "@-83",
+    "kst": "4713 Prüffeld",
+    "kostenart": "Energie",
+    "betrag": 9318.59,
+    "text": "Einzelbestellung"
+   },
+   {
+    "datum": "@-146",
+    "kst": "4711 Montage",
+    "kostenart": "Personal",
+    "betrag": 10368.21,
+    "text": "Umbuchung"
+   },
+   {
+    "datum": "@-57",
+    "kst": "4730 Logistik",
+    "kostenart": "Werkzeuge",
+    "betrag": 12437.93,
+    "text": "Monatsabgrenzung"
+   },
+   {
+    "datum": "@-96",
+    "kst": "4720 Instandhaltung",
+    "kostenart": "Energie",
+    "betrag": 17338.73,
+    "text": "Einzelbestellung"
+   },
+   {
+    "datum": "@-140",
+    "kst": "4713 Prüffeld",
+    "kostenart": "Reparatur",
+    "betrag": 15746.56,
+    "text": "Rahmenvertrag"
+   },
+   {
+    "datum": "@-30",
+    "kst": "4720 Instandhaltung",
+    "kostenart": "Energie",
+    "betrag": 8753.84,
+    "text": "Umbuchung"
+   },
+   {
+    "datum": "@-16",
+    "kst": "4712 Zerspanung",
+    "kostenart": "Energie",
+    "betrag": 3161.35,
+    "text": "Monatsabgrenzung"
+   },
+   {
+    "datum": "@-121",
+    "kst": "4712 Zerspanung",
+    "kostenart": "Werkzeuge",
+    "betrag": 14036.81,
+    "text": "Monatsabgrenzung"
+   },
+   {
+    "datum": "@-49",
+    "kst": "4711 Montage",
+    "kostenart": "Reparatur",
+    "betrag": 4243.61,
+    "text": "Rahmenvertrag"
+   },
+   {
+    "datum": "@+0",
+    "kst": "4712 Zerspanung",
+    "kostenart": "Werkzeuge",
+    "betrag": 703.97,
+    "text": "Einzelbestellung"
+   },
+   {
+    "datum": "@-47",
+    "kst": "4712 Zerspanung",
+    "kostenart": "Reparatur",
+    "betrag": 11716.96,
+    "text": "Umbuchung"
+   },
+   {
+    "datum": "@-112",
+    "kst": "4711 Montage",
+    "kostenart": "Reparatur",
+    "betrag": 14714.35,
+    "text": "Rahmenvertrag"
+   },
+   {
+    "datum": "@-51",
+    "kst": "4712 Zerspanung",
+    "kostenart": "Werkzeuge",
+    "betrag": 1786.51,
+    "text": "Rahmenvertrag"
+   },
+   {
+    "datum": "@-24",
+    "kst": "4712 Zerspanung",
+    "kostenart": "Werkzeuge",
+    "betrag": 3602.74,
+    "text": "Umbuchung"
+   },
+   {
+    "datum": "@-83",
+    "kst": "4720 Instandhaltung",
+    "kostenart": "Hilfs- & Betriebsstoffe",
+    "betrag": 16056.79,
+    "text": "Monatsabgrenzung"
+   },
+   {
+    "datum": "@-50",
+    "kst": "4713 Prüffeld",
+    "kostenart": "Fremdleistung",
+    "betrag": 12722.88,
+    "text": "Monatsabgrenzung"
+   },
+   {
+    "datum": "@-4",
+    "kst": "4730 Logistik",
+    "kostenart": "Reparatur",
+    "betrag": 16958.66,
+    "text": "Umbuchung"
+   },
+   {
+    "datum": "@-50",
+    "kst": "4713 Prüffeld",
+    "kostenart": "Reparatur",
+    "betrag": 14160.7,
+    "text": "Einzelbestellung"
+   },
+   {
+    "datum": "@-140",
+    "kst": "4712 Zerspanung",
+    "kostenart": "Personal",
+    "betrag": 10638.64,
+    "text": "Umbuchung"
+   },
+   {
+    "datum": "@-45",
+    "kst": "4730 Logistik",
+    "kostenart": "Werkzeuge",
+    "betrag": 1814.6,
+    "text": "Monatsabgrenzung"
+   },
+   {
+    "datum": "@-79",
+    "kst": "4713 Prüffeld",
+    "kostenart": "Werkzeuge",
+    "betrag": 2836.31,
+    "text": "Einzelbestellung"
+   },
+   {
+    "datum": "@-24",
+    "kst": "4730 Logistik",
+    "kostenart": "Reparatur",
+    "betrag": 6089.92,
+    "text": "Monatsabgrenzung"
+   },
+   {
+    "datum": "@-31",
+    "kst": "4712 Zerspanung",
+    "kostenart": "Fremdleistung",
+    "betrag": 11483.23,
+    "text": "Monatsabgrenzung"
+   },
+   {
+    "datum": "@-33",
+    "kst": "4712 Zerspanung",
+    "kostenart": "Reparatur",
+    "betrag": 15502.16,
+    "text": "Umbuchung"
+   },
+   {
+    "datum": "@-57",
+    "kst": "4713 Prüffeld",
+    "kostenart": "Personal",
+    "betrag": 12957.24,
+    "text": "Umbuchung"
+   },
+   {
+    "datum": "@-89",
+    "kst": "4711 Montage",
+    "kostenart": "Hilfs- & Betriebsstoffe",
+    "betrag": 14432.52,
+    "text": "Einzelbestellung"
+   },
+   {
+    "datum": "@-99",
+    "kst": "4712 Zerspanung",
+    "kostenart": "Werkzeuge",
+    "betrag": 3382.69,
+    "text": "Monatsabgrenzung"
+   },
+   {
+    "datum": "@-58",
+    "kst": "4712 Zerspanung",
+    "kostenart": "Hilfs- & Betriebsstoffe",
+    "betrag": 14670.99,
+    "text": "Rahmenvertrag"
+   },
+   {
+    "datum": "@-120",
+    "kst": "4713 Prüffeld",
+    "kostenart": "Werkzeuge",
+    "betrag": 14505.43,
+    "text": "Rahmenvertrag"
+   },
+   {
+    "datum": "@-112",
+    "kst": "4730 Logistik",
+    "kostenart": "Reparatur",
+    "betrag": 6933.82,
+    "text": "Monatsabgrenzung"
+   },
+   {
+    "datum": "@-28",
+    "kst": "4711 Montage",
+    "kostenart": "Reparatur",
+    "betrag": 7424.4,
+    "text": "Rahmenvertrag"
+   },
+   {
+    "datum": "@-32",
+    "kst": "4730 Logistik",
+    "kostenart": "Hilfs- & Betriebsstoffe",
+    "betrag": 9956.53,
+    "text": "Monatsabgrenzung"
+   },
+   {
+    "datum": "@-35",
+    "kst": "4720 Instandhaltung",
+    "kostenart": "Fremdleistung",
+    "betrag": 2122.84,
+    "text": "Rahmenvertrag"
+   },
+   {
+    "datum": "@-121",
+    "kst": "4712 Zerspanung",
+    "kostenart": "Hilfs- & Betriebsstoffe",
+    "betrag": 3035.33,
+    "text": "Monatsabgrenzung"
+   },
+   {
+    "datum": "@-13",
+    "kst": "4712 Zerspanung",
+    "kostenart": "Personal",
+    "betrag": 5326.46,
+    "text": "Einzelbestellung"
+   },
+   {
+    "datum": "@-136",
+    "kst": "4720 Instandhaltung",
+    "kostenart": "Fremdleistung",
+    "betrag": 8279.47,
+    "text": "Rahmenvertrag"
+   },
+   {
+    "datum": "@-121",
+    "kst": "4720 Instandhaltung",
+    "kostenart": "Personal",
+    "betrag": 4766.51,
+    "text": "Rahmenvertrag"
+   },
+   {
+    "datum": "@-33",
+    "kst": "4711 Montage",
+    "kostenart": "Reparatur",
+    "betrag": 1558.28,
+    "text": "Einzelbestellung"
+   },
+   {
+    "datum": "@-20",
+    "kst": "4711 Montage",
+    "kostenart": "Werkzeuge",
+    "betrag": 4660.95,
+    "text": "Monatsabgrenzung"
+   },
+   {
+    "datum": "@-80",
+    "kst": "4711 Montage",
+    "kostenart": "Hilfs- & Betriebsstoffe",
+    "betrag": 10549.78,
+    "text": "Rahmenvertrag"
+   },
+   {
+    "datum": "@-27",
+    "kst": "4720 Instandhaltung",
+    "kostenart": "Hilfs- & Betriebsstoffe",
+    "betrag": 13312.61,
+    "text": "Einzelbestellung"
+   },
+   {
+    "datum": "@-143",
+    "kst": "4712 Zerspanung",
+    "kostenart": "Fremdleistung",
+    "betrag": 17563.02,
+    "text": "Monatsabgrenzung"
+   },
+   {
+    "datum": "@-79",
+    "kst": "4720 Instandhaltung",
+    "kostenart": "Energie",
+    "betrag": 6564.72,
+    "text": "Rahmenvertrag"
+   },
+   {
+    "datum": "@-51",
+    "kst": "4720 Instandhaltung",
+    "kostenart": "Hilfs- & Betriebsstoffe",
+    "betrag": 2070.0,
+    "text": "Monatsabgrenzung"
+   },
+   {
+    "datum": "@-137",
+    "kst": "4712 Zerspanung",
+    "kostenart": "Reparatur",
+    "betrag": 16810.08,
+    "text": "Monatsabgrenzung"
+   },
+   {
+    "datum": "@-60",
+    "kst": "4720 Instandhaltung",
+    "kostenart": "Reparatur",
+    "betrag": 7164.17,
+    "text": "Rahmenvertrag"
+   },
+   {
+    "datum": "@-56",
+    "kst": "4713 Prüffeld",
+    "kostenart": "Energie",
+    "betrag": 6740.38,
+    "text": "Umbuchung"
+   },
+   {
+    "datum": "@-85",
+    "kst": "4720 Instandhaltung",
+    "kostenart": "Reparatur",
+    "betrag": 678.56,
+    "text": "Rahmenvertrag"
+   },
+   {
+    "datum": "@-34",
+    "kst": "4711 Montage",
+    "kostenart": "Personal",
+    "betrag": 15134.31,
+    "text": "Umbuchung"
+   },
+   {
+    "datum": "@-15",
+    "kst": "4720 Instandhaltung",
+    "kostenart": "Personal",
+    "betrag": 12086.32,
+    "text": "Monatsabgrenzung"
+   },
+   {
+    "datum": "@-23",
+    "kst": "4713 Prüffeld",
+    "kostenart": "Hilfs- & Betriebsstoffe",
+    "betrag": 6587.09,
+    "text": "Umbuchung"
+   },
+   {
+    "datum": "@-120",
+    "kst": "4713 Prüffeld",
+    "kostenart": "Reparatur",
+    "betrag": 9846.4,
+    "text": "Rahmenvertrag"
+   },
+   {
+    "datum": "@-111",
+    "kst": "4711 Montage",
+    "kostenart": "Personal",
+    "betrag": 13578.69,
+    "text": "Rahmenvertrag"
+   },
+   {
+    "datum": "@-33",
+    "kst": "4712 Zerspanung",
+    "kostenart": "Werkzeuge",
+    "betrag": 3636.61,
+    "text": "Monatsabgrenzung"
+   },
+   {
+    "datum": "@-55",
+    "kst": "4711 Montage",
+    "kostenart": "Reparatur",
+    "betrag": 3412.91,
+    "text": "Umbuchung"
+   },
+   {
+    "datum": "@-84",
+    "kst": "4720 Instandhaltung",
+    "kostenart": "Energie",
+    "betrag": 1791.96,
+    "text": "Monatsabgrenzung"
+   },
+   {
+    "datum": "@-147",
+    "kst": "4720 Instandhaltung",
+    "kostenart": "Energie",
+    "betrag": 6805.42,
+    "text": "Monatsabgrenzung"
+   },
+   {
+    "datum": "@-116",
+    "kst": "4712 Zerspanung",
+    "kostenart": "Fremdleistung",
+    "betrag": 7409.44,
+    "text": "Umbuchung"
+   },
+   {
+    "datum": "@-47",
+    "kst": "4713 Prüffeld",
+    "kostenart": "Hilfs- & Betriebsstoffe",
+    "betrag": 6146.62,
+    "text": "Umbuchung"
+   },
+   {
+    "datum": "@-77",
+    "kst": "4730 Logistik",
+    "kostenart": "Reparatur",
+    "betrag": 14970.72,
+    "text": "Umbuchung"
+   },
+   {
+    "datum": "@-98",
+    "kst": "4711 Montage",
+    "kostenart": "Fremdleistung",
+    "betrag": 13211.36,
+    "text": "Monatsabgrenzung"
+   },
+   {
+    "datum": "@-130",
+    "kst": "4720 Instandhaltung",
+    "kostenart": "Reparatur",
+    "betrag": 7240.01,
+    "text": "Einzelbestellung"
+   },
+   {
+    "datum": "@-79",
+    "kst": "4720 Instandhaltung",
+    "kostenart": "Reparatur",
+    "betrag": 9097.86,
+    "text": "Monatsabgrenzung"
+   },
+   {
+    "datum": "@-137",
+    "kst": "4713 Prüffeld",
+    "kostenart": "Hilfs- & Betriebsstoffe",
+    "betrag": 15539.69,
+    "text": "Einzelbestellung"
+   },
+   {
+    "datum": "@-66",
+    "kst": "4720 Instandhaltung",
+    "kostenart": "Personal",
+    "betrag": 16053.42,
+    "text": "Umbuchung"
+   },
+   {
+    "datum": "@-36",
+    "kst": "4711 Montage",
+    "kostenart": "Werkzeuge",
+    "betrag": 16332.88,
+    "text": "Umbuchung"
+   },
+   {
+    "datum": "@-109",
+    "kst": "4730 Logistik",
+    "kostenart": "Reparatur",
+    "betrag": 1733.49,
+    "text": "Monatsabgrenzung"
+   },
+   {
+    "datum": "@-29",
+    "kst": "4711 Montage",
+    "kostenart": "Energie",
+    "betrag": 12645.83,
+    "text": "Rahmenvertrag"
+   },
+   {
+    "datum": "@-38",
+    "kst": "4713 Prüffeld",
+    "kostenart": "Werkzeuge",
+    "betrag": 14173.03,
+    "text": "Rahmenvertrag"
+   },
+   {
+    "datum": "@-111",
+    "kst": "4712 Zerspanung",
+    "kostenart": "Energie",
+    "betrag": 10353.11,
+    "text": "Monatsabgrenzung"
+   },
+   {
+    "datum": "@-146",
+    "kst": "4730 Logistik",
+    "kostenart": "Hilfs- & Betriebsstoffe",
+    "betrag": 13626.91,
+    "text": "Umbuchung"
+   },
+   {
+    "datum": "@-67",
+    "kst": "4712 Zerspanung",
+    "kostenart": "Werkzeuge",
+    "betrag": 4038.49,
+    "text": "Rahmenvertrag"
+   },
+   {
+    "datum": "@-143",
+    "kst": "4730 Logistik",
+    "kostenart": "Personal",
+    "betrag": 15805.43,
+    "text": "Rahmenvertrag"
+   },
+   {
+    "datum": "@-46",
+    "kst": "4730 Logistik",
+    "kostenart": "Reparatur",
+    "betrag": 12619.56,
+    "text": "Monatsabgrenzung"
+   },
+   {
+    "datum": "@-87",
+    "kst": "4720 Instandhaltung",
+    "kostenart": "Fremdleistung",
+    "betrag": 4770.07,
+    "text": "Monatsabgrenzung"
+   },
+   {
+    "datum": "@-37",
+    "kst": "4730 Logistik",
+    "kostenart": "Fremdleistung",
+    "betrag": 6004.91,
+    "text": "Umbuchung"
+   },
+   {
+    "datum": "@-16",
+    "kst": "4720 Instandhaltung",
+    "kostenart": "Personal",
+    "betrag": 2688.19,
+    "text": "Rahmenvertrag"
+   },
+   {
+    "datum": "@-111",
+    "kst": "4711 Montage",
+    "kostenart": "Personal",
+    "betrag": 9447.24,
+    "text": "Monatsabgrenzung"
+   },
+   {
+    "datum": "@-133",
+    "kst": "4730 Logistik",
+    "kostenart": "Personal",
+    "betrag": 6089.27,
+    "text": "Einzelbestellung"
+   },
+   {
+    "datum": "@-21",
+    "kst": "4711 Montage",
+    "kostenart": "Personal",
+    "betrag": 2713.62,
+    "text": "Einzelbestellung"
+   },
+   {
+    "datum": "@-112",
+    "kst": "4730 Logistik",
+    "kostenart": "Energie",
+    "betrag": 17066.35,
+    "text": "Umbuchung"
+   },
+   {
+    "datum": "@-107",
+    "kst": "4730 Logistik",
+    "kostenart": "Fremdleistung",
+    "betrag": 17900.28,
+    "text": "Rahmenvertrag"
+   },
+   {
+    "datum": "@-10",
+    "kst": "4712 Zerspanung",
+    "kostenart": "Energie",
+    "betrag": 8110.98,
+    "text": "Umbuchung"
+   },
+   {
+    "datum": "@-100",
+    "kst": "4712 Zerspanung",
+    "kostenart": "Fremdleistung",
+    "betrag": 9771.37,
+    "text": "Umbuchung"
+   },
+   {
+    "datum": "@-26",
+    "kst": "4713 Prüffeld",
+    "kostenart": "Werkzeuge",
+    "betrag": 3373.27,
+    "text": "Rahmenvertrag"
+   },
+   {
+    "datum": "@-102",
+    "kst": "4711 Montage",
+    "kostenart": "Fremdleistung",
+    "betrag": 1596.04,
+    "text": "Einzelbestellung"
+   },
+   {
+    "datum": "@-107",
+    "kst": "4711 Montage",
+    "kostenart": "Hilfs- & Betriebsstoffe",
+    "betrag": 3470.39,
+    "text": "Einzelbestellung"
+   },
+   {
+    "datum": "@-129",
+    "kst": "4711 Montage",
+    "kostenart": "Hilfs- & Betriebsstoffe",
+    "betrag": 2777.76,
+    "text": "Monatsabgrenzung"
+   },
+   {
+    "datum": "@-115",
+    "kst": "4713 Prüffeld",
+    "kostenart": "Energie",
+    "betrag": 11549.16,
+    "text": "Rahmenvertrag"
+   },
+   {
+    "datum": "@-107",
+    "kst": "4730 Logistik",
+    "kostenart": "Reparatur",
+    "betrag": 642.57,
+    "text": "Rahmenvertrag"
+   },
+   {
+    "datum": "@-8",
+    "kst": "4720 Instandhaltung",
+    "kostenart": "Hilfs- & Betriebsstoffe",
+    "betrag": 1692.91,
+    "text": "Umbuchung"
+   },
+   {
+    "datum": "@-25",
+    "kst": "4711 Montage",
+    "kostenart": "Hilfs- & Betriebsstoffe",
+    "betrag": 3301.54,
+    "text": "Einzelbestellung"
+   },
+   {
+    "datum": "@-134",
+    "kst": "4713 Prüffeld",
+    "kostenart": "Hilfs- & Betriebsstoffe",
+    "betrag": 4723.19,
+    "text": "Einzelbestellung"
+   },
+   {
+    "datum": "@-59",
+    "kst": "4730 Logistik",
+    "kostenart": "Personal",
+    "betrag": 15393.87,
+    "text": "Einzelbestellung"
+   },
+   {
+    "datum": "@-128",
+    "kst": "4713 Prüffeld",
+    "kostenart": "Energie",
+    "betrag": 14050.33,
+    "text": "Monatsabgrenzung"
+   },
+   {
+    "datum": "@-121",
+    "kst": "4713 Prüffeld",
+    "kostenart": "Energie",
+    "betrag": 10216.27,
+    "text": "Einzelbestellung"
+   },
+   {
+    "datum": "@-59",
+    "kst": "4711 Montage",
+    "kostenart": "Werkzeuge",
+    "betrag": 16159.11,
+    "text": "Umbuchung"
+   },
+   {
+    "datum": "@-78",
+    "kst": "4711 Montage",
+    "kostenart": "Energie",
+    "betrag": 14337.56,
+    "text": "Umbuchung"
+   },
+   {
+    "datum": "@-37",
+    "kst": "4720 Instandhaltung",
+    "kostenart": "Fremdleistung",
+    "betrag": 6705.57,
+    "text": "Einzelbestellung"
+   },
+   {
+    "datum": "@-27",
+    "kst": "4730 Logistik",
+    "kostenart": "Energie",
+    "betrag": 7534.82,
+    "text": "Umbuchung"
+   },
+   {
+    "datum": "@-62",
+    "kst": "4712 Zerspanung",
+    "kostenart": "Personal",
+    "betrag": 11855.92,
+    "text": "Rahmenvertrag"
+   },
+   {
+    "datum": "@-39",
+    "kst": "4713 Prüffeld",
+    "kostenart": "Energie",
+    "betrag": 17843.55,
+    "text": "Einzelbestellung"
+   },
+   {
+    "datum": "@-147",
+    "kst": "4720 Instandhaltung",
+    "kostenart": "Personal",
+    "betrag": 7360.41,
+    "text": "Umbuchung"
+   },
+   {
+    "datum": "@-19",
+    "kst": "4712 Zerspanung",
+    "kostenart": "Werkzeuge",
+    "betrag": 2861.51,
+    "text": "Einzelbestellung"
+   },
+   {
+    "datum": "@-67",
+    "kst": "4712 Zerspanung",
+    "kostenart": "Werkzeuge",
+    "betrag": 2433.97,
+    "text": "Monatsabgrenzung"
+   },
+   {
+    "datum": "@-118",
+    "kst": "4712 Zerspanung",
+    "kostenart": "Energie",
+    "betrag": 8491.06,
+    "text": "Umbuchung"
+   },
+   {
+    "datum": "@-110",
+    "kst": "4720 Instandhaltung",
+    "kostenart": "Werkzeuge",
+    "betrag": 1949.26,
+    "text": "Monatsabgrenzung"
+   },
+   {
+    "datum": "@-145",
+    "kst": "4711 Montage",
+    "kostenart": "Personal",
+    "betrag": 11654.49,
+    "text": "Einzelbestellung"
+   },
+   {
+    "datum": "@-102",
+    "kst": "4712 Zerspanung",
+    "kostenart": "Reparatur",
+    "betrag": 2324.31,
+    "text": "Rahmenvertrag"
+   },
+   {
+    "datum": "@-82",
+    "kst": "4712 Zerspanung",
+    "kostenart": "Werkzeuge",
+    "betrag": 10689.43,
+    "text": "Monatsabgrenzung"
+   },
+   {
+    "datum": "@-88",
+    "kst": "4713 Prüffeld",
+    "kostenart": "Fremdleistung",
+    "betrag": 4940.03,
+    "text": "Einzelbestellung"
+   },
+   {
+    "datum": "@-50",
+    "kst": "4712 Zerspanung",
+    "kostenart": "Werkzeuge",
+    "betrag": 9460.51,
+    "text": "Monatsabgrenzung"
+   },
+   {
+    "datum": "@-107",
+    "kst": "4730 Logistik",
+    "kostenart": "Fremdleistung",
+    "betrag": 666.55,
+    "text": "Einzelbestellung"
+   },
+   {
+    "datum": "@-100",
+    "kst": "4730 Logistik",
+    "kostenart": "Personal",
+    "betrag": 10054.78,
+    "text": "Rahmenvertrag"
+   },
+   {
+    "datum": "@-87",
+    "kst": "4713 Prüffeld",
+    "kostenart": "Werkzeuge",
+    "betrag": 2263.63,
+    "text": "Einzelbestellung"
+   },
+   {
+    "datum": "@-107",
+    "kst": "4713 Prüffeld",
+    "kostenart": "Energie",
+    "betrag": 12687.8,
+    "text": "Rahmenvertrag"
+   },
+   {
+    "datum": "@-108",
+    "kst": "4730 Logistik",
+    "kostenart": "Energie",
+    "betrag": 10713.99,
+    "text": "Monatsabgrenzung"
+   },
+   {
+    "datum": "@-131",
+    "kst": "4720 Instandhaltung",
+    "kostenart": "Werkzeuge",
+    "betrag": 15505.91,
+    "text": "Rahmenvertrag"
+   },
+   {
+    "datum": "@-103",
+    "kst": "4712 Zerspanung",
+    "kostenart": "Werkzeuge",
+    "betrag": 14789.51,
+    "text": "Einzelbestellung"
+   },
+   {
+    "datum": "@-7",
+    "kst": "4713 Prüffeld",
+    "kostenart": "Personal",
+    "betrag": 14987.09,
+    "text": "Rahmenvertrag"
+   },
+   {
+    "datum": "@-122",
+    "kst": "4720 Instandhaltung",
+    "kostenart": "Reparatur",
+    "betrag": 16886.23,
+    "text": "Einzelbestellung"
+   },
+   {
+    "datum": "@-112",
+    "kst": "4712 Zerspanung",
+    "kostenart": "Personal",
+    "betrag": 15632.6,
+    "text": "Einzelbestellung"
+   },
+   {
+    "datum": "@-94",
+    "kst": "4730 Logistik",
+    "kostenart": "Fremdleistung",
+    "betrag": 14899.79,
+    "text": "Rahmenvertrag"
+   },
+   {
+    "datum": "@-111",
+    "kst": "4712 Zerspanung",
+    "kostenart": "Reparatur",
+    "betrag": 14981.98,
+    "text": "Einzelbestellung"
+   },
+   {
+    "datum": "@-5",
+    "kst": "4720 Instandhaltung",
+    "kostenart": "Energie",
+    "betrag": 10719.17,
+    "text": "Umbuchung"
+   },
+   {
+    "datum": "@-87",
+    "kst": "4712 Zerspanung",
+    "kostenart": "Personal",
+    "betrag": 11110.15,
+    "text": "Umbuchung"
+   },
+   {
+    "datum": "@-98",
+    "kst": "4711 Montage",
+    "kostenart": "Werkzeuge",
+    "betrag": 6920.95,
+    "text": "Rahmenvertrag"
+   },
+   {
+    "datum": "@-58",
+    "kst": "4720 Instandhaltung",
+    "kostenart": "Hilfs- & Betriebsstoffe",
+    "betrag": 1665.24,
+    "text": "Monatsabgrenzung"
+   },
+   {
+    "datum": "@-120",
+    "kst": "4712 Zerspanung",
+    "kostenart": "Hilfs- & Betriebsstoffe",
+    "betrag": 11663.28,
+    "text": "Monatsabgrenzung"
+   },
+   {
+    "datum": "@-7",
+    "kst": "4730 Logistik",
+    "kostenart": "Energie",
+    "betrag": 17984.49,
+    "text": "Rahmenvertrag"
+   },
+   {
+    "datum": "@+0",
+    "kst": "4711 Montage",
+    "kostenart": "Energie",
+    "betrag": 15757.13,
+    "text": "Umbuchung"
+   },
+   {
+    "datum": "@-101",
+    "kst": "4720 Instandhaltung",
+    "kostenart": "Reparatur",
+    "betrag": 5869.31,
+    "text": "Einzelbestellung"
+   },
+   {
+    "datum": "@-132",
+    "kst": "4720 Instandhaltung",
+    "kostenart": "Personal",
+    "betrag": 10363.88,
+    "text": "Umbuchung"
+   },
+   {
+    "datum": "@-83",
+    "kst": "4730 Logistik",
+    "kostenart": "Reparatur",
+    "betrag": 9123.78,
+    "text": "Rahmenvertrag"
+   },
+   {
+    "datum": "@-6",
+    "kst": "4712 Zerspanung",
+    "kostenart": "Fremdleistung",
+    "betrag": 431.8,
+    "text": "Umbuchung"
+   },
+   {
+    "datum": "@-53",
+    "kst": "4720 Instandhaltung",
+    "kostenart": "Fremdleistung",
+    "betrag": 15572.94,
+    "text": "Einzelbestellung"
+   },
+   {
+    "datum": "@-129",
+    "kst": "4712 Zerspanung",
+    "kostenart": "Fremdleistung",
+    "betrag": 5786.09,
+    "text": "Einzelbestellung"
+   },
+   {
+    "datum": "@-48",
+    "kst": "4720 Instandhaltung",
+    "kostenart": "Hilfs- & Betriebsstoffe",
+    "betrag": 9937.01,
+    "text": "Einzelbestellung"
+   },
+   {
+    "datum": "@-104",
+    "kst": "4720 Instandhaltung",
+    "kostenart": "Werkzeuge",
+    "betrag": 15656.25,
+    "text": "Rahmenvertrag"
+   },
+   {
+    "datum": "@-11",
+    "kst": "4711 Montage",
+    "kostenart": "Hilfs- & Betriebsstoffe",
+    "betrag": 17187.19,
+    "text": "Umbuchung"
+   },
+   {
+    "datum": "@-109",
+    "kst": "4712 Zerspanung",
+    "kostenart": "Personal",
+    "betrag": 7641.17,
+    "text": "Umbuchung"
+   },
+   {
+    "datum": "@-65",
+    "kst": "4712 Zerspanung",
+    "kostenart": "Hilfs- & Betriebsstoffe",
+    "betrag": 15573.22,
+    "text": "Einzelbestellung"
+   },
+   {
+    "datum": "@-27",
+    "kst": "4730 Logistik",
+    "kostenart": "Werkzeuge",
+    "betrag": 3897.0,
+    "text": "Rahmenvertrag"
+   },
+   {
+    "datum": "@-133",
+    "kst": "4711 Montage",
+    "kostenart": "Hilfs- & Betriebsstoffe",
+    "betrag": 3954.12,
+    "text": "Einzelbestellung"
+   },
+   {
+    "datum": "@-19",
+    "kst": "4712 Zerspanung",
+    "kostenart": "Hilfs- & Betriebsstoffe",
+    "betrag": 4157.55,
+    "text": "Umbuchung"
+   },
+   {
+    "datum": "@-8",
+    "kst": "4713 Prüffeld",
+    "kostenart": "Hilfs- & Betriebsstoffe",
+    "betrag": 14845.72,
+    "text": "Monatsabgrenzung"
+   },
+   {
+    "datum": "@-80",
+    "kst": "4720 Instandhaltung",
+    "kostenart": "Personal",
+    "betrag": 2459.18,
+    "text": "Einzelbestellung"
+   },
+   {
+    "datum": "@-45",
+    "kst": "4730 Logistik",
+    "kostenart": "Fremdleistung",
+    "betrag": 17728.21,
+    "text": "Monatsabgrenzung"
+   },
+   {
+    "datum": "@-137",
+    "kst": "4713 Prüffeld",
+    "kostenart": "Personal",
+    "betrag": 5741.16,
+    "text": "Monatsabgrenzung"
+   },
+   {
+    "datum": "@-107",
+    "kst": "4730 Logistik",
+    "kostenart": "Fremdleistung",
+    "betrag": 14894.46,
+    "text": "Monatsabgrenzung"
+   },
+   {
+    "datum": "@-46",
+    "kst": "4720 Instandhaltung",
+    "kostenart": "Energie",
+    "betrag": 11771.61,
+    "text": "Monatsabgrenzung"
+   },
+   {
+    "datum": "@-49",
+    "kst": "4720 Instandhaltung",
+    "kostenart": "Hilfs- & Betriebsstoffe",
+    "betrag": 16571.38,
+    "text": "Monatsabgrenzung"
+   },
+   {
+    "datum": "@-102",
+    "kst": "4713 Prüffeld",
+    "kostenart": "Personal",
+    "betrag": 14166.11,
+    "text": "Monatsabgrenzung"
+   },
+   {
+    "datum": "@-70",
+    "kst": "4720 Instandhaltung",
+    "kostenart": "Personal",
+    "betrag": 5509.96,
+    "text": "Rahmenvertrag"
+   },
+   {
+    "datum": "@-138",
+    "kst": "4713 Prüffeld",
+    "kostenart": "Hilfs- & Betriebsstoffe",
+    "betrag": 3415.42,
+    "text": "Einzelbestellung"
+   },
+   {
+    "datum": "@-103",
+    "kst": "4712 Zerspanung",
+    "kostenart": "Hilfs- & Betriebsstoffe",
+    "betrag": 4817.58,
+    "text": "Rahmenvertrag"
+   },
+   {
+    "datum": "@-131",
+    "kst": "4713 Prüffeld",
+    "kostenart": "Reparatur",
+    "betrag": 15196.24,
+    "text": "Einzelbestellung"
+   },
+   {
+    "datum": "@-24",
+    "kst": "4720 Instandhaltung",
+    "kostenart": "Energie",
+    "betrag": 8392.47,
+    "text": "Rahmenvertrag"
+   },
+   {
+    "datum": "@-54",
+    "kst": "4713 Prüffeld",
+    "kostenart": "Reparatur",
+    "betrag": 16900.95,
+    "text": "Rahmenvertrag"
+   },
+   {
+    "datum": "@-80",
+    "kst": "4712 Zerspanung",
+    "kostenart": "Personal",
+    "betrag": 13075.96,
+    "text": "Einzelbestellung"
+   },
+   {
+    "datum": "@-102",
+    "kst": "4720 Instandhaltung",
+    "kostenart": "Hilfs- & Betriebsstoffe",
+    "betrag": 6955.39,
+    "text": "Umbuchung"
+   },
+   {
+    "datum": "@-31",
+    "kst": "4730 Logistik",
+    "kostenart": "Werkzeuge",
+    "betrag": 14762.65,
+    "text": "Monatsabgrenzung"
+   },
+   {
+    "datum": "@-112",
+    "kst": "4720 Instandhaltung",
+    "kostenart": "Energie",
+    "betrag": 14925.22,
+    "text": "Rahmenvertrag"
+   },
+   {
+    "datum": "@-74",
+    "kst": "4720 Instandhaltung",
+    "kostenart": "Fremdleistung",
+    "betrag": 11429.42,
+    "text": "Einzelbestellung"
+   },
+   {
+    "datum": "@-18",
+    "kst": "4730 Logistik",
+    "kostenart": "Personal",
+    "betrag": 11788.89,
+    "text": "Umbuchung"
+   },
+   {
+    "datum": "@-89",
+    "kst": "4720 Instandhaltung",
+    "kostenart": "Energie",
+    "betrag": 9581.97,
+    "text": "Monatsabgrenzung"
+   },
+   {
+    "datum": "@+0",
+    "kst": "4712 Zerspanung",
+    "kostenart": "Fremdleistung",
+    "betrag": 17908.37,
+    "text": "Monatsabgrenzung"
+   },
+   {
+    "datum": "@+0",
+    "kst": "4712 Zerspanung",
+    "kostenart": "Werkzeuge",
+    "betrag": 7883.39,
+    "text": "Einzelbestellung"
+   },
+   {
+    "datum": "@-101",
+    "kst": "4730 Logistik",
+    "kostenart": "Personal",
+    "betrag": 10137.0,
+    "text": "Rahmenvertrag"
+   },
+   {
+    "datum": "@-129",
+    "kst": "4711 Montage",
+    "kostenart": "Hilfs- & Betriebsstoffe",
+    "betrag": 16677.43,
+    "text": "Umbuchung"
+   },
+   {
+    "datum": "@-131",
+    "kst": "4711 Montage",
+    "kostenart": "Personal",
+    "betrag": 7123.36,
+    "text": "Monatsabgrenzung"
+   },
+   {
+    "datum": "@-50",
+    "kst": "4730 Logistik",
+    "kostenart": "Fremdleistung",
+    "betrag": 9279.8,
+    "text": "Umbuchung"
+   },
+   {
+    "datum": "@-109",
+    "kst": "4711 Montage",
+    "kostenart": "Energie",
+    "betrag": 3749.8,
+    "text": "Monatsabgrenzung"
+   },
+   {
+    "datum": "@-26",
+    "kst": "4712 Zerspanung",
+    "kostenart": "Werkzeuge",
+    "betrag": 4793.92,
+    "text": "Rahmenvertrag"
+   },
+   {
+    "datum": "@-115",
+    "kst": "4712 Zerspanung",
+    "kostenart": "Fremdleistung",
+    "betrag": 2412.38,
+    "text": "Einzelbestellung"
+   },
+   {
+    "datum": "@-15",
+    "kst": "4711 Montage",
+    "kostenart": "Hilfs- & Betriebsstoffe",
+    "betrag": 9069.29,
+    "text": "Einzelbestellung"
+   },
+   {
+    "datum": "@-89",
+    "kst": "4730 Logistik",
+    "kostenart": "Hilfs- & Betriebsstoffe",
+    "betrag": 17712.73,
+    "text": "Umbuchung"
+   },
+   {
+    "datum": "@-60",
+    "kst": "4720 Instandhaltung",
+    "kostenart": "Fremdleistung",
+    "betrag": 3736.48,
+    "text": "Rahmenvertrag"
+   },
+   {
+    "datum": "@-79",
+    "kst": "4713 Prüffeld",
+    "kostenart": "Werkzeuge",
+    "betrag": 14900.73,
+    "text": "Rahmenvertrag"
+   },
+   {
+    "datum": "@-149",
+    "kst": "4720 Instandhaltung",
+    "kostenart": "Hilfs- & Betriebsstoffe",
+    "betrag": 15957.98,
+    "text": "Umbuchung"
+   },
+   {
+    "datum": "@-17",
+    "kst": "4720 Instandhaltung",
+    "kostenart": "Werkzeuge",
+    "betrag": 12991.05,
+    "text": "Umbuchung"
+   }
+  ],
+  "budgets": [
+   {
+    "kst": "4711 Montage",
+    "budget": 420000
+   },
+   {
+    "kst": "4712 Zerspanung",
+    "budget": 380000
+   },
+   {
+    "kst": "4713 Prüffeld",
+    "budget": 160000
+   },
+   {
+    "kst": "4720 Instandhaltung",
+    "budget": 210000
+   },
+   {
+    "kst": "4730 Logistik",
+    "budget": 140000
+   }
+  ]
+ },
+ "nachbauten": [
+  {
+   "baustein": "ziel_aus_tabelle",
+   "ersatz": "Fortschritt: Zielwert ist eine feste Zahl, das Budget steht aber in einer Tabelle – nur die Beschriftung lässt sich per Skript ändern, der Zielwert nicht.",
+   "geloest": false
+  },
+  {
+   "baustein": "ampel",
+   "ersatz": "5 Budget-Ampeln mit Hochrechnung als Hinweis-Bausteine.",
+   "geloest": false
+  }
+ ]
+}

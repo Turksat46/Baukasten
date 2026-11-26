@@ -24,6 +24,19 @@ Test prüft, dass die neueste Version hier und `BAUKASTEN_VERSION` übereinstimm
 **Kurz gesagt:** Berichte aus n8n und Teams, Data Science, persönliche Startseite, Planung per Drag-and-drop und Fehler-Alarme
 
 ### Für Nutzer
+- **Nur bestimmte Einträge zeigen:** Liste, Kennzahl, Diagramme, Kalender und Co. haben die
+  Einstellung „Nur Einträge, für die gilt“, z. B. `Status != Erledigt` und `Fällig < heute`.
+  „Offen“, „Überfällig“ oder „Fällig in 7 Tagen“ brauchen damit kein Skript mehr.
+- **Kennzahl mit Ampel und Trend:** gelb/rot ab einem Wert, und auf Wunsch der Vergleich mit dem
+  Vorzeitraum (z. B. diese gegen letzte Woche) mit Pfeil. Neu auch „Tage seit dem letzten Datum“
+  (Tage ohne Unfall) und „Tage bis zum nächsten Datum“ (Tage bis SOP).
+- **Balkendiagramm mit Summe, Durchschnitt und Pareto:** z. B. Stillstandsminuten je Ursache,
+  absteigend mit kumuliertem Anteil.
+- **Regelkarte:** Das Liniendiagramm hat eine untere Grenze; Punkte außerhalb von OEG/UEG werden rot.
+- **Mit Datumsfeldern rechnen:** „Nächste Fälligkeit = Zuletzt + Intervall“ oder
+  `add_months(letzte, 12)` als Formel in einem Datumsfeld.
+- **20 Werks-Apps zum Ausprobieren** (Schichtbuch, Andon, OEE, SPC, TPM, Shopfloor-Tafel …):
+  `python manage.py beispiel_werk`.
 - **Ladebalken:** Beim Seitenwechsel, Speichern und bei Skripten zeigt ein dünner Balken oben,
   dass etwas passiert. Buttons drehen sich, bis die Antwort da ist, und lassen sich nicht doppelt
   drücken; dauert ein Skript länger, steht daneben „läuft … 5 s“.
@@ -64,6 +77,16 @@ Test prüft, dass die neueste Version hier und `BAUKASTEN_VERSION` übereinstimm
   Einstellungen verschwinden; `python manage.py bausteinvertrag` trägt neue ein.
 
 ### Neu
+- `builder/conditions.py`: Einstellung `where` für 19 Datenbausteine, ausgewertet in
+  `blocks.filtered()`; Fehler in der Bedingung zeigt der Baustein selbst an.
+- Kennzahl: `direction`, `warn_at`, `alarm_at` (Ampel), `compare_field`/`compare_days` (Trend),
+  Berechnung `days_since`/`days_until`. Balkendiagramm: `agg`, `value_field`, `pareto`.
+  Liniendiagramm: `threshold_low`; `threshold` versteht jetzt auch Dezimalkomma.
+- Formeln: Datumsfelder zählen als Tage, Zieltyp „Datum“ erlaubt, Funktion `add_months`.
+- Designer zeigt einen Hilfetext unter Einstellungen (`help` in der Bausteindefinition).
+- `python manage.py beispiel_werk [--neu] [--nur gmd-oee,…]` lädt die Werks-Apps aus
+  `beispiele/werk/*.json`; `beispiele/werk/erzeugen.py` erzeugt sie samt Bericht
+  (`beispiele/werk/README.md`: welche Bausteine fehlten und welche jetzt eingebaut sind).
 - Ladebalken und Wartezustand (`builder/static/builder/progress.js`): automatisch bei Links,
   abgeschickten Formularen und schreibenden `fetch`-Aufrufen; Downloads und `data-no-progress`
   ausgenommen. Eigene Skripte nutzen `BaukastenProgress.start()/done()/busy(button, true)`.
@@ -87,6 +110,14 @@ Test prüft, dass die neueste Version hier und `BAUKASTEN_VERSION` übereinstimm
   Fragezeichen startet die Führung wie bisher erneut.
 
 ### Behoben
+- Histogramm und Boxplot: Bei kleinen Bereichen (Messwerte 24,001–24,012 mm) hießen alle Klassen
+  „24,00–24,00“. Die Nachkommastellen richten sich jetzt nach der Spannweite; ebenso bei der
+  Kennzahl „Durchschnitt“ eines Kommazahlfelds.
+- Liniendiagramm: Lagen alle Werte weit über 0, war die Linie flach. Die Achse beginnt jetzt knapp
+  unter dem kleinsten Wert.
+- Kreuztabelle und Widgets: Zahlen mit Dezimalpunkt und ohne Tausenderpunkt („1364.5“) – jetzt „1.364,5“.
+- Summe eines Ganzzahl-Felds zeigte „180,00“, jetzt „180“.
+- Filterleiste auf dem Handy: Das zweite Datumsfeld (bis) ragte über den Bildschirmrand.
 - Widgets auf der Startseite und neu geladene Bausteine: Ein Klick auf einen Punkt, Balken oder
   eine Legende öffnete das nackte HTML des Bausteins (`…/b/<id>/`) statt der Seite. Filter-Links und
   Rücksprünge (`next=`) zeigen jetzt immer auf die Seite (`builder/page_path.py`).

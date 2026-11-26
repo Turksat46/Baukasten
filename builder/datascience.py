@@ -8,8 +8,8 @@ from django.conf import settings
 from django.utils.translation import gettext, gettext_lazy as _
 
 from . import app_i18n, datasources
-from .blocks import (ENTITY, LAZY_WITH_QUERY, _entity, _format_number, display_value, filter_param, filtered,
-                     register)
+from .blocks import (ENTITY, LAZY_WITH_QUERY, _entity, _format_number, decimals_for, display_value, filter_param,
+                     filtered, register)
 from .models import DataQuery, Field
 from .page_path import page_path
 
@@ -251,6 +251,7 @@ def prep_boxplot(request, app, block):
     all_vals = [v for vals in buckets.values() for v in vals]
     g_min, g_max = min(all_vals), max(all_vals)
     span = (g_max - g_min) or 1.0
+    digits = decimals_for(g_max - g_min)
 
     def pct(v):
         return round(max(0.0, min(100.0, (v - g_min) / span * 100.0)), 2)
@@ -281,17 +282,17 @@ def prep_boxplot(request, app, block):
             "whisker_width": f"{round(max(0.0, pct(w_high) - pct(w_low)), 2)}",
             "mean_pct": f"{pct(mean)}",
             "outliers": outliers[:30],
-            "min": _format_number(round(s[0], 2)),
-            "q1": _format_number(round(q1, 2)),
-            "median": _format_number(round(med, 2)),
-            "q3": _format_number(round(q3, 2)),
-            "max": _format_number(round(s[-1], 2)),
-            "mean": _format_number(round(mean, 2)),
+            "min": _format_number(s[0], digits),
+            "q1": _format_number(q1, digits),
+            "median": _format_number(med, digits),
+            "q3": _format_number(q3, digits),
+            "max": _format_number(s[-1], digits),
+            "mean": _format_number(mean, digits),
         })
 
     return {
         "entity": entity, "field_label": f_label,
-        "min_label": _format_number(round(g_min, 2)), "max_label": _format_number(round(g_max, 2)),
+        "min_label": _format_number(g_min, digits), "max_label": _format_number(g_max, digits),
         "rows": out_rows, "empty": False,
     }
 
@@ -477,13 +478,14 @@ def prep_histogram(request, app, block):
             drift_label = gettext("Stabil")
             drift_tone = "ok"
 
+    digits = decimals_for(step) if span < 1 else 1
     bins_out = []
     for i in range(num_bins):
         b_start = low + i * step
         b_end = low + (i + 1) * step
         c = bin_totals[i]
         bins_out.append({
-            "range": f"{_format_number(round(b_start, 1))}–{_format_number(round(b_end, 1))}",
+            "range": f"{_format_number(b_start, digits)}–{_format_number(b_end, digits)}",
             "count": c,
             "percent": round(100 * c / max_bin),
             "share": round(100 * c / total_n),
