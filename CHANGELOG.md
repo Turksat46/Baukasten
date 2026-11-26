@@ -27,6 +27,9 @@ Test prüft, dass die neueste Version hier und `BAUKASTEN_VERSION` übereinstimm
 - **Seiten nur für bestimmte Gruppen:** Im Seiten-Designer legt „Sichtbar für“ fest, welche Gruppen
   eine Seite sehen, z. B. „Kosten“ nur für das Controlling. Für alle anderen fehlt sie im Menü, in
   Seitenlinks und Widgets.
+- **Widgets anordnen:** Auf der Startseite verschiebt „Anordnen“ die eigenen Widgets (Ziehen oder
+  Pfeile) und stellt ihre Breite ein (⅓, ½, ⅔, ganz). Die Widgets sehen ruhiger aus: keine Karte
+  in der Karte, gleich hoch je Reihe, lange Titel werden gekürzt. Neue Widgets kommen ans Ende.
 - **Verständliche Seite bei fehlenden Rechten:** Statt der kahlen Fehlerseite steht dort jetzt
   „Dafür fehlt dir die Berechtigung“, wer die App betreut, und ein Weg zurück zur App oder zur
   Startseite.
@@ -91,6 +94,9 @@ Test prüft, dass die neueste Version hier und `BAUKASTEN_VERSION` übereinstimm
   Geprüft beim Seitenaufruf, für Einzelbausteine (`/b/`), Baustein-Aktionen, Menü, Seitenlinks und
   Startseiten-Widgets; Bearbeiter der App sehen alles, öffentliche Seiten bleiben öffentlich.
   Versionen speichern die Gruppen mit Namen; Änderungen stehen im Protokoll.
+- Widgets anordnen: `POST /start/widgets/anordnen/` (`views.home_widgets_arrange`) speichert
+  Reihenfolge und Breite (`WIDGET_WIDTHS` 4/6/8/12) der eigenen Widgets; fremde IDs und ungültige
+  Breiten werden übergangen. `home_widget_add` hängt neue Widgets hinten an.
 - Eigene Fehlerseite 403: `handler403` → `views.permission_denied`, Vorlage `templates/403.html`
   (App und Eigentümerin aus der Adresse, Link zur App nur mit App-Zugriff).
 - Tabellenrechte: `Entity.read_groups` und `Entity.write_groups` (Migration 0024),

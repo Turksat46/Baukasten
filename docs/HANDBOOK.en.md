@@ -171,7 +171,9 @@ user name and password.
 After signing in you see a greeting with today's date, optionally your pinned
 widgets (**My widgets**, loaded asynchronously; "+ Widget" opens an Android-style
 picker grouped by app, with search and preview – one click pins a widget, "×"
-removes it) and your apps as tiles, each with its own color, the number of pages
+removes it; **"Arrange"** moves widgets by dragging or with the arrows and sets their
+width: ⅓, ½, ⅔ or full. "Done" saves the arrangement, "Cancel" discards it; on a
+phone all widgets are stacked) and your apps as tiles, each with its own color, the number of pages
 and important notices (`notice` blocks) from its pages. You only see apps that
 are published and shared with you; designers also see their drafts and an error
 badge when scripts or data syncs failed. With more than six apps, a search field

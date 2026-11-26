@@ -6351,3 +6351,47 @@ msgstr "To the app \"%(name)s\""
 #: builder/templates/403.html
 msgid "Zur Startseite"
 msgstr "To the home page"
+
+#: builder/templates/builder/home.html
+msgid "Anordnen"
+msgstr "Arrange"
+
+#: builder/templates/builder/home.html
+msgid "Breite"
+msgstr "Width"
+
+#: builder/templates/builder/home.html
+msgid "Fertig"
+msgstr "Done"
+
+#: builder/templates/builder/home.html
+msgid "Nach hinten"
+msgstr "Move back"
+
+#: builder/templates/builder/home.html
+msgid "Nach vorne"
+msgstr "Move forward"
+
+#: builder/templates/builder/home.html
+msgid "Ziehen oder Pfeile zum Verschieben, Breite oben rechts."
+msgstr "Drag or use the arrows to move, width at the top right."
+
+#: builder/templates/builder/home.html
+msgid "„%(name)s“ anordnen"
+msgstr "Arrange \"%(name)s\""
+
+#: builder/views.py
+msgid "Ein Drittel breit"
+msgstr "One third wide"
+
+#: builder/views.py
+msgid "Ganz"
+msgstr "Full"
+
+#: builder/views.py
+msgid "Halb breit"
+msgstr "Half wide"
+
+#: builder/views.py
+msgid "Zwei Drittel breit"
+msgstr "Two thirds wide"

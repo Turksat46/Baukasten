@@ -23,6 +23,7 @@ urlpatterns = [
     path("", views.home, name="home"),
     path("start/widgets/hinzufuegen/", views.home_widget_add, name="home_widget_add"),
     path("start/widgets/<int:pk>/entfernen/", views.home_widget_remove, name="home_widget_remove"),
+    path("start/widgets/anordnen/", views.home_widgets_arrange, name="home_widgets_arrange"),
     path("a/<slug:app>/", views.page, name="page"),
     path("a/<slug:app>/p/<slug:page>/", views.page, name="page"),
     path("a/<slug:app>/t/<slug:entity>/neu/", views.record_create, name="record_create"),

@@ -171,7 +171,10 @@ lokalen Benutzernamen und Passwort.
 Nach der Anmeldung siehst du eine Begrüßung mit dem heutigen Datum, optional deine
 persönlich angepinnten Widgets (**Meine Widgets**, die asynchron nachgeladen werden;
 „+ Widget“ öffnet eine Auswahl wie unter Android, nach Apps gruppiert, mit Suche
-und Vorschau – ein Klick pinnt das Widget an, „×“ entfernt es wieder)
+und Vorschau – ein Klick pinnt das Widget an, „×“ entfernt es wieder; **„Anordnen“**
+verschiebt Widgets per Ziehen oder mit den Pfeilen und stellt ihre Breite ein: ⅓, ½, ⅔
+oder ganz. „Fertig“ speichert die Anordnung, „Abbrechen“ verwirft sie; am Handy stehen
+alle Widgets untereinander)
 und deine Apps als Kacheln, jede mit eigener Farbe, der Zahl ihrer Seiten sowie
 wichtigen Hinweisen (`notice`-Bausteine) aus ihren Seiten. Du siehst nur Apps, die
 veröffentlicht und für dich freigegeben sind; Designer sehen zusätzlich ihre Entwürfe

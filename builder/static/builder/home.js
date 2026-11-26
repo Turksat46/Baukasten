@@ -104,3 +104,120 @@
     });
   }
 })();
+
+// Widgets anordnen: Reihenfolge (Ziehen mit der Maus oder Pfeil-Buttons) und Breite ändern.
+// Gespeichert wird erst mit „Fertig“; „Abbrechen“ stellt den Zustand von vorher wieder her.
+(function () {
+  var gettext = window.gettext || function (text) { return text; };
+  var grid = document.querySelector("[data-widget-grid]");
+  var toggle = document.querySelector("[data-widget-arrange]");
+  var bar = document.querySelector("[data-widget-arrange-bar]");
+  if (!grid || !toggle || !bar) return;
+  var status = bar.querySelector("[data-widget-status]");
+  var hint = status ? status.textContent : "";
+  var WIDTHS = ["4", "6", "8", "12"];
+  var before = [];
+  var dragged = null;
+
+  function cards() { return Array.prototype.slice.call(grid.querySelectorAll("[data-widget-id]")); }
+
+  function setWidth(card, width) {
+    WIDTHS.forEach(function (w) { card.classList.remove("col-" + w); });
+    card.classList.add("col-" + width);
+    card.dataset.width = String(width);
+    card.querySelectorAll("[data-size]").forEach(function (b) {
+      b.setAttribute("aria-pressed", b.dataset.size === String(width) ? "true" : "false");
+    });
+  }
+
+  function say(text) { if (status) status.textContent = text; }
+
+  function setArranging(on) {
+    grid.classList.toggle("is-arranging", on);
+    toggle.hidden = on;
+    bar.hidden = !on;
+    cards().forEach(function (card) {
+      card.draggable = on;
+      var tools = card.querySelector(".home-widget-tools");
+      if (tools) tools.hidden = !on;
+    });
+    if (on) {
+      before = cards().map(function (card) { return {card: card, width: card.dataset.width}; });
+      say(hint);
+      var first = grid.querySelector("[data-move]");
+      if (first) first.focus();
+    } else {
+      toggle.focus();
+    }
+  }
+
+  function csrf() {
+    var input = document.querySelector("input[name=csrfmiddlewaretoken]");
+    return input ? input.value : "";
+  }
+
+  toggle.addEventListener("click", function () { setArranging(true); });
+
+  bar.querySelector("[data-widget-cancel]").addEventListener("click", function () {
+    before.forEach(function (s) { grid.appendChild(s.card); setWidth(s.card, s.width); });
+    setArranging(false);
+  });
+
+  bar.querySelector("[data-widget-save]").addEventListener("click", function () {
+    var button = this;
+    var widgets = cards().map(function (card) {
+      return {id: parseInt(card.dataset.widgetId, 10), width: parseInt(card.dataset.width, 10)};
+    });
+    button.disabled = true;
+    fetch(grid.dataset.saveUrl, {
+      method: "POST", credentials: "same-origin",
+      headers: {"Content-Type": "application/json", "X-CSRFToken": csrf()},
+      body: JSON.stringify({widgets: widgets})
+    })
+      .then(function (r) { if (!r.ok) throw new Error(r.status); setArranging(false); })
+      .catch(function () { say(gettext("Konnte nicht gespeichert werden. Bitte noch einmal versuchen.")); })
+      .then(function () { button.disabled = false; });
+  });
+
+  grid.addEventListener("click", function (e) {
+    if (!grid.classList.contains("is-arranging")) return;
+    var button = e.target.closest("[data-move], [data-size]");
+    if (!button) return;
+    var card = button.closest("[data-widget-id]");
+    if (button.dataset.size) {
+      setWidth(card, button.dataset.size);
+      say(button.getAttribute("aria-label"));
+      return;
+    }
+    var list = cards();
+    var target = list[list.indexOf(card) + parseInt(button.dataset.move, 10)];
+    if (!target) return;
+    grid.insertBefore(card, button.dataset.move === "-1" ? target : target.nextSibling);
+    button.focus();
+    say(gettext("Position %(n)s von %(total)s")
+      .replace("%(n)s", cards().indexOf(card) + 1).replace("%(total)s", list.length));
+  });
+
+  // Ziehen mit der Maus: Das Widget rutscht vor oder hinter die Karte unter dem Mauszeiger.
+  grid.addEventListener("dragstart", function (e) {
+    var card = e.target.closest && e.target.closest("[data-widget-id]");
+    if (!card || !grid.classList.contains("is-arranging")) return;
+    dragged = card;
+    card.classList.add("is-dragged");
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", card.dataset.widgetId);
+  });
+  grid.addEventListener("dragover", function (e) {
+    if (!dragged) return;
+    e.preventDefault();
+    var over = e.target.closest("[data-widget-id]");
+    if (!over || over === dragged) return;
+    var rect = over.getBoundingClientRect();
+    grid.insertBefore(dragged, e.clientX > rect.left + rect.width / 2 ? over.nextSibling : over);
+  });
+  grid.addEventListener("drop", function (e) { if (dragged) e.preventDefault(); });
+  grid.addEventListener("dragend", function () {
+    if (dragged) dragged.classList.remove("is-dragged");
+    dragged = null;
+  });
+})();

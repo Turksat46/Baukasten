@@ -32,9 +32,19 @@
 {% if widgets or widget_groups %}
   <div class="section-head">
     <h2>{% translate "Meine Widgets" %}</h2>
-    {% if widget_groups %}
-      <button type="button" class="btn btn-secondary btn-small" data-widget-sheet-open>{% translate "+ Widget" %}</button>
-    {% endif %}
+    <div class="widget-actions">
+      {% if widgets %}
+        <button type="button" class="btn btn-secondary btn-small" data-widget-arrange>{% translate "Anordnen" %}</button>
+        <span class="widget-arrange-bar" data-widget-arrange-bar hidden>
+          <span class="muted small" data-widget-status role="status">{% translate "Ziehen oder Pfeile zum Verschieben, Breite oben rechts." %}</span>
+          <button type="button" class="btn btn-secondary btn-small" data-widget-cancel>{% translate "Abbrechen" %}</button>
+          <button type="button" class="btn btn-small" data-widget-save>{% translate "Fertig" %}</button>
+        </span>
+      {% endif %}
+      {% if widget_groups %}
+        <button type="button" class="btn btn-secondary btn-small" data-widget-sheet-open>{% translate "+ Widget" %}</button>
+      {% endif %}
+    </div>
   </div>
   {% if widget_groups %}
     <dialog class="widget-sheet" id="widget-sheet" aria-labelledby="widget-sheet-title" aria-describedby="widget-sheet-hint">
@@ -77,11 +87,20 @@
     </dialog>
   {% endif %}
   {% if widgets %}
-    <div class="grid home-widgets">
+    <div class="grid home-widgets" data-widget-grid data-save-url="{% url 'home_widgets_arrange' %}">
       {% for w in widgets %}
-        <div class="col col-{{ w.col_width }} home-widget-card">
+        <div class="col col-{{ w.col_width }} home-widget-card" data-widget-id="{{ w.pk }}" data-width="{{ w.col_width }}">
+          <div class="home-widget-tools" role="group" aria-label="{% blocktranslate with name=w.display_title %}„{{ name }}“ anordnen{% endblocktranslate %}" hidden>
+            <button type="button" data-move="-1" title="{% translate 'Nach vorne' %}" aria-label="{% translate 'Nach vorne' %}">←</button>
+            <button type="button" data-move="1" title="{% translate 'Nach hinten' %}" aria-label="{% translate 'Nach hinten' %}">→</button>
+            <span class="home-widget-sizes" role="group" aria-label="{% translate 'Breite' %}">
+              {% for size, label, hint in widget_sizes %}
+                <button type="button" data-size="{{ size }}" title="{{ hint }}" aria-label="{{ hint }}" aria-pressed="{% if size == w.col_width %}true{% else %}false{% endif %}">{{ label }}</button>
+              {% endfor %}
+            </span>
+          </div>
           <div class="home-widget-head">
-            <a class="muted small" href="{% url 'page' w.page.app.slug w.page.slug %}">{{ w.page.app.name|tr:w.page.app }} · {{ w.display_title }}</a>
+            <a class="home-widget-title muted small" href="{% url 'page' w.page.app.slug w.page.slug %}" title="{{ w.page.app.name|tr:w.page.app }} · {{ w.display_title }}">{{ w.page.app.name|tr:w.page.app }} · {{ w.display_title }}</a>
             <form method="post" action="{% url 'home_widget_remove' w.pk %}">
               {% csrf_token %}
               <button class="link small muted" title="{% translate 'Widget entfernen' %}" aria-label="{% translate 'Widget entfernen' %}">×</button>
