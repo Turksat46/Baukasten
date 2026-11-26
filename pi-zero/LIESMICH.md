@@ -81,6 +81,30 @@ DEMO_DATASOURCE_FILE=/var/lib/baukasten/demo-datenquelle.sqlite3
 DATASOURCE_DEMO=sqlite:////var/lib/baukasten/demo-datenquelle.sqlite3
 ```
 
+## HTTPS und Zugriff aus dem Internet
+
+Mit einem öffentlichen Namen in `DOMAIN` setzt `einrichten.sh` **Caddy** vor den Baukasten. Caddy holt ein
+kostenloses Zertifikat von Let's Encrypt, erneuert es selbst und leitet `http://` auf `https://` um. Die App
+verlangt dann ebenfalls HTTPS (sichere Cookies, Umleitung, HSTS für 30 Tage). gunicorn lauscht nur noch intern.
+
+1. **Name, der auf deinen Anschluss zeigt** (deine IP ändert sich, daher DynDNS), z. B.
+   - FRITZ!Box: *Internet → MyFRITZ!-Konto* → Adresse wie `abc123.myfritz.net`, oder
+   - kostenlos bei DuckDNS: `meinname.duckdns.org` (Router bzw. Pi aktualisiert die IP).
+2. **Portfreigabe im Router:** TCP **80** und **443** auf den Pi (`hellgir`). Port 80 braucht Let's Encrypt
+   zum Prüfen und für die Umleitung. SSH (22) nicht freigeben.
+3. **Auf dem Pi** den Namen in `/etc/baukasten/pi.env` eintragen (`DOMAIN=meinname.duckdns.org`) und
+   `sudo /opt/baukasten/app/pi-zero/einrichten.sh` noch einmal ausführen. Danach
+   `sudo systemctl start baukasten-aktualisieren` (übernimmt den Namen in `ALLOWED_HOSTS`).
+
+Prüfen: `journalctl -u caddy -n 30` sollte „certificate obtained successfully“ zeigen.
+Im Heimnetz leitet `http://hellgir.local/` auf die HTTPS-Adresse um (der Router muss Aufrufe der eigenen
+öffentlichen Adresse von innen zulassen, die FRITZ!Box kann das).
+
+Geht es nicht: Viele Kabel- und Glasfaseranschlüsse haben **DS-Lite** (keine eigene öffentliche IPv4-Adresse).
+Dann lassen sich Ports nicht von außen über IPv4 erreichen; Abhilfe sind IPv6 oder ein Tunnel wie Cloudflare Tunnel.
+
+Wieder ausschalten: `DOMAIN=` leeren und `einrichten.sh` erneut ausführen.
+
 ## Einstellungen
 
 - `/etc/baukasten/pi.env` – Repository, Zweig (`BRANCH`), `TESTS_ABWARTEN`, `GITHUB_TOKEN`, `EXTRA_HOSTS`

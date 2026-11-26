@@ -26,6 +26,9 @@ source "$KONF/pi.env"
 BRANCH="${BRANCH:-main}"
 TESTS_ABWARTEN="${TESTS_ABWARTEN:-ja}"
 BEISPIELE="${BEISPIELE:-nein}"
+DOMAIN="${DOMAIN:-}"
+# Mit DOMAIN steht Caddy (HTTPS) davor und gunicorn lauscht nur intern auf 8000 (siehe einrichten.sh).
+if [ -n "$DOMAIN" ]; then PORT=8000; else PORT=80; fi
 : "${REPO_SLUG:?REPO_SLUG fehlt in $KONF/pi.env}"
 
 exec 9>"$ZUSTAND/lauf.lock"
@@ -36,7 +39,7 @@ if [ -f "$ZUSTAND/erzwingen" ]; then ERZWINGEN=1; rm -f "$ZUSTAND/erzwingen"; fi
 # manage.py mit denselben Umgebungsvariablen wie die Dienste ausführen.
 manage() {
     local nutzer="$1"; shift
-    runuser -u "$nutzer" -- bash -c 'set -a; . /etc/baukasten/baukasten.env; . /var/lib/baukasten/netz.env; set +a
+    runuser -u "$nutzer" -- bash -c 'set -a; . /etc/baukasten/baukasten.env; [ -f /etc/baukasten/https.env ] && . /etc/baukasten/https.env; . /var/lib/baukasten/netz.env; set +a
         cd /opt/baukasten/app && exec /opt/baukasten/venv/bin/python manage.py "$@"' _ "$@"
 }
 
@@ -79,7 +82,7 @@ ausrollen() {
     systemctl restart baukasten-web baukasten-worker || { echo "FEHLER: Neustart der Dienste" >&2; return 1; }
     echo "==> Warte auf den Start (auf dem Pi Zero bis zu ein paar Minuten)"
     for _ in $(seq 1 60); do
-        curl -fsS -o /dev/null http://127.0.0.1/readyz 2>/dev/null && return 0
+        curl -fsS -o /dev/null "http://127.0.0.1:$PORT/readyz" 2>/dev/null && return 0
         sleep 5
     done
     return 1
@@ -88,7 +91,7 @@ ausrollen() {
 # ---- Adressen, unter denen der Pi erreichbar ist (DHCP kann die IP ändern) ----
 NAME=$(hostname)
 IPS=$(hostname -I 2>/dev/null | tr ' ' '\n' | grep -E '^[0-9]+(\.[0-9]+){3}$' | paste -sd, - || true)
-NETZ="ALLOWED_HOSTS=localhost,127.0.0.1,$NAME,$NAME.local${IPS:+,$IPS}${EXTRA_HOSTS:+,$EXTRA_HOSTS}"
+NETZ="ALLOWED_HOSTS=${DOMAIN:+$DOMAIN,}localhost,127.0.0.1,$NAME,$NAME.local${IPS:+,$IPS}${EXTRA_HOSTS:+,$EXTRA_HOSTS}"
 if [ "$(cat "$ZUSTAND/netz.env" 2>/dev/null)" != "$NETZ" ]; then
     echo "$NETZ" >"$ZUSTAND/netz.env"
     if [ -f "$ZUSTAND/ausgerollt" ]; then
@@ -156,7 +159,7 @@ if ausrollen; then
     fi
     echo "$ZIEL" >"$ZUSTAND/ausgerollt"
     rm -f "$ZUSTAND/uebersprungen"
-    echo "==> Fertig: $KURZ läuft unter http://$NAME.local/"
+    echo "==> Fertig: $KURZ läuft unter ${DOMAIN:+https://$DOMAIN/}${DOMAIN:-http://$NAME.local/}"
     exit 0
 fi
 

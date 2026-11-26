@@ -5,5 +5,5 @@
 #   sudo /opt/baukasten/app/pi-zero/manage.sh help
 set -euo pipefail
 [ "$(id -u)" = 0 ] || { echo "Bitte mit sudo starten." >&2; exit 1; }
-exec runuser -u baukasten -- bash -c 'set -a; . /etc/baukasten/baukasten.env; . /var/lib/baukasten/netz.env; set +a
+exec runuser -u baukasten -- bash -c 'set -a; . /etc/baukasten/baukasten.env; [ -f /etc/baukasten/https.env ] && . /etc/baukasten/https.env; . /var/lib/baukasten/netz.env; set +a
     cd /opt/baukasten/app && exec /opt/baukasten/venv/bin/python manage.py "$@"' _ "$@"

@@ -71,6 +71,9 @@ GITHUB_TOKEN=
 BEISPIELE=nein
 # Weitere Hostnamen, unter denen der Baukasten erreichbar sein soll (kommagetrennt), z. B. baukasten.fritz.box
 EXTRA_HOSTS=
+# Öffentlicher Name für HTTPS aus dem Internet (z. B. meinname.duckdns.org). Leer: nur http im Heimnetz.
+# Nach dem Eintragen einrichten.sh noch einmal ausführen (installiert Caddy, holt das Zertifikat).
+DOMAIN=
 EOF
     chmod 600 "$KONF/pi.env"
 fi
@@ -106,6 +109,42 @@ chown root:baukasten "$KONF/baukasten.env"
 chmod 640 "$KONF/baukasten.env"
 touch "$ZUSTAND/netz.env"
 
+# ---- HTTPS (nur mit DOMAIN in pi.env) ----
+DOMAIN=$(. "$KONF/pi.env"; echo "${DOMAIN:-}")
+if [ -n "$DOMAIN" ]; then
+    schritt "HTTPS für $DOMAIN (Caddy mit Let's-Encrypt-Zertifikat)"
+    apt-get install -y -qq caddy >/dev/null || fehler "Caddy ließ sich nicht installieren (apt-get install caddy)."
+    cat >/etc/caddy/Caddyfile <<CADDY
+# Erzeugt von pi-zero/einrichten.sh – Änderungen dort machen.
+# Caddy holt und erneuert das Zertifikat selbst und leitet http:// auf https:// um.
+$DOMAIN {
+	encode gzip
+	reverse_proxy 127.0.0.1:8000
+}
+
+# Aufrufe im Heimnetz über den alten Namen ebenfalls auf HTTPS umleiten.
+http://$(hostname).local {
+	redir https://$DOMAIN{uri} permanent
+}
+CADDY
+    # Die App verlangt dann ebenfalls HTTPS: sichere Cookies, Umleitung, HSTS (30 Tage).
+    cat >"$KONF/https.env" <<HTTPS
+# Erzeugt von pi-zero/einrichten.sh (DOMAIN in pi.env), überschreibt baukasten.env.
+COOKIE_SECURE=true
+SECURE_SSL_REDIRECT=true
+SECURE_HSTS_SECONDS=2592000
+HTTPS
+    BIND=127.0.0.1:8000
+    systemctl enable caddy >/dev/null
+    systemctl restart caddy
+else
+    : >"$KONF/https.env"
+    BIND=0.0.0.0:80
+    if systemctl is-active --quiet caddy 2>/dev/null; then systemctl disable --now caddy >/dev/null; fi
+fi
+chown root:baukasten "$KONF/https.env"
+chmod 640 "$KONF/https.env"
+
 # ---- Dienste ----
 schritt "Dienste einrichten"
 chmod +x "$APP/pi-zero/"*.sh
@@ -120,10 +159,11 @@ User=baukasten
 Group=baukasten
 WorkingDirectory=$APP
 EnvironmentFile=$KONF/baukasten.env
+EnvironmentFile=-$KONF/https.env
 EnvironmentFile=-$ZUSTAND/netz.env
 # Port 80 ohne root
 AmbientCapabilities=CAP_NET_BIND_SERVICE
-ExecStart=$VENV/bin/gunicorn config.wsgi:application --config gunicorn.conf.py --bind 0.0.0.0:80
+ExecStart=$VENV/bin/gunicorn config.wsgi:application --config gunicorn.conf.py --bind $BIND
 Restart=always
 RestartSec=10
 TimeoutStartSec=5min
@@ -144,6 +184,7 @@ User=baukasten
 Group=baukasten
 WorkingDirectory=$APP
 EnvironmentFile=$KONF/baukasten.env
+EnvironmentFile=-$KONF/https.env
 EnvironmentFile=-$ZUSTAND/netz.env
 ExecStart=$VENV/bin/python manage.py hintergrund --dauerhaft
 Restart=always
@@ -213,7 +254,7 @@ cat <<EOF
 Die erste Installation läuft jetzt im Hintergrund (Python-Pakete, Datenbank: 20–40 Minuten
 auf dem Pi Zero). Zuschauen:   journalctl -fu baukasten-aktualisieren
 
-Danach:      http://$(hostname).local/   (oder http://$(hostname -I | awk '{print $1}')/)
+Danach:      ${DOMAIN:+https://$DOMAIN/   (im Heimnetz leitet http://$(hostname).local/ dorthin um)}${DOMAIN:-http://$(hostname).local/   (oder http://$(hostname -I | awk '{print $1}')/)}
 Anmelden:    $ADMIN_USERNAME / $ADMIN_PASSWORD   (steht auch in $KONF/baukasten.env)
 
 Ab jetzt:    git push auf '$(. "$KONF/pi.env"; echo "$BRANCH")' → GitHub testet → bei grünen Tests
