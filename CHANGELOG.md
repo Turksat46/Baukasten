@@ -94,6 +94,11 @@ Test prüft, dass die neueste Version hier und `BAUKASTEN_VERSION` übereinstimm
   Geprüft beim Seitenaufruf, für Einzelbausteine (`/b/`), Baustein-Aktionen, Menü, Seitenlinks und
   Startseiten-Widgets; Bearbeiter der App sehen alles, öffentliche Seiten bleiben öffentlich.
   Versionen speichern die Gruppen mit Namen; Änderungen stehen im Protokoll.
+- Rechte-Policy (ADR 0012): `builder/policy.py` mit `darf()`, `pruefe()` und `sichtbare_seiten()`
+  trifft alle Rechte-Entscheidungen; Ansichten, `render_block`, `TableOps`, Berichte und Designer
+  fragen nur noch dort. `tests/test_policy.py` prüft jede Rolle gegen jeden Zugriffsweg (Policy und
+  HTTP müssen übereinstimmen). Kleine Änderung: Gäste, die über ein öffentliches Formular in eine
+  Tabelle mit ausgeschaltetem „Anlegen erlaubt“ schreiben wollen, landen bei der Anmeldung statt bei 403.
 - Widgets anordnen: `POST /start/widgets/anordnen/` (`views.home_widgets_arrange`) speichert
   Reihenfolge und Breite (`WIDGET_WIDTHS` 4/6/8/12) der eigenen Widgets; fremde IDs und ungültige
   Breiten werden übergangen. `home_widget_add` hängt neue Widgets hinten an.

@@ -13,6 +13,7 @@ from django.db.models.fields.json import KeyTextTransform
 from django.db.models.functions import Cast
 from django.utils.translation import gettext as _
 
+from .. import policy
 from ..models import Field, Record
 
 MAX_ROWS = 10000
@@ -80,9 +81,12 @@ class TableOps:
         if entity is None:
             raise OpsError(_("Die Tabelle „%(name)s“ gibt es in dieser App nicht.") % {"name": slug})
         if self.enforce_flags:
-            if not entity.user_can_read(self.user) and not (write == "create" and entity.user_can_write(self.user)):
+            # Rechte der Person (policy); die Schalter der Tabelle prüfen create/update/delete selbst
+            lesen = policy.darf(self.user, policy.LESEN, entity)
+            schreiben = policy.darf(self.user, policy.SCHREIBEN, entity)
+            if not lesen and not (write == "create" and schreiben):
                 raise OpsError(_("Für die Tabelle „%(name)s“ fehlt dir die Berechtigung.") % {"name": entity.name})
-            if write and not entity.user_can_write(self.user):
+            if write and not schreiben:
                 raise OpsError(_("Die Tabelle „%(name)s“ darfst du nur lesen.") % {"name": entity.name})
         return entity
 

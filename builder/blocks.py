@@ -28,7 +28,7 @@ from django.utils.safestring import mark_safe
 from django.utils.translation import gettext
 from django.utils.translation import gettext_lazy as _
 
-from . import app_i18n, conditions, hooks
+from . import app_i18n, conditions, hooks, policy
 from .forms import RecordForm
 from .models import CustomBlock, Field, Record, Script
 from .page_path import page_url
@@ -828,9 +828,8 @@ def prep_cards(request, app, block):
 
 
 def prep_pagelinks(request, app, block):
-    from .models import Page
 
-    return {"links": list(Page.visible_to(app, request.user, app.pages.filter(show_in_nav=True)))}
+    return {"links": list(policy.sichtbare_seiten(request.user, app, app.pages.filter(show_in_nav=True)))}
 
 
 def prep_image(request, app, block):
@@ -1236,12 +1235,12 @@ def table_rights(request, app, block, block_type):
     read_only = set()
     for entity in app.entities.filter(slug__in=slugs).prefetch_related("read_groups", "write_groups"):
         if block.get("type") == "form":
-            if not entity.user_can_write(user):
+            if not policy.darf(user, policy.SCHREIBEN, entity):
                 return gettext("Für die Tabelle „%(name)s“ fehlt dir die Berechtigung.") % {"name": entity.name}, None
             continue
-        if not entity.user_can_read(user):
+        if not policy.darf(user, policy.LESEN, entity):
             return gettext("Für die Tabelle „%(name)s“ fehlt dir die Berechtigung.") % {"name": entity.name}, None
-        if not entity.user_can_write(user):
+        if not policy.darf(user, policy.SCHREIBEN, entity):
             read_only.add(entity.slug)
     return None, frozenset(read_only)
 
