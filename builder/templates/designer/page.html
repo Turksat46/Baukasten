@@ -9,6 +9,17 @@
     <input id="page-title" type="text" value="{{ page.title }}" maxlength="80" aria-label="{% translate 'Seitentitel' %}">
     <label class="check"><input id="page-nav" type="checkbox"{% if page.show_in_nav %} checked{% endif %}> {% translate "Im Menü anzeigen" %}</label>
     <label class="check" title="{% translate 'Jeder mit dem Link kann die Seite öffnen, ihre Formulare absenden und ihre Buttons auslösen.' %}"><input id="page-public" type="checkbox"{% if page.public %} checked{% endif %}> {% translate "Ohne Anmeldung erreichbar" %}</label>
+    <details class="page-access" id="page-access">
+      <summary title="{% translate 'Wer darf die Seite sehen? Schützt die Seite, nicht die Tabellen dahinter.' %}">{% translate "Sichtbar für:" %} <span data-access-label data-all="{% translate 'alle' %}">{% for g in all_groups %}{% if g.pk in page_group_ids %}{{ g.name }}{% if not forloop.last %}, {% endif %}{% endif %}{% empty %}{% endfor %}</span></summary>
+      <div class="page-access-menu">
+        {% for g in all_groups %}
+          <label class="check"><input type="checkbox" name="page-group" value="{{ g.pk }}" data-name="{{ g.name }}"{% if g.pk in page_group_ids %} checked{% endif %}> {{ g.name }}</label>
+        {% empty %}
+          <p class="muted">{% translate "Es gibt noch keine Gruppen. Gruppen legst du unter Verwaltung an." %}</p>
+        {% endfor %}
+        <p class="muted small">{% translate "Nichts angehakt: alle, die die App benutzen dürfen. Bearbeiter der App sehen immer alle Seiten. Die Tabellen bleiben über andere Seiten, Formulare, Export und API erreichbar." %}</p>
+      </div>
+    </details>
     <span id="status" class="muted" role="status"></span>
     <span data-tour="save-area" class="designer-actions">
       <a class="btn btn-secondary" href="{% url 'page' app.slug page.slug %}" target="_blank" rel="noopener">{% translate "Vorschau" %}</a>

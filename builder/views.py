@@ -112,7 +112,8 @@ def home(request):
     app_ids = {a.pk for a in apps}
     types_map = all_types()
     for app in apps:
-        pages = list(app.pages.all())
+        pages = list(Page.visible_to(app, request.user))
+        app.visible_pages = pages
         app.page_count = sum(1 for p in pages if p.show_in_nav)
         app.tone = sum(map(ord, app.slug)) % 5 + 1  # feste Farbe je App für die Kachel
         notices = []
@@ -137,8 +138,9 @@ def home(request):
 
     widgets = []
     pinned_keys = set()
+    visible_ids = {p.pk for app in apps for p in app.visible_pages}
     for w in HomeWidget.objects.filter(user=request.user).select_related("page", "page__app"):
-        if w.page.app_id not in app_ids:
+        if w.page.app_id not in app_ids or w.page_id not in visible_ids:
             continue
         block = next((b for b in (w.page.layout or []) if b.get("id") == w.block_id), None)
         if block is None:
@@ -152,7 +154,7 @@ def home(request):
     widget_groups = []
     for app in apps:
         items = []
-        for p in app.pages.all():
+        for p in app.visible_pages:
             for b in p.layout or []:
                 bid = b.get("id")
                 if not bid or not _is_pinnable(b) or (p.pk, bid) in pinned_keys:
@@ -186,7 +188,7 @@ def home_widget_add(request):
         messages.error(request, _("Bitte einen gültigen Baustein auswählen."))
         return redirect("home")
     page = get_object_or_404(Page.objects.select_related("app"), pk=int(page_id))
-    if not page.app.user_can_use(request.user):
+    if not page.app.user_can_use(request.user) or not page.user_can_view(request.user):
         raise PermissionDenied
     block = next((b for b in (page.layout or []) if b.get("id") == block_id), None)
     if block is None or not _is_pinnable(block):
@@ -235,9 +237,22 @@ def _interactive(blocks):
     return any(getattr(types.get(b.get("type")), "action", None) for b in blocks)
 
 
-def nav_pages(app, guest):
+def nav_pages(app, guest, user=None):
     pages = app.pages.filter(show_in_nav=True)
-    return pages.filter(public=True) if guest else pages
+    return pages.filter(public=True) if guest else Page.visible_to(app, user, pages)
+
+
+def visible_page(request, app, guest, slug):
+    """Die aufgerufene Seite, wenn die Person sie sehen darf: (Seite, None) oder (None, Antwort).
+    Ohne Kurznamen die erste Seite, die sie sehen darf."""
+    if not slug:
+        if guest:  # Gäste: wie bisher die erste Seite, sonst zur Anmeldung (siehe page())
+            return app.home_page, None
+        return Page.visible_to(app, request.user).order_by("order", "id").first(), None
+    current = get_object_or_404(app.pages, slug=slug)
+    if current.public or (not guest and current.user_can_view(request.user)):
+        return current, None
+    return None, deny(request)
 
 
 def page(request, app, page=None):
@@ -245,7 +260,9 @@ def page(request, app, page=None):
     if isinstance(access, HttpResponse):
         return access
     app, guest = access
-    current = get_object_or_404(app.pages, slug=page) if page else app.home_page
+    current, denied = visible_page(request, app, guest, page)
+    if denied:
+        return denied
     if guest and not (current and current.public):
         return deny(request)
     overrides, notes, errors = run_page(request, app, current) if current else ({}, [], [])
@@ -254,7 +271,7 @@ def page(request, app, page=None):
     return render(request, "builder/page.html", {
         "app": app,
         "page": current,
-        "nav_pages": nav_pages(app, guest),
+        "nav_pages": nav_pages(app, guest, request.user),
         "blocks": blocks,
         "script_notes": notes,
         "script_errors": errors if app.user_can_edit(request.user) else [],
@@ -269,9 +286,9 @@ def page_block(request, app, page, block):
     if isinstance(access, HttpResponse):
         return access
     app, guest = access
-    current = get_object_or_404(app.pages, slug=page)
-    if guest and not current.public:
-        return deny(request)
+    current, denied = visible_page(request, app, guest, page)
+    if denied:
+        return denied
     found = next((b for b in current.layout if b.get("id") == block), None)
     if found is None:
         return HttpResponse(status=404)
@@ -296,6 +313,8 @@ def block_action(request, app, page, block):
 
     app = get_app(request, app)
     current = get_object_or_404(app.pages, slug=page)
+    if not current.user_can_view(request.user):
+        raise PermissionDenied
     found = next((b for b in current.layout or [] if b.get("id") == block), None)
     if found is None:
         return JsonResponse({"error": _("Diesen Baustein gibt es auf der Seite nicht (mehr).")}, status=404)
@@ -409,7 +428,7 @@ def _record_form(request, app, entity, record=None, guest=False):
             app=app, target_type="record", target_id=str(record.pk)).select_related("user")[:10]]
     return render(request, "builder/record_form.html", {
         "app": app, "entity": entity, "form": form, "record": record, "history": history,
-        "nav_pages": nav_pages(app, guest),
+        "nav_pages": nav_pages(app, guest, request.user),
         "next": safe_next(request, home_url), "form_prefix": prefix or "",
     })
 
@@ -644,7 +663,7 @@ def api_docs(request, app):
         "base": request.build_absolute_uri(reverse("api_describe", args=[app.slug])),
         "spec_url": reverse("api_docs_spec", args=[app.slug]),
         "public_spec_url": request.build_absolute_uri(reverse("api_openapi", args=[app.slug])),
-        "nav_pages": app.pages.filter(show_in_nav=True),
+        "nav_pages": nav_pages(app, False, request.user),
     })
 
 

@@ -652,6 +652,7 @@
       title: titleEl.value,
       show_in_nav: navEl.checked,
       public: publicEl ? publicEl.checked : false,
+      groups: pageGroups().map(function (el) { return el.value; }),
       layout: layout,
       version: pageVersion,
       baukasten_version: cfg.baukasten_version,
@@ -719,6 +720,30 @@
   });
   titleEl.addEventListener("input", function () { dirty = true; statusEl.textContent = gettext("Nicht gespeichert"); storeDraft(); });
   navEl.addEventListener("change", function () { dirty = true; statusEl.textContent = gettext("Nicht gespeichert"); });
+  // Sichtbar für: Gruppen, die die Seite sehen dürfen (leer = alle mit Zugriff auf die App)
+  function pageGroups() {
+    return Array.prototype.slice.call(document.querySelectorAll("input[name='page-group']:checked"));
+  }
+  var accessLabel = document.querySelector("[data-access-label]");
+  function showAccess() {
+    if (!accessLabel) return;
+    var names = pageGroups().map(function (el) { return el.getAttribute("data-name"); });
+    accessLabel.textContent = names.length ? names.join(", ") : accessLabel.getAttribute("data-all");
+  }
+  showAccess();
+  var accessMenu = document.getElementById("page-access");
+  if (accessMenu) {
+    document.addEventListener("click", function (e) {
+      if (accessMenu.open && !accessMenu.contains(e.target)) accessMenu.open = false;
+    });
+  }
+  Array.prototype.forEach.call(document.querySelectorAll("input[name='page-group']"), function (el) {
+    el.addEventListener("change", function () {
+      dirty = true;
+      statusEl.textContent = gettext("Nicht gespeichert");
+      showAccess();
+    });
+  });
   if (publicEl) {
     publicEl.addEventListener("change", function () {
       dirty = true;
