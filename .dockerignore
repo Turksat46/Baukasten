@@ -6,3 +6,4 @@ staticfiles
 k8s
 .venv
 demo-datenquelle.sqlite3
+pi-zero

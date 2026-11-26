@@ -89,6 +89,15 @@ DATABASES = {
         conn_health_checks=True,
     )
 }
+# SQLite im Dauerbetrieb (z. B. Raspberry Pi, pi-zero/): Webserver und Hintergrunddienst schreiben
+# gleichzeitig. WAL erlaubt Lesen während des Schreibens, IMMEDIATE und das Zeitlimit vermeiden
+# „database is locked“. Ohne SQLITE_WAL bleibt alles wie bisher.
+if DATABASES["default"]["ENGINE"] == "django.db.backends.sqlite3" and env_bool("SQLITE_WAL"):
+    DATABASES["default"].setdefault("OPTIONS", {}).update({
+        "timeout": int(os.environ.get("SQLITE_TIMEOUT", "20")),
+        "transaction_mode": "IMMEDIATE",
+        "init_command": "PRAGMA journal_mode=WAL; PRAGMA synchronous=NORMAL;",
+    })
 
 # Zwischenspeicher, gemeinsam für alle Pods: Ergebnisse von Abfragen, Sperren gegen
 # Mehrfachabfragen und das Limit je Datenquelle hängen daran.

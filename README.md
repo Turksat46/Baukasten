@@ -193,6 +193,9 @@ an. Einzelheiten im Handbuch unter „Lokal mit Kubernetes“.
 Einmal `k8s/pi/einrichten.sh` auf dem Pi ausführen; danach baut GitHub Actions nach grünen Tests
 ein arm64-Image und der Pi rollt es selbst aus. Anleitung: [k8s/pi/LIESMICH.md](k8s/pi/LIESMICH.md).
 
+Für den ersten Pi Zero / Zero W (ARMv6, kein Kubernetes möglich) gibt es eine Variante ohne Container
+mit SQLite, die ebenfalls nach jedem grünen Push selbst aktualisiert: [pi-zero/LIESMICH.md](pi-zero/LIESMICH.md).
+
 </details>
 
 ## Was er kann
