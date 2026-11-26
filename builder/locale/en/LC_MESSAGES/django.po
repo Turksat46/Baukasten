@@ -6295,3 +6295,27 @@ msgstr "Who may see the page? Protects the page, not the tables behind it."
 #: builder/templates/designer/page.html
 msgid "alle"
 msgstr "everyone"
+
+#: builder/blocks.py builder/scripting/ops.py
+msgid "Für die Tabelle „%(name)s“ fehlt dir die Berechtigung."
+msgstr "You lack permission for the table \"%(name)s\"."
+
+#: builder/models.py
+msgid "Anlegen, Bearbeiten, Löschen. Leer lassen: alle, die die App benutzen dürfen."
+msgstr "Create, edit, delete. Leave empty: everyone who may use the app."
+
+#: builder/models.py
+msgid "Lesen dürfen"
+msgstr "May read"
+
+#: builder/models.py
+msgid "Ändern dürfen"
+msgstr "May change"
+
+#: builder/scripting/ops.py
+msgid "Die Tabelle „%(name)s“ darfst du nur lesen."
+msgstr "You may only read the table \"%(name)s\"."
+
+#: builder/templates/designer/entity.html
+msgid "Bearbeiter der App dürfen immer alles. Nicht eingeschränkt sind Python-Skripte, gespeicherte SQL-Abfragen und API-Schlüssel: Die legen Bearbeiter an, sie laufen mit deren Rechten."
+msgstr "Editors of the app may always do everything. Python scripts, saved SQL queries and API keys are not restricted: editors create them, and they run with the editors' rights."

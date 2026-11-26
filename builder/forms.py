@@ -127,7 +127,8 @@ class NewAppForm(forms.ModelForm):
 class EntityForm(forms.ModelForm):
     class Meta:
         model = Entity
-        fields = ["name", "allow_create", "allow_edit", "allow_delete"]
+        fields = ["name", "allow_create", "allow_edit", "allow_delete", "read_groups", "write_groups"]
+        widgets = {"read_groups": forms.CheckboxSelectMultiple, "write_groups": forms.CheckboxSelectMultiple}
 
 
 class NewEntityForm(forms.ModelForm):

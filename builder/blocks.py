@@ -4,6 +4,7 @@ Jeder Baustein hat ein Schema (welche Einstellungen der Designer anbietet) und
 eine prepare-Funktion, die die Daten für die Anzeige holt. Eine Seite ist eine
 Liste von Bausteinen: {"id", "type", "width", "props"}.
 """
+import contextvars
 import json
 import logging
 import re
@@ -140,8 +141,16 @@ BUILTIN_PLACEHOLDERS = ["nutzer", "app", "datum"]
 
 # ---------- Hilfen ----------
 
+# Tabellen, die die Person beim Anzeigen des aktuellen Bausteins nur lesen darf (siehe render_block)
+_READ_ONLY = contextvars.ContextVar("baukasten_read_only_tables", default=frozenset())
+
+
 def _entity(app, slug):
-    return app.entities.filter(slug=slug).first() if slug else None
+    entity = app.entities.filter(slug=slug).first() if slug else None
+    if entity is not None and entity.slug in _READ_ONLY.get():
+        # Nur für diese Anzeige: keine Links und Aktionen zum Anlegen, Bearbeiten, Löschen
+        entity.allow_create = entity.allow_edit = entity.allow_delete = False
+    return entity
 
 
 def reference_labels(fields, records):
@@ -1213,20 +1222,51 @@ from . import reports  # noqa: E402,F401  Berichte-Feed
 
 # ---------- Anzeige, Prüfung, Designer-Konfiguration ----------
 
+def table_rights(request, app, block, block_type):
+    """Tabellenrechte für einen Baustein: (Fehlermeldung oder None, nur lesbare Tabellen).
+
+    Geprüft werden alle Einstellungen vom Typ „Tabelle“. Formulare brauchen nur das Schreibrecht
+    (Einträge anlegen ohne die anderen zu sehen), alle anderen Bausteine das Leserecht."""
+    props = block.get("props") or {}
+    slugs = [props.get(spec["key"]) for spec in block_type.fields if spec.get("type") == "entity"]
+    slugs = [s for s in slugs if isinstance(s, str) and s]
+    if not slugs:
+        return None, frozenset()
+    user = getattr(request, "user", None)
+    read_only = set()
+    for entity in app.entities.filter(slug__in=slugs).prefetch_related("read_groups", "write_groups"):
+        if block.get("type") == "form":
+            if not entity.user_can_write(user):
+                return gettext("Für die Tabelle „%(name)s“ fehlt dir die Berechtigung.") % {"name": entity.name}, None
+            continue
+        if not entity.user_can_read(user):
+            return gettext("Für die Tabelle „%(name)s“ fehlt dir die Berechtigung.") % {"name": entity.name}, None
+        if not entity.user_can_write(user):
+            read_only.add(entity.slug)
+    return None, frozenset(read_only)
+
+
 def render_block(request, app, block, types=None, overrides=None):
     """HTML eines Bausteins oder None, wenn ein Skript ihn verborgen hat."""
     types = types or all_types()
     block_type = types.get(block.get("type"))
     if not block_type:
         return None
+    denied, read_only = table_rights(request, app, block, block_type)
+    token = _READ_ONLY.set(read_only or frozenset())
     try:
-        with conditions.active(request, app, block):
-            ctx = block_type.prepare(request, app, block) if block_type.prepare else {}
+        if denied:
+            ctx = {"error": denied}
+        else:
+            with conditions.active(request, app, block):
+                ctx = block_type.prepare(request, app, block) if block_type.prepare else {}
     except conditions.ConditionError as exc:
         ctx = {"error": str(exc)}
     except Exception:
         log.exception("Baustein %s fehlgeschlagen", block.get("type"))
         ctx = {"error": gettext("Dieser Baustein konnte nicht geladen werden.")}
+    finally:
+        _READ_ONLY.reset(token)
     props = app_i18n.translate_props(dict(block["props"]), block_type)
     values = (overrides or {}).get(block.get("name") or "", {})
     if values and not apply_overrides(block["type"], props, ctx, values, request, app, block):

@@ -44,6 +44,7 @@
       <form method="post" class="form">
         {% csrf_token %}<input type="hidden" name="kind" value="entity">
         {{ form.as_div }}
+        <p class="muted small">{% translate "Bearbeiter der App dürfen immer alles. Nicht eingeschränkt sind Python-Skripte, gespeicherte SQL-Abfragen und API-Schlüssel: Die legen Bearbeiter an, sie laufen mit deren Rechten." %}</p>
         <div class="actions"><button class="btn">{% translate "Speichern" %}</button></div>
       </form>
       <form method="post" action="{% url 'designer_entity_delete' app.slug entity.pk %}" data-confirm="{% blocktranslate with name=entity.name count=record_count %}Tabelle „{{ name }}“ mit allen {{ count }} Einträgen löschen?{% endblocktranslate %}">

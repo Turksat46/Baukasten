@@ -26,7 +26,11 @@ Test prüft, dass die neueste Version hier und `BAUKASTEN_VERSION` übereinstimm
 ### Für Nutzer
 - **Seiten nur für bestimmte Gruppen:** Im Seiten-Designer legt „Sichtbar für“ fest, welche Gruppen
   eine Seite sehen, z. B. „Kosten“ nur für das Controlling. Für alle anderen fehlt sie im Menü, in
-  Seitenlinks und Widgets. Das schützt die Seite, nicht die Tabellen dahinter.
+  Seitenlinks und Widgets.
+- **Tabellen nur für bestimmte Gruppen:** In den Einstellungen einer Tabelle legen „Lesen dürfen“
+  und „Ändern dürfen“ fest, wer Einträge sieht und wer sie anlegt, bearbeitet oder löscht. Wer nicht
+  lesen darf, sieht in Listen, Kennzahlen und Diagrammen nur einen Hinweis und kommt auch über
+  Export und Formulare nicht an die Daten. Ein Formular zum Anlegen geht auch ohne Leserecht.
 - **Nur bestimmte Einträge zeigen:** Liste, Kennzahl, Diagramme, Kalender und Co. haben die
   Einstellung „Nur Einträge, für die gilt“, z. B. `Status != Erledigt` und `Fällig < heute`.
   „Offen“, „Überfällig“ oder „Fällig in 7 Tagen“ brauchen damit kein Skript mehr.
@@ -84,6 +88,13 @@ Test prüft, dass die neueste Version hier und `BAUKASTEN_VERSION` übereinstimm
   Geprüft beim Seitenaufruf, für Einzelbausteine (`/b/`), Baustein-Aktionen, Menü, Seitenlinks und
   Startseiten-Widgets; Bearbeiter der App sehen alles, öffentliche Seiten bleiben öffentlich.
   Versionen speichern die Gruppen mit Namen; Änderungen stehen im Protokoll.
+- Tabellenrechte: `Entity.read_groups` und `Entity.write_groups` (Migration 0024),
+  `Entity.user_can_read()` / `user_can_write()`. Geprüft in `render_block` für alle Einstellungen vom
+  Typ „Tabelle“ (Formulare nur Schreibrecht; nur lesbare Tabellen blenden Anlegen/Bearbeiten/Löschen
+  aus), in Eintrag anlegen/bearbeiten/löschen, CSV-Export und -Import, API-Doku und `TableOps` mit
+  `enforce_flags=True` (JavaScript-Skripte, Planung, Widget-Aktionen). Python-Skripte, gespeicherte
+  Abfragen und API-Schlüssel bleiben uneingeschränkt (von Bearbeitern angelegt). Versionen und
+  Protokoll enthalten die Gruppen; ältere Versionen ohne Tabellenrechte lassen sie unverändert.
 - `builder/conditions.py`: Einstellung `where` für 19 Datenbausteine, ausgewertet in
   `blocks.filtered()`; Fehler in der Bedingung zeigt der Baustein selbst an.
 - Kennzahl: `direction`, `warn_at`, `alarm_at` (Ampel), `compare_field`/`compare_days` (Trend),

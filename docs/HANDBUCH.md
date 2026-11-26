@@ -400,9 +400,39 @@ die Seite „Kosten“ nur die Gruppe „Controlling“.
 - Eine öffentliche Seite („Ohne Anmeldung erreichbar“) sieht jeder; die
   Gruppen spielen dann keine Rolle.
 - **Wichtig:** Das schützt die Seite, nicht die Daten. Wer die App benutzen
-  darf, erreicht ihre Tabellen weiter über andere Seiten, Formulare, CSV-Export,
-  Skripte und die API. Vertrauliche Daten gehören in eine eigene App mit
-  eigenen Gruppen.
+  darf, erreicht ihre Tabellen weiter über andere Seiten und den Export. Die
+  Daten selbst schützen die [Tabellenrechte](#wer-eine-tabelle-liest-und-ändert).
+
+### Wer eine Tabelle liest und ändert
+
+In den Einstellungen einer Tabelle (Designer → Tabelle) stehen zwei Listen mit
+Gruppen:
+
+- **Lesen dürfen:** Wer Einträge sehen darf, in Listen, Kennzahlen, Diagrammen,
+  Kalendern und allen anderen Bausteinen, im Bearbeiten-Formular und im
+  CSV-Export. Alle anderen sehen statt des Bausteins den Hinweis „Für die
+  Tabelle … fehlt dir die Berechtigung“; Export und Bearbeiten werden
+  abgelehnt (Fehler 403).
+- **Ändern dürfen:** Wer Einträge anlegen, bearbeiten und löschen darf (dazu
+  kommen wie bisher die Schalter „Anlegen erlaubt“ usw.). Wer nur lesen darf,
+  sieht keine Knöpfe zum Anlegen, Bearbeiten und Löschen.
+
+Ist nichts angehakt, gilt es für alle, die die App benutzen dürfen.
+Bearbeiter der App dürfen immer alles.
+
+- **Anlegen ohne Lesen:** Ein Formular braucht nur das Recht zum Ändern. So
+  schickt jeder eine Meldung ab, lesen darf sie nur z. B. das Controlling.
+  Bestehende Einträge bearbeiten oder löschen braucht beide Rechte.
+- **Gäste** auf öffentlichen Seiten gehören zu keiner Gruppe: Eingeschränkte
+  Tabellen sehen sie nicht, Formulare gehen nur, wenn „Ändern dürfen“ leer ist.
+- **JavaScript-Skripte** laufen mit den Rechten der angemeldeten Person und
+  halten sich an die Tabellenrechte.
+- **Nicht eingeschränkt** sind Python-Skripte, gespeicherte SQL-Abfragen und
+  API-Schlüssel. Sie legen Bearbeiter an, und sie laufen mit deren Rechten.
+  Eine Abfrage, die eine geschützte Tabelle liest, gehört deshalb auf eine
+  Seite, die nur die richtigen Gruppen sehen.
+- Verweise auf einen Eintrag einer geschützten Tabelle zeigen weiter dessen
+  Namen an.
 
 ### Öffentliche Seiten
 
@@ -1852,7 +1882,7 @@ Passwort wird nie von einem gleichnamigen Keycloak-Konto übernommen.
 
 | Wer | Darf |
 |---|---|
-| Nutzer | veröffentlichte Apps verwenden, die für alle oder für eine seiner Gruppen freigegeben sind; darin die Seiten, die für alle oder für eine seiner Gruppen sichtbar sind ([Wer eine Seite sieht](#wer-eine-seite-sieht)); öffentliche Seiten brauchen gar keine Anmeldung |
+| Nutzer | veröffentlichte Apps verwenden, die für alle oder für eine seiner Gruppen freigegeben sind; darin die Seiten, die für alle oder für eine seiner Gruppen sichtbar sind ([Wer eine Seite sieht](#wer-eine-seite-sieht)) und die Tabellen, die sie lesen oder ändern dürfen ([Tabellenrechte](#wer-eine-tabelle-liest-und-ändert)); öffentliche Seiten brauchen gar keine Anmeldung |
 | Designer | eigene Apps und Apps, zu denen sie eingeladen sind, bearbeiten; neue Apps anlegen, eigene Bausteine anlegen |
 | Automatisierer | zusätzlich [Automatisierungen](#automatisierungen) anlegen und bearbeiten (echtes Python im Hintergrund) |
 | Verwalter (Superuser) | zusätzlich alle Apps im Designer und `/admin/`: Benutzer, Gruppen, alle Daten |

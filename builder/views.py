@@ -444,14 +444,21 @@ def record_create(request, app, entity):
     entity = get_object_or_404(app.entities, slug=entity)
     if not entity.allow_create:
         raise PermissionDenied
+    if not entity.user_can_write(request.user):
+        return deny(request)
     return _record_form(request, app, entity, guest=guest)
+
+
+def _can_change(entity, user):
+    """Bestehende Einträge ändern oder löschen: Lese- und Schreibrecht auf die Tabelle."""
+    return entity.user_can_read(user) and entity.user_can_write(user)
 
 
 @login_required
 def record_edit(request, app, entity, pk):
     app = get_app(request, app)
     entity = get_object_or_404(app.entities, slug=entity)
-    if not entity.allow_edit:
+    if not entity.allow_edit or not _can_change(entity, request.user):
         raise PermissionDenied
     return _record_form(request, app, entity, get_object_or_404(Record, pk=pk, entity=entity))
 
@@ -461,7 +468,7 @@ def record_edit(request, app, entity, pk):
 def record_delete(request, app, entity, pk):
     app = get_app(request, app)
     entity = get_object_or_404(app.entities, slug=entity)
-    if not entity.allow_delete:
+    if not entity.allow_delete or not _can_change(entity, request.user):
         raise PermissionDenied
     get_object_or_404(Record, pk=pk, entity=entity).delete()
     messages.success(request, _("Gelöscht."))
@@ -505,6 +512,8 @@ def entity_export(request, app, entity):
 
     app = get_app(request, app)
     entity = get_object_or_404(app.entities, slug=entity)
+    if not entity.user_can_read(request.user):
+        raise PermissionDenied
     fields = list(entity.fields.all())
     writer = csv.writer(_Echo(), delimiter=";")
     qs = filtered(request, entity).order_by("id")
@@ -563,7 +572,7 @@ def entity_import(request, app, entity):
 
     app = get_app(request, app)
     entity = get_object_or_404(app.entities, slug=entity)
-    if not entity.allow_create:
+    if not entity.allow_create or not entity.user_can_write(request.user):
         raise PermissionDenied
     # Formelfelder werden beim Speichern berechnet; eine Spalte dorthin würde nur überschrieben.
     fields = [f for f in entity.fields.all() if not f.formula]
@@ -659,7 +668,8 @@ def api_docs(request, app):
                                "tag": operation["tags"][0]})
     return render(request, "builder/api_docs.html", {
         "app": app, "operations": operations,
-        "tables": app.entities.filter(api_enabled=True).prefetch_related("fields"),
+        "tables": [e for e in app.entities.filter(api_enabled=True).prefetch_related("fields")
+                   if e.user_can_read(request.user)],
         "base": request.build_absolute_uri(reverse("api_describe", args=[app.slug])),
         "spec_url": reverse("api_docs_spec", args=[app.slug]),
         "public_spec_url": request.build_absolute_uri(reverse("api_openapi", args=[app.slug])),
