@@ -15,6 +15,7 @@ from . import app_i18n
 from .blocks import (_entity, _groups, display_value, filter_param, filtered, reference_labels, register,
                      rich_value)
 from .models import Field
+from .page_path import page_url
 
 
 def _pick(entity, key, types):
@@ -85,7 +86,7 @@ def prep_report_feed(request, app, block):
         "older_href": page_href(page_obj.next_page_number()) if page_obj.has_next() else "",
         "source_label": app_i18n.t(source.label) if source else "",
         "edit": entity.allow_edit and request.user.is_authenticated and app.user_can_use(request.user),
-        "next": request.get_full_path(),
+        "next": page_url(request),
         "inbox_url": request.build_absolute_uri(reverse("api_inbox", args=[app.slug, entity.slug]))
         if entity.api_enabled else "",
     }

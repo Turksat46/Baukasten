@@ -30,6 +30,7 @@ from django.utils.translation import gettext_lazy as _
 from . import app_i18n, conditions, hooks
 from .forms import RecordForm
 from .models import CustomBlock, DataQuery, Field, Record, Script
+from .page_path import page_url
 from .sanitize import fill_placeholders, sanitize_html, sanitize_html_report
 from .services import HttpNotAllowed, http_json
 
@@ -278,7 +279,7 @@ def prep_table(request, app, block):
     ]
     return {
         "entity": entity, "columns": columns, "rows": rows, "page_obj": page_obj,
-        "query": query, "next": request.get_full_path(),
+        "query": query, "next": page_url(request),
     }
 
 
@@ -292,7 +293,7 @@ def prep_form(request, app, block):
         "entity": entity,
         "form": RecordForm(entity, prefix=block["id"]),
         "action_url": reverse("record_create", args=[app.slug, entity.slug]),
-        "next": request.get_full_path(),
+        "next": page_url(request),
     }
 
 
@@ -814,7 +815,7 @@ def prep_cards(request, app, block):
          "details": [(app_i18n.t(f.label), display_value(f, r.data.get(f.key), refs)) for f in detail_fields]}
         for r in page_obj.object_list
     ]
-    return {"entity": entity, "cards": cards, "page_obj": page_obj, "next": request.get_full_path()}
+    return {"entity": entity, "cards": cards, "page_obj": page_obj, "next": page_url(request)}
 
 
 def prep_pagelinks(request, app, block):
@@ -848,7 +849,7 @@ def prep_export(request, app, block):
 def prep_button(request, app, block):
     props = block["props"]
     target = props.get("target") or "page"
-    ctx = {"next": request.get_full_path()}
+    ctx = {"next": page_url(request)}
     # Parameter der Seite (z. B. ?event=12) gehen an Button-Skripte und Aktionen weiter.
     query = request.GET.urlencode()
     if target == "script":

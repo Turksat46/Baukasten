@@ -11,6 +11,7 @@ from . import app_i18n, datasources
 from .blocks import (ENTITY, LAZY_WITH_QUERY, _entity, _format_number, decimals_for, display_value, filter_param,
                      filtered, register)
 from .models import DataQuery, Field
+from .page_path import page_path
 
 FIELD = {"type": "field"}
 QUERY_OPT = {"key": "query", "label": _("Oder Datenbank-Abfrage (DataQuery)"), "type": "query"}
@@ -45,7 +46,7 @@ def _filter_href(request, param, value):
     else:
         query[param] = str_val
     encoded = urlencode(query, doseq=True)
-    path = getattr(request, "path", "") or ""
+    path = page_path(request)
     return f"{path}?{encoded}" if encoded else path
 
 
@@ -191,7 +192,7 @@ def prep_scatter(request, app, block):
         points.append({
             "cx": f"{sx(p['x'])}", "cy": f"{sy(p['y'])}", "r": f"{r}", "tone": p["tone"],
             "title": tooltip, "group": p["group"],
-            "href": _filter_href(request, color_param, p["group"]) if color_param else (f"?id={p['pk']}" if entity else "#"),
+            "href": _filter_href(request, color_param, p["group"]) if color_param else (f"{page_path(request)}?id={p['pk']}" if entity else "#"),
         })
 
     trend = None

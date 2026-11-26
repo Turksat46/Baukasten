@@ -26,6 +26,7 @@ from . import app_i18n
 from .blocks import all_types, display_value, reference_labels, render_block, render_layout
 from .forms import RecordForm
 from .models import App, HomeWidget, Page, Record, Script
+from .page_path import set_page_path
 from .scripting import python as python_scripts
 from .scripting.ops import OpsError, TableOps
 from .scripting.triggers import execute, page_scripts, run_page
@@ -274,6 +275,8 @@ def page_block(request, app, page, block):
     found = next((b for b in current.layout if b.get("id") == block), None)
     if found is None:
         return HttpResponse(status=404)
+    # Links im Baustein (Filter per Klick, next=) sollen auf die Seite zeigen, nicht hierher.
+    set_page_path(request, reverse("page", args=[app.slug, current.slug]))
     overrides = run_page(request, app, current)[0] if found.get("name") else {}
     html = render_block(request, app, found, all_types(), overrides)
     response = HttpResponse(html or "", content_type="text/html; charset=utf-8")
