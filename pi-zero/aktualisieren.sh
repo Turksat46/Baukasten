@@ -53,8 +53,11 @@ pakete_installieren() {
     # Dieselben Versionen wie im getesteten Image, soweit vorhanden.
     grep -oE '^[A-Za-z0-9_.-]+==[^ ;\\]+' "$APP/requirements.txt" \
         | grep -viE '^(cryptography|cffi|pycparser)==' >"$tmp/versionen.txt"
-    "$VENV/bin/pip" install --quiet --disable-pip-version-check --prefer-binary \
-        -r "$tmp/pakete.txt" -c "$tmp/versionen.txt"
+    if ! "$VENV/bin/pip" install --quiet --disable-pip-version-check --prefer-binary \
+        -r "$tmp/pakete.txt" -c "$tmp/versionen.txt"; then
+        rm -rf "$tmp"
+        return 1
+    fi
     rm -rf "$tmp"
     echo "$stand" >"$ZUSTAND/pakete"
 }
@@ -64,15 +67,16 @@ db_sichern() {  # $1: Zieldatei
     python3 -c 'import sqlite3, sys; s = sqlite3.connect(sys.argv[1]); d = sqlite3.connect(sys.argv[2]); s.backup(d); d.close()' "$DB" "$1"
 }
 
+# Läuft als Bedingung („if ausrollen“), dort greift set -e nicht: jeden Schritt selbst prüfen.
 ausrollen() {
-    pakete_installieren
+    pakete_installieren || { echo "FEHLER: Python-Pakete" >&2; return 1; }
     echo "==> Statische Dateien"
-    manage root collectstatic --noinput >/dev/null
+    manage root collectstatic --noinput >/dev/null || { echo "FEHLER: collectstatic" >&2; return 1; }
     echo "==> Datenbank migrieren"
-    manage baukasten migrate --noinput
-    manage baukasten createcachetable
+    manage baukasten migrate --noinput || { echo "FEHLER: Migration" >&2; return 1; }
+    manage baukasten createcachetable || { echo "FEHLER: Cache-Tabelle" >&2; return 1; }
     echo "==> Dienste neu starten"
-    systemctl restart baukasten-web baukasten-worker
+    systemctl restart baukasten-web baukasten-worker || { echo "FEHLER: Neustart der Dienste" >&2; return 1; }
     echo "==> Warte auf den Start (auf dem Pi Zero bis zu ein paar Minuten)"
     for _ in $(seq 1 60); do
         curl -fsS -o /dev/null http://127.0.0.1/readyz 2>/dev/null && return 0
