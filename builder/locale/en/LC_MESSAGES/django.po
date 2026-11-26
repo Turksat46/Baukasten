@@ -6267,3 +6267,31 @@ msgstr "These number or date fields do not exist in the table: %(names)s"
 #: builder/models.py
 msgid "Erlaubt sind Zahlen, Zahlen- und Datumsfelder, + - * / und round, abs, min, max, add_months."
 msgstr "Allowed are numbers, number and date fields, + - * / and round, abs, min, max, add_months."
+
+#: builder/models.py
+msgid "Leer lassen: alle, die die App benutzen dürfen."
+msgstr "Leave empty: everyone who may use the app."
+
+#: builder/models.py
+msgid "Sichtbar für Gruppen"
+msgstr "Visible to groups"
+
+#: builder/templates/designer/page.html
+msgid "Es gibt noch keine Gruppen. Gruppen legst du unter Verwaltung an."
+msgstr "There are no groups yet. You create groups under Administration."
+
+#: builder/templates/designer/page.html
+msgid "Nichts angehakt: alle, die die App benutzen dürfen. Bearbeiter der App sehen immer alle Seiten. Die Tabellen bleiben über andere Seiten, Formulare, Export und API erreichbar."
+msgstr "Nothing ticked: everyone who may use the app. Editors of the app always see all pages. The tables stay reachable through other pages, forms, export and the API."
+
+#: builder/templates/designer/page.html
+msgid "Sichtbar für:"
+msgstr "Visible to:"
+
+#: builder/templates/designer/page.html
+msgid "Wer darf die Seite sehen? Schützt die Seite, nicht die Tabellen dahinter."
+msgstr "Who may see the page? Protects the page, not the tables behind it."
+
+#: builder/templates/designer/page.html
+msgid "alle"
+msgstr "everyone"

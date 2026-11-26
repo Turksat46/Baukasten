@@ -506,13 +506,30 @@ def page_designer(request, app, pk):
             page.show_in_nav = bool(payload.get("show_in_nav", True))
             page.public = bool(payload.get("public", page.public))
             page.save()
+            if isinstance(payload.get("groups"), list):
+                _save_page_groups(app, page, payload["groups"])
         # baukasten_version: Der Designer vergleicht sie mit dem Stand beim Öffnen und bittet nach
         # einem Update ums Neuladen (neue Bausteine und Einstellungen).
         return JsonResponse({"ok": True, "layout": page.layout, "version": page.version,
                              "baukasten_version": settings.BAUKASTEN_VERSION})
     return render(request, "designer/page.html", {
         "app": app, "page": page, "config": designer_config(app, page),
+        "all_groups": Group.objects.order_by("name"),
+        "page_group_ids": set(page.groups.values_list("pk", flat=True)),
     })
+
+
+def _save_page_groups(app, page, raw):
+    """Wer die Seite sehen darf. Nur bekannte Gruppen; Änderungen kommen ins Protokoll (M2M erfassen
+    die Signale nicht)."""
+    ids = {int(v) for v in raw if str(v).isdigit()}
+    before = sorted(page.groups.values_list("name", flat=True))
+    page.groups.set(Group.objects.filter(pk__in=ids))
+    after = sorted(page.groups.values_list("name", flat=True))
+    if after != before:
+        audit.log("share", "page", app=app, target_id=page.pk, label=page.title,
+                  changes={"groups": [", ".join(before) or "alle", ", ".join(after) or "alle"]},
+                  note="Sichtbarkeit der Seite geändert")
 
 
 @designer_required

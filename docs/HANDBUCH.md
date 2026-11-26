@@ -386,6 +386,24 @@ den gewählten Baustein ein.
 - **Speichern:** Änderungen gelten erst nach „Speichern“. „Vorschau“ öffnet die
   Seite so, wie Nutzer sie sehen.
 
+### Wer eine Seite sieht
+
+Oben im Seiten-Designer steht **„Sichtbar für: alle“**. Ein Klick öffnet die
+Liste der Gruppen. Ist nichts angehakt, sehen alle die Seite, die die App
+benutzen dürfen. Sind Gruppen angehakt, sehen sie nur deren Mitglieder, z. B.
+die Seite „Kosten“ nur die Gruppe „Controlling“.
+
+- Für alle anderen fehlt die Seite im Menü, in Seitenlinks und bei den
+  Widgets der Startseite; ein direkter Aufruf wird abgelehnt (Fehler 403). Ist die
+  erste Seite gesperrt, öffnet die App mit der ersten Seite, die man sehen darf.
+- Eigentümerin, Mitbearbeiter und Verwalter sehen immer alle Seiten.
+- Eine öffentliche Seite („Ohne Anmeldung erreichbar“) sieht jeder; die
+  Gruppen spielen dann keine Rolle.
+- **Wichtig:** Das schützt die Seite, nicht die Daten. Wer die App benutzen
+  darf, erreicht ihre Tabellen weiter über andere Seiten, Formulare, CSV-Export,
+  Skripte und die API. Vertrauliche Daten gehören in eine eigene App mit
+  eigenen Gruppen.
+
 ### Öffentliche Seiten
 
 Oben im Seiten-Designer macht der Haken **„Ohne Anmeldung erreichbar“** eine
@@ -1834,7 +1852,7 @@ Passwort wird nie von einem gleichnamigen Keycloak-Konto übernommen.
 
 | Wer | Darf |
 |---|---|
-| Nutzer | veröffentlichte Apps verwenden, die für alle oder für eine seiner Gruppen freigegeben sind; öffentliche Seiten brauchen gar keine Anmeldung |
+| Nutzer | veröffentlichte Apps verwenden, die für alle oder für eine seiner Gruppen freigegeben sind; darin die Seiten, die für alle oder für eine seiner Gruppen sichtbar sind ([Wer eine Seite sieht](#wer-eine-seite-sieht)); öffentliche Seiten brauchen gar keine Anmeldung |
 | Designer | eigene Apps und Apps, zu denen sie eingeladen sind, bearbeiten; neue Apps anlegen, eigene Bausteine anlegen |
 | Automatisierer | zusätzlich [Automatisierungen](#automatisierungen) anlegen und bearbeiten (echtes Python im Hintergrund) |
 | Verwalter (Superuser) | zusätzlich alle Apps im Designer und `/admin/`: Benutzer, Gruppen, alle Daten |

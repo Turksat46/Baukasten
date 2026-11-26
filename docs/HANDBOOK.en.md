@@ -380,6 +380,23 @@ configure the selected block.
 - **Save:** changes only apply after "Save". "Preview" opens the page the way
   users see it.
 
+### Who sees a page
+
+At the top of the page designer it says **"Visible to: everyone"**. A click
+opens the list of groups. With nothing ticked, everyone who may use the app sees
+the page. With groups ticked, only their members see it, e.g. the page "Costs"
+only for the group "Controlling".
+
+- For everyone else the page is missing from the menu, page links and the
+  widgets on the home page; opening it directly is refused (error 403). If the
+  first page is locked, the app opens with the first page the person may see.
+- The owner, co-editors and administrators always see all pages.
+- A public page ("Reachable without sign-in") is visible to anyone; the groups
+  do not matter then.
+- **Important:** this protects the page, not the data. Whoever may use the app
+  still reaches its tables through other pages, forms, CSV export, scripts and
+  the API. Confidential data belongs in an app of its own with its own groups.
+
 ### Public pages
 
 At the top of the page designer, the tick **"Reachable without sign-in"** makes
@@ -1748,7 +1765,7 @@ taken over by a Keycloak account of the same name.
 
 | Who | May |
 |---|---|
-| Users | use published apps that are shared with everyone or with one of their groups; public pages need no sign-in at all |
+| Users | use published apps that are shared with everyone or with one of their groups; within them the pages visible to everyone or to one of their groups ([Who sees a page](#who-sees-a-page)); public pages need no sign-in at all |
 | Designers | edit their own apps and apps they were invited to; create new apps and custom blocks |
 | Automators | additionally create and edit [automations](#automations) (real Python in the background) |
 | Administrators (superusers) | additionally all apps in the Designer and `/admin/`: users, groups, all data |

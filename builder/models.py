@@ -451,6 +451,12 @@ class Page(models.Model):
     order = models.PositiveIntegerField(default=0)
     layout = models.JSONField(default=list, encoder=UnicodeJSONEncoder)
     version = models.PositiveIntegerField(default=1, editable=False)
+    # Wer die Seite sehen darf, innerhalb der App. Leer: alle, die die App benutzen dürfen.
+    # Schützt die Seite (Menü, Aufruf, Bausteine, Widgets), nicht die Tabellen dahinter.
+    groups = models.ManyToManyField(
+        Group, blank=True, related_name="visible_pages", verbose_name=_("Sichtbar für Gruppen"),
+        help_text=_("Leer lassen: alle, die die App benutzen dürfen."),
+    )
 
     class Meta:
         verbose_name = _("Seite")
@@ -460,6 +466,25 @@ class Page(models.Model):
 
     def __str__(self):
         return self.title
+
+    def user_can_view(self, user):
+        """Darf diese Person (mit Zugriff auf die App) die Seite sehen? Öffentliche Seiten sieht jeder,
+        Bearbeiter der App sehen alle Seiten."""
+        if self.public or self.app.user_can_edit(user):
+            return True
+        group_ids = [g.pk for g in self.groups.all()]
+        return not group_ids or (user.is_authenticated and user.groups.filter(pk__in=group_ids).exists())
+
+    @classmethod
+    def visible_to(cls, app, user, queryset=None):
+        """Seiten der App, die diese Person sehen darf (siehe user_can_view)."""
+        pages = app.pages.all() if queryset is None else queryset
+        if app.user_can_edit(user):
+            return pages
+        allowed = models.Q(public=True) | models.Q(groups__isnull=True)
+        if user.is_authenticated:
+            allowed |= models.Q(groups__in=user.groups.all())
+        return pages.filter(pk__in=app.pages.filter(allowed).values("pk"))
 
     def save(self, *args, **kwargs):
         if not self.slug:

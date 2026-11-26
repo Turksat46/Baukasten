@@ -24,6 +24,9 @@ Test prüft, dass die neueste Version hier und `BAUKASTEN_VERSION` übereinstimm
 **Kurz gesagt:** Berichte aus n8n und Teams, Data Science, persönliche Startseite, Planung per Drag-and-drop und Fehler-Alarme
 
 ### Für Nutzer
+- **Seiten nur für bestimmte Gruppen:** Im Seiten-Designer legt „Sichtbar für“ fest, welche Gruppen
+  eine Seite sehen, z. B. „Kosten“ nur für das Controlling. Für alle anderen fehlt sie im Menü, in
+  Seitenlinks und Widgets. Das schützt die Seite, nicht die Tabellen dahinter.
 - **Nur bestimmte Einträge zeigen:** Liste, Kennzahl, Diagramme, Kalender und Co. haben die
   Einstellung „Nur Einträge, für die gilt“, z. B. `Status != Erledigt` und `Fällig < heute`.
   „Offen“, „Überfällig“ oder „Fällig in 7 Tagen“ brauchen damit kein Skript mehr.
@@ -77,6 +80,10 @@ Test prüft, dass die neueste Version hier und `BAUKASTEN_VERSION` übereinstimm
   Einstellungen verschwinden; `python manage.py bausteinvertrag` trägt neue ein.
 
 ### Neu
+- Seitenrechte: `Page.groups` (Migration 0023), `Page.user_can_view()` und `Page.visible_to()`.
+  Geprüft beim Seitenaufruf, für Einzelbausteine (`/b/`), Baustein-Aktionen, Menü, Seitenlinks und
+  Startseiten-Widgets; Bearbeiter der App sehen alles, öffentliche Seiten bleiben öffentlich.
+  Versionen speichern die Gruppen mit Namen; Änderungen stehen im Protokoll.
 - `builder/conditions.py`: Einstellung `where` für 19 Datenbausteine, ausgewertet in
   `blocks.filtered()`; Fehler in der Bedingung zeigt der Baustein selbst an.
 - Kennzahl: `direction`, `warn_at`, `alarm_at` (Ampel), `compare_field`/`compare_days` (Trend),

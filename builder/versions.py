@@ -6,6 +6,7 @@ verloren: Tabellen, die es im alten Stand noch nicht gab, bleiben bestehen.
 """
 from datetime import time
 
+from django.contrib.auth.models import Group
 from django.db import IntegrityError, transaction
 from django.utils.translation import gettext as _
 
@@ -47,8 +48,9 @@ def snapshot(app):
         ],
         "pages": [
             {"slug": p.slug, "title": p.title, "show_in_nav": p.show_in_nav, "public": p.public,
-             "order": p.order, "layout": p.layout}
-            for p in app.pages.all()
+             "order": p.order, "layout": p.layout,
+             "groups": sorted(g.name for g in p.groups.all())}
+            for p in app.pages.prefetch_related("groups")
         ],
         "scripts": [
             {"slug": sc.slug, "name": sc.name, "language": sc.language, "trigger": sc.trigger,
@@ -214,12 +216,16 @@ def _apply_snapshot(app, data):
 
         app.pages.all().delete()
         for position, item in enumerate(pages, start=1):
-            Page.objects.create(
+            page = Page.objects.create(
                 app=app, slug=_text(item["slug"], 50), title=_text(item.get("title"), 80) or "Seite",
                 show_in_nav=bool(item.get("show_in_nav", True)), public=bool(item.get("public", False)),
                 order=int(item.get("order") or position),
                 layout=clean_layout(item.get("layout") or [], keep_unknown=True),
             )
+            # Gruppen über den Namen; Gruppen, die es hier nicht gibt, fallen weg
+            names = [str(n) for n in item.get("groups") or [] if isinstance(n, str)]
+            if names:
+                page.groups.set(Group.objects.filter(name__in=names))
         _apply_logic(app, data)
     except (KeyError, TypeError, ValueError, IntegrityError) as exc:
         if isinstance(exc, InvalidSnapshot):
@@ -342,7 +348,8 @@ def diff(current, target):
     def _page_changed(c_pg, t_pg):
         return (c_pg.get("title") != t_pg.get("title")
                 or c_pg.get("layout") != t_pg.get("layout")
-                or bool(c_pg.get("public")) != bool(t_pg.get("public")))
+                or bool(c_pg.get("public")) != bool(t_pg.get("public"))
+                or sorted(c_pg.get("groups") or []) != sorted(t_pg.get("groups") or []))
 
     def _script_changed(c_sc, t_sc):
         return (c_sc.get("name") != t_sc.get("name")

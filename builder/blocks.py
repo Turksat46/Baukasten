@@ -819,7 +819,9 @@ def prep_cards(request, app, block):
 
 
 def prep_pagelinks(request, app, block):
-    return {"links": list(app.pages.filter(show_in_nav=True))}
+    from .models import Page
+
+    return {"links": list(Page.visible_to(app, request.user, app.pages.filter(show_in_nav=True)))}
 
 
 def prep_image(request, app, block):
