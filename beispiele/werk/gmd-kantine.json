@@ -1,0 +1,463 @@
+{
+ "slug": "gmd-kantine",
+ "name": "Kantine & Schichtessen",
+ "icon": "🍽️",
+ "description": "Speiseplan der Woche und Essensbestellung für die Spät- und Nachtschicht",
+ "rolle": "Werker",
+ "komplexitaet": "einfach",
+ "entities": [
+  {
+   "name": "Speiseplan",
+   "slug": "speiseplan",
+   "fields": [
+    {
+     "label": "Datum",
+     "key": "datum",
+     "type": "date",
+     "required": true
+    },
+    {
+     "label": "Gericht",
+     "key": "gericht",
+     "type": "text",
+     "required": true
+    },
+    {
+     "label": "Kategorie",
+     "key": "kategorie",
+     "type": "choice",
+     "choices": [
+      "Vegetarisch",
+      "Vegan",
+      "Fleisch",
+      "Fisch"
+     ]
+    },
+    {
+     "label": "Preis (€)",
+     "key": "preis",
+     "type": "decimal"
+    }
+   ]
+  },
+  {
+   "name": "Bestellungen",
+   "slug": "bestellungen",
+   "fields": [
+    {
+     "label": "Name",
+     "key": "name",
+     "type": "text",
+     "required": true
+    },
+    {
+     "label": "Personalnummer",
+     "key": "persnr",
+     "type": "text"
+    },
+    {
+     "label": "Gericht",
+     "key": "gericht",
+     "type": "reference",
+     "reference": "speiseplan",
+     "required": true
+    },
+    {
+     "label": "Schicht",
+     "key": "schicht",
+     "type": "choice",
+     "choices": [
+      "Früh",
+      "Spät",
+      "Nacht"
+     ]
+    },
+    {
+     "label": "Abholung",
+     "key": "datum",
+     "type": "date"
+    }
+   ]
+  }
+ ],
+ "pages": [
+  {
+   "title": "Speiseplan",
+   "slug": "plan",
+   "layout": [
+    {
+     "type": "heading",
+     "width": 12,
+     "props": {
+      "text": "Speiseplan",
+      "subtitle": "Kantine Werk Gmünd · Bau 3",
+      "level": "1"
+     }
+    },
+    {
+     "type": "filter",
+     "width": 12,
+     "props": {
+      "entity": "speiseplan",
+      "field": "kategorie"
+     }
+    },
+    {
+     "type": "calendar",
+     "width": 12,
+     "props": {
+      "title": "Diese und nächste Woche",
+      "entity": "speiseplan",
+      "date_field": "datum",
+      "label_field": "gericht",
+      "color_field": "kategorie",
+      "create_links": false
+     }
+    },
+    {
+     "type": "cards",
+     "width": 12,
+     "props": {
+      "title": "Alle Gerichte",
+      "entity": "speiseplan",
+      "page_size": 12
+     }
+    }
+   ]
+  },
+  {
+   "title": "Bestellen",
+   "slug": "bestellen",
+   "layout": [
+    {
+     "type": "heading",
+     "width": 12,
+     "props": {
+      "text": "Schichtessen bestellen",
+      "subtitle": "Bis 11 Uhr für die Spätschicht, bis 18 Uhr für die Nacht",
+      "level": "2"
+     }
+    },
+    {
+     "type": "form",
+     "width": 6,
+     "props": {
+      "entity": "bestellungen",
+      "submit_label": "Bestellen"
+     }
+    },
+    {
+     "type": "stat",
+     "width": 6,
+     "props": {
+      "label": "Bestellungen für heute",
+      "entity": "bestellungen",
+      "where": "Abholung = heute"
+     }
+    },
+    {
+     "type": "table",
+     "width": 12,
+     "props": {
+      "entity": "bestellungen",
+      "title": "Bestellungen",
+      "searchable": true
+     }
+    }
+   ]
+  }
+ ],
+ "scripts": [],
+ "beispieldaten": {
+  "speiseplan": [
+   {
+    "datum": "@-2",
+    "gericht": "Seelachs mit Kartoffelsalat",
+    "kategorie": "Fisch",
+    "preis": 6.4
+   },
+   {
+    "datum": "@-2",
+    "gericht": "Ofengemüse mit Hummus",
+    "kategorie": "Vegan",
+    "preis": 4.6
+   },
+   {
+    "datum": "@-2",
+    "gericht": "Kichererbsen-Curry",
+    "kategorie": "Vegan",
+    "preis": 4.9
+   },
+   {
+    "datum": "@-1",
+    "gericht": "Linsen mit Spätzle und Saitenwürstle",
+    "kategorie": "Fleisch",
+    "preis": 5.9
+   },
+   {
+    "datum": "@-1",
+    "gericht": "Ofengemüse mit Hummus",
+    "kategorie": "Vegan",
+    "preis": 4.6
+   },
+   {
+    "datum": "@-1",
+    "gericht": "Seelachs mit Kartoffelsalat",
+    "kategorie": "Fisch",
+    "preis": 6.4
+   },
+   {
+    "datum": "@+0",
+    "gericht": "Käsespätzle mit Röstzwiebeln",
+    "kategorie": "Vegetarisch",
+    "preis": 5.2
+   },
+   {
+    "datum": "@+0",
+    "gericht": "Rostbraten mit Spätzle",
+    "kategorie": "Fleisch",
+    "preis": 8.5
+   },
+   {
+    "datum": "@+0",
+    "gericht": "Linsen mit Spätzle und Saitenwürstle",
+    "kategorie": "Fleisch",
+    "preis": 5.9
+   },
+   {
+    "datum": "@+1",
+    "gericht": "Schweinebraten mit Knödel",
+    "kategorie": "Fleisch",
+    "preis": 6.9
+   },
+   {
+    "datum": "@+1",
+    "gericht": "Linsen mit Spätzle und Saitenwürstle",
+    "kategorie": "Fleisch",
+    "preis": 5.9
+   },
+   {
+    "datum": "@+1",
+    "gericht": "Kichererbsen-Curry",
+    "kategorie": "Vegan",
+    "preis": 4.9
+   },
+   {
+    "datum": "@+2",
+    "gericht": "Schweinebraten mit Knödel",
+    "kategorie": "Fleisch",
+    "preis": 6.9
+   },
+   {
+    "datum": "@+2",
+    "gericht": "Käsespätzle mit Röstzwiebeln",
+    "kategorie": "Vegetarisch",
+    "preis": 5.2
+   },
+   {
+    "datum": "@+2",
+    "gericht": "Seelachs mit Kartoffelsalat",
+    "kategorie": "Fisch",
+    "preis": 6.4
+   },
+   {
+    "datum": "@+3",
+    "gericht": "Schweinebraten mit Knödel",
+    "kategorie": "Fleisch",
+    "preis": 6.9
+   },
+   {
+    "datum": "@+3",
+    "gericht": "Gemüse-Maultaschen in Brühe",
+    "kategorie": "Vegetarisch",
+    "preis": 4.8
+   },
+   {
+    "datum": "@+3",
+    "gericht": "Käsespätzle mit Röstzwiebeln",
+    "kategorie": "Vegetarisch",
+    "preis": 5.2
+   },
+   {
+    "datum": "@+4",
+    "gericht": "Seelachs mit Kartoffelsalat",
+    "kategorie": "Fisch",
+    "preis": 6.4
+   },
+   {
+    "datum": "@+4",
+    "gericht": "Linsen mit Spätzle und Saitenwürstle",
+    "kategorie": "Fleisch",
+    "preis": 5.9
+   },
+   {
+    "datum": "@+4",
+    "gericht": "Schweinebraten mit Knödel",
+    "kategorie": "Fleisch",
+    "preis": 6.9
+   },
+   {
+    "datum": "@+5",
+    "gericht": "Käsespätzle mit Röstzwiebeln",
+    "kategorie": "Vegetarisch",
+    "preis": 5.2
+   },
+   {
+    "datum": "@+5",
+    "gericht": "Gemüse-Maultaschen in Brühe",
+    "kategorie": "Vegetarisch",
+    "preis": 4.8
+   },
+   {
+    "datum": "@+5",
+    "gericht": "Kichererbsen-Curry",
+    "kategorie": "Vegan",
+    "preis": 4.9
+   },
+   {
+    "datum": "@+6",
+    "gericht": "Gemüse-Maultaschen in Brühe",
+    "kategorie": "Vegetarisch",
+    "preis": 4.8
+   },
+   {
+    "datum": "@+6",
+    "gericht": "Rostbraten mit Spätzle",
+    "kategorie": "Fleisch",
+    "preis": 8.5
+   },
+   {
+    "datum": "@+6",
+    "gericht": "Seelachs mit Kartoffelsalat",
+    "kategorie": "Fisch",
+    "preis": 6.4
+   },
+   {
+    "datum": "@+7",
+    "gericht": "Linsen mit Spätzle und Saitenwürstle",
+    "kategorie": "Fleisch",
+    "preis": 5.9
+   },
+   {
+    "datum": "@+7",
+    "gericht": "Ofengemüse mit Hummus",
+    "kategorie": "Vegan",
+    "preis": 4.6
+   },
+   {
+    "datum": "@+7",
+    "gericht": "Gemüse-Maultaschen in Brühe",
+    "kategorie": "Vegetarisch",
+    "preis": 4.8
+   }
+  ],
+  "bestellungen": [
+   {
+    "name": "Elif Dietrich",
+    "persnr": "788153",
+    "gericht": "#7",
+    "schicht": "Spät",
+    "datum": "@+0"
+   },
+   {
+    "name": "Heike Dietrich",
+    "persnr": "259670",
+    "gericht": "#10",
+    "schicht": "Spät",
+    "datum": "@+0"
+   },
+   {
+    "name": "Ivan Pfeiffer",
+    "persnr": "969147",
+    "gericht": "#10",
+    "schicht": "Spät",
+    "datum": "@+0"
+   },
+   {
+    "name": "Selin Dietrich",
+    "persnr": "953656",
+    "gericht": "#8",
+    "schicht": "Spät",
+    "datum": "@+0"
+   },
+   {
+    "name": "Zoe Engel",
+    "persnr": "332715",
+    "gericht": "#8",
+    "schicht": "Nacht",
+    "datum": "@+0"
+   },
+   {
+    "name": "Dragan Lutz",
+    "persnr": "706057",
+    "gericht": "#11",
+    "schicht": "Nacht",
+    "datum": "@+0"
+   },
+   {
+    "name": "Gül Ilić",
+    "persnr": "999192",
+    "gericht": "#9",
+    "schicht": "Spät",
+    "datum": "@+0"
+   },
+   {
+    "name": "Rüdiger Wolf",
+    "persnr": "746993",
+    "gericht": "#9",
+    "schicht": "Spät",
+    "datum": "@+0"
+   },
+   {
+    "name": "Kemal Rapp",
+    "persnr": "851894",
+    "gericht": "#11",
+    "schicht": "Nacht",
+    "datum": "@+0"
+   },
+   {
+    "name": "Thomas Kaya",
+    "persnr": "528982",
+    "gericht": "#7",
+    "schicht": "Nacht",
+    "datum": "@+0"
+   },
+   {
+    "name": "Uwe Hahn",
+    "persnr": "674217",
+    "gericht": "#10",
+    "schicht": "Nacht",
+    "datum": "@+0"
+   },
+   {
+    "name": "Uwe Rapp",
+    "persnr": "755177",
+    "gericht": "#7",
+    "schicht": "Nacht",
+    "datum": "@+0"
+   },
+   {
+    "name": "Ayşe Ilić",
+    "persnr": "928469",
+    "gericht": "#7",
+    "schicht": "Nacht",
+    "datum": "@+0"
+   },
+   {
+    "name": "Zoe Bauer",
+    "persnr": "205643",
+    "gericht": "#12",
+    "schicht": "Spät",
+    "datum": "@+0"
+   }
+  ]
+ },
+ "nachbauten": [
+  {
+   "baustein": "kennzahl_bedingung",
+   "ersatz": "„Bestellungen für heute“: Kennzahl zählt nur gefiltert über die Adresse, darum Seitenskript mit count(datum=heute) und ui.set.",
+   "geloest": true,
+   "jetzt": "Kennzahl mit Bedingung „Abholung = heute“, kein Skript mehr."
+  }
+ ]
+}

@@ -1,0 +1,582 @@
+{
+ "slug": "gmd-tpm",
+ "name": "TPM-Wartungsplan",
+ "icon": "🛠️",
+ "description": "Anlagen, Wartungsintervalle, Fälligkeiten und Rückmeldung der Wartung",
+ "rolle": "Instandhaltung",
+ "komplexitaet": "mittel",
+ "entities": [
+  {
+   "name": "Anlagen",
+   "slug": "anlagen",
+   "fields": [
+    {
+     "label": "Anlage",
+     "key": "name",
+     "type": "text",
+     "required": true
+    },
+    {
+     "label": "Linie",
+     "key": "linie",
+     "type": "choice",
+     "choices": [
+      "ZS-1 Zahnstange",
+      "LG-2 Lenkgetriebe",
+      "EPS-3 Servoeinheit",
+      "PR-4 Endprüfung",
+      "HT-5 Härterei",
+      "VM-6 Ventilmontage",
+      "Infrastruktur"
+     ]
+    },
+    {
+     "label": "Kritikalität",
+     "key": "krit",
+     "type": "choice",
+     "choices": [
+      "A",
+      "B",
+      "C"
+     ]
+    },
+    {
+     "label": "Baujahr",
+     "key": "baujahr",
+     "type": "number"
+    }
+   ]
+  },
+  {
+   "name": "Wartungen",
+   "slug": "wartungen",
+   "fields": [
+    {
+     "label": "Anlage",
+     "key": "anlage",
+     "type": "reference",
+     "reference": "anlagen",
+     "required": true
+    },
+    {
+     "label": "Aufgabe",
+     "key": "aufgabe",
+     "type": "text",
+     "required": true
+    },
+    {
+     "label": "Intervall (Tage)",
+     "key": "intervall",
+     "type": "number"
+    },
+    {
+     "label": "Zuletzt",
+     "key": "letzte",
+     "type": "date"
+    },
+    {
+     "label": "Nächste Fälligkeit",
+     "key": "naechste",
+     "type": "date",
+     "formula": "letzte + intervall",
+     "show_in_form": false
+    },
+    {
+     "label": "Art",
+     "key": "art",
+     "type": "choice",
+     "choices": [
+      "Autonome IH (Werker)",
+      "Geplante IH"
+     ]
+    },
+    {
+     "label": "Verantwortlich",
+     "key": "verantwortlich",
+     "type": "text"
+    }
+   ]
+  }
+ ],
+ "pages": [
+  {
+   "title": "Fällig",
+   "slug": "faellig",
+   "layout": [
+    {
+     "type": "heading",
+     "width": 12,
+     "props": {
+      "text": "Wartungen",
+      "subtitle": "Überfällig, diese Woche, demnächst",
+      "level": "1"
+     }
+    },
+    {
+     "type": "stat",
+     "width": 4,
+     "props": {
+      "label": "Überfällig",
+      "entity": "wartungen",
+      "where": "Nächste Fälligkeit < heute",
+      "warn_at": "1",
+      "alarm_at": "5"
+     }
+    },
+    {
+     "type": "stat",
+     "width": 4,
+     "props": {
+      "label": "Fällig in 7 Tagen",
+      "entity": "wartungen",
+      "where": "Nächste Fälligkeit >= heute\nNächste Fälligkeit <= heute+7"
+     }
+    },
+    {
+     "type": "stat",
+     "width": 4,
+     "props": {
+      "label": "Überfällig an A-Anlagen"
+     },
+     "name": "k_a"
+    },
+    {
+     "type": "table",
+     "width": 12,
+     "props": {
+      "title": "Überfällige Wartungen",
+      "entity": "wartungen",
+      "where": "Nächste Fälligkeit < heute"
+     }
+    },
+    {
+     "type": "calendar",
+     "width": 12,
+     "props": {
+      "title": "Fälligkeiten",
+      "entity": "wartungen",
+      "date_field": "naechste",
+      "label_field": "aufgabe",
+      "color_field": "art"
+     }
+    }
+   ]
+  },
+  {
+   "title": "Anlagen",
+   "slug": "anlagen",
+   "layout": [
+    {
+     "type": "search",
+     "width": 12,
+     "props": {
+      "entity": "anlagen",
+      "field": "name",
+      "target_page": "anlage"
+     }
+    },
+    {
+     "type": "table",
+     "width": 12,
+     "props": {
+      "entity": "anlagen"
+     }
+    }
+   ]
+  },
+  {
+   "title": "Anlage",
+   "slug": "anlage",
+   "layout": [
+    {
+     "type": "detail",
+     "width": 12,
+     "props": {
+      "entity": "anlagen"
+     }
+    },
+    {
+     "type": "related_list",
+     "width": 12,
+     "props": {
+      "title": "Wartungsaufgaben",
+      "entity": "wartungen",
+      "ref_field": "anlage"
+     }
+    }
+   ],
+   "show_in_nav": false
+  },
+  {
+   "title": "Plan",
+   "slug": "plan",
+   "layout": [
+    {
+     "type": "filter",
+     "width": 12,
+     "props": {
+      "entity": "wartungen",
+      "field": "art",
+      "field2": "anlage"
+     }
+    },
+    {
+     "type": "gantt",
+     "width": 12,
+     "props": {
+      "title": "Nächste 4 Wochen",
+      "entity": "wartungen",
+      "start_field": "naechste",
+      "label_field": "aufgabe",
+      "group_field": "anlage",
+      "color_field": "art"
+     }
+    },
+    {
+     "type": "table",
+     "width": 12,
+     "props": {
+      "entity": "wartungen",
+      "searchable": true,
+      "page_size": 30
+     }
+    }
+   ]
+  }
+ ],
+ "scripts": [
+  {
+   "name": "Fälligkeiten",
+   "language": "python",
+   "trigger": "page",
+   "code": "import datetime\nheute = datetime.date.today()\nanlagen = {a[\"id\"]: a for a in app.table(\"anlagen\").all()}\nrows = app.table(\"wartungen\").all()\ndef tage(r):\n    return (datetime.date.fromisoformat(r[\"naechste\"]) - heute).days if r[\"naechste\"] else 9999\nueber = [r for r in rows if tage(r) < 0]\nn = len([r for r in ueber if anlagen.get(int(r[\"anlage\"] or 0), {}).get(\"krit\") == \"A\"])\nui.set(\"k_a\", value=n, tone=\"danger\" if n else \"success\")\n",
+   "page": "faellig"
+  }
+ ],
+ "beispieldaten": {
+  "anlagen": [
+   {
+    "name": "Räummaschine RM-01",
+    "linie": "ZS-1 Zahnstange",
+    "krit": "A",
+    "baujahr": 2017
+   },
+   {
+    "name": "Induktionshärteanlage IH-02",
+    "linie": "HT-5 Härterei",
+    "krit": "A",
+    "baujahr": 2009
+   },
+   {
+    "name": "Verzahnungsfräse VF-03",
+    "linie": "ZS-1 Zahnstange",
+    "krit": "A",
+    "baujahr": 2008
+   },
+   {
+    "name": "Schraubstation SS-40",
+    "linie": "LG-2 Lenkgetriebe",
+    "krit": "B",
+    "baujahr": 2012
+   },
+   {
+    "name": "Fügepresse FP-12",
+    "linie": "LG-2 Lenkgetriebe",
+    "krit": "A",
+    "baujahr": 2023
+   },
+   {
+    "name": "Roboterzelle RZ-07",
+    "linie": "EPS-3 Servoeinheit",
+    "krit": "B",
+    "baujahr": 2021
+   },
+   {
+    "name": "Funktionsprüfstand PS-02",
+    "linie": "PR-4 Endprüfung",
+    "krit": "A",
+    "baujahr": 2016
+   },
+   {
+    "name": "Dichtheitsprüfung DP-05",
+    "linie": "PR-4 Endprüfung",
+    "krit": "B",
+    "baujahr": 2018
+   },
+   {
+    "name": "Waschanlage WA-01",
+    "linie": "VM-6 Ventilmontage",
+    "krit": "C",
+    "baujahr": 2018
+   },
+   {
+    "name": "Kompressor K-3",
+    "linie": "Infrastruktur",
+    "krit": "B",
+    "baujahr": 2013
+   }
+  ],
+  "wartungen": [
+   {
+    "anlage": "#1",
+    "aufgabe": "Kalibrierung Kraftsensor",
+    "intervall": 365,
+    "letzte": "@-83",
+    "verantwortlich": "Rüdiger Gruber",
+    "art": "Autonome IH (Werker)"
+   },
+   {
+    "anlage": "#1",
+    "aufgabe": "Spindel-Schwingungsmessung",
+    "intervall": 90,
+    "letzte": "@-66",
+    "verantwortlich": "Vesna Traub",
+    "art": "Autonome IH (Werker)"
+   },
+   {
+    "anlage": "#1",
+    "aufgabe": "Schmierung Führungen",
+    "intervall": 14,
+    "letzte": "@-28",
+    "verantwortlich": "Lena Fuchs",
+    "art": "Geplante IH"
+   },
+   {
+    "anlage": "#2",
+    "aufgabe": "Ölwechsel Hydraulik",
+    "intervall": 180,
+    "letzte": "@-17",
+    "verantwortlich": "Gül Wolf",
+    "art": "Geplante IH"
+   },
+   {
+    "anlage": "#2",
+    "aufgabe": "Spindel-Schwingungsmessung",
+    "intervall": 90,
+    "letzte": "@-80",
+    "verantwortlich": "Kemal Wolf",
+    "art": "Autonome IH (Werker)"
+   },
+   {
+    "anlage": "#2",
+    "aufgabe": "Kühlmittel prüfen",
+    "intervall": 7,
+    "letzte": "@+0",
+    "verantwortlich": "Selin Kaya",
+    "art": "Geplante IH"
+   },
+   {
+    "anlage": "#3",
+    "aufgabe": "Ölwechsel Hydraulik",
+    "intervall": 180,
+    "letzte": "@-127",
+    "verantwortlich": "Kemal Lutz",
+    "art": "Autonome IH (Werker)"
+   },
+   {
+    "anlage": "#3",
+    "aufgabe": "Bremsentest Roboter",
+    "intervall": 30,
+    "letzte": "@-32",
+    "verantwortlich": "Heike Maier",
+    "art": "Geplante IH"
+   },
+   {
+    "anlage": "#3",
+    "aufgabe": "Filter tauschen",
+    "intervall": 30,
+    "letzte": "@-7",
+    "verantwortlich": "Nadine Bauer",
+    "art": "Geplante IH"
+   },
+   {
+    "anlage": "#4",
+    "aufgabe": "Filter tauschen",
+    "intervall": 30,
+    "letzte": "@-41",
+    "verantwortlich": "Elif Fuchs",
+    "art": "Geplante IH"
+   },
+   {
+    "anlage": "#4",
+    "aufgabe": "Kalibrierung Kraftsensor",
+    "intervall": 365,
+    "letzte": "@-235",
+    "verantwortlich": "Dragan Traub",
+    "art": "Geplante IH"
+   },
+   {
+    "anlage": "#4",
+    "aufgabe": "Schmierung Führungen",
+    "intervall": 14,
+    "letzte": "@-26",
+    "verantwortlich": "Yusuf Abele",
+    "art": "Geplante IH"
+   },
+   {
+    "anlage": "#5",
+    "aufgabe": "Kühlmittel prüfen",
+    "intervall": 7,
+    "letzte": "@-22",
+    "verantwortlich": "Dragan Nowak",
+    "art": "Geplante IH"
+   },
+   {
+    "anlage": "#5",
+    "aufgabe": "Sichtprüfung Schutzeinrichtung",
+    "intervall": 7,
+    "letzte": "@-17",
+    "verantwortlich": "Elif Fuchs",
+    "art": "Autonome IH (Werker)"
+   },
+   {
+    "anlage": "#5",
+    "aufgabe": "Bremsentest Roboter",
+    "intervall": 30,
+    "letzte": "@-10",
+    "verantwortlich": "Jana Vogel",
+    "art": "Geplante IH"
+   },
+   {
+    "anlage": "#6",
+    "aufgabe": "Sichtprüfung Schutzeinrichtung",
+    "intervall": 7,
+    "letzte": "@-2",
+    "verantwortlich": "Ayşe Ott",
+    "art": "Geplante IH"
+   },
+   {
+    "anlage": "#6",
+    "aufgabe": "Kalibrierung Kraftsensor",
+    "intervall": 365,
+    "letzte": "@-69",
+    "verantwortlich": "Thomas Rapp",
+    "art": "Autonome IH (Werker)"
+   },
+   {
+    "anlage": "#6",
+    "aufgabe": "Kühlmittel prüfen",
+    "intervall": 7,
+    "letzte": "@-9",
+    "verantwortlich": "Thomas Abele",
+    "art": "Geplante IH"
+   },
+   {
+    "anlage": "#7",
+    "aufgabe": "Ölwechsel Hydraulik",
+    "intervall": 180,
+    "letzte": "@-115",
+    "verantwortlich": "Nadine Celik",
+    "art": "Geplante IH"
+   },
+   {
+    "anlage": "#7",
+    "aufgabe": "Filter tauschen",
+    "intervall": 30,
+    "letzte": "@-22",
+    "verantwortlich": "Kemal Ott",
+    "art": "Autonome IH (Werker)"
+   },
+   {
+    "anlage": "#7",
+    "aufgabe": "Spindel-Schwingungsmessung",
+    "intervall": 90,
+    "letzte": "@-64",
+    "verantwortlich": "Petra Celik",
+    "art": "Geplante IH"
+   },
+   {
+    "anlage": "#8",
+    "aufgabe": "Bremsentest Roboter",
+    "intervall": 30,
+    "letzte": "@-11",
+    "verantwortlich": "Rüdiger Kaya",
+    "art": "Autonome IH (Werker)"
+   },
+   {
+    "anlage": "#8",
+    "aufgabe": "Filter tauschen",
+    "intervall": 30,
+    "letzte": "@-22",
+    "verantwortlich": "Bernd Nowak",
+    "art": "Geplante IH"
+   },
+   {
+    "anlage": "#8",
+    "aufgabe": "Ölwechsel Hydraulik",
+    "intervall": 180,
+    "letzte": "@-154",
+    "verantwortlich": "Frank Ott",
+    "art": "Geplante IH"
+   },
+   {
+    "anlage": "#9",
+    "aufgabe": "Spindel-Schwingungsmessung",
+    "intervall": 90,
+    "letzte": "@-36",
+    "verantwortlich": "Bernd Engel",
+    "art": "Autonome IH (Werker)"
+   },
+   {
+    "anlage": "#9",
+    "aufgabe": "Sichtprüfung Schutzeinrichtung",
+    "intervall": 7,
+    "letzte": "@-12",
+    "verantwortlich": "Selin Schäfer",
+    "art": "Geplante IH"
+   },
+   {
+    "anlage": "#9",
+    "aufgabe": "Ölwechsel Hydraulik",
+    "intervall": 180,
+    "letzte": "@-108",
+    "verantwortlich": "Oleksandr Ilić",
+    "art": "Autonome IH (Werker)"
+   },
+   {
+    "anlage": "#10",
+    "aufgabe": "Ölwechsel Hydraulik",
+    "intervall": 180,
+    "letzte": "@-101",
+    "verantwortlich": "Marco Engel",
+    "art": "Geplante IH"
+   },
+   {
+    "anlage": "#10",
+    "aufgabe": "Kalibrierung Kraftsensor",
+    "intervall": 365,
+    "letzte": "@-260",
+    "verantwortlich": "Uwe Traub",
+    "art": "Geplante IH"
+   },
+   {
+    "anlage": "#10",
+    "aufgabe": "Filter tauschen",
+    "intervall": 30,
+    "letzte": "@-9",
+    "verantwortlich": "Petra Bauer",
+    "art": "Geplante IH"
+   }
+  ]
+ },
+ "nachbauten": [
+  {
+   "baustein": "datumsformel",
+   "ersatz": "„Nächste Fälligkeit = Zuletzt + Intervall“: Formeln rechnen nur mit Zahlen, darum Skript nach dem Speichern.",
+   "geloest": true,
+   "jetzt": "Formel „letzte + intervall“ im Datumsfeld, kein Skript mehr."
+  },
+  {
+   "baustein": "kennzahl_bedingung",
+   "ersatz": "3 Kennzahlen mit Datumsbedingung (überfällig, 7 Tage, A-Anlagen) per Skript.",
+   "geloest": true,
+   "jetzt": "2 von 3 als Kennzahl mit Bedingung. „A-Anlagen“ braucht ein Feld der verknüpften Anlage – bleibt Skript."
+  },
+  {
+   "baustein": "liste_bedingung",
+   "ersatz": "Liste der überfälligen Wartungen als Ausgabe-Baustein; Verweis auf Anlage im Skript aufgelöst.",
+   "geloest": true,
+   "jetzt": "Liste mit Bedingung „Nächste Fälligkeit < heute“."
+  }
+ ]
+}

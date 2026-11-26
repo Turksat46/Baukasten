@@ -10,3 +10,6 @@ builder/static/builder/brand/logo.svg
 builder/static/builder/brand/logo.png
 builder/static/builder/brand/logo-hell.svg
 .devcontainer/.eingerichtet
+
+# Datenbankkopie der Werks-Apps (lokal, nicht ins Repo)
+beispiele/werk/datenbank/

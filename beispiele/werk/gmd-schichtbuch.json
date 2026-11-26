@@ -1,0 +1,1978 @@
+{
+ "slug": "gmd-schichtbuch",
+ "name": "Schichtbuch & Übergabe",
+ "icon": "📒",
+ "description": "Stückzahlen, Ausschuss und Besonderheiten je Schicht und Linie, mit Übergabe-Checkliste",
+ "rolle": "Werker / Schichtführer",
+ "komplexitaet": "einfach",
+ "entities": [
+  {
+   "name": "Schichtbuch",
+   "slug": "schichtbuch",
+   "fields": [
+    {
+     "label": "Datum",
+     "key": "datum",
+     "type": "date",
+     "required": true
+    },
+    {
+     "label": "Schicht",
+     "key": "schicht",
+     "type": "choice",
+     "choices": [
+      "Früh",
+      "Spät",
+      "Nacht"
+     ],
+     "required": true
+    },
+    {
+     "label": "Linie",
+     "key": "linie",
+     "type": "choice",
+     "choices": [
+      "ZS-1 Zahnstange",
+      "LG-2 Lenkgetriebe",
+      "EPS-3 Servoeinheit",
+      "PR-4 Endprüfung",
+      "HT-5 Härterei",
+      "VM-6 Ventilmontage"
+     ],
+     "required": true
+    },
+    {
+     "label": "Soll (Stück)",
+     "key": "soll",
+     "type": "number"
+    },
+    {
+     "label": "Ist (Stück)",
+     "key": "ist",
+     "type": "number"
+    },
+    {
+     "label": "Ausschuss (Stück)",
+     "key": "ausschuss",
+     "type": "number"
+    },
+    {
+     "label": "Personal anwesend",
+     "key": "personal",
+     "type": "number"
+    },
+    {
+     "label": "Erfüllung (%)",
+     "key": "erfuellung",
+     "type": "decimal",
+     "formula": "round(ist / soll * 100, 1)",
+     "show_in_form": false
+    },
+    {
+     "label": "Besonderheiten",
+     "key": "besonderheiten",
+     "type": "longtext",
+     "show_in_list": false
+    }
+   ]
+  },
+  {
+   "name": "Übergabepunkte",
+   "slug": "uebergabe",
+   "fields": [
+    {
+     "label": "Punkt",
+     "key": "punkt",
+     "type": "text",
+     "required": true
+    },
+    {
+     "label": "Linie",
+     "key": "linie",
+     "type": "choice",
+     "choices": [
+      "ZS-1 Zahnstange",
+      "LG-2 Lenkgetriebe",
+      "EPS-3 Servoeinheit",
+      "PR-4 Endprüfung",
+      "HT-5 Härterei",
+      "VM-6 Ventilmontage"
+     ]
+    },
+    {
+     "label": "Erledigt",
+     "key": "erledigt",
+     "type": "bool"
+    },
+    {
+     "label": "Hinweis",
+     "key": "hinweis",
+     "type": "text"
+    }
+   ]
+  }
+ ],
+ "pages": [
+  {
+   "title": "Übergabe",
+   "slug": "uebergabe",
+   "layout": [
+    {
+     "type": "heading",
+     "width": 12,
+     "props": {
+      "text": "Schichtübergabe",
+      "level": "1"
+     }
+    },
+    {
+     "type": "notice",
+     "width": 12,
+     "props": {
+      "title": "Erfüllung letzte Schicht",
+      "text": "wird berechnet …",
+      "tone": "info"
+     },
+     "name": "ampel"
+    },
+    {
+     "type": "checklist",
+     "width": 6,
+     "props": {
+      "title": "Übergabe-Checkliste",
+      "entity": "uebergabe",
+      "field": "erledigt",
+      "label_field": "punkt",
+      "detail": "linie"
+     }
+    },
+    {
+     "type": "form",
+     "width": 6,
+     "props": {
+      "entity": "schichtbuch",
+      "submit_label": "Schicht eintragen"
+     }
+    }
+   ]
+  },
+  {
+   "title": "Auswertung",
+   "slug": "auswertung",
+   "layout": [
+    {
+     "type": "filter",
+     "width": 12,
+     "props": {
+      "entity": "schichtbuch",
+      "field": "linie",
+      "field2": "schicht",
+      "field3": "datum"
+     }
+    },
+    {
+     "type": "stat",
+     "width": 4,
+     "props": {
+      "label": "Ist-Stück gesamt",
+      "entity": "schichtbuch",
+      "aggregate": "sum",
+      "field": "ist"
+     }
+    },
+    {
+     "type": "stat",
+     "width": 4,
+     "props": {
+      "label": "Ausschuss gesamt",
+      "entity": "schichtbuch",
+      "aggregate": "sum",
+      "field": "ausschuss"
+     }
+    },
+    {
+     "type": "stat",
+     "width": 4,
+     "props": {
+      "label": "Ø Erfüllung",
+      "entity": "schichtbuch",
+      "aggregate": "avg",
+      "field": "erfuellung",
+      "unit": "%"
+     }
+    },
+    {
+     "type": "line",
+     "width": 12,
+     "props": {
+      "label": "Ist-Stück pro Tag",
+      "entity": "schichtbuch",
+      "date_field": "datum",
+      "aggregate": "sum",
+      "field": "ist",
+      "period": "day",
+      "count": 14
+     }
+    },
+    {
+     "type": "pivot",
+     "width": 12,
+     "props": {
+      "title": "Erfüllung (%) Linie × Schicht",
+      "entity": "schichtbuch",
+      "row_field": "linie",
+      "col_field": "schicht",
+      "agg": "avg",
+      "value_field": "erfuellung"
+     }
+    },
+    {
+     "type": "table",
+     "width": 12,
+     "props": {
+      "entity": "schichtbuch",
+      "page_size": 20,
+      "searchable": true
+     }
+    }
+   ]
+  }
+ ],
+ "scripts": [
+  {
+   "name": "Ampel letzte Schicht",
+   "language": "python",
+   "trigger": "page",
+   "code": "rows = app.table(\"schichtbuch\").all()\nif rows:\n    letzte = max(rows, key=lambda r: (r[\"datum\"] or \"\", [\"Früh\", \"Spät\", \"Nacht\"].index(r[\"schicht\"]) if r[\"schicht\"] in [\"Früh\", \"Spät\", \"Nacht\"] else 0))\n    gleiche = [r for r in rows if r[\"datum\"] == letzte[\"datum\"] and r[\"schicht\"] == letzte[\"schicht\"]]\n    soll = sum(r[\"soll\"] or 0 for r in gleiche); ist = sum(r[\"ist\"] or 0 for r in gleiche)\n    quote = round(100 * ist / soll, 1) if soll else 0\n    ton = \"success\" if quote >= 95 else (\"warning\" if quote >= 85 else \"danger\")\n    ui.set(\"ampel\", tone=ton, title=f\"Erfüllung {letzte['schicht']}schicht {letzte['datum']}: {quote} %\",\n           text=f\"{ist} von {soll} Stück über {len(gleiche)} Linien.\")\n",
+   "page": "uebergabe"
+  }
+ ],
+ "beispieldaten": {
+  "schichtbuch": [
+   {
+    "datum": "@-13",
+    "schicht": "Früh",
+    "linie": "ZS-1 Zahnstange",
+    "soll": 620,
+    "ist": 564,
+    "ausschuss": 2,
+    "personal": 10,
+    "besonderheiten": ""
+   },
+   {
+    "datum": "@-13",
+    "schicht": "Früh",
+    "linie": "LG-2 Lenkgetriebe",
+    "soll": 480,
+    "ist": 381,
+    "ausschuss": 10,
+    "personal": 8,
+    "besonderheiten": ""
+   },
+   {
+    "datum": "@-13",
+    "schicht": "Früh",
+    "linie": "EPS-3 Servoeinheit",
+    "soll": 410,
+    "ist": 418,
+    "ausschuss": 4,
+    "personal": 6,
+    "besonderheiten": "Materialengpass Ritzel"
+   },
+   {
+    "datum": "@-13",
+    "schicht": "Früh",
+    "linie": "PR-4 Endprüfung",
+    "soll": 900,
+    "ist": 863,
+    "ausschuss": 5,
+    "personal": 11,
+    "besonderheiten": ""
+   },
+   {
+    "datum": "@-13",
+    "schicht": "Spät",
+    "linie": "ZS-1 Zahnstange",
+    "soll": 620,
+    "ist": 556,
+    "ausschuss": 3,
+    "personal": 10,
+    "besonderheiten": ""
+   },
+   {
+    "datum": "@-13",
+    "schicht": "Spät",
+    "linie": "LG-2 Lenkgetriebe",
+    "soll": 480,
+    "ist": 499,
+    "ausschuss": 0,
+    "personal": 7,
+    "besonderheiten": "Prüfstand 2 kalibriert"
+   },
+   {
+    "datum": "@-13",
+    "schicht": "Spät",
+    "linie": "EPS-3 Servoeinheit",
+    "soll": 410,
+    "ist": 390,
+    "ausschuss": 6,
+    "personal": 9,
+    "besonderheiten": "Störung Schrauber Station 40"
+   },
+   {
+    "datum": "@-13",
+    "schicht": "Spät",
+    "linie": "PR-4 Endprüfung",
+    "soll": 900,
+    "ist": 861,
+    "ausschuss": 9,
+    "personal": 6,
+    "besonderheiten": "Materialengpass Ritzel"
+   },
+   {
+    "datum": "@-13",
+    "schicht": "Nacht",
+    "linie": "ZS-1 Zahnstange",
+    "soll": 620,
+    "ist": 553,
+    "ausschuss": 14,
+    "personal": 9,
+    "besonderheiten": "Materialengpass Ritzel"
+   },
+   {
+    "datum": "@-13",
+    "schicht": "Nacht",
+    "linie": "LG-2 Lenkgetriebe",
+    "soll": 480,
+    "ist": 432,
+    "ausschuss": 4,
+    "personal": 11,
+    "besonderheiten": "Prüfstand 2 kalibriert"
+   },
+   {
+    "datum": "@-13",
+    "schicht": "Nacht",
+    "linie": "EPS-3 Servoeinheit",
+    "soll": 410,
+    "ist": 328,
+    "ausschuss": 12,
+    "personal": 6,
+    "besonderheiten": "Werkzeugwechsel Räumnadel"
+   },
+   {
+    "datum": "@-13",
+    "schicht": "Nacht",
+    "linie": "PR-4 Endprüfung",
+    "soll": 900,
+    "ist": 795,
+    "ausschuss": 7,
+    "personal": 7,
+    "besonderheiten": ""
+   },
+   {
+    "datum": "@-12",
+    "schicht": "Früh",
+    "linie": "ZS-1 Zahnstange",
+    "soll": 620,
+    "ist": 618,
+    "ausschuss": 4,
+    "personal": 11,
+    "besonderheiten": "Störung Schrauber Station 40"
+   },
+   {
+    "datum": "@-12",
+    "schicht": "Früh",
+    "linie": "LG-2 Lenkgetriebe",
+    "soll": 480,
+    "ist": 426,
+    "ausschuss": 8,
+    "personal": 8,
+    "besonderheiten": ""
+   },
+   {
+    "datum": "@-12",
+    "schicht": "Früh",
+    "linie": "EPS-3 Servoeinheit",
+    "soll": 410,
+    "ist": 326,
+    "ausschuss": 10,
+    "personal": 6,
+    "besonderheiten": "Prüfstand 2 kalibriert"
+   },
+   {
+    "datum": "@-12",
+    "schicht": "Früh",
+    "linie": "PR-4 Endprüfung",
+    "soll": 900,
+    "ist": 861,
+    "ausschuss": 4,
+    "personal": 10,
+    "besonderheiten": "Prüfstand 2 kalibriert"
+   },
+   {
+    "datum": "@-12",
+    "schicht": "Spät",
+    "linie": "ZS-1 Zahnstange",
+    "soll": 620,
+    "ist": 576,
+    "ausschuss": 14,
+    "personal": 8,
+    "besonderheiten": ""
+   },
+   {
+    "datum": "@-12",
+    "schicht": "Spät",
+    "linie": "LG-2 Lenkgetriebe",
+    "soll": 480,
+    "ist": 453,
+    "ausschuss": 2,
+    "personal": 6,
+    "besonderheiten": "Werkzeugwechsel Räumnadel"
+   },
+   {
+    "datum": "@-12",
+    "schicht": "Spät",
+    "linie": "EPS-3 Servoeinheit",
+    "soll": 410,
+    "ist": 375,
+    "ausschuss": 2,
+    "personal": 7,
+    "besonderheiten": "Störung Schrauber Station 40"
+   },
+   {
+    "datum": "@-12",
+    "schicht": "Spät",
+    "linie": "PR-4 Endprüfung",
+    "soll": 900,
+    "ist": 882,
+    "ausschuss": 13,
+    "personal": 6,
+    "besonderheiten": "Werkzeugwechsel Räumnadel"
+   },
+   {
+    "datum": "@-12",
+    "schicht": "Nacht",
+    "linie": "ZS-1 Zahnstange",
+    "soll": 620,
+    "ist": 501,
+    "ausschuss": 5,
+    "personal": 10,
+    "besonderheiten": ""
+   },
+   {
+    "datum": "@-12",
+    "schicht": "Nacht",
+    "linie": "LG-2 Lenkgetriebe",
+    "soll": 480,
+    "ist": 439,
+    "ausschuss": 0,
+    "personal": 10,
+    "besonderheiten": ""
+   },
+   {
+    "datum": "@-12",
+    "schicht": "Nacht",
+    "linie": "EPS-3 Servoeinheit",
+    "soll": 410,
+    "ist": 327,
+    "ausschuss": 6,
+    "personal": 10,
+    "besonderheiten": ""
+   },
+   {
+    "datum": "@-12",
+    "schicht": "Nacht",
+    "linie": "PR-4 Endprüfung",
+    "soll": 900,
+    "ist": 886,
+    "ausschuss": 2,
+    "personal": 7,
+    "besonderheiten": "Prüfstand 2 kalibriert"
+   },
+   {
+    "datum": "@-11",
+    "schicht": "Früh",
+    "linie": "ZS-1 Zahnstange",
+    "soll": 620,
+    "ist": 638,
+    "ausschuss": 1,
+    "personal": 11,
+    "besonderheiten": "Störung Schrauber Station 40"
+   },
+   {
+    "datum": "@-11",
+    "schicht": "Früh",
+    "linie": "LG-2 Lenkgetriebe",
+    "soll": 480,
+    "ist": 474,
+    "ausschuss": 8,
+    "personal": 10,
+    "besonderheiten": "Materialengpass Ritzel"
+   },
+   {
+    "datum": "@-11",
+    "schicht": "Früh",
+    "linie": "EPS-3 Servoeinheit",
+    "soll": 410,
+    "ist": 410,
+    "ausschuss": 6,
+    "personal": 8,
+    "besonderheiten": "Materialengpass Ritzel"
+   },
+   {
+    "datum": "@-11",
+    "schicht": "Früh",
+    "linie": "PR-4 Endprüfung",
+    "soll": 900,
+    "ist": 875,
+    "ausschuss": 12,
+    "personal": 7,
+    "besonderheiten": "Prüfstand 2 kalibriert"
+   },
+   {
+    "datum": "@-11",
+    "schicht": "Spät",
+    "linie": "ZS-1 Zahnstange",
+    "soll": 620,
+    "ist": 503,
+    "ausschuss": 7,
+    "personal": 7,
+    "besonderheiten": ""
+   },
+   {
+    "datum": "@-11",
+    "schicht": "Spät",
+    "linie": "LG-2 Lenkgetriebe",
+    "soll": 480,
+    "ist": 423,
+    "ausschuss": 1,
+    "personal": 8,
+    "besonderheiten": "Prüfstand 2 kalibriert"
+   },
+   {
+    "datum": "@-11",
+    "schicht": "Spät",
+    "linie": "EPS-3 Servoeinheit",
+    "soll": 410,
+    "ist": 395,
+    "ausschuss": 12,
+    "personal": 10,
+    "besonderheiten": "Materialengpass Ritzel"
+   },
+   {
+    "datum": "@-11",
+    "schicht": "Spät",
+    "linie": "PR-4 Endprüfung",
+    "soll": 900,
+    "ist": 773,
+    "ausschuss": 9,
+    "personal": 6,
+    "besonderheiten": "Materialengpass Ritzel"
+   },
+   {
+    "datum": "@-11",
+    "schicht": "Nacht",
+    "linie": "ZS-1 Zahnstange",
+    "soll": 620,
+    "ist": 555,
+    "ausschuss": 8,
+    "personal": 10,
+    "besonderheiten": "Prüfstand 2 kalibriert"
+   },
+   {
+    "datum": "@-11",
+    "schicht": "Nacht",
+    "linie": "LG-2 Lenkgetriebe",
+    "soll": 480,
+    "ist": 391,
+    "ausschuss": 7,
+    "personal": 9,
+    "besonderheiten": "Störung Schrauber Station 40"
+   },
+   {
+    "datum": "@-11",
+    "schicht": "Nacht",
+    "linie": "EPS-3 Servoeinheit",
+    "soll": 410,
+    "ist": 419,
+    "ausschuss": 11,
+    "personal": 9,
+    "besonderheiten": "Werkzeugwechsel Räumnadel"
+   },
+   {
+    "datum": "@-11",
+    "schicht": "Nacht",
+    "linie": "PR-4 Endprüfung",
+    "soll": 900,
+    "ist": 744,
+    "ausschuss": 2,
+    "personal": 8,
+    "besonderheiten": "Prüfstand 2 kalibriert"
+   },
+   {
+    "datum": "@-10",
+    "schicht": "Früh",
+    "linie": "ZS-1 Zahnstange",
+    "soll": 620,
+    "ist": 572,
+    "ausschuss": 2,
+    "personal": 6,
+    "besonderheiten": ""
+   },
+   {
+    "datum": "@-10",
+    "schicht": "Früh",
+    "linie": "LG-2 Lenkgetriebe",
+    "soll": 480,
+    "ist": 492,
+    "ausschuss": 11,
+    "personal": 10,
+    "besonderheiten": "Prüfstand 2 kalibriert"
+   },
+   {
+    "datum": "@-10",
+    "schicht": "Früh",
+    "linie": "EPS-3 Servoeinheit",
+    "soll": 410,
+    "ist": 393,
+    "ausschuss": 7,
+    "personal": 8,
+    "besonderheiten": ""
+   },
+   {
+    "datum": "@-10",
+    "schicht": "Früh",
+    "linie": "PR-4 Endprüfung",
+    "soll": 900,
+    "ist": 742,
+    "ausschuss": 14,
+    "personal": 8,
+    "besonderheiten": ""
+   },
+   {
+    "datum": "@-10",
+    "schicht": "Spät",
+    "linie": "ZS-1 Zahnstange",
+    "soll": 620,
+    "ist": 496,
+    "ausschuss": 2,
+    "personal": 8,
+    "besonderheiten": "Materialengpass Ritzel"
+   },
+   {
+    "datum": "@-10",
+    "schicht": "Spät",
+    "linie": "LG-2 Lenkgetriebe",
+    "soll": 480,
+    "ist": 398,
+    "ausschuss": 12,
+    "personal": 10,
+    "besonderheiten": "Störung Schrauber Station 40"
+   },
+   {
+    "datum": "@-10",
+    "schicht": "Spät",
+    "linie": "EPS-3 Servoeinheit",
+    "soll": 410,
+    "ist": 424,
+    "ausschuss": 4,
+    "personal": 8,
+    "besonderheiten": ""
+   },
+   {
+    "datum": "@-10",
+    "schicht": "Spät",
+    "linie": "PR-4 Endprüfung",
+    "soll": 900,
+    "ist": 925,
+    "ausschuss": 9,
+    "personal": 6,
+    "besonderheiten": ""
+   },
+   {
+    "datum": "@-10",
+    "schicht": "Nacht",
+    "linie": "ZS-1 Zahnstange",
+    "soll": 620,
+    "ist": 485,
+    "ausschuss": 6,
+    "personal": 10,
+    "besonderheiten": "Materialengpass Ritzel"
+   },
+   {
+    "datum": "@-10",
+    "schicht": "Nacht",
+    "linie": "LG-2 Lenkgetriebe",
+    "soll": 480,
+    "ist": 392,
+    "ausschuss": 3,
+    "personal": 9,
+    "besonderheiten": "Materialengpass Ritzel"
+   },
+   {
+    "datum": "@-10",
+    "schicht": "Nacht",
+    "linie": "EPS-3 Servoeinheit",
+    "soll": 410,
+    "ist": 351,
+    "ausschuss": 0,
+    "personal": 6,
+    "besonderheiten": ""
+   },
+   {
+    "datum": "@-10",
+    "schicht": "Nacht",
+    "linie": "PR-4 Endprüfung",
+    "soll": 900,
+    "ist": 802,
+    "ausschuss": 5,
+    "personal": 8,
+    "besonderheiten": "Störung Schrauber Station 40"
+   },
+   {
+    "datum": "@-9",
+    "schicht": "Früh",
+    "linie": "ZS-1 Zahnstange",
+    "soll": 620,
+    "ist": 612,
+    "ausschuss": 11,
+    "personal": 7,
+    "besonderheiten": ""
+   },
+   {
+    "datum": "@-9",
+    "schicht": "Früh",
+    "linie": "LG-2 Lenkgetriebe",
+    "soll": 480,
+    "ist": 415,
+    "ausschuss": 6,
+    "personal": 7,
+    "besonderheiten": "Werkzeugwechsel Räumnadel"
+   },
+   {
+    "datum": "@-9",
+    "schicht": "Früh",
+    "linie": "EPS-3 Servoeinheit",
+    "soll": 410,
+    "ist": 406,
+    "ausschuss": 13,
+    "personal": 11,
+    "besonderheiten": ""
+   },
+   {
+    "datum": "@-9",
+    "schicht": "Früh",
+    "linie": "PR-4 Endprüfung",
+    "soll": 900,
+    "ist": 901,
+    "ausschuss": 6,
+    "personal": 10,
+    "besonderheiten": "Prüfstand 2 kalibriert"
+   },
+   {
+    "datum": "@-9",
+    "schicht": "Spät",
+    "linie": "ZS-1 Zahnstange",
+    "soll": 620,
+    "ist": 558,
+    "ausschuss": 2,
+    "personal": 7,
+    "besonderheiten": "Materialengpass Ritzel"
+   },
+   {
+    "datum": "@-9",
+    "schicht": "Spät",
+    "linie": "LG-2 Lenkgetriebe",
+    "soll": 480,
+    "ist": 377,
+    "ausschuss": 12,
+    "personal": 6,
+    "besonderheiten": "Störung Schrauber Station 40"
+   },
+   {
+    "datum": "@-9",
+    "schicht": "Spät",
+    "linie": "EPS-3 Servoeinheit",
+    "soll": 410,
+    "ist": 353,
+    "ausschuss": 13,
+    "personal": 7,
+    "besonderheiten": "Störung Schrauber Station 40"
+   },
+   {
+    "datum": "@-9",
+    "schicht": "Spät",
+    "linie": "PR-4 Endprüfung",
+    "soll": 900,
+    "ist": 915,
+    "ausschuss": 0,
+    "personal": 10,
+    "besonderheiten": ""
+   },
+   {
+    "datum": "@-9",
+    "schicht": "Nacht",
+    "linie": "ZS-1 Zahnstange",
+    "soll": 620,
+    "ist": 514,
+    "ausschuss": 7,
+    "personal": 11,
+    "besonderheiten": "Störung Schrauber Station 40"
+   },
+   {
+    "datum": "@-9",
+    "schicht": "Nacht",
+    "linie": "LG-2 Lenkgetriebe",
+    "soll": 480,
+    "ist": 395,
+    "ausschuss": 3,
+    "personal": 10,
+    "besonderheiten": "Werkzeugwechsel Räumnadel"
+   },
+   {
+    "datum": "@-9",
+    "schicht": "Nacht",
+    "linie": "EPS-3 Servoeinheit",
+    "soll": 410,
+    "ist": 341,
+    "ausschuss": 6,
+    "personal": 8,
+    "besonderheiten": "Materialengpass Ritzel"
+   },
+   {
+    "datum": "@-9",
+    "schicht": "Nacht",
+    "linie": "PR-4 Endprüfung",
+    "soll": 900,
+    "ist": 921,
+    "ausschuss": 1,
+    "personal": 9,
+    "besonderheiten": "Werkzeugwechsel Räumnadel"
+   },
+   {
+    "datum": "@-8",
+    "schicht": "Früh",
+    "linie": "ZS-1 Zahnstange",
+    "soll": 620,
+    "ist": 633,
+    "ausschuss": 8,
+    "personal": 10,
+    "besonderheiten": "Störung Schrauber Station 40"
+   },
+   {
+    "datum": "@-8",
+    "schicht": "Früh",
+    "linie": "LG-2 Lenkgetriebe",
+    "soll": 480,
+    "ist": 498,
+    "ausschuss": 13,
+    "personal": 6,
+    "besonderheiten": ""
+   },
+   {
+    "datum": "@-8",
+    "schicht": "Früh",
+    "linie": "EPS-3 Servoeinheit",
+    "soll": 410,
+    "ist": 397,
+    "ausschuss": 1,
+    "personal": 10,
+    "besonderheiten": "Prüfstand 2 kalibriert"
+   },
+   {
+    "datum": "@-8",
+    "schicht": "Früh",
+    "linie": "PR-4 Endprüfung",
+    "soll": 900,
+    "ist": 778,
+    "ausschuss": 6,
+    "personal": 11,
+    "besonderheiten": ""
+   },
+   {
+    "datum": "@-8",
+    "schicht": "Spät",
+    "linie": "ZS-1 Zahnstange",
+    "soll": 620,
+    "ist": 596,
+    "ausschuss": 10,
+    "personal": 11,
+    "besonderheiten": "Werkzeugwechsel Räumnadel"
+   },
+   {
+    "datum": "@-8",
+    "schicht": "Spät",
+    "linie": "LG-2 Lenkgetriebe",
+    "soll": 480,
+    "ist": 420,
+    "ausschuss": 10,
+    "personal": 10,
+    "besonderheiten": ""
+   },
+   {
+    "datum": "@-8",
+    "schicht": "Spät",
+    "linie": "EPS-3 Servoeinheit",
+    "soll": 410,
+    "ist": 387,
+    "ausschuss": 8,
+    "personal": 7,
+    "besonderheiten": "Materialengpass Ritzel"
+   },
+   {
+    "datum": "@-8",
+    "schicht": "Spät",
+    "linie": "PR-4 Endprüfung",
+    "soll": 900,
+    "ist": 806,
+    "ausschuss": 14,
+    "personal": 6,
+    "besonderheiten": "Prüfstand 2 kalibriert"
+   },
+   {
+    "datum": "@-8",
+    "schicht": "Nacht",
+    "linie": "ZS-1 Zahnstange",
+    "soll": 620,
+    "ist": 622,
+    "ausschuss": 1,
+    "personal": 9,
+    "besonderheiten": ""
+   },
+   {
+    "datum": "@-8",
+    "schicht": "Nacht",
+    "linie": "LG-2 Lenkgetriebe",
+    "soll": 480,
+    "ist": 449,
+    "ausschuss": 11,
+    "personal": 11,
+    "besonderheiten": ""
+   },
+   {
+    "datum": "@-8",
+    "schicht": "Nacht",
+    "linie": "EPS-3 Servoeinheit",
+    "soll": 410,
+    "ist": 350,
+    "ausschuss": 2,
+    "personal": 11,
+    "besonderheiten": ""
+   },
+   {
+    "datum": "@-8",
+    "schicht": "Nacht",
+    "linie": "PR-4 Endprüfung",
+    "soll": 900,
+    "ist": 784,
+    "ausschuss": 8,
+    "personal": 11,
+    "besonderheiten": ""
+   },
+   {
+    "datum": "@-7",
+    "schicht": "Früh",
+    "linie": "ZS-1 Zahnstange",
+    "soll": 620,
+    "ist": 524,
+    "ausschuss": 13,
+    "personal": 11,
+    "besonderheiten": ""
+   },
+   {
+    "datum": "@-7",
+    "schicht": "Früh",
+    "linie": "LG-2 Lenkgetriebe",
+    "soll": 480,
+    "ist": 467,
+    "ausschuss": 9,
+    "personal": 9,
+    "besonderheiten": ""
+   },
+   {
+    "datum": "@-7",
+    "schicht": "Früh",
+    "linie": "EPS-3 Servoeinheit",
+    "soll": 410,
+    "ist": 359,
+    "ausschuss": 11,
+    "personal": 9,
+    "besonderheiten": "Störung Schrauber Station 40"
+   },
+   {
+    "datum": "@-7",
+    "schicht": "Früh",
+    "linie": "PR-4 Endprüfung",
+    "soll": 900,
+    "ist": 734,
+    "ausschuss": 10,
+    "personal": 9,
+    "besonderheiten": ""
+   },
+   {
+    "datum": "@-7",
+    "schicht": "Spät",
+    "linie": "ZS-1 Zahnstange",
+    "soll": 620,
+    "ist": 537,
+    "ausschuss": 4,
+    "personal": 8,
+    "besonderheiten": ""
+   },
+   {
+    "datum": "@-7",
+    "schicht": "Spät",
+    "linie": "LG-2 Lenkgetriebe",
+    "soll": 480,
+    "ist": 460,
+    "ausschuss": 13,
+    "personal": 8,
+    "besonderheiten": ""
+   },
+   {
+    "datum": "@-7",
+    "schicht": "Spät",
+    "linie": "EPS-3 Servoeinheit",
+    "soll": 410,
+    "ist": 322,
+    "ausschuss": 5,
+    "personal": 6,
+    "besonderheiten": "Prüfstand 2 kalibriert"
+   },
+   {
+    "datum": "@-7",
+    "schicht": "Spät",
+    "linie": "PR-4 Endprüfung",
+    "soll": 900,
+    "ist": 890,
+    "ausschuss": 14,
+    "personal": 6,
+    "besonderheiten": "Prüfstand 2 kalibriert"
+   },
+   {
+    "datum": "@-7",
+    "schicht": "Nacht",
+    "linie": "ZS-1 Zahnstange",
+    "soll": 620,
+    "ist": 574,
+    "ausschuss": 10,
+    "personal": 9,
+    "besonderheiten": ""
+   },
+   {
+    "datum": "@-7",
+    "schicht": "Nacht",
+    "linie": "LG-2 Lenkgetriebe",
+    "soll": 480,
+    "ist": 471,
+    "ausschuss": 3,
+    "personal": 8,
+    "besonderheiten": "Prüfstand 2 kalibriert"
+   },
+   {
+    "datum": "@-7",
+    "schicht": "Nacht",
+    "linie": "EPS-3 Servoeinheit",
+    "soll": 410,
+    "ist": 334,
+    "ausschuss": 7,
+    "personal": 9,
+    "besonderheiten": "Werkzeugwechsel Räumnadel"
+   },
+   {
+    "datum": "@-7",
+    "schicht": "Nacht",
+    "linie": "PR-4 Endprüfung",
+    "soll": 900,
+    "ist": 830,
+    "ausschuss": 11,
+    "personal": 11,
+    "besonderheiten": "Werkzeugwechsel Räumnadel"
+   },
+   {
+    "datum": "@-6",
+    "schicht": "Früh",
+    "linie": "ZS-1 Zahnstange",
+    "soll": 620,
+    "ist": 589,
+    "ausschuss": 1,
+    "personal": 6,
+    "besonderheiten": ""
+   },
+   {
+    "datum": "@-6",
+    "schicht": "Früh",
+    "linie": "LG-2 Lenkgetriebe",
+    "soll": 480,
+    "ist": 461,
+    "ausschuss": 13,
+    "personal": 10,
+    "besonderheiten": "Werkzeugwechsel Räumnadel"
+   },
+   {
+    "datum": "@-6",
+    "schicht": "Früh",
+    "linie": "EPS-3 Servoeinheit",
+    "soll": 410,
+    "ist": 335,
+    "ausschuss": 9,
+    "personal": 10,
+    "besonderheiten": ""
+   },
+   {
+    "datum": "@-6",
+    "schicht": "Früh",
+    "linie": "PR-4 Endprüfung",
+    "soll": 900,
+    "ist": 844,
+    "ausschuss": 4,
+    "personal": 7,
+    "besonderheiten": "Störung Schrauber Station 40"
+   },
+   {
+    "datum": "@-6",
+    "schicht": "Spät",
+    "linie": "ZS-1 Zahnstange",
+    "soll": 620,
+    "ist": 588,
+    "ausschuss": 10,
+    "personal": 6,
+    "besonderheiten": ""
+   },
+   {
+    "datum": "@-6",
+    "schicht": "Spät",
+    "linie": "LG-2 Lenkgetriebe",
+    "soll": 480,
+    "ist": 451,
+    "ausschuss": 5,
+    "personal": 8,
+    "besonderheiten": "Werkzeugwechsel Räumnadel"
+   },
+   {
+    "datum": "@-6",
+    "schicht": "Spät",
+    "linie": "EPS-3 Servoeinheit",
+    "soll": 410,
+    "ist": 410,
+    "ausschuss": 2,
+    "personal": 10,
+    "besonderheiten": ""
+   },
+   {
+    "datum": "@-6",
+    "schicht": "Spät",
+    "linie": "PR-4 Endprüfung",
+    "soll": 900,
+    "ist": 904,
+    "ausschuss": 10,
+    "personal": 9,
+    "besonderheiten": ""
+   },
+   {
+    "datum": "@-6",
+    "schicht": "Nacht",
+    "linie": "ZS-1 Zahnstange",
+    "soll": 620,
+    "ist": 512,
+    "ausschuss": 11,
+    "personal": 10,
+    "besonderheiten": ""
+   },
+   {
+    "datum": "@-6",
+    "schicht": "Nacht",
+    "linie": "LG-2 Lenkgetriebe",
+    "soll": 480,
+    "ist": 475,
+    "ausschuss": 13,
+    "personal": 10,
+    "besonderheiten": ""
+   },
+   {
+    "datum": "@-6",
+    "schicht": "Nacht",
+    "linie": "EPS-3 Servoeinheit",
+    "soll": 410,
+    "ist": 347,
+    "ausschuss": 13,
+    "personal": 8,
+    "besonderheiten": "Materialengpass Ritzel"
+   },
+   {
+    "datum": "@-6",
+    "schicht": "Nacht",
+    "linie": "PR-4 Endprüfung",
+    "soll": 900,
+    "ist": 919,
+    "ausschuss": 0,
+    "personal": 9,
+    "besonderheiten": "Störung Schrauber Station 40"
+   },
+   {
+    "datum": "@-5",
+    "schicht": "Früh",
+    "linie": "ZS-1 Zahnstange",
+    "soll": 620,
+    "ist": 612,
+    "ausschuss": 5,
+    "personal": 6,
+    "besonderheiten": "Störung Schrauber Station 40"
+   },
+   {
+    "datum": "@-5",
+    "schicht": "Früh",
+    "linie": "LG-2 Lenkgetriebe",
+    "soll": 480,
+    "ist": 418,
+    "ausschuss": 12,
+    "personal": 8,
+    "besonderheiten": "Materialengpass Ritzel"
+   },
+   {
+    "datum": "@-5",
+    "schicht": "Früh",
+    "linie": "EPS-3 Servoeinheit",
+    "soll": 410,
+    "ist": 327,
+    "ausschuss": 5,
+    "personal": 9,
+    "besonderheiten": "Prüfstand 2 kalibriert"
+   },
+   {
+    "datum": "@-5",
+    "schicht": "Früh",
+    "linie": "PR-4 Endprüfung",
+    "soll": 900,
+    "ist": 857,
+    "ausschuss": 2,
+    "personal": 6,
+    "besonderheiten": ""
+   },
+   {
+    "datum": "@-5",
+    "schicht": "Spät",
+    "linie": "ZS-1 Zahnstange",
+    "soll": 620,
+    "ist": 570,
+    "ausschuss": 3,
+    "personal": 11,
+    "besonderheiten": "Prüfstand 2 kalibriert"
+   },
+   {
+    "datum": "@-5",
+    "schicht": "Spät",
+    "linie": "LG-2 Lenkgetriebe",
+    "soll": 480,
+    "ist": 464,
+    "ausschuss": 13,
+    "personal": 10,
+    "besonderheiten": "Prüfstand 2 kalibriert"
+   },
+   {
+    "datum": "@-5",
+    "schicht": "Spät",
+    "linie": "EPS-3 Servoeinheit",
+    "soll": 410,
+    "ist": 340,
+    "ausschuss": 13,
+    "personal": 8,
+    "besonderheiten": ""
+   },
+   {
+    "datum": "@-5",
+    "schicht": "Spät",
+    "linie": "PR-4 Endprüfung",
+    "soll": 900,
+    "ist": 802,
+    "ausschuss": 9,
+    "personal": 11,
+    "besonderheiten": ""
+   },
+   {
+    "datum": "@-5",
+    "schicht": "Nacht",
+    "linie": "ZS-1 Zahnstange",
+    "soll": 620,
+    "ist": 539,
+    "ausschuss": 5,
+    "personal": 6,
+    "besonderheiten": "Materialengpass Ritzel"
+   },
+   {
+    "datum": "@-5",
+    "schicht": "Nacht",
+    "linie": "LG-2 Lenkgetriebe",
+    "soll": 480,
+    "ist": 432,
+    "ausschuss": 12,
+    "personal": 6,
+    "besonderheiten": "Störung Schrauber Station 40"
+   },
+   {
+    "datum": "@-5",
+    "schicht": "Nacht",
+    "linie": "EPS-3 Servoeinheit",
+    "soll": 410,
+    "ist": 347,
+    "ausschuss": 10,
+    "personal": 7,
+    "besonderheiten": ""
+   },
+   {
+    "datum": "@-5",
+    "schicht": "Nacht",
+    "linie": "PR-4 Endprüfung",
+    "soll": 900,
+    "ist": 751,
+    "ausschuss": 12,
+    "personal": 9,
+    "besonderheiten": "Prüfstand 2 kalibriert"
+   },
+   {
+    "datum": "@-4",
+    "schicht": "Früh",
+    "linie": "ZS-1 Zahnstange",
+    "soll": 620,
+    "ist": 545,
+    "ausschuss": 13,
+    "personal": 10,
+    "besonderheiten": "Materialengpass Ritzel"
+   },
+   {
+    "datum": "@-4",
+    "schicht": "Früh",
+    "linie": "LG-2 Lenkgetriebe",
+    "soll": 480,
+    "ist": 439,
+    "ausschuss": 6,
+    "personal": 9,
+    "besonderheiten": ""
+   },
+   {
+    "datum": "@-4",
+    "schicht": "Früh",
+    "linie": "EPS-3 Servoeinheit",
+    "soll": 410,
+    "ist": 368,
+    "ausschuss": 3,
+    "personal": 8,
+    "besonderheiten": "Störung Schrauber Station 40"
+   },
+   {
+    "datum": "@-4",
+    "schicht": "Früh",
+    "linie": "PR-4 Endprüfung",
+    "soll": 900,
+    "ist": 935,
+    "ausschuss": 2,
+    "personal": 10,
+    "besonderheiten": "Störung Schrauber Station 40"
+   },
+   {
+    "datum": "@-4",
+    "schicht": "Spät",
+    "linie": "ZS-1 Zahnstange",
+    "soll": 620,
+    "ist": 573,
+    "ausschuss": 5,
+    "personal": 6,
+    "besonderheiten": ""
+   },
+   {
+    "datum": "@-4",
+    "schicht": "Spät",
+    "linie": "LG-2 Lenkgetriebe",
+    "soll": 480,
+    "ist": 392,
+    "ausschuss": 9,
+    "personal": 10,
+    "besonderheiten": ""
+   },
+   {
+    "datum": "@-4",
+    "schicht": "Spät",
+    "linie": "EPS-3 Servoeinheit",
+    "soll": 410,
+    "ist": 321,
+    "ausschuss": 10,
+    "personal": 11,
+    "besonderheiten": "Werkzeugwechsel Räumnadel"
+   },
+   {
+    "datum": "@-4",
+    "schicht": "Spät",
+    "linie": "PR-4 Endprüfung",
+    "soll": 900,
+    "ist": 727,
+    "ausschuss": 3,
+    "personal": 6,
+    "besonderheiten": ""
+   },
+   {
+    "datum": "@-4",
+    "schicht": "Nacht",
+    "linie": "ZS-1 Zahnstange",
+    "soll": 620,
+    "ist": 589,
+    "ausschuss": 7,
+    "personal": 6,
+    "besonderheiten": "Werkzeugwechsel Räumnadel"
+   },
+   {
+    "datum": "@-4",
+    "schicht": "Nacht",
+    "linie": "LG-2 Lenkgetriebe",
+    "soll": 480,
+    "ist": 481,
+    "ausschuss": 8,
+    "personal": 11,
+    "besonderheiten": ""
+   },
+   {
+    "datum": "@-4",
+    "schicht": "Nacht",
+    "linie": "EPS-3 Servoeinheit",
+    "soll": 410,
+    "ist": 418,
+    "ausschuss": 6,
+    "personal": 11,
+    "besonderheiten": ""
+   },
+   {
+    "datum": "@-4",
+    "schicht": "Nacht",
+    "linie": "PR-4 Endprüfung",
+    "soll": 900,
+    "ist": 878,
+    "ausschuss": 8,
+    "personal": 11,
+    "besonderheiten": ""
+   },
+   {
+    "datum": "@-3",
+    "schicht": "Früh",
+    "linie": "ZS-1 Zahnstange",
+    "soll": 620,
+    "ist": 548,
+    "ausschuss": 3,
+    "personal": 7,
+    "besonderheiten": ""
+   },
+   {
+    "datum": "@-3",
+    "schicht": "Früh",
+    "linie": "LG-2 Lenkgetriebe",
+    "soll": 480,
+    "ist": 481,
+    "ausschuss": 5,
+    "personal": 11,
+    "besonderheiten": ""
+   },
+   {
+    "datum": "@-3",
+    "schicht": "Früh",
+    "linie": "EPS-3 Servoeinheit",
+    "soll": 410,
+    "ist": 402,
+    "ausschuss": 7,
+    "personal": 10,
+    "besonderheiten": ""
+   },
+   {
+    "datum": "@-3",
+    "schicht": "Früh",
+    "linie": "PR-4 Endprüfung",
+    "soll": 900,
+    "ist": 757,
+    "ausschuss": 0,
+    "personal": 9,
+    "besonderheiten": "Prüfstand 2 kalibriert"
+   },
+   {
+    "datum": "@-3",
+    "schicht": "Spät",
+    "linie": "ZS-1 Zahnstange",
+    "soll": 620,
+    "ist": 491,
+    "ausschuss": 14,
+    "personal": 10,
+    "besonderheiten": ""
+   },
+   {
+    "datum": "@-3",
+    "schicht": "Spät",
+    "linie": "LG-2 Lenkgetriebe",
+    "soll": 480,
+    "ist": 495,
+    "ausschuss": 7,
+    "personal": 10,
+    "besonderheiten": "Störung Schrauber Station 40"
+   },
+   {
+    "datum": "@-3",
+    "schicht": "Spät",
+    "linie": "EPS-3 Servoeinheit",
+    "soll": 410,
+    "ist": 414,
+    "ausschuss": 12,
+    "personal": 6,
+    "besonderheiten": ""
+   },
+   {
+    "datum": "@-3",
+    "schicht": "Spät",
+    "linie": "PR-4 Endprüfung",
+    "soll": 900,
+    "ist": 862,
+    "ausschuss": 6,
+    "personal": 9,
+    "besonderheiten": "Prüfstand 2 kalibriert"
+   },
+   {
+    "datum": "@-3",
+    "schicht": "Nacht",
+    "linie": "ZS-1 Zahnstange",
+    "soll": 620,
+    "ist": 504,
+    "ausschuss": 8,
+    "personal": 10,
+    "besonderheiten": ""
+   },
+   {
+    "datum": "@-3",
+    "schicht": "Nacht",
+    "linie": "LG-2 Lenkgetriebe",
+    "soll": 480,
+    "ist": 472,
+    "ausschuss": 7,
+    "personal": 10,
+    "besonderheiten": "Materialengpass Ritzel"
+   },
+   {
+    "datum": "@-3",
+    "schicht": "Nacht",
+    "linie": "EPS-3 Servoeinheit",
+    "soll": 410,
+    "ist": 346,
+    "ausschuss": 13,
+    "personal": 8,
+    "besonderheiten": ""
+   },
+   {
+    "datum": "@-3",
+    "schicht": "Nacht",
+    "linie": "PR-4 Endprüfung",
+    "soll": 900,
+    "ist": 791,
+    "ausschuss": 0,
+    "personal": 11,
+    "besonderheiten": ""
+   },
+   {
+    "datum": "@-2",
+    "schicht": "Früh",
+    "linie": "ZS-1 Zahnstange",
+    "soll": 620,
+    "ist": 537,
+    "ausschuss": 10,
+    "personal": 7,
+    "besonderheiten": ""
+   },
+   {
+    "datum": "@-2",
+    "schicht": "Früh",
+    "linie": "LG-2 Lenkgetriebe",
+    "soll": 480,
+    "ist": 388,
+    "ausschuss": 11,
+    "personal": 11,
+    "besonderheiten": "Prüfstand 2 kalibriert"
+   },
+   {
+    "datum": "@-2",
+    "schicht": "Früh",
+    "linie": "EPS-3 Servoeinheit",
+    "soll": 410,
+    "ist": 418,
+    "ausschuss": 1,
+    "personal": 11,
+    "besonderheiten": "Werkzeugwechsel Räumnadel"
+   },
+   {
+    "datum": "@-2",
+    "schicht": "Früh",
+    "linie": "PR-4 Endprüfung",
+    "soll": 900,
+    "ist": 935,
+    "ausschuss": 9,
+    "personal": 9,
+    "besonderheiten": ""
+   },
+   {
+    "datum": "@-2",
+    "schicht": "Spät",
+    "linie": "ZS-1 Zahnstange",
+    "soll": 620,
+    "ist": 603,
+    "ausschuss": 5,
+    "personal": 8,
+    "besonderheiten": "Störung Schrauber Station 40"
+   },
+   {
+    "datum": "@-2",
+    "schicht": "Spät",
+    "linie": "LG-2 Lenkgetriebe",
+    "soll": 480,
+    "ist": 497,
+    "ausschuss": 8,
+    "personal": 11,
+    "besonderheiten": "Prüfstand 2 kalibriert"
+   },
+   {
+    "datum": "@-2",
+    "schicht": "Spät",
+    "linie": "EPS-3 Servoeinheit",
+    "soll": 410,
+    "ist": 413,
+    "ausschuss": 12,
+    "personal": 8,
+    "besonderheiten": ""
+   },
+   {
+    "datum": "@-2",
+    "schicht": "Spät",
+    "linie": "PR-4 Endprüfung",
+    "soll": 900,
+    "ist": 912,
+    "ausschuss": 7,
+    "personal": 6,
+    "besonderheiten": "Prüfstand 2 kalibriert"
+   },
+   {
+    "datum": "@-2",
+    "schicht": "Nacht",
+    "linie": "ZS-1 Zahnstange",
+    "soll": 620,
+    "ist": 632,
+    "ausschuss": 13,
+    "personal": 8,
+    "besonderheiten": ""
+   },
+   {
+    "datum": "@-2",
+    "schicht": "Nacht",
+    "linie": "LG-2 Lenkgetriebe",
+    "soll": 480,
+    "ist": 422,
+    "ausschuss": 12,
+    "personal": 7,
+    "besonderheiten": "Prüfstand 2 kalibriert"
+   },
+   {
+    "datum": "@-2",
+    "schicht": "Nacht",
+    "linie": "EPS-3 Servoeinheit",
+    "soll": 410,
+    "ist": 360,
+    "ausschuss": 12,
+    "personal": 11,
+    "besonderheiten": "Prüfstand 2 kalibriert"
+   },
+   {
+    "datum": "@-2",
+    "schicht": "Nacht",
+    "linie": "PR-4 Endprüfung",
+    "soll": 900,
+    "ist": 823,
+    "ausschuss": 11,
+    "personal": 11,
+    "besonderheiten": "Störung Schrauber Station 40"
+   },
+   {
+    "datum": "@-1",
+    "schicht": "Früh",
+    "linie": "ZS-1 Zahnstange",
+    "soll": 620,
+    "ist": 510,
+    "ausschuss": 13,
+    "personal": 10,
+    "besonderheiten": ""
+   },
+   {
+    "datum": "@-1",
+    "schicht": "Früh",
+    "linie": "LG-2 Lenkgetriebe",
+    "soll": 480,
+    "ist": 410,
+    "ausschuss": 2,
+    "personal": 6,
+    "besonderheiten": "Prüfstand 2 kalibriert"
+   },
+   {
+    "datum": "@-1",
+    "schicht": "Früh",
+    "linie": "EPS-3 Servoeinheit",
+    "soll": 410,
+    "ist": 349,
+    "ausschuss": 4,
+    "personal": 8,
+    "besonderheiten": "Materialengpass Ritzel"
+   },
+   {
+    "datum": "@-1",
+    "schicht": "Früh",
+    "linie": "PR-4 Endprüfung",
+    "soll": 900,
+    "ist": 851,
+    "ausschuss": 9,
+    "personal": 7,
+    "besonderheiten": "Störung Schrauber Station 40"
+   },
+   {
+    "datum": "@-1",
+    "schicht": "Spät",
+    "linie": "ZS-1 Zahnstange",
+    "soll": 620,
+    "ist": 529,
+    "ausschuss": 12,
+    "personal": 8,
+    "besonderheiten": "Störung Schrauber Station 40"
+   },
+   {
+    "datum": "@-1",
+    "schicht": "Spät",
+    "linie": "LG-2 Lenkgetriebe",
+    "soll": 480,
+    "ist": 486,
+    "ausschuss": 0,
+    "personal": 6,
+    "besonderheiten": "Werkzeugwechsel Räumnadel"
+   },
+   {
+    "datum": "@-1",
+    "schicht": "Spät",
+    "linie": "EPS-3 Servoeinheit",
+    "soll": 410,
+    "ist": 325,
+    "ausschuss": 4,
+    "personal": 6,
+    "besonderheiten": "Störung Schrauber Station 40"
+   },
+   {
+    "datum": "@-1",
+    "schicht": "Spät",
+    "linie": "PR-4 Endprüfung",
+    "soll": 900,
+    "ist": 821,
+    "ausschuss": 0,
+    "personal": 9,
+    "besonderheiten": "Materialengpass Ritzel"
+   },
+   {
+    "datum": "@-1",
+    "schicht": "Nacht",
+    "linie": "ZS-1 Zahnstange",
+    "soll": 620,
+    "ist": 551,
+    "ausschuss": 4,
+    "personal": 9,
+    "besonderheiten": ""
+   },
+   {
+    "datum": "@-1",
+    "schicht": "Nacht",
+    "linie": "LG-2 Lenkgetriebe",
+    "soll": 480,
+    "ist": 429,
+    "ausschuss": 2,
+    "personal": 11,
+    "besonderheiten": "Störung Schrauber Station 40"
+   },
+   {
+    "datum": "@-1",
+    "schicht": "Nacht",
+    "linie": "EPS-3 Servoeinheit",
+    "soll": 410,
+    "ist": 392,
+    "ausschuss": 1,
+    "personal": 9,
+    "besonderheiten": ""
+   },
+   {
+    "datum": "@-1",
+    "schicht": "Nacht",
+    "linie": "PR-4 Endprüfung",
+    "soll": 900,
+    "ist": 786,
+    "ausschuss": 0,
+    "personal": 10,
+    "besonderheiten": "Störung Schrauber Station 40"
+   },
+   {
+    "datum": "@+0",
+    "schicht": "Früh",
+    "linie": "ZS-1 Zahnstange",
+    "soll": 620,
+    "ist": 529,
+    "ausschuss": 7,
+    "personal": 9,
+    "besonderheiten": ""
+   },
+   {
+    "datum": "@+0",
+    "schicht": "Früh",
+    "linie": "LG-2 Lenkgetriebe",
+    "soll": 480,
+    "ist": 464,
+    "ausschuss": 0,
+    "personal": 7,
+    "besonderheiten": "Prüfstand 2 kalibriert"
+   },
+   {
+    "datum": "@+0",
+    "schicht": "Früh",
+    "linie": "EPS-3 Servoeinheit",
+    "soll": 410,
+    "ist": 328,
+    "ausschuss": 10,
+    "personal": 7,
+    "besonderheiten": ""
+   },
+   {
+    "datum": "@+0",
+    "schicht": "Früh",
+    "linie": "PR-4 Endprüfung",
+    "soll": 900,
+    "ist": 896,
+    "ausschuss": 12,
+    "personal": 11,
+    "besonderheiten": "Werkzeugwechsel Räumnadel"
+   },
+   {
+    "datum": "@+0",
+    "schicht": "Spät",
+    "linie": "ZS-1 Zahnstange",
+    "soll": 620,
+    "ist": 589,
+    "ausschuss": 0,
+    "personal": 9,
+    "besonderheiten": "Störung Schrauber Station 40"
+   },
+   {
+    "datum": "@+0",
+    "schicht": "Spät",
+    "linie": "LG-2 Lenkgetriebe",
+    "soll": 480,
+    "ist": 382,
+    "ausschuss": 0,
+    "personal": 10,
+    "besonderheiten": "Materialengpass Ritzel"
+   },
+   {
+    "datum": "@+0",
+    "schicht": "Spät",
+    "linie": "EPS-3 Servoeinheit",
+    "soll": 410,
+    "ist": 379,
+    "ausschuss": 12,
+    "personal": 8,
+    "besonderheiten": "Werkzeugwechsel Räumnadel"
+   },
+   {
+    "datum": "@+0",
+    "schicht": "Spät",
+    "linie": "PR-4 Endprüfung",
+    "soll": 900,
+    "ist": 880,
+    "ausschuss": 9,
+    "personal": 7,
+    "besonderheiten": ""
+   },
+   {
+    "datum": "@+0",
+    "schicht": "Nacht",
+    "linie": "ZS-1 Zahnstange",
+    "soll": 620,
+    "ist": 576,
+    "ausschuss": 6,
+    "personal": 8,
+    "besonderheiten": "Werkzeugwechsel Räumnadel"
+   },
+   {
+    "datum": "@+0",
+    "schicht": "Nacht",
+    "linie": "LG-2 Lenkgetriebe",
+    "soll": 480,
+    "ist": 441,
+    "ausschuss": 1,
+    "personal": 9,
+    "besonderheiten": "Prüfstand 2 kalibriert"
+   },
+   {
+    "datum": "@+0",
+    "schicht": "Nacht",
+    "linie": "EPS-3 Servoeinheit",
+    "soll": 410,
+    "ist": 388,
+    "ausschuss": 5,
+    "personal": 7,
+    "besonderheiten": "Materialengpass Ritzel"
+   },
+   {
+    "datum": "@+0",
+    "schicht": "Nacht",
+    "linie": "PR-4 Endprüfung",
+    "soll": 900,
+    "ist": 752,
+    "ausschuss": 7,
+    "personal": 7,
+    "besonderheiten": ""
+   }
+  ],
+  "uebergabe": [
+   {
+    "punkt": "Werkzeugstandzeiten eingetragen",
+    "linie": "ZS-1 Zahnstange",
+    "erledigt": false
+   },
+   {
+    "punkt": "Prüfprotokolle abgelegt",
+    "linie": "PR-4 Endprüfung",
+    "erledigt": false
+   },
+   {
+    "punkt": "Leergut abgeholt",
+    "linie": "LG-2 Lenkgetriebe",
+    "erledigt": false
+   },
+   {
+    "punkt": "Nacharbeitsplatz leer",
+    "linie": "EPS-3 Servoeinheit",
+    "erledigt": false
+   },
+   {
+    "punkt": "Sperrlager-Teile gekennzeichnet",
+    "linie": "PR-4 Endprüfung",
+    "erledigt": false
+   },
+   {
+    "punkt": "Kühlschmierstoff-Konzentration gemessen",
+    "linie": "ZS-1 Zahnstange",
+    "erledigt": false
+   },
+   {
+    "punkt": "5S-Rundgang Arbeitsplatz",
+    "linie": "LG-2 Lenkgetriebe",
+    "erledigt": true
+   }
+  ]
+ },
+ "nachbauten": [
+  {
+   "baustein": "ampel",
+   "ersatz": "Soll/Ist-Ampel der letzten Schicht: Hinweis-Baustein, dessen Farbe (tone) ein Seitenskript setzt.",
+   "geloest": false
+  }
+ ]
+}

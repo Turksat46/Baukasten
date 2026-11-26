@@ -130,9 +130,10 @@
   </div>
 
 {% elif type == "stat" %}
-  <section class="stat">
+  <section class="stat{% if tone %} stat-{{ tone }}{% elif p.tone and p.tone != 'info' %} stat-{{ p.tone }}{% endif %}">
     <div class="stat-label" data-slot="label">{{ p.label }}</div>
     <div class="stat-value"><span data-slot="value">{{ value }}</span><span class="stat-unit" data-slot="unit"{% if not p.unit %} hidden{% endif %}>{{ p.unit }}</span></div>
+    {% if delta %}<div class="stat-delta stat-delta-{{ delta_dir }}{% if delta_good %} is-good{% else %} is-bad{% endif %}" title="{{ delta_note }}">{% if delta_dir == "up" %}▲{% elif delta_dir == "down" %}▼{% else %}▶{% endif %} {{ delta }}{% if p.unit %} {{ p.unit }}{% endif %} <span class="muted">{{ delta_note }}</span></div>{% endif %}
   </section>
 
 {% elif type == "progress" %}
@@ -153,7 +154,7 @@
         <span class="bar-label">{% if bar.href %}<a href="{{ bar.href }}" class="chart-filter-link">{{ bar.label }}</a>{% else %}{{ bar.label }}{% endif %}</span>
         <span class="bar-track"><span class="bar-fill" style="width: {{ bar.percent }}%"></span></span>
         <span class="bar-count">{{ bar.count }}</span>
-        <span class="bar-share">{{ bar.share }} %</span>
+        <span class="bar-share">{% if pareto %}<span title="{% translate 'kumuliert' %}">Σ {{ bar.cumulative }} %</span>{% elif bar.share is not None %}{{ bar.share }} %{% endif %}</span>
       </div>
     {% empty %}
       <p class="empty">{% translate "Noch keine Daten." %}</p>
@@ -229,6 +230,7 @@
           <line x1="0" y1="{{ height }}" x2="{{ width }}" y2="{{ height }}" class="line-grid"/>
           {% if band_area %}<polygon points="{{ band_area }}" class="line-band"/>{% endif %}
           {% if threshold_y is not None %}<line x1="0" y1="{{ threshold_y }}" x2="{{ width }}" y2="{{ threshold_y }}" class="line-threshold"/>{% endif %}
+          {% if lower_y is not None %}<line x1="0" y1="{{ lower_y }}" x2="{{ width }}" y2="{{ lower_y }}" class="line-threshold"/>{% endif %}
           {% if area %}<polygon points="{{ area }}" class="line-area"/>{% endif %}
           {% if line %}<polyline points="{{ line }}" class="line-path"/>{% endif %}
           {% for a in anomalies %}<circle cx="{{ a.cx }}" cy="{{ a.cy }}" r="4.5" class="line-anomaly"><title>{% translate "Anomalie" %}: {{ a.value }}</title></circle>{% endfor %}
@@ -236,6 +238,7 @@
         <div class="line-hits">{% for e in entries %}<span title="{{ e.title }}"></span>{% endfor %}</div>
         {% if empty %}<p class="line-empty muted small">{% translate "Im gewählten Zeitraum gibt es noch keine Werte." %}</p>{% endif %}
       </div>
+      {% if min %}<div class="line-top muted small">{{ min }}{% if p.unit %} {{ p.unit }}{% endif %}</div>{% endif %}
       <div class="line-labels" aria-hidden="true">{% for e in entries %}<span>{{ e.label }}</span>{% endfor %}</div>
     </div>
     <table class="visually-hidden">

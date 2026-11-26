@@ -63,6 +63,7 @@ At the end you find [Frequently asked questions](#frequently-asked-questions),
 | Inventar (inventory) | tables, forms, metrics, charts, data source, Python and JavaScript scripts | `python manage.py demo` |
 | Aufnahme-Einwilligung (recording consent) | a process across several people: create an event, send a link, agree or decline, evaluation; also for guests without an account | `python manage.py beispiel_einwilligung` |
 | Personaleinsatz (shift planning) | scheduling staff into shifts by drag and drop, lines with priorities, confirmations when overbooking, week overview, Kanban board; a tasks page with filter bar, checklist, sliders and calendar | `python manage.py beispiel_einsatzplanung` |
+| 20 plant apps | invented apps from a steering-systems plant, from the shop floor to plant management: canteen, shift log, andon, 5S, TPM, 8D, SPC, SMED, replenishment, qualification matrix, safety, cost centres, OEE, ramp-up, ideas, visitors, energy, gauges, LPA, shop-floor board. Overview in `beispiele/werk/README.md` | `python manage.py beispiel_werk` |
 
 The example apps are built in German. With [translations](#translating-an-app)
 they can also be shown in English.
@@ -350,6 +351,14 @@ functions `round`, `abs`, `min` and `max` referencing the short names (`key`) of
 other fields in the same table. The value is evaluated safely via the abstract
 syntax tree (AST, without `eval`) whenever a record is saved.
 
+**Calculating with dates:** In formulas, date fields count as days. A field of type
+"Date" can have a formula itself, e.g. "Next due" = `letzte + intervall` (interval in
+days) or "Next calibration" = `add_months(letzte, 12)` (the 31st becomes the last day
+of a shorter month). A number field with `ende - start` gives the duration in days.
+Values that change every day ("days since the last accident") are not formulas, as
+formulas only run on save – use the metric "days since/until" instead (see
+[Blocks](#blocks)).
+
 Per table you can switch off whether entries may be created, edited or deleted.
 This applies to the interface and to the API.
 
@@ -433,12 +442,12 @@ on the entry, append it to the link as `?code=…` and check it on the page with
 | | Kanban board | move entries between the values of a choice field (e.g. status) by drag and drop, optionally with a maximum per column |
 | | Calendar | monthly view by a date field, optionally with an end date (several days) and colour by a choice field; “+” creates an entry for that day |
 | | Checklist | tick a yes/no field, with progress; done items can be hidden |
-| Evaluation | Metric | count, sum or average, optionally with a unit |
+| Evaluation | Metric | count, sum, average or "days since the last / until the next date", optionally with a unit, traffic light (yellow/red from, "what is bad?") and comparison with the previous period (e.g. this week against last week, with trend arrow) |
 | | Progress | value relative to a target |
-| | Bar chart | entries per value of a field, as a ranking |
+| | Bar chart | count, sum or average per value of a field, as a ranking; optionally as Pareto with cumulative share |
 | | Donut chart | shares of the five most frequent values, the rest as "Other" |
 | | Timeline | entries per month, by a date field or the creation date |
-| | Line chart | count, sum or average per day, week or month as a line, optionally with confidence band ($\pm 1\,\sigma$), threshold and anomaly markers |
+| | Line chart | count, sum or average per day, week or month as a line, optionally with confidence band ($\pm 1\,\sigma$), threshold and anomaly markers; with an upper and a lower limit it becomes a control chart (UCL/LCL), points outside are marked red |
 | | Scatter plot | X/Y numeric fields (or live query) with bubble size, colour groups, trendline, Pearson $r$ and $R^2$ |
 | | Boxplot & distribution | median, quartiles ($Q_1$, $Q_3$), mean, whiskers and $1.5\times\text{IQR}$ outliers, optionally grouped |
 | | Heatmap & correlation | Pearson correlation matrix across all numeric fields or colour-coded crosstab |
@@ -463,6 +472,23 @@ reference fields as a list, yes/no as yes/no, dates as a from–to range, text a
 link. It applies to **all** blocks of the same table on the page: list, cards, key
 figure, progress, charts, timeline, line chart, Kanban board, calendar, checklist
 and sliders. Other parameters of the address are kept when filtering.
+
+**Fixed condition per block:** Table, cards, metric, progress, the charts, kanban
+board, calendar, checklist and sliders have the setting **"Only entries for which
+applies"**. One condition per line, all must match:
+
+```
+Status != Erledigt
+Fällig < today
+```
+
+Fields by label or short name; comparisons `=`, `!=`, `<`, `<=`, `>`, `>=`,
+`contains`, `is empty`, `is not empty`. `=` and `!=` take several values separated by
+commas. The right side may also be another field (`Stock < Minimum stock`). Date words:
+`today`, `weekstart`, `monthstart`, `quarterstart`, `yearstart` (German: `heute`,
+`wochenanfang` …), each with `+N`/`-N` days (`today+7`). Yes/no fields with
+`yes`/`no` (`ja`/`nein`). The condition only applies to its block; the filter bar
+comes on top.
 
 A **“New” link can prefill fields**: `…/t/<table>/neu/?faellig=2026-12-24` fills in
 the field “faellig” in the form (this is what the “+” in the calendar does).

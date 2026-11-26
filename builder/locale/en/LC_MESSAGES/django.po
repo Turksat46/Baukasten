@@ -6143,3 +6143,127 @@ msgstr "Seen tour"
 #: builder/models.py
 msgid "Gesehene Führungen"
 msgstr "Seen tours"
+
+#: builder/blocks.py
+msgid "Ampel gelb ab (optional)"
+msgstr "Traffic light yellow from (optional)"
+
+#: builder/blocks.py
+msgid "Ampel rot ab (optional)"
+msgstr "Traffic light red from (optional)"
+
+#: builder/blocks.py
+msgid "Ampel: Was ist schlecht?"
+msgstr "Traffic light: what is bad?"
+
+#: builder/blocks.py
+msgid "Anzahl Einträge"
+msgstr "Number of entries"
+
+#: builder/blocks.py
+msgid "Anzahl, Summe oder Durchschnitt, optional mit Ampel und Trend"
+msgstr "Count, sum or average, optionally with traffic light and trend"
+
+#: builder/blocks.py
+msgid "Balkenlänge"
+msgstr "Bar length"
+
+#: builder/blocks.py
+msgid "Durchschnitt eines Zahlenfelds"
+msgstr "Average of a number field"
+
+#: builder/blocks.py
+msgid "Hohe Werte (z. B. Ausschuss, Störungen)"
+msgstr "High values (e.g. scrap, breakdowns)"
+
+#: builder/blocks.py
+msgid "Niedrige Werte (z. B. OEE, Liefertreue)"
+msgstr "Low values (e.g. OEE, delivery reliability)"
+
+#: builder/blocks.py
+msgid "Pareto: kumulierten Anteil zeigen"
+msgstr "Pareto: show cumulative share"
+
+#: builder/blocks.py
+msgid "Rangliste je Wert: Anzahl, Summe oder Durchschnitt, optional als Pareto"
+msgstr "Ranking per value: count, sum or average, optionally as Pareto"
+
+#: builder/blocks.py
+msgid "Summe eines Zahlenfelds"
+msgstr "Sum of a number field"
+
+#: builder/blocks.py
+msgid "Vergleich: Datumsfeld (optional)"
+msgstr "Comparison: date field (optional)"
+
+#: builder/blocks.py
+msgid "Vergleich: Zeitraum in Tagen (0 = aus)"
+msgstr "Comparison: period in days (0 = off)"
+
+#: builder/blocks.py
+msgid "Zeigt den Wert der letzten Tage und die Veränderung zu den Tagen davor, z. B. 7 = diese gegen letzte Woche."
+msgstr "Shows the value of the last days and the change compared with the days before, e.g. 7 = this week against last week."
+
+#: builder/blocks.py
+msgid "zu den %(days)s Tagen davor"
+msgstr "vs. the %(days)s days before"
+
+#: builder/conditions.py
+msgid "Bedingung „%(line)s“: Ein Feld „%(name)s“ gibt es in „%(table)s“ nicht."
+msgstr "Condition “%(line)s”: there is no field “%(name)s” in “%(table)s”."
+
+#: builder/conditions.py
+msgid "Bedingung „%(line)s“: Vergleich fehlt (=, !=, <, >, <=, >=, enthält, ist leer)."
+msgstr "Condition “%(line)s”: comparison missing (=, !=, <, >, <=, >=, contains, is empty)."
+
+#: builder/conditions.py
+msgid "Eine Bedingung je Zeile, z. B. „Status != Erledigt“, „Fällig < heute“, „Datum >= monatsanfang“ oder „Bestand < Mindestbestand“."
+msgstr "One condition per line, e.g. “Status != Done”, “Due < today”, “Date >= monthstart” or “Stock < Minimum stock”."
+
+#: builder/conditions.py
+msgid "Nur Einträge, für die gilt (optional)"
+msgstr "Only entries for which applies (optional)"
+
+#: builder/templates/builder/block.html
+msgid "kumuliert"
+msgstr "cumulative"
+
+#: builder/blocks.py
+msgid "Feld (für Summe, Durchschnitt oder Tage)"
+msgstr "Field (for sum, average or days)"
+
+#: builder/blocks.py
+msgid "Mit beiden Grenzen wird das Diagramm zur Regelkarte: Punkte über der oberen oder unter der unteren Grenze (z. B. OEG/UEG) werden rot markiert."
+msgstr "With both limits the chart becomes a control chart: points above the upper or below the lower limit (e.g. UCL/LCL) are marked red."
+
+#: builder/blocks.py
+msgid "Tage bis zum nächsten Datum"
+msgstr "Days until the next date"
+
+#: builder/blocks.py
+msgid "Tage seit dem letzten Datum"
+msgstr "Days since the last date"
+
+#: builder/blocks.py
+msgid "Untere Grenze (optional)"
+msgstr "Lower limit (optional)"
+
+#: builder/blocks.py
+msgid "„Tage seit“ und „Tage bis“ brauchen ein Datumsfeld."
+msgstr "“Days since” and “days until” need a date field."
+
+#: builder/blocks.py
+msgid "„Tage seit“ zählt z. B. die Tage ohne Unfall seit der letzten Meldung, „Tage bis“ die Tage bis zum nächsten Termin. Beides braucht ein Datumsfeld."
+msgstr "“Days since” counts e.g. the days without an accident since the last report, “days until” the days until the next appointment. Both need a date field."
+
+#: builder/forms.py
+msgid "Formeln gibt es nur für die Typen „Ganze Zahl“, „Kommazahl“ und „Datum“."
+msgstr "Formulas are only available for the types “Whole number”, “Decimal number” and “Date”."
+
+#: builder/models.py
+msgid "Diese Zahlen- oder Datumsfelder gibt es in der Tabelle nicht: %(names)s"
+msgstr "These number or date fields do not exist in the table: %(names)s"
+
+#: builder/models.py
+msgid "Erlaubt sind Zahlen, Zahlen- und Datumsfelder, + - * / und round, abs, min, max, add_months."
+msgstr "Allowed are numbers, number and date fields, + - * / and round, abs, min, max, add_months."

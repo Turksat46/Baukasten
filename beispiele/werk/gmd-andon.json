@@ -1,0 +1,939 @@
+{
+ "slug": "gmd-andon",
+ "name": "Andon & Störungsmeldung",
+ "icon": "🚨",
+ "description": "Störungen an der Linie melden, Andon-Tafel mit Linienstatus, Stillstands-Pareto",
+ "rolle": "Werker / Instandhaltung",
+ "komplexitaet": "mittel",
+ "entities": [
+  {
+   "name": "Störungen",
+   "slug": "stoerungen",
+   "fields": [
+    {
+     "label": "Störung",
+     "key": "titel",
+     "type": "text",
+     "required": true
+    },
+    {
+     "label": "Linie",
+     "key": "linie",
+     "type": "choice",
+     "choices": [
+      "ZS-1 Zahnstange",
+      "LG-2 Lenkgetriebe",
+      "EPS-3 Servoeinheit",
+      "PR-4 Endprüfung",
+      "HT-5 Härterei",
+      "VM-6 Ventilmontage"
+     ],
+     "required": true
+    },
+    {
+     "label": "Kategorie",
+     "key": "kategorie",
+     "type": "choice",
+     "choices": [
+      "Mechanik",
+      "Elektrik",
+      "Hydraulik",
+      "Steuerung/Software",
+      "Material fehlt",
+      "Qualität"
+     ]
+    },
+    {
+     "label": "Priorität",
+     "key": "prioritaet",
+     "type": "choice",
+     "choices": [
+      "Hoch",
+      "Mittel",
+      "Niedrig"
+     ]
+    },
+    {
+     "label": "Status",
+     "key": "status",
+     "type": "choice",
+     "choices": [
+      "Offen",
+      "In Arbeit",
+      "Wartet auf Teil",
+      "Behoben"
+     ]
+    },
+    {
+     "label": "Gemeldet am",
+     "key": "gemeldet",
+     "type": "date"
+    },
+    {
+     "label": "Stillstand (min)",
+     "key": "dauer_min",
+     "type": "number"
+    },
+    {
+     "label": "Gemeldet von",
+     "key": "gemeldet_von",
+     "type": "text"
+    },
+    {
+     "label": "Beschreibung",
+     "key": "beschreibung",
+     "type": "longtext",
+     "show_in_list": false
+    }
+   ]
+  }
+ ],
+ "pages": [
+  {
+   "title": "Andon-Tafel",
+   "slug": "tafel",
+   "layout": [
+    {
+     "type": "heading",
+     "width": 12,
+     "props": {
+      "text": "Andon-Tafel",
+      "subtitle": "Werk Gmünd · Halle 2",
+      "level": "1"
+     }
+    },
+    {
+     "type": "stat",
+     "width": 4,
+     "props": {
+      "label": "Offene Störungen",
+      "entity": "stoerungen",
+      "where": "Status != Behoben",
+      "warn_at": "5",
+      "alarm_at": "10"
+     }
+    },
+    {
+     "type": "stat",
+     "width": 4,
+     "props": {
+      "label": "davon Priorität hoch",
+      "entity": "stoerungen",
+      "where": "Status != Behoben\nPriorität = Hoch",
+      "warn_at": "1",
+      "alarm_at": "3"
+     }
+    },
+    {
+     "type": "stat",
+     "width": 4,
+     "props": {
+      "label": "Stillstand heute",
+      "entity": "stoerungen",
+      "aggregate": "sum",
+      "field": "dauer_min",
+      "unit": "min",
+      "where": "Gemeldet am = heute",
+      "warn_at": "60",
+      "alarm_at": "120"
+     }
+    },
+    {
+     "type": "notice",
+     "width": 4,
+     "props": {
+      "title": "ZS-1 Zahnstange",
+      "text": "…",
+      "tone": "info"
+     },
+     "name": "linie1"
+    },
+    {
+     "type": "notice",
+     "width": 4,
+     "props": {
+      "title": "LG-2 Lenkgetriebe",
+      "text": "…",
+      "tone": "info"
+     },
+     "name": "linie2"
+    },
+    {
+     "type": "notice",
+     "width": 4,
+     "props": {
+      "title": "EPS-3 Servoeinheit",
+      "text": "…",
+      "tone": "info"
+     },
+     "name": "linie3"
+    },
+    {
+     "type": "notice",
+     "width": 4,
+     "props": {
+      "title": "PR-4 Endprüfung",
+      "text": "…",
+      "tone": "info"
+     },
+     "name": "linie4"
+    },
+    {
+     "type": "notice",
+     "width": 4,
+     "props": {
+      "title": "HT-5 Härterei",
+      "text": "…",
+      "tone": "info"
+     },
+     "name": "linie5"
+    },
+    {
+     "type": "notice",
+     "width": 4,
+     "props": {
+      "title": "VM-6 Ventilmontage",
+      "text": "…",
+      "tone": "info"
+     },
+     "name": "linie6"
+    },
+    {
+     "type": "table",
+     "width": 8,
+     "props": {
+      "title": "Offene Störungen",
+      "entity": "stoerungen",
+      "where": "Status != Behoben"
+     }
+    },
+    {
+     "type": "chart",
+     "width": 4,
+     "props": {
+      "label": "Pareto: Stillstand nach Ursache (min)",
+      "entity": "stoerungen",
+      "field": "kategorie",
+      "agg": "sum",
+      "value_field": "dauer_min",
+      "pareto": true
+     }
+    }
+   ]
+  },
+  {
+   "title": "Melden",
+   "slug": "melden",
+   "layout": [
+    {
+     "type": "heading",
+     "width": 12,
+     "props": {
+      "text": "Störung melden",
+      "level": "2"
+     }
+    },
+    {
+     "type": "form",
+     "width": 12,
+     "props": {
+      "entity": "stoerungen",
+      "submit_label": "Störung melden"
+     }
+    }
+   ]
+  },
+  {
+   "title": "Bearbeitung",
+   "slug": "bearbeitung",
+   "layout": [
+    {
+     "type": "filter",
+     "width": 12,
+     "props": {
+      "entity": "stoerungen",
+      "field": "linie",
+      "field2": "kategorie",
+      "field3": "prioritaet"
+     }
+    },
+    {
+     "type": "kanban",
+     "width": 12,
+     "props": {
+      "title": "Störungen nach Status",
+      "entity": "stoerungen",
+      "field": "status",
+      "detail": "linie",
+      "limit": 8
+     }
+    },
+    {
+     "type": "chart",
+     "width": 6,
+     "props": {
+      "label": "Anzahl nach Kategorie",
+      "entity": "stoerungen",
+      "field": "kategorie"
+     }
+    },
+    {
+     "type": "donut",
+     "width": 6,
+     "props": {
+      "label": "Nach Linie",
+      "entity": "stoerungen",
+      "field": "linie"
+     }
+    },
+    {
+     "type": "table",
+     "width": 12,
+     "props": {
+      "entity": "stoerungen",
+      "searchable": true
+     }
+    }
+   ]
+  }
+ ],
+ "scripts": [
+  {
+   "name": "Andon berechnen",
+   "language": "python",
+   "trigger": "page",
+   "code": "rows = app.table(\"stoerungen\").all()\noffen = [r for r in rows if r[\"status\"] != \"Behoben\"]\nlinien = [\"ZS-1 Zahnstange\", \"LG-2 Lenkgetriebe\", \"EPS-3 Servoeinheit\", \"PR-4 Endprüfung\", \"HT-5 Härterei\", \"VM-6 Ventilmontage\"]\nfor i, linie in enumerate(linien, start=1):\n    l_offen = [r for r in offen if r[\"linie\"] == linie]\n    hoch = [r for r in l_offen if r[\"prioritaet\"] == \"Hoch\"]\n    ton = \"danger\" if hoch else (\"warning\" if l_offen else \"success\")\n    ui.set(f\"linie{i}\", tone=ton, title=linie,\n           text=(\"Steht: \" + hoch[0][\"titel\"]) if hoch else (f\"{len(l_offen)} offene Meldung(en)\" if l_offen else \"Läuft\"))\n",
+   "page": "tafel"
+  }
+ ],
+ "beispieldaten": {
+  "stoerungen": [
+   {
+    "titel": "Roboter Kollision",
+    "linie": "LG-2 Lenkgetriebe",
+    "kategorie": "Material fehlt",
+    "prioritaet": "Hoch",
+    "status": "Behoben",
+    "gemeldet": "@-10",
+    "dauer_min": 60,
+    "gemeldet_von": "Marco Ilić"
+   },
+   {
+    "titel": "Ritzel fehlen am Band",
+    "linie": "PR-4 Endprüfung",
+    "kategorie": "Material fehlt",
+    "prioritaet": "Mittel",
+    "status": "Behoben",
+    "gemeldet": "@+0",
+    "dauer_min": 90,
+    "gemeldet_von": "Frank Jäger"
+   },
+   {
+    "titel": "Hydraulikdruck niedrig",
+    "linie": "LG-2 Lenkgetriebe",
+    "kategorie": "Elektrik",
+    "prioritaet": "Hoch",
+    "status": "Behoben",
+    "gemeldet": "@-10",
+    "dauer_min": 120,
+    "gemeldet_von": "Ayşe Schäfer"
+   },
+   {
+    "titel": "Schrauber NOK",
+    "linie": "EPS-3 Servoeinheit",
+    "kategorie": "Mechanik",
+    "prioritaet": "Niedrig",
+    "status": "Behoben",
+    "gemeldet": "@-2",
+    "dauer_min": 30,
+    "gemeldet_von": "Chiara Rapp"
+   },
+   {
+    "titel": "Prüfstand Fehlercode 217",
+    "linie": "PR-4 Endprüfung",
+    "kategorie": "Hydraulik",
+    "prioritaet": "Mittel",
+    "status": "Behoben",
+    "gemeldet": "@-15",
+    "dauer_min": 30,
+    "gemeldet_von": "Lena Vogel"
+   },
+   {
+    "titel": "Greifer klemmt",
+    "linie": "EPS-3 Servoeinheit",
+    "kategorie": "Elektrik",
+    "prioritaet": "Mittel",
+    "status": "Behoben",
+    "gemeldet": "@-1",
+    "dauer_min": 5,
+    "gemeldet_von": "Chiara Vogel"
+   },
+   {
+    "titel": "Hydraulikdruck niedrig",
+    "linie": "EPS-3 Servoeinheit",
+    "kategorie": "Mechanik",
+    "prioritaet": "Niedrig",
+    "status": "Behoben",
+    "gemeldet": "@-2",
+    "dauer_min": 15,
+    "gemeldet_von": "Bernd Engel"
+   },
+   {
+    "titel": "Prüfstand Fehlercode 217",
+    "linie": "ZS-1 Zahnstange",
+    "kategorie": "Mechanik",
+    "prioritaet": "Niedrig",
+    "status": "Offen",
+    "gemeldet": "@-18",
+    "dauer_min": 240,
+    "gemeldet_von": "Elif Schäfer"
+   },
+   {
+    "titel": "Lichtschranke verschmutzt",
+    "linie": "VM-6 Ventilmontage",
+    "kategorie": "Elektrik",
+    "prioritaet": "Hoch",
+    "status": "Behoben",
+    "gemeldet": "@+0",
+    "dauer_min": 30,
+    "gemeldet_von": "Kemal Bauer"
+   },
+   {
+    "titel": "Greifer klemmt",
+    "linie": "LG-2 Lenkgetriebe",
+    "kategorie": "Steuerung/Software",
+    "prioritaet": "Mittel",
+    "status": "Behoben",
+    "gemeldet": "@-13",
+    "dauer_min": 60,
+    "gemeldet_von": "Bernd Vogel"
+   },
+   {
+    "titel": "Prüfstand Fehlercode 217",
+    "linie": "PR-4 Endprüfung",
+    "kategorie": "Mechanik",
+    "prioritaet": "Hoch",
+    "status": "Behoben",
+    "gemeldet": "@-18",
+    "dauer_min": 240,
+    "gemeldet_von": "Uwe Ulrich"
+   },
+   {
+    "titel": "Hydraulikdruck niedrig",
+    "linie": "VM-6 Ventilmontage",
+    "kategorie": "Elektrik",
+    "prioritaet": "Hoch",
+    "status": "Behoben",
+    "gemeldet": "@-12",
+    "dauer_min": 90,
+    "gemeldet_von": "Bernd Ulrich"
+   },
+   {
+    "titel": "Prüfstand Fehlercode 217",
+    "linie": "EPS-3 Servoeinheit",
+    "kategorie": "Elektrik",
+    "prioritaet": "Mittel",
+    "status": "Behoben",
+    "gemeldet": "@+0",
+    "dauer_min": 10,
+    "gemeldet_von": "Chiara Fuchs"
+   },
+   {
+    "titel": "Ritzel fehlen am Band",
+    "linie": "EPS-3 Servoeinheit",
+    "kategorie": "Qualität",
+    "prioritaet": "Niedrig",
+    "status": "Behoben",
+    "gemeldet": "@-14",
+    "dauer_min": 20,
+    "gemeldet_von": "Yusuf Engel"
+   },
+   {
+    "titel": "Lichtschranke verschmutzt",
+    "linie": "VM-6 Ventilmontage",
+    "kategorie": "Elektrik",
+    "prioritaet": "Mittel",
+    "status": "Behoben",
+    "gemeldet": "@-19",
+    "dauer_min": 240,
+    "gemeldet_von": "Ayşe Schäfer"
+   },
+   {
+    "titel": "Greifer klemmt",
+    "linie": "PR-4 Endprüfung",
+    "kategorie": "Mechanik",
+    "prioritaet": "Mittel",
+    "status": "Behoben",
+    "gemeldet": "@-11",
+    "dauer_min": 30,
+    "gemeldet_von": "Gül Engel"
+   },
+   {
+    "titel": "Ritzel fehlen am Band",
+    "linie": "EPS-3 Servoeinheit",
+    "kategorie": "Hydraulik",
+    "prioritaet": "Hoch",
+    "status": "In Arbeit",
+    "gemeldet": "@-3",
+    "dauer_min": 5,
+    "gemeldet_von": "Zoe Abele"
+   },
+   {
+    "titel": "SPS-Kommunikation gestört",
+    "linie": "PR-4 Endprüfung",
+    "kategorie": "Steuerung/Software",
+    "prioritaet": "Hoch",
+    "status": "Behoben",
+    "gemeldet": "@-3",
+    "dauer_min": 60,
+    "gemeldet_von": "Petra Dietrich"
+   },
+   {
+    "titel": "Roboter Kollision",
+    "linie": "EPS-3 Servoeinheit",
+    "kategorie": "Elektrik",
+    "prioritaet": "Mittel",
+    "status": "Offen",
+    "gemeldet": "@-11",
+    "dauer_min": 90,
+    "gemeldet_von": "Yusuf Gruber"
+   },
+   {
+    "titel": "Roboter Kollision",
+    "linie": "EPS-3 Servoeinheit",
+    "kategorie": "Mechanik",
+    "prioritaet": "Mittel",
+    "status": "Behoben",
+    "gemeldet": "@-17",
+    "dauer_min": 60,
+    "gemeldet_von": "Thomas Gruber"
+   },
+   {
+    "titel": "Lichtschranke verschmutzt",
+    "linie": "LG-2 Lenkgetriebe",
+    "kategorie": "Hydraulik",
+    "prioritaet": "Niedrig",
+    "status": "Behoben",
+    "gemeldet": "@-1",
+    "dauer_min": 30,
+    "gemeldet_von": "Nadine Kaya"
+   },
+   {
+    "titel": "SPS-Kommunikation gestört",
+    "linie": "HT-5 Härterei",
+    "kategorie": "Steuerung/Software",
+    "prioritaet": "Niedrig",
+    "status": "In Arbeit",
+    "gemeldet": "@-5",
+    "dauer_min": 10,
+    "gemeldet_von": "Wolfgang Traub"
+   },
+   {
+    "titel": "Schrauber NOK",
+    "linie": "PR-4 Endprüfung",
+    "kategorie": "Elektrik",
+    "prioritaet": "Niedrig",
+    "status": "Behoben",
+    "gemeldet": "@-18",
+    "dauer_min": 10,
+    "gemeldet_von": "Frank Rapp"
+   },
+   {
+    "titel": "Ritzel fehlen am Band",
+    "linie": "ZS-1 Zahnstange",
+    "kategorie": "Mechanik",
+    "prioritaet": "Hoch",
+    "status": "Behoben",
+    "gemeldet": "@-19",
+    "dauer_min": 5,
+    "gemeldet_von": "Elif Ulrich"
+   },
+   {
+    "titel": "Hydraulikdruck niedrig",
+    "linie": "VM-6 Ventilmontage",
+    "kategorie": "Hydraulik",
+    "prioritaet": "Mittel",
+    "status": "In Arbeit",
+    "gemeldet": "@-9",
+    "dauer_min": 10,
+    "gemeldet_von": "Selin Ulrich"
+   },
+   {
+    "titel": "Hydraulikdruck niedrig",
+    "linie": "LG-2 Lenkgetriebe",
+    "kategorie": "Mechanik",
+    "prioritaet": "Hoch",
+    "status": "Wartet auf Teil",
+    "gemeldet": "@-17",
+    "dauer_min": 60,
+    "gemeldet_von": "Kemal Pfeiffer"
+   },
+   {
+    "titel": "Hydraulikdruck niedrig",
+    "linie": "PR-4 Endprüfung",
+    "kategorie": "Elektrik",
+    "prioritaet": "Niedrig",
+    "status": "Behoben",
+    "gemeldet": "@-14",
+    "dauer_min": 10,
+    "gemeldet_von": "Uwe Dietrich"
+   },
+   {
+    "titel": "Greifer klemmt",
+    "linie": "EPS-3 Servoeinheit",
+    "kategorie": "Mechanik",
+    "prioritaet": "Mittel",
+    "status": "In Arbeit",
+    "gemeldet": "@-2",
+    "dauer_min": 45,
+    "gemeldet_von": "Zoe Nowak"
+   },
+   {
+    "titel": "Ritzel fehlen am Band",
+    "linie": "PR-4 Endprüfung",
+    "kategorie": "Steuerung/Software",
+    "prioritaet": "Niedrig",
+    "status": "Behoben",
+    "gemeldet": "@-2",
+    "dauer_min": 45,
+    "gemeldet_von": "Chiara Pfeiffer"
+   },
+   {
+    "titel": "Lichtschranke verschmutzt",
+    "linie": "PR-4 Endprüfung",
+    "kategorie": "Mechanik",
+    "prioritaet": "Hoch",
+    "status": "Behoben",
+    "gemeldet": "@-5",
+    "dauer_min": 45,
+    "gemeldet_von": "Frank Wolf"
+   },
+   {
+    "titel": "Lichtschranke verschmutzt",
+    "linie": "EPS-3 Servoeinheit",
+    "kategorie": "Mechanik",
+    "prioritaet": "Hoch",
+    "status": "Behoben",
+    "gemeldet": "@-11",
+    "dauer_min": 240,
+    "gemeldet_von": "Gül Celik"
+   },
+   {
+    "titel": "Greifer klemmt",
+    "linie": "VM-6 Ventilmontage",
+    "kategorie": "Mechanik",
+    "prioritaet": "Hoch",
+    "status": "Behoben",
+    "gemeldet": "@-10",
+    "dauer_min": 60,
+    "gemeldet_von": "Gül Dietrich"
+   },
+   {
+    "titel": "Schrauber NOK",
+    "linie": "HT-5 Härterei",
+    "kategorie": "Material fehlt",
+    "prioritaet": "Niedrig",
+    "status": "Behoben",
+    "gemeldet": "@+0",
+    "dauer_min": 5,
+    "gemeldet_von": "Chiara Ott"
+   },
+   {
+    "titel": "Schrauber NOK",
+    "linie": "VM-6 Ventilmontage",
+    "kategorie": "Elektrik",
+    "prioritaet": "Mittel",
+    "status": "Behoben",
+    "gemeldet": "@-9",
+    "dauer_min": 30,
+    "gemeldet_von": "Nadine Gruber"
+   },
+   {
+    "titel": "SPS-Kommunikation gestört",
+    "linie": "LG-2 Lenkgetriebe",
+    "kategorie": "Hydraulik",
+    "prioritaet": "Mittel",
+    "status": "In Arbeit",
+    "gemeldet": "@-15",
+    "dauer_min": 15,
+    "gemeldet_von": "Vesna Kaya"
+   },
+   {
+    "titel": "Ritzel fehlen am Band",
+    "linie": "EPS-3 Servoeinheit",
+    "kategorie": "Steuerung/Software",
+    "prioritaet": "Mittel",
+    "status": "Behoben",
+    "gemeldet": "@-9",
+    "dauer_min": 30,
+    "gemeldet_von": "Vesna Bauer"
+   },
+   {
+    "titel": "Prüfstand Fehlercode 217",
+    "linie": "LG-2 Lenkgetriebe",
+    "kategorie": "Material fehlt",
+    "prioritaet": "Niedrig",
+    "status": "Behoben",
+    "gemeldet": "@-11",
+    "dauer_min": 30,
+    "gemeldet_von": "Chiara Engel"
+   },
+   {
+    "titel": "Greifer klemmt",
+    "linie": "ZS-1 Zahnstange",
+    "kategorie": "Mechanik",
+    "prioritaet": "Hoch",
+    "status": "Behoben",
+    "gemeldet": "@-19",
+    "dauer_min": 10,
+    "gemeldet_von": "Oleksandr Lutz"
+   },
+   {
+    "titel": "Roboter Kollision",
+    "linie": "VM-6 Ventilmontage",
+    "kategorie": "Material fehlt",
+    "prioritaet": "Niedrig",
+    "status": "Behoben",
+    "gemeldet": "@-19",
+    "dauer_min": 240,
+    "gemeldet_von": "Petra Vogel"
+   },
+   {
+    "titel": "Roboter Kollision",
+    "linie": "EPS-3 Servoeinheit",
+    "kategorie": "Elektrik",
+    "prioritaet": "Mittel",
+    "status": "Behoben",
+    "gemeldet": "@-6",
+    "dauer_min": 45,
+    "gemeldet_von": "Dragan Gruber"
+   },
+   {
+    "titel": "Greifer klemmt",
+    "linie": "HT-5 Härterei",
+    "kategorie": "Material fehlt",
+    "prioritaet": "Hoch",
+    "status": "Offen",
+    "gemeldet": "@-7",
+    "dauer_min": 90,
+    "gemeldet_von": "Zoe Wolf"
+   },
+   {
+    "titel": "Hydraulikdruck niedrig",
+    "linie": "ZS-1 Zahnstange",
+    "kategorie": "Mechanik",
+    "prioritaet": "Hoch",
+    "status": "Offen",
+    "gemeldet": "@-4",
+    "dauer_min": 20,
+    "gemeldet_von": "Petra Abele"
+   },
+   {
+    "titel": "Lichtschranke verschmutzt",
+    "linie": "HT-5 Härterei",
+    "kategorie": "Hydraulik",
+    "prioritaet": "Mittel",
+    "status": "In Arbeit",
+    "gemeldet": "@-11",
+    "dauer_min": 45,
+    "gemeldet_von": "Dragan Ilić"
+   },
+   {
+    "titel": "Prüfstand Fehlercode 217",
+    "linie": "VM-6 Ventilmontage",
+    "kategorie": "Hydraulik",
+    "prioritaet": "Niedrig",
+    "status": "Behoben",
+    "gemeldet": "@-12",
+    "dauer_min": 10,
+    "gemeldet_von": "Uwe Abele"
+   },
+   {
+    "titel": "Ritzel fehlen am Band",
+    "linie": "VM-6 Ventilmontage",
+    "kategorie": "Elektrik",
+    "prioritaet": "Niedrig",
+    "status": "In Arbeit",
+    "gemeldet": "@-19",
+    "dauer_min": 240,
+    "gemeldet_von": "Lena Abele"
+   },
+   {
+    "titel": "Greifer klemmt",
+    "linie": "EPS-3 Servoeinheit",
+    "kategorie": "Qualität",
+    "prioritaet": "Mittel",
+    "status": "In Arbeit",
+    "gemeldet": "@-9",
+    "dauer_min": 45,
+    "gemeldet_von": "Vesna Engel"
+   },
+   {
+    "titel": "Greifer klemmt",
+    "linie": "ZS-1 Zahnstange",
+    "kategorie": "Mechanik",
+    "prioritaet": "Mittel",
+    "status": "Behoben",
+    "gemeldet": "@-17",
+    "dauer_min": 60,
+    "gemeldet_von": "Chiara Wolf"
+   },
+   {
+    "titel": "Lichtschranke verschmutzt",
+    "linie": "HT-5 Härterei",
+    "kategorie": "Mechanik",
+    "prioritaet": "Mittel",
+    "status": "Behoben",
+    "gemeldet": "@-13",
+    "dauer_min": 15,
+    "gemeldet_von": "Marco Traub"
+   },
+   {
+    "titel": "Prüfstand Fehlercode 217",
+    "linie": "VM-6 Ventilmontage",
+    "kategorie": "Mechanik",
+    "prioritaet": "Mittel",
+    "status": "Behoben",
+    "gemeldet": "@-13",
+    "dauer_min": 240,
+    "gemeldet_von": "Chiara Schäfer"
+   },
+   {
+    "titel": "Prüfstand Fehlercode 217",
+    "linie": "VM-6 Ventilmontage",
+    "kategorie": "Elektrik",
+    "prioritaet": "Niedrig",
+    "status": "Offen",
+    "gemeldet": "@-10",
+    "dauer_min": 90,
+    "gemeldet_von": "Nadine Nowak"
+   },
+   {
+    "titel": "Presse Kraft außer Toleranz",
+    "linie": "HT-5 Härterei",
+    "kategorie": "Qualität",
+    "prioritaet": "Mittel",
+    "status": "Offen",
+    "gemeldet": "@-5",
+    "dauer_min": 5,
+    "gemeldet_von": "Rüdiger Pfeiffer"
+   },
+   {
+    "titel": "Schrauber NOK",
+    "linie": "EPS-3 Servoeinheit",
+    "kategorie": "Mechanik",
+    "prioritaet": "Niedrig",
+    "status": "Behoben",
+    "gemeldet": "@-10",
+    "dauer_min": 90,
+    "gemeldet_von": "Thomas Engel"
+   },
+   {
+    "titel": "Schrauber NOK",
+    "linie": "ZS-1 Zahnstange",
+    "kategorie": "Mechanik",
+    "prioritaet": "Mittel",
+    "status": "Behoben",
+    "gemeldet": "@-6",
+    "dauer_min": 15,
+    "gemeldet_von": "Chiara Lutz"
+   },
+   {
+    "titel": "Ritzel fehlen am Band",
+    "linie": "ZS-1 Zahnstange",
+    "kategorie": "Elektrik",
+    "prioritaet": "Niedrig",
+    "status": "Behoben",
+    "gemeldet": "@-3",
+    "dauer_min": 10,
+    "gemeldet_von": "Petra Ott"
+   },
+   {
+    "titel": "Prüfstand Fehlercode 217",
+    "linie": "LG-2 Lenkgetriebe",
+    "kategorie": "Qualität",
+    "prioritaet": "Mittel",
+    "status": "Behoben",
+    "gemeldet": "@-10",
+    "dauer_min": 45,
+    "gemeldet_von": "Ayşe Dietrich"
+   },
+   {
+    "titel": "Roboter Kollision",
+    "linie": "PR-4 Endprüfung",
+    "kategorie": "Material fehlt",
+    "prioritaet": "Mittel",
+    "status": "Behoben",
+    "gemeldet": "@-18",
+    "dauer_min": 45,
+    "gemeldet_von": "Bernd Schäfer"
+   },
+   {
+    "titel": "Greifer klemmt",
+    "linie": "EPS-3 Servoeinheit",
+    "kategorie": "Mechanik",
+    "prioritaet": "Mittel",
+    "status": "Behoben",
+    "gemeldet": "@-6",
+    "dauer_min": 5,
+    "gemeldet_von": "Bernd Pfeiffer"
+   },
+   {
+    "titel": "Greifer klemmt",
+    "linie": "LG-2 Lenkgetriebe",
+    "kategorie": "Hydraulik",
+    "prioritaet": "Niedrig",
+    "status": "Behoben",
+    "gemeldet": "@-14",
+    "dauer_min": 20,
+    "gemeldet_von": "Ayşe Nowak"
+   },
+   {
+    "titel": "SPS-Kommunikation gestört",
+    "linie": "ZS-1 Zahnstange",
+    "kategorie": "Elektrik",
+    "prioritaet": "Mittel",
+    "status": "Behoben",
+    "gemeldet": "@-13",
+    "dauer_min": 15,
+    "gemeldet_von": "Ivan Kaya"
+   },
+   {
+    "titel": "Ritzel fehlen am Band",
+    "linie": "EPS-3 Servoeinheit",
+    "kategorie": "Steuerung/Software",
+    "prioritaet": "Niedrig",
+    "status": "Behoben",
+    "gemeldet": "@-4",
+    "dauer_min": 10,
+    "gemeldet_von": "Wolfgang Ilić"
+   }
+  ]
+ },
+ "nachbauten": [
+  {
+   "baustein": "kennzahl_bedingung",
+   "ersatz": "3 Kennzahlen (offen, Prio hoch, Stillstand heute) per Skript statt Kennzahl-Baustein.",
+   "geloest": true,
+   "jetzt": "Kennzahlen mit Bedingung und Ampel-Schwellen."
+  },
+  {
+   "baustein": "ampel",
+   "ersatz": "6 Linien-Ampeln als Hinweis-Bausteine mit tone aus dem Skript.",
+   "geloest": true,
+   "jetzt": "Die 3 Kennzahlen färben sich selbst. Die Linien-Ampeln bleiben Skript: Sie zeigen den Text der Störung."
+  },
+  {
+   "baustein": "liste_bedingung",
+   "ersatz": "Liste nur der offenen Störungen als Ausgabe-Baustein mit rows aus dem Skript – ohne Klick zum Bearbeiten.",
+   "geloest": true,
+   "jetzt": "Liste mit Bedingung „Status != Behoben“, mit Bearbeiten."
+  },
+  {
+   "baustein": "diagramm_summe",
+   "ersatz": "Pareto Stillstand nach Ursache: Balkendiagramm kann nur zählen, nicht Minuten summieren und absteigend sortieren – Tabelle aus dem Skript.",
+   "geloest": true,
+   "jetzt": "Balkendiagramm mit Summe der Minuten und Pareto-Anteil."
+  }
+ ]
+}

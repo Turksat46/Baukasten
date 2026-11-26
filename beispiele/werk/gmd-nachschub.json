@@ -1,0 +1,536 @@
+{
+ "slug": "gmd-nachschub",
+ "name": "Materialnachschub (Routenzug)",
+ "icon": "🚚",
+ "description": "Nachschub an die Linie anfordern, Routenzug-Aufträge abarbeiten, Unterdeckungen erkennen",
+ "rolle": "Logistik",
+ "komplexitaet": "mittel",
+ "entities": [
+  {
+   "name": "Material",
+   "slug": "material",
+   "fields": [
+    {
+     "label": "Sachnummer",
+     "key": "sachnr",
+     "type": "text",
+     "required": true
+    },
+    {
+     "label": "Bezeichnung",
+     "key": "bezeichnung",
+     "type": "text"
+    },
+    {
+     "label": "Lagerort",
+     "key": "lagerort",
+     "type": "text"
+    },
+    {
+     "label": "Bestand",
+     "key": "bestand",
+     "type": "number"
+    },
+    {
+     "label": "Mindestbestand",
+     "key": "mindest",
+     "type": "number"
+    },
+    {
+     "label": "Reichweite über Minimum",
+     "key": "puffer",
+     "type": "number",
+     "formula": "bestand - mindest",
+     "show_in_form": false
+    }
+   ]
+  },
+  {
+   "name": "Anforderungen",
+   "slug": "anforderungen",
+   "fields": [
+    {
+     "label": "Material",
+     "key": "material",
+     "type": "reference",
+     "reference": "material",
+     "required": true
+    },
+    {
+     "label": "Linie",
+     "key": "linie",
+     "type": "choice",
+     "choices": [
+      "ZS-1 Zahnstange",
+      "LG-2 Lenkgetriebe",
+      "EPS-3 Servoeinheit",
+      "PR-4 Endprüfung",
+      "HT-5 Härterei",
+      "VM-6 Ventilmontage"
+     ],
+     "required": true
+    },
+    {
+     "label": "Behälter",
+     "key": "behaelter",
+     "type": "number"
+    },
+    {
+     "label": "Status",
+     "key": "status",
+     "type": "choice",
+     "choices": [
+      "Angefordert",
+      "Kommissioniert",
+      "Auf Routenzug",
+      "Geliefert"
+     ]
+    },
+    {
+     "label": "Angefordert am",
+     "key": "datum",
+     "type": "date"
+    },
+    {
+     "label": "Dringend",
+     "key": "dringend",
+     "type": "bool"
+    }
+   ]
+  }
+ ],
+ "pages": [
+  {
+   "title": "Anfordern",
+   "slug": "anfordern",
+   "layout": [
+    {
+     "type": "heading",
+     "width": 12,
+     "props": {
+      "text": "Nachschub anfordern",
+      "subtitle": "Kanban-Karte scannen oder Material auswählen",
+      "level": "1"
+     }
+    },
+    {
+     "type": "form",
+     "width": 6,
+     "props": {
+      "entity": "anforderungen",
+      "submit_label": "Anfordern"
+     }
+    },
+    {
+     "type": "stat",
+     "width": 6,
+     "props": {
+      "label": "Material unter Mindestbestand",
+      "entity": "material",
+      "where": "Bestand < Mindestbestand",
+      "warn_at": "1",
+      "alarm_at": "3"
+     }
+    }
+   ]
+  },
+  {
+   "title": "Routenzug",
+   "slug": "routenzug",
+   "layout": [
+    {
+     "type": "filter",
+     "width": 12,
+     "props": {
+      "entity": "anforderungen",
+      "field": "linie",
+      "field2": "dringend"
+     }
+    },
+    {
+     "type": "kanban",
+     "width": 12,
+     "props": {
+      "title": "Aufträge",
+      "entity": "anforderungen",
+      "field": "status",
+      "detail": "material",
+      "limit": 10
+     }
+    },
+    {
+     "type": "donut",
+     "width": 6,
+     "props": {
+      "label": "Anforderungen je Linie",
+      "entity": "anforderungen",
+      "field": "linie"
+     }
+    },
+    {
+     "type": "stat",
+     "width": 6,
+     "props": {
+      "label": "Nicht geliefert",
+      "entity": "anforderungen",
+      "where": "Status != Geliefert"
+     }
+    }
+   ]
+  },
+  {
+   "title": "Bestand",
+   "slug": "bestand",
+   "layout": [
+    {
+     "type": "table",
+     "width": 12,
+     "props": {
+      "title": "Material unter Mindestbestand",
+      "entity": "material",
+      "where": "Bestand < Mindestbestand"
+     }
+    },
+    {
+     "type": "table",
+     "width": 12,
+     "props": {
+      "entity": "material",
+      "searchable": true
+     }
+    },
+    {
+     "type": "csv_import",
+     "width": 12,
+     "props": {
+      "entity": "material",
+      "label": "Bestand aus SAP-Export (CSV) laden"
+     }
+    }
+   ]
+  }
+ ],
+ "scripts": [],
+ "beispieldaten": {
+  "material": [
+   {
+    "sachnr": "1 345 678 901",
+    "bezeichnung": "Ritzelwelle 7.8",
+    "lagerort": "Supermarkt A-01",
+    "bestand": 480,
+    "mindest": 300
+   },
+   {
+    "sachnr": "1 345 678 902",
+    "bezeichnung": "Zahnstangenrohling",
+    "lagerort": "Supermarkt A-02",
+    "bestand": 120,
+    "mindest": 200
+   },
+   {
+    "sachnr": "1 345 678 903",
+    "bezeichnung": "Dichtring 32x2",
+    "lagerort": "Supermarkt B-04",
+    "bestand": 4000,
+    "mindest": 2500
+   },
+   {
+    "sachnr": "1 345 678 904",
+    "bezeichnung": "Gehäuse LG Alu",
+    "lagerort": "Hochregal 12",
+    "bestand": 90,
+    "mindest": 150
+   },
+   {
+    "sachnr": "1 345 678 905",
+    "bezeichnung": "Steuergerät Gen4",
+    "lagerort": "Sperrbereich C",
+    "bestand": 260,
+    "mindest": 200
+   },
+   {
+    "sachnr": "1 345 678 906",
+    "bezeichnung": "Kugelumlaufmutter",
+    "lagerort": "Supermarkt A-05",
+    "bestand": 310,
+    "mindest": 250
+   },
+   {
+    "sachnr": "1 345 678 907",
+    "bezeichnung": "Elektromotor 80 W",
+    "lagerort": "Hochregal 07",
+    "bestand": 75,
+    "mindest": 120
+   },
+   {
+    "sachnr": "1 345 678 908",
+    "bezeichnung": "Schrauben M8x25",
+    "lagerort": "Kanban-Regal 1",
+    "bestand": 9000,
+    "mindest": 5000
+   }
+  ],
+  "anforderungen": [
+   {
+    "material": "#3",
+    "linie": "EPS-3 Servoeinheit",
+    "behaelter": 3,
+    "status": "Angefordert",
+    "datum": "@-1",
+    "dringend": false
+   },
+   {
+    "material": "#2",
+    "linie": "ZS-1 Zahnstange",
+    "behaelter": 1,
+    "status": "Auf Routenzug",
+    "datum": "@-1",
+    "dringend": false
+   },
+   {
+    "material": "#2",
+    "linie": "PR-4 Endprüfung",
+    "behaelter": 4,
+    "status": "Geliefert",
+    "datum": "@-1",
+    "dringend": false
+   },
+   {
+    "material": "#5",
+    "linie": "EPS-3 Servoeinheit",
+    "behaelter": 4,
+    "status": "Geliefert",
+    "datum": "@-3",
+    "dringend": false
+   },
+   {
+    "material": "#8",
+    "linie": "VM-6 Ventilmontage",
+    "behaelter": 4,
+    "status": "Geliefert",
+    "datum": "@-2",
+    "dringend": false
+   },
+   {
+    "material": "#7",
+    "linie": "VM-6 Ventilmontage",
+    "behaelter": 2,
+    "status": "Auf Routenzug",
+    "datum": "@-2",
+    "dringend": false
+   },
+   {
+    "material": "#8",
+    "linie": "LG-2 Lenkgetriebe",
+    "behaelter": 1,
+    "status": "Kommissioniert",
+    "datum": "@-1",
+    "dringend": false
+   },
+   {
+    "material": "#6",
+    "linie": "PR-4 Endprüfung",
+    "behaelter": 5,
+    "status": "Geliefert",
+    "datum": "@-3",
+    "dringend": false
+   },
+   {
+    "material": "#1",
+    "linie": "HT-5 Härterei",
+    "behaelter": 3,
+    "status": "Angefordert",
+    "datum": "@-1",
+    "dringend": true
+   },
+   {
+    "material": "#8",
+    "linie": "ZS-1 Zahnstange",
+    "behaelter": 6,
+    "status": "Geliefert",
+    "datum": "@-1",
+    "dringend": false
+   },
+   {
+    "material": "#1",
+    "linie": "VM-6 Ventilmontage",
+    "behaelter": 2,
+    "status": "Geliefert",
+    "datum": "@-2",
+    "dringend": false
+   },
+   {
+    "material": "#2",
+    "linie": "VM-6 Ventilmontage",
+    "behaelter": 5,
+    "status": "Auf Routenzug",
+    "datum": "@-2",
+    "dringend": false
+   },
+   {
+    "material": "#4",
+    "linie": "VM-6 Ventilmontage",
+    "behaelter": 4,
+    "status": "Angefordert",
+    "datum": "@-2",
+    "dringend": false
+   },
+   {
+    "material": "#4",
+    "linie": "HT-5 Härterei",
+    "behaelter": 3,
+    "status": "Geliefert",
+    "datum": "@-3",
+    "dringend": false
+   },
+   {
+    "material": "#2",
+    "linie": "HT-5 Härterei",
+    "behaelter": 2,
+    "status": "Geliefert",
+    "datum": "@-1",
+    "dringend": false
+   },
+   {
+    "material": "#7",
+    "linie": "ZS-1 Zahnstange",
+    "behaelter": 2,
+    "status": "Geliefert",
+    "datum": "@-2",
+    "dringend": false
+   },
+   {
+    "material": "#6",
+    "linie": "PR-4 Endprüfung",
+    "behaelter": 6,
+    "status": "Auf Routenzug",
+    "datum": "@-2",
+    "dringend": false
+   },
+   {
+    "material": "#1",
+    "linie": "LG-2 Lenkgetriebe",
+    "behaelter": 3,
+    "status": "Angefordert",
+    "datum": "@+0",
+    "dringend": false
+   },
+   {
+    "material": "#5",
+    "linie": "HT-5 Härterei",
+    "behaelter": 1,
+    "status": "Geliefert",
+    "datum": "@-1",
+    "dringend": false
+   },
+   {
+    "material": "#2",
+    "linie": "VM-6 Ventilmontage",
+    "behaelter": 5,
+    "status": "Kommissioniert",
+    "datum": "@-1",
+    "dringend": false
+   },
+   {
+    "material": "#7",
+    "linie": "ZS-1 Zahnstange",
+    "behaelter": 2,
+    "status": "Auf Routenzug",
+    "datum": "@-1",
+    "dringend": false
+   },
+   {
+    "material": "#7",
+    "linie": "LG-2 Lenkgetriebe",
+    "behaelter": 2,
+    "status": "Geliefert",
+    "datum": "@-1",
+    "dringend": false
+   },
+   {
+    "material": "#5",
+    "linie": "HT-5 Härterei",
+    "behaelter": 5,
+    "status": "Kommissioniert",
+    "datum": "@+0",
+    "dringend": false
+   },
+   {
+    "material": "#2",
+    "linie": "LG-2 Lenkgetriebe",
+    "behaelter": 3,
+    "status": "Auf Routenzug",
+    "datum": "@-3",
+    "dringend": false
+   },
+   {
+    "material": "#7",
+    "linie": "HT-5 Härterei",
+    "behaelter": 2,
+    "status": "Auf Routenzug",
+    "datum": "@-3",
+    "dringend": false
+   },
+   {
+    "material": "#2",
+    "linie": "PR-4 Endprüfung",
+    "behaelter": 2,
+    "status": "Auf Routenzug",
+    "datum": "@-2",
+    "dringend": false
+   },
+   {
+    "material": "#4",
+    "linie": "PR-4 Endprüfung",
+    "behaelter": 2,
+    "status": "Auf Routenzug",
+    "datum": "@-1",
+    "dringend": true
+   },
+   {
+    "material": "#6",
+    "linie": "ZS-1 Zahnstange",
+    "behaelter": 3,
+    "status": "Geliefert",
+    "datum": "@-2",
+    "dringend": true
+   },
+   {
+    "material": "#6",
+    "linie": "ZS-1 Zahnstange",
+    "behaelter": 3,
+    "status": "Kommissioniert",
+    "datum": "@-2",
+    "dringend": false
+   },
+   {
+    "material": "#2",
+    "linie": "VM-6 Ventilmontage",
+    "behaelter": 1,
+    "status": "Angefordert",
+    "datum": "@-1",
+    "dringend": false
+   }
+  ]
+ },
+ "nachbauten": [
+  {
+   "baustein": "liste_bedingung",
+   "ersatz": "Material unter Mindestbestand (Bedingung zwischen zwei Feldern) nur per Skript.",
+   "geloest": true,
+   "jetzt": "Liste mit Bedingung „Bestand < Mindestbestand“ (Feld gegen Feld)."
+  },
+  {
+   "baustein": "ampel",
+   "ersatz": "Unterdeckung als Hinweis mit tone.",
+   "geloest": true,
+   "jetzt": "Kennzahl mit Ampel."
+  },
+  {
+   "baustein": "kennzahl_bedingung",
+   "ersatz": "„Nicht geliefert“ per Skript.",
+   "geloest": true,
+   "jetzt": "Kennzahl mit Bedingung, kein Skript mehr."
+  }
+ ]
+}

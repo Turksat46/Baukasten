@@ -23,7 +23,8 @@
   "group_field",
   "query",
   "show_outliers",
-  "title"
+  "title",
+  "where"
  ],
  "button": [
   "action",
@@ -42,17 +43,23 @@
   "end_field",
   "entity",
   "label_field",
-  "title"
+  "title",
+  "where"
  ],
  "cards": [
   "entity",
   "page_size",
-  "title"
+  "title",
+  "where"
  ],
  "chart": [
+  "agg",
   "entity",
   "field",
-  "label"
+  "label",
+  "pareto",
+  "value_field",
+  "where"
  ],
  "checklist": [
   "detail",
@@ -60,7 +67,8 @@
   "field",
   "hide_done",
   "label_field",
-  "title"
+  "title",
+  "where"
  ],
  "csv_import": [
   "entity",
@@ -81,7 +89,8 @@
  "donut": [
   "entity",
   "field",
-  "label"
+  "label",
+  "where"
  ],
  "export": [
   "entity",
@@ -105,7 +114,8 @@
   "group_field",
   "label_field",
   "start_field",
-  "title"
+  "title",
+  "where"
  ],
  "greeting": [
   "text"
@@ -123,7 +133,8 @@
   "query",
   "row_field",
   "title",
-  "value_field"
+  "value_field",
+  "where"
  ],
  "histogram": [
   "bins",
@@ -131,7 +142,8 @@
   "field",
   "group_field",
   "query",
-  "title"
+  "title",
+  "where"
  ],
  "http": [
   "label",
@@ -160,7 +172,8 @@
   "entity",
   "field",
   "limit",
-  "title"
+  "title",
+  "where"
  ],
  "line": [
   "aggregate",
@@ -172,7 +185,9 @@
   "period",
   "show_band",
   "threshold",
-  "unit"
+  "threshold_low",
+  "unit",
+  "where"
  ],
  "notice": [
   "text",
@@ -194,7 +209,8 @@
   "row_field",
   "show_totals",
   "title",
-  "value_field"
+  "value_field",
+  "where"
  ],
  "progress": [
   "aggregate",
@@ -202,7 +218,8 @@
   "field",
   "label",
   "target",
-  "unit"
+  "unit",
+  "where"
  ],
  "query": [
   "max_rows",
@@ -223,7 +240,8 @@
   "page_size",
   "source_field",
   "title",
-  "title_field"
+  "title_field",
+  "where"
  ],
  "scatter": [
   "color_field",
@@ -233,6 +251,7 @@
   "size_field",
   "title",
   "trendline",
+  "where",
   "x_field",
   "y_field"
  ],
@@ -251,7 +270,8 @@
   "min",
   "step",
   "title",
-  "unit"
+  "unit",
+  "where"
  ],
  "spacer": [
   "size"
@@ -264,10 +284,16 @@
  ],
  "stat": [
   "aggregate",
+  "alarm_at",
+  "compare_days",
+  "compare_field",
+  "direction",
   "entity",
   "field",
   "label",
-  "unit"
+  "unit",
+  "warn_at",
+  "where"
  ],
  "stepper": [
   "entity",
@@ -279,7 +305,8 @@
   "entity",
   "page_size",
   "searchable",
-  "title"
+  "title",
+  "where"
  ],
  "tableau": [
   "filters",
@@ -297,7 +324,8 @@
   "entity",
   "field",
   "label",
-  "months"
+  "months",
+  "where"
  ],
  "weekplan": [
   "capacity_field",

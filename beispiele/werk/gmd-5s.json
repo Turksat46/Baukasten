@@ -1,0 +1,843 @@
+{
+ "slug": "gmd-5s",
+ "name": "5S-Audit",
+ "icon": "🧹",
+ "description": "5S-Audits je Bereich erfassen, Entwicklung verfolgen, Maßnahmen abhaken",
+ "rolle": "Meister / Werker",
+ "komplexitaet": "mittel",
+ "entities": [
+  {
+   "name": "Audits",
+   "slug": "audits",
+   "fields": [
+    {
+     "label": "Bereich",
+     "key": "bereich",
+     "type": "choice",
+     "choices": [
+      "Halle 1 Zerspanung",
+      "Halle 2 Montage",
+      "Halle 3 Prüffeld",
+      "Logistik Wareneingang",
+      "Werkstatt IH",
+      "Härterei"
+     ],
+     "required": true
+    },
+    {
+     "label": "Datum",
+     "key": "datum",
+     "type": "date",
+     "required": true
+    },
+    {
+     "label": "Auditor/in",
+     "key": "auditor",
+     "type": "text"
+    },
+    {
+     "label": "Sortieren (0–5)",
+     "key": "s1",
+     "type": "number"
+    },
+    {
+     "label": "Systematisieren (0–5)",
+     "key": "s2",
+     "type": "number"
+    },
+    {
+     "label": "Säubern (0–5)",
+     "key": "s3",
+     "type": "number"
+    },
+    {
+     "label": "Standardisieren (0–5)",
+     "key": "s4",
+     "type": "number"
+    },
+    {
+     "label": "Selbstdisziplin (0–5)",
+     "key": "s5",
+     "type": "number"
+    },
+    {
+     "label": "Punkte gesamt",
+     "key": "gesamt",
+     "type": "number",
+     "formula": "s1 + s2 + s3 + s4 + s5",
+     "show_in_form": false
+    },
+    {
+     "label": "Bemerkung",
+     "key": "bemerkung",
+     "type": "longtext",
+     "show_in_list": false
+    }
+   ]
+  },
+  {
+   "name": "Maßnahmen",
+   "slug": "massnahmen",
+   "fields": [
+    {
+     "label": "Maßnahme",
+     "key": "massnahme",
+     "type": "text",
+     "required": true
+    },
+    {
+     "label": "Bereich",
+     "key": "bereich",
+     "type": "choice",
+     "choices": [
+      "Halle 1 Zerspanung",
+      "Halle 2 Montage",
+      "Halle 3 Prüffeld",
+      "Logistik Wareneingang",
+      "Werkstatt IH",
+      "Härterei"
+     ]
+    },
+    {
+     "label": "Verantwortlich",
+     "key": "verantwortlich",
+     "type": "text"
+    },
+    {
+     "label": "Fällig",
+     "key": "faellig",
+     "type": "date"
+    },
+    {
+     "label": "Erledigt",
+     "key": "erledigt",
+     "type": "bool"
+    }
+   ]
+  }
+ ],
+ "pages": [
+  {
+   "title": "Audit erfassen",
+   "slug": "erfassen",
+   "layout": [
+    {
+     "type": "heading",
+     "width": 12,
+     "props": {
+      "text": "5S-Audit erfassen",
+      "subtitle": "Je Kriterium 0 (nicht erfüllt) bis 5 (vorbildlich)",
+      "level": "1"
+     }
+    },
+    {
+     "type": "form",
+     "width": 12,
+     "props": {
+      "entity": "audits",
+      "submit_label": "Audit speichern"
+     }
+    }
+   ]
+  },
+  {
+   "title": "Auswertung",
+   "slug": "auswertung",
+   "layout": [
+    {
+     "type": "filter",
+     "width": 12,
+     "props": {
+      "entity": "audits",
+      "field": "bereich",
+      "field2": "datum"
+     }
+    },
+    {
+     "type": "stat",
+     "width": 4,
+     "props": {
+      "label": "Ø Punkte (max. 25)",
+      "entity": "audits",
+      "aggregate": "avg",
+      "field": "gesamt"
+     }
+    },
+    {
+     "type": "stat",
+     "width": 4,
+     "props": {
+      "label": "Audits",
+      "entity": "audits"
+     }
+    },
+    {
+     "type": "output",
+     "width": 4,
+     "props": {
+      "label": "Schwächstes S"
+     },
+     "name": "schwaechstes"
+    },
+    {
+     "type": "line",
+     "width": 12,
+     "props": {
+      "label": "Ø Punkte je Woche",
+      "entity": "audits",
+      "date_field": "datum",
+      "aggregate": "avg",
+      "field": "gesamt",
+      "period": "week",
+      "count": 12,
+      "threshold": "18"
+     }
+    },
+    {
+     "type": "heatmap",
+     "width": 12,
+     "props": {
+      "title": "Ø Punkte Bereich × Woche",
+      "entity": "audits",
+      "mode": "crosstab",
+      "row_field": "bereich",
+      "col_field": "auditor",
+      "value_field": "gesamt",
+      "agg": "avg"
+     }
+    },
+    {
+     "type": "boxplot",
+     "width": 6,
+     "props": {
+      "title": "Streuung je Bereich",
+      "entity": "audits",
+      "field": "gesamt",
+      "group_field": "bereich"
+     }
+    },
+    {
+     "type": "output",
+     "width": 6,
+     "props": {
+      "label": "Profil der 5 S (Ø)"
+     },
+     "name": "netz"
+    }
+   ]
+  },
+  {
+   "title": "Maßnahmen",
+   "slug": "massnahmen",
+   "layout": [
+    {
+     "type": "checklist",
+     "width": 12,
+     "props": {
+      "title": "Offene 5S-Maßnahmen",
+      "entity": "massnahmen",
+      "field": "erledigt",
+      "label_field": "massnahme",
+      "detail": "bereich"
+     }
+    },
+    {
+     "type": "calendar",
+     "width": 12,
+     "props": {
+      "entity": "massnahmen",
+      "date_field": "faellig",
+      "label_field": "massnahme",
+      "color_field": "bereich"
+     }
+    },
+    {
+     "type": "form",
+     "width": 12,
+     "props": {
+      "entity": "massnahmen",
+      "submit_label": "Maßnahme anlegen"
+     }
+    }
+   ]
+  }
+ ],
+ "scripts": [
+  {
+   "name": "5S-Profil",
+   "language": "python",
+   "trigger": "page",
+   "code": "rows = app.table(\"audits\").all()\nnamen = [\"Sortieren\", \"Systematisieren\", \"Säubern\", \"Standardisieren\", \"Selbstdisziplin\"]\nmittel = []\nfor i, n in enumerate(namen, start=1):\n    werte = [r[f\"s{i}\"] for r in rows if r[f\"s{i}\"] is not None]\n    mittel.append((n, round(sum(werte) / len(werte), 2) if werte else 0))\nui.set(\"netz\", rows=[{\"S\": n, \"Ø\": m, \"Balken\": \"█\" * int(round(m * 4))} for n, m in mittel])\nschwach = min(mittel, key=lambda x: x[1]) if mittel else (\"–\", 0)\nui.set(\"schwaechstes\", value=schwach[0], unit=f\"Ø {schwach[1]}\")\n",
+   "page": "auswertung"
+  }
+ ],
+ "beispieldaten": {
+  "audits": [
+   {
+    "bereich": "Halle 1 Zerspanung",
+    "datum": "@-4",
+    "auditor": "Yusuf Ott",
+    "s1": 5,
+    "s2": 3,
+    "s3": 2,
+    "s4": 5,
+    "s5": 4
+   },
+   {
+    "bereich": "Halle 2 Montage",
+    "datum": "@-3",
+    "auditor": "Petra Kaya",
+    "s1": 2,
+    "s2": 5,
+    "s3": 3,
+    "s4": 4,
+    "s5": 5
+   },
+   {
+    "bereich": "Werkstatt IH",
+    "datum": "@-1",
+    "auditor": "Elif Pfeiffer",
+    "s1": 2,
+    "s2": 5,
+    "s3": 5,
+    "s4": 4,
+    "s5": 4
+   },
+   {
+    "bereich": "Halle 1 Zerspanung",
+    "datum": "@-11",
+    "auditor": "Lena Vogel",
+    "s1": 2,
+    "s2": 4,
+    "s3": 4,
+    "s4": 3,
+    "s5": 4
+   },
+   {
+    "bereich": "Halle 3 Prüffeld",
+    "datum": "@-7",
+    "auditor": "Lena Ilić",
+    "s1": 5,
+    "s2": 3,
+    "s3": 4,
+    "s4": 4,
+    "s5": 2
+   },
+   {
+    "bereich": "Logistik Wareneingang",
+    "datum": "@-8",
+    "auditor": "Yusuf Vogel",
+    "s1": 2,
+    "s2": 2,
+    "s3": 3,
+    "s4": 3,
+    "s5": 3
+   },
+   {
+    "bereich": "Werkstatt IH",
+    "datum": "@-9",
+    "auditor": "Gül Dietrich",
+    "s1": 4,
+    "s2": 3,
+    "s3": 5,
+    "s4": 5,
+    "s5": 4
+   },
+   {
+    "bereich": "Halle 1 Zerspanung",
+    "datum": "@-17",
+    "auditor": "Nadine Kaya",
+    "s1": 3,
+    "s2": 2,
+    "s3": 4,
+    "s4": 5,
+    "s5": 5
+   },
+   {
+    "bereich": "Halle 3 Prüffeld",
+    "datum": "@-17",
+    "auditor": "Kemal Engel",
+    "s1": 4,
+    "s2": 2,
+    "s3": 5,
+    "s4": 2,
+    "s5": 2
+   },
+   {
+    "bereich": "Logistik Wareneingang",
+    "datum": "@-16",
+    "auditor": "Oleksandr Wolf",
+    "s1": 2,
+    "s2": 2,
+    "s3": 3,
+    "s4": 5,
+    "s5": 5
+   },
+   {
+    "bereich": "Härterei",
+    "datum": "@-17",
+    "auditor": "Zoe Fuchs",
+    "s1": 5,
+    "s2": 4,
+    "s3": 4,
+    "s4": 2,
+    "s5": 2
+   },
+   {
+    "bereich": "Halle 2 Montage",
+    "datum": "@-24",
+    "auditor": "Zoe Maier",
+    "s1": 4,
+    "s2": 2,
+    "s3": 3,
+    "s4": 3,
+    "s5": 5
+   },
+   {
+    "bereich": "Logistik Wareneingang",
+    "datum": "@-23",
+    "auditor": "Wolfgang Maier",
+    "s1": 5,
+    "s2": 4,
+    "s3": 2,
+    "s4": 3,
+    "s5": 4
+   },
+   {
+    "bereich": "Halle 1 Zerspanung",
+    "datum": "@-28",
+    "auditor": "Rüdiger Ilić",
+    "s1": 2,
+    "s2": 5,
+    "s3": 2,
+    "s4": 3,
+    "s5": 5
+   },
+   {
+    "bereich": "Halle 2 Montage",
+    "datum": "@-31",
+    "auditor": "Ivan Abele",
+    "s1": 2,
+    "s2": 5,
+    "s3": 5,
+    "s4": 5,
+    "s5": 2
+   },
+   {
+    "bereich": "Halle 3 Prüffeld",
+    "datum": "@-30",
+    "auditor": "Rüdiger Nowak",
+    "s1": 4,
+    "s2": 2,
+    "s3": 3,
+    "s4": 2,
+    "s5": 5
+   },
+   {
+    "bereich": "Logistik Wareneingang",
+    "datum": "@-30",
+    "auditor": "Lena Ulrich",
+    "s1": 3,
+    "s2": 2,
+    "s3": 5,
+    "s4": 5,
+    "s5": 3
+   },
+   {
+    "bereich": "Werkstatt IH",
+    "datum": "@-28",
+    "auditor": "Selin Engel",
+    "s1": 2,
+    "s2": 5,
+    "s3": 3,
+    "s4": 2,
+    "s5": 3
+   },
+   {
+    "bereich": "Härterei",
+    "datum": "@-30",
+    "auditor": "Uwe Lutz",
+    "s1": 4,
+    "s2": 5,
+    "s3": 5,
+    "s4": 5,
+    "s5": 4
+   },
+   {
+    "bereich": "Halle 2 Montage",
+    "datum": "@-36",
+    "auditor": "Oleksandr Jäger",
+    "s1": 2,
+    "s2": 2,
+    "s3": 4,
+    "s4": 3,
+    "s5": 5
+   },
+   {
+    "bereich": "Halle 3 Prüffeld",
+    "datum": "@-38",
+    "auditor": "Dragan Kaya",
+    "s1": 2,
+    "s2": 5,
+    "s3": 2,
+    "s4": 3,
+    "s5": 2
+   },
+   {
+    "bereich": "Logistik Wareneingang",
+    "datum": "@-35",
+    "auditor": "Ayşe Maier",
+    "s1": 5,
+    "s2": 2,
+    "s3": 3,
+    "s4": 2,
+    "s5": 5
+   },
+   {
+    "bereich": "Werkstatt IH",
+    "datum": "@-37",
+    "auditor": "Elif Ulrich",
+    "s1": 4,
+    "s2": 5,
+    "s3": 2,
+    "s4": 2,
+    "s5": 5
+   },
+   {
+    "bereich": "Halle 1 Zerspanung",
+    "datum": "@-45",
+    "auditor": "Ayşe Gruber",
+    "s1": 5,
+    "s2": 2,
+    "s3": 2,
+    "s4": 2,
+    "s5": 5
+   },
+   {
+    "bereich": "Halle 3 Prüffeld",
+    "datum": "@-42",
+    "auditor": "Elif Traub",
+    "s1": 2,
+    "s2": 2,
+    "s3": 3,
+    "s4": 3,
+    "s5": 2
+   },
+   {
+    "bereich": "Logistik Wareneingang",
+    "datum": "@-42",
+    "auditor": "Vesna Abele",
+    "s1": 2,
+    "s2": 2,
+    "s3": 2,
+    "s4": 5,
+    "s5": 2
+   },
+   {
+    "bereich": "Werkstatt IH",
+    "datum": "@-46",
+    "auditor": "Selin Wolf",
+    "s1": 5,
+    "s2": 2,
+    "s3": 2,
+    "s4": 5,
+    "s5": 3
+   },
+   {
+    "bereich": "Halle 1 Zerspanung",
+    "datum": "@-52",
+    "auditor": "Chiara Abele",
+    "s1": 2,
+    "s2": 3,
+    "s3": 5,
+    "s4": 2,
+    "s5": 5
+   },
+   {
+    "bereich": "Halle 3 Prüffeld",
+    "datum": "@-50",
+    "auditor": "Ivan Dietrich",
+    "s1": 3,
+    "s2": 3,
+    "s3": 2,
+    "s4": 2,
+    "s5": 3
+   },
+   {
+    "bereich": "Logistik Wareneingang",
+    "datum": "@-50",
+    "auditor": "Rüdiger Gruber",
+    "s1": 2,
+    "s2": 3,
+    "s3": 4,
+    "s4": 5,
+    "s5": 3
+   },
+   {
+    "bereich": "Werkstatt IH",
+    "datum": "@-50",
+    "auditor": "Heike Fuchs",
+    "s1": 5,
+    "s2": 3,
+    "s3": 5,
+    "s4": 5,
+    "s5": 2
+   },
+   {
+    "bereich": "Härterei",
+    "datum": "@-50",
+    "auditor": "Marco Bauer",
+    "s1": 3,
+    "s2": 3,
+    "s3": 4,
+    "s4": 3,
+    "s5": 4
+   },
+   {
+    "bereich": "Halle 3 Prüffeld",
+    "datum": "@-56",
+    "auditor": "Ayşe Schäfer",
+    "s1": 3,
+    "s2": 5,
+    "s3": 3,
+    "s4": 5,
+    "s5": 5
+   },
+   {
+    "bereich": "Werkstatt IH",
+    "datum": "@-58",
+    "auditor": "Selin Schäfer",
+    "s1": 5,
+    "s2": 2,
+    "s3": 4,
+    "s4": 5,
+    "s5": 5
+   },
+   {
+    "bereich": "Härterei",
+    "datum": "@-58",
+    "auditor": "Nadine Ott",
+    "s1": 5,
+    "s2": 5,
+    "s3": 5,
+    "s4": 5,
+    "s5": 4
+   },
+   {
+    "bereich": "Halle 1 Zerspanung",
+    "datum": "@-67",
+    "auditor": "Jana Lutz",
+    "s1": 5,
+    "s2": 2,
+    "s3": 4,
+    "s4": 2,
+    "s5": 2
+   },
+   {
+    "bereich": "Halle 2 Montage",
+    "datum": "@-67",
+    "auditor": "Elif Rapp",
+    "s1": 2,
+    "s2": 3,
+    "s3": 3,
+    "s4": 3,
+    "s5": 2
+   },
+   {
+    "bereich": "Werkstatt IH",
+    "datum": "@-65",
+    "auditor": "Chiara Nowak",
+    "s1": 3,
+    "s2": 4,
+    "s3": 5,
+    "s4": 3,
+    "s5": 4
+   },
+   {
+    "bereich": "Härterei",
+    "datum": "@-63",
+    "auditor": "Petra Nowak",
+    "s1": 2,
+    "s2": 3,
+    "s3": 5,
+    "s4": 5,
+    "s5": 3
+   },
+   {
+    "bereich": "Halle 1 Zerspanung",
+    "datum": "@-74",
+    "auditor": "Kemal Dietrich",
+    "s1": 3,
+    "s2": 3,
+    "s3": 2,
+    "s4": 2,
+    "s5": 3
+   },
+   {
+    "bereich": "Halle 3 Prüffeld",
+    "datum": "@-72",
+    "auditor": "Oleksandr Abele",
+    "s1": 5,
+    "s2": 2,
+    "s3": 4,
+    "s4": 2,
+    "s5": 3
+   },
+   {
+    "bereich": "Logistik Wareneingang",
+    "datum": "@-71",
+    "auditor": "Marco Traub",
+    "s1": 3,
+    "s2": 3,
+    "s3": 3,
+    "s4": 2,
+    "s5": 3
+   },
+   {
+    "bereich": "Werkstatt IH",
+    "datum": "@-74",
+    "auditor": "Wolfgang Maier",
+    "s1": 3,
+    "s2": 4,
+    "s3": 3,
+    "s4": 2,
+    "s5": 2
+   },
+   {
+    "bereich": "Härterei",
+    "datum": "@-70",
+    "auditor": "Oleksandr Lutz",
+    "s1": 4,
+    "s2": 2,
+    "s3": 5,
+    "s4": 5,
+    "s5": 2
+   },
+   {
+    "bereich": "Halle 1 Zerspanung",
+    "datum": "@-80",
+    "auditor": "Gül Abele",
+    "s1": 2,
+    "s2": 2,
+    "s3": 4,
+    "s4": 4,
+    "s5": 4
+   },
+   {
+    "bereich": "Halle 2 Montage",
+    "datum": "@-78",
+    "auditor": "Marco Jäger",
+    "s1": 5,
+    "s2": 3,
+    "s3": 5,
+    "s4": 5,
+    "s5": 2
+   },
+   {
+    "bereich": "Logistik Wareneingang",
+    "datum": "@-80",
+    "auditor": "Oleksandr Traub",
+    "s1": 3,
+    "s2": 4,
+    "s3": 4,
+    "s4": 4,
+    "s5": 2
+   },
+   {
+    "bereich": "Werkstatt IH",
+    "datum": "@-80",
+    "auditor": "Oleksandr Bauer",
+    "s1": 2,
+    "s2": 5,
+    "s3": 5,
+    "s4": 5,
+    "s5": 5
+   },
+   {
+    "bereich": "Härterei",
+    "datum": "@-81",
+    "auditor": "Nadine Bauer",
+    "s1": 3,
+    "s2": 2,
+    "s3": 2,
+    "s4": 3,
+    "s5": 5
+   }
+  ],
+  "massnahmen": [
+   {
+    "massnahme": "Schattenbrett Werkzeugwagen 3 erneuern",
+    "bereich": "Logistik Wareneingang",
+    "verantwortlich": "Chiara Ulrich",
+    "faellig": "@-1",
+    "erledigt": false
+   },
+   {
+    "massnahme": "Bodenmarkierung Gang B nachziehen",
+    "bereich": "Halle 2 Montage",
+    "verantwortlich": "Kemal Schäfer",
+    "faellig": "@+17",
+    "erledigt": false
+   },
+   {
+    "massnahme": "Kabelkanal Station 20 schließen",
+    "bereich": "Halle 2 Montage",
+    "verantwortlich": "Uwe Ulrich",
+    "faellig": "@+12",
+    "erledigt": false
+   },
+   {
+    "massnahme": "Ablage Prüfmittel beschriften",
+    "bereich": "Halle 1 Zerspanung",
+    "verantwortlich": "Lena Traub",
+    "faellig": "@+8",
+    "erledigt": false
+   },
+   {
+    "massnahme": "Ölwanne Presse 4 reinigen",
+    "bereich": "Logistik Wareneingang",
+    "verantwortlich": "Thomas Maier",
+    "faellig": "@+20",
+    "erledigt": false
+   },
+   {
+    "massnahme": "Rote-Karte-Bereich auflösen",
+    "bereich": "Werkstatt IH",
+    "verantwortlich": "Yusuf Abele",
+    "faellig": "@+12",
+    "erledigt": false
+   },
+   {
+    "massnahme": "Standard Reinigungsplan aushängen",
+    "bereich": "Härterei",
+    "verantwortlich": "Wolfgang Pfeiffer",
+    "faellig": "@-3",
+    "erledigt": false
+   },
+   {
+    "massnahme": "Leergutplatz kennzeichnen",
+    "bereich": "Halle 1 Zerspanung",
+    "verantwortlich": "Lena Traub",
+    "faellig": "@+4",
+    "erledigt": false
+   }
+  ]
+ },
+ "nachbauten": [
+  {
+   "baustein": "netzdiagramm",
+   "ersatz": "Profil der 5 Kriterien: kein Netz-/Radardiagramm, darum Tabelle mit Textbalken aus dem Skript.",
+   "geloest": false
+  },
+  {
+   "baustein": "diagramm_mehrere_felder",
+   "ersatz": "Durchschnitt über 5 Zahlenfelder nebeneinander geht mit keinem Diagramm.",
+   "geloest": false
+  },
+  {
+   "baustein": "kennzahl_bedingung",
+   "ersatz": "„Schwächstes S“ per Skript.",
+   "geloest": false
+  }
+ ]
+}

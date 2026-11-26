@@ -1,0 +1,577 @@
+{
+ "slug": "gmd-anlauf",
+ "name": "Projekt Anlauf EPS Gen 5",
+ "icon": "🚀",
+ "description": "Arbeitspakete, Meilensteine, Risiken und offene Punkte bis SOP",
+ "rolle": "Projektingenieur / Projektleiter",
+ "komplexitaet": "komplex",
+ "entities": [
+  {
+   "name": "Arbeitspakete",
+   "slug": "pakete",
+   "fields": [
+    {
+     "label": "Arbeitspaket",
+     "key": "name",
+     "type": "text",
+     "required": true
+    },
+    {
+     "label": "Gewerk",
+     "key": "gewerk",
+     "type": "choice",
+     "choices": [
+      "Konstruktion",
+      "Betriebsmittel",
+      "Qualität",
+      "Logistik",
+      "Einkauf",
+      "Produktion"
+     ]
+    },
+    {
+     "label": "Start",
+     "key": "start",
+     "type": "date"
+    },
+    {
+     "label": "Ende",
+     "key": "ende",
+     "type": "date"
+    },
+    {
+     "label": "Status",
+     "key": "status",
+     "type": "choice",
+     "choices": [
+      "Geplant",
+      "In Arbeit",
+      "Blockiert",
+      "Erledigt"
+     ]
+    },
+    {
+     "label": "Fortschritt (%)",
+     "key": "fortschritt",
+     "type": "number"
+    },
+    {
+     "label": "Verantwortlich",
+     "key": "verantwortlich",
+     "type": "text"
+    }
+   ]
+  },
+  {
+   "name": "Risiken",
+   "slug": "risiken",
+   "fields": [
+    {
+     "label": "Risiko",
+     "key": "titel",
+     "type": "text",
+     "required": true
+    },
+    {
+     "label": "Wahrscheinlichkeit (1–5)",
+     "key": "w",
+     "type": "number"
+    },
+    {
+     "label": "Auswirkung (1–5)",
+     "key": "a",
+     "type": "number"
+    },
+    {
+     "label": "Risikozahl",
+     "key": "rz",
+     "type": "number",
+     "formula": "w * a",
+     "show_in_form": false
+    },
+    {
+     "label": "Maßnahme",
+     "key": "massnahme",
+     "type": "text"
+    },
+    {
+     "label": "Status",
+     "key": "status",
+     "type": "choice",
+     "choices": [
+      "Offen",
+      "Mitigiert",
+      "Eingetreten",
+      "Geschlossen"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Offene Punkte",
+   "slug": "ops",
+   "fields": [
+    {
+     "label": "Punkt",
+     "key": "punkt",
+     "type": "text",
+     "required": true
+    },
+    {
+     "label": "Gewerk",
+     "key": "gewerk",
+     "type": "choice",
+     "choices": [
+      "Konstruktion",
+      "Betriebsmittel",
+      "Qualität",
+      "Logistik",
+      "Einkauf",
+      "Produktion"
+     ]
+    },
+    {
+     "label": "Fällig",
+     "key": "faellig",
+     "type": "date"
+    },
+    {
+     "label": "Erledigt",
+     "key": "erledigt",
+     "type": "bool"
+    },
+    {
+     "label": "Verantwortlich",
+     "key": "verantwortlich",
+     "type": "text"
+    }
+   ]
+  }
+ ],
+ "pages": [
+  {
+   "title": "Status",
+   "slug": "status",
+   "layout": [
+    {
+     "type": "heading",
+     "width": 12,
+     "props": {
+      "text": "Projekt EPS Gen 5 · Anlauf Halle 2",
+      "level": "1"
+     }
+    },
+    {
+     "type": "stat",
+     "width": 3,
+     "props": {
+      "label": "Tage bis SOP",
+      "entity": "pakete",
+      "aggregate": "days_until",
+      "field": "start",
+      "where": "Arbeitspaket = SOP"
+     }
+    },
+    {
+     "type": "stat",
+     "width": 3,
+     "props": {
+      "label": "Ø Fortschritt",
+      "entity": "pakete",
+      "aggregate": "avg",
+      "field": "fortschritt",
+      "unit": "%"
+     }
+    },
+    {
+     "type": "stat",
+     "width": 3,
+     "props": {
+      "label": "Blockierte Pakete",
+      "entity": "pakete",
+      "where": "Status = Blockiert",
+      "warn_at": "1",
+      "alarm_at": "2"
+     }
+    },
+    {
+     "type": "stat",
+     "width": 3,
+     "props": {
+      "label": "Risiken mit RZ ≥ 12",
+      "entity": "risiken",
+      "where": "Risikozahl >= 12\nStatus = Offen",
+      "warn_at": "1",
+      "alarm_at": "3"
+     }
+    },
+    {
+     "type": "notice",
+     "width": 12,
+     "props": {
+      "title": "Projektampel",
+      "text": "…"
+     },
+     "name": "ampel"
+    },
+    {
+     "type": "gantt",
+     "width": 12,
+     "props": {
+      "title": "Arbeitspakete",
+      "entity": "pakete",
+      "start_field": "start",
+      "end_field": "ende",
+      "label_field": "name",
+      "group_field": "gewerk",
+      "color_field": "status"
+     }
+    },
+    {
+     "type": "sliders",
+     "width": 6,
+     "props": {
+      "title": "Fortschritt melden",
+      "entity": "pakete",
+      "field": "fortschritt",
+      "label_field": "name",
+      "step": 10,
+      "unit": "%"
+     }
+    },
+    {
+     "type": "kanban",
+     "width": 6,
+     "props": {
+      "entity": "pakete",
+      "field": "status",
+      "detail": "gewerk"
+     }
+    }
+   ]
+  },
+  {
+   "title": "Risiken",
+   "slug": "risiken",
+   "layout": [
+    {
+     "type": "heatmap",
+     "width": 6,
+     "props": {
+      "title": "Risikomatrix (Anzahl)",
+      "entity": "risiken",
+      "mode": "crosstab",
+      "row_field": "w",
+      "col_field": "a"
+     }
+    },
+    {
+     "type": "scatter",
+     "width": 6,
+     "props": {
+      "title": "Risiken",
+      "entity": "risiken",
+      "x_field": "w",
+      "y_field": "a",
+      "label_field": "titel",
+      "size_field": "rz"
+     }
+    },
+    {
+     "type": "table",
+     "width": 12,
+     "props": {
+      "entity": "risiken"
+     }
+    },
+    {
+     "type": "form",
+     "width": 12,
+     "props": {
+      "entity": "risiken"
+     }
+    }
+   ]
+  },
+  {
+   "title": "Offene Punkte",
+   "slug": "ops",
+   "layout": [
+    {
+     "type": "filter",
+     "width": 12,
+     "props": {
+      "entity": "ops",
+      "field": "gewerk",
+      "field2": "erledigt"
+     }
+    },
+    {
+     "type": "checklist",
+     "width": 12,
+     "props": {
+      "entity": "ops",
+      "field": "erledigt",
+      "label_field": "punkt",
+      "detail": "gewerk"
+     }
+    },
+    {
+     "type": "calendar",
+     "width": 12,
+     "props": {
+      "entity": "ops",
+      "date_field": "faellig",
+      "label_field": "punkt",
+      "color_field": "gewerk"
+     }
+    },
+    {
+     "type": "form",
+     "width": 12,
+     "props": {
+      "entity": "ops"
+     }
+    }
+   ]
+  }
+ ],
+ "scripts": [
+  {
+   "name": "Projektstatus",
+   "language": "python",
+   "trigger": "page",
+   "code": "import datetime\nheute = datetime.date.today()\npakete = app.table(\"pakete\").all()\nblock = [p for p in pakete if p[\"status\"] == \"Blockiert\"]\nverzug = [p for p in pakete if p[\"ende\"] and p[\"status\"] != \"Erledigt\" and datetime.date.fromisoformat(p[\"ende\"]) < heute]\nhoch = [r for r in app.table(\"risiken\").all() if (r[\"rz\"] or 0) >= 12 and r[\"status\"] == \"Offen\"]\nton = \"danger\" if block or len(verzug) > 1 else (\"warning\" if verzug or hoch else \"success\")\nui.set(\"ampel\", tone=ton, text=f\"{len(verzug)} Paket(e) im Verzug, {len(block)} blockiert, {len(hoch)} hohe Risiken offen.\")\n",
+   "page": "status"
+  }
+ ],
+ "beispieldaten": {
+  "pakete": [
+   {
+    "name": "Lastenheft Linie",
+    "gewerk": "Konstruktion",
+    "start": "@-60",
+    "ende": "@-40",
+    "status": "Erledigt",
+    "fortschritt": 100,
+    "verantwortlich": "Chiara Ulrich"
+   },
+   {
+    "name": "Anlagenbeschaffung",
+    "gewerk": "Einkauf",
+    "start": "@-50",
+    "ende": "@+10",
+    "status": "In Arbeit",
+    "fortschritt": 67,
+    "verantwortlich": "Wolfgang Kaya"
+   },
+   {
+    "name": "Vorabnahme Lieferant",
+    "gewerk": "Betriebsmittel",
+    "start": "@-20",
+    "ende": "@-10",
+    "status": "Erledigt",
+    "fortschritt": 100,
+    "verantwortlich": "Dragan Schäfer"
+   },
+   {
+    "name": "Aufbau Linie Halle 2",
+    "gewerk": "Betriebsmittel",
+    "start": "@-15",
+    "ende": "@+10",
+    "status": "In Arbeit",
+    "fortschritt": 20,
+    "verantwortlich": "Petra Abele"
+   },
+   {
+    "name": "Prüfmittelfähigkeit MSA",
+    "gewerk": "Qualität",
+    "start": "@-3",
+    "ende": "@+12",
+    "status": "In Arbeit",
+    "fortschritt": 47,
+    "verantwortlich": "Oleksandr Bauer"
+   },
+   {
+    "name": "Logistikkonzept Supermarkt",
+    "gewerk": "Logistik",
+    "start": "@+4",
+    "ende": "@+24",
+    "status": "Geplant",
+    "fortschritt": 0,
+    "verantwortlich": "Oleksandr Engel"
+   },
+   {
+    "name": "Run@Rate 1",
+    "gewerk": "Produktion",
+    "start": "@+14",
+    "ende": "@+17",
+    "status": "Geplant",
+    "fortschritt": 0,
+    "verantwortlich": "Thomas Fuchs"
+   },
+   {
+    "name": "PPAP Einreichung",
+    "gewerk": "Qualität",
+    "start": "@+17",
+    "ende": "@+29",
+    "status": "Geplant",
+    "fortschritt": 0,
+    "verantwortlich": "Gül Dietrich"
+   },
+   {
+    "name": "Mitarbeiterschulung",
+    "gewerk": "Produktion",
+    "start": "@+23",
+    "ende": "@+41",
+    "status": "Geplant",
+    "fortschritt": 0,
+    "verantwortlich": "Petra Engel"
+   },
+   {
+    "name": "Run@Rate 2",
+    "gewerk": "Produktion",
+    "start": "@+32",
+    "ende": "@+35",
+    "status": "Geplant",
+    "fortschritt": 0,
+    "verantwortlich": "Thomas Fuchs"
+   },
+   {
+    "name": "SOP",
+    "gewerk": "Produktion",
+    "start": "@+35",
+    "ende": "@+36",
+    "status": "Geplant",
+    "fortschritt": 0,
+    "verantwortlich": "Ivan Jäger"
+   }
+  ],
+  "risiken": [
+   {
+    "titel": "Lieferverzug Roboterzelle",
+    "w": 4,
+    "a": 3,
+    "massnahme": "Zweitlieferant anfragen",
+    "status": "Offen"
+   },
+   {
+    "titel": "Cpk Verzahnung < 1,33",
+    "w": 4,
+    "a": 3,
+    "massnahme": "Prozessparameter-DoE",
+    "status": "Offen"
+   },
+   {
+    "titel": "Fachkräfte Prüfstand fehlen",
+    "w": 5,
+    "a": 3,
+    "massnahme": "Schulung vorziehen",
+    "status": "Mitigiert"
+   },
+   {
+    "titel": "Software-Freigabe Steuergerät spät",
+    "w": 5,
+    "a": 4,
+    "massnahme": "Wöchentliche Abstimmung OEM",
+    "status": "Offen"
+   },
+   {
+    "titel": "Platz Supermarkt reicht nicht",
+    "w": 4,
+    "a": 1,
+    "massnahme": "Layout-Variante B",
+    "status": "Offen"
+   },
+   {
+    "titel": "Energieanschluss Halle 2",
+    "w": 3,
+    "a": 4,
+    "massnahme": "Elektroplanung beauftragen",
+    "status": "Offen"
+   }
+  ],
+  "ops": [
+   {
+    "punkt": "Schutzzaun-Abnahme",
+    "gewerk": "Betriebsmittel",
+    "faellig": "@+19",
+    "erledigt": true,
+    "verantwortlich": "Kemal Traub"
+   },
+   {
+    "punkt": "Prüfanweisung ST60",
+    "gewerk": "Betriebsmittel",
+    "faellig": "@+18",
+    "erledigt": false,
+    "verantwortlich": "Elif Bauer"
+   },
+   {
+    "punkt": "Behälterkonzept final",
+    "gewerk": "Qualität",
+    "faellig": "@+25",
+    "erledigt": true,
+    "verantwortlich": "Elif Ott"
+   },
+   {
+    "punkt": "Rüstwagen bestellen",
+    "gewerk": "Betriebsmittel",
+    "faellig": "@+7",
+    "erledigt": false,
+    "verantwortlich": "Jana Hahn"
+   },
+   {
+    "punkt": "Ersatzteilliste",
+    "gewerk": "Logistik",
+    "faellig": "@+7",
+    "erledigt": true,
+    "verantwortlich": "Rüdiger Nowak"
+   },
+   {
+    "punkt": "Wartungsplan anlegen",
+    "gewerk": "Betriebsmittel",
+    "faellig": "@+21",
+    "erledigt": false,
+    "verantwortlich": "Gül Kaya"
+   },
+   {
+    "punkt": "Arbeitsplatzgestaltung Ergonomie",
+    "gewerk": "Logistik",
+    "faellig": "@+0",
+    "erledigt": false,
+    "verantwortlich": "Jana Wolf"
+   },
+   {
+    "punkt": "Kennzeichnung Sperrlager",
+    "gewerk": "Konstruktion",
+    "faellig": "@+39",
+    "erledigt": true,
+    "verantwortlich": "Petra Lutz"
+   }
+  ]
+ },
+ "nachbauten": [
+  {
+   "baustein": "datumsformel",
+   "ersatz": "„Tage bis SOP“ per Skript.",
+   "geloest": true,
+   "jetzt": "Kennzahl „Tage bis zum nächsten Datum“ mit Bedingung „Arbeitspaket = SOP“."
+  },
+  {
+   "baustein": "kennzahl_bedingung",
+   "ersatz": "Blockierte Pakete und hohe Risiken per Skript.",
+   "geloest": true,
+   "jetzt": "Kennzahlen mit Bedingung und Ampel."
+  },
+  {
+   "baustein": "ampel",
+   "ersatz": "Projektampel als Hinweis mit tone.",
+   "geloest": false
+  },
+  {
+   "baustein": "meilensteine",
+   "ersatz": "Meilensteine als Raute im Zeitstrahl fehlen; SOP ist ein 1-Tages-Balken.",
+   "geloest": false
+  }
+ ]
+}

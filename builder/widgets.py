@@ -11,12 +11,12 @@ from datetime import date, timedelta
 from django.db.models import Q
 from django.urls import reverse
 from django.utils import timezone
-from django.utils.formats import date_format
+from django.utils.formats import date_format, number_format
 from django.utils.translation import gettext
 from django.utils.translation import gettext_lazy as _
 
 from . import app_i18n
-from .blocks import _entity, display_value, filter_param, filtered, reference_labels, register, rich_value
+from .blocks import _entity, _format_number, display_value, filter_param, filtered, reference_labels, register, rich_value
 from .models import Field
 
 MONTH_PARAM = "monat"   # ?monat=2026-11
@@ -296,11 +296,14 @@ def _pivot_key(field, value, refs):
 
 
 def _fmt_num(value):
+    """Zahl in der Kreuztabelle: mit Tausenderpunkt und Dezimalkomma wie die Kennzahlen, ohne unnötige Nullen."""
     if value is None:
         return "—"
     if float(value).is_integer():
-        return str(int(value))
-    return f"{value:.2f}".rstrip("0").rstrip(".")
+        return _format_number(int(value))
+    text = _format_number(round(float(value), 2))
+    decimal = number_format(0.5, decimal_pos=1, use_l10n=True)[1]  # „,“ oder „.“ je nach Sprache
+    return text.rstrip("0").rstrip(decimal) if decimal in text else text
 
 
 def _agg_value(agg, count, total):
@@ -408,6 +411,15 @@ def _parse_date(raw):
         return None
 
 
+def _gantt_labelled(i, d):
+    """Beschriftung jeden 7. Tag und am Monatsersten. Liegt der Monatserste direkt neben der
+    Wochenbeschriftung, fällt diese weg – sonst überlappen „30.11.“ und „1.12.“."""
+    if d.day == 1:
+        return True
+    near = (d + timedelta(days=k) for k in (-1, 1, 2))
+    return i % 7 == 0 and all(n.day != 1 for n in near)
+
+
 def prep_gantt(request, app, block):
     props = block["props"]
     entity = _entity(app, props.get("entity"))
@@ -435,7 +447,7 @@ def prep_gantt(request, app, block):
     for i in range(GANTT_DAYS):
         d = win_start + timedelta(days=i)
         days.append({"day": d, "num": d.day, "today": d == today, "weekend": d.weekday() >= 5,
-                     "label": date_format(d, "j.n.") if i % 7 == 0 or d.day == 1 else ""})
+                     "label": date_format(d, "j.n.") if _gantt_labelled(i, d) else ""})
 
     items = []
     for r in records:

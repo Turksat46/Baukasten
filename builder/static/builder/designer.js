@@ -524,6 +524,7 @@
       return el("div", { class: "prop check-prop" }, label);
     }
     var row = el("div", { class: "prop" }, el("label", { for: id, text: spec.label }), input);
+    if (spec.help) row.appendChild(el("p", { class: "muted small", text: spec.help }));
     if (spec.type === "entity" && !cfg.entities.length) {
       row.appendChild(el("p", { class: "muted small", text: gettext("Diese App hat noch keine Tabelle. Lege zuerst eine an.") }));
     }
