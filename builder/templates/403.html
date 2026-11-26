@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% block title %}{% translate "Keine Berechtigung" %} – Baukasten{% endblock %}
+{% block content %}
+<section class="error-page" aria-labelledby="error-title">
+  <p class="error-code" aria-hidden="true">403</p>
+  <h1 id="error-title">{% translate "Dafür fehlt dir die Berechtigung" %}</h1>
+  {% if app %}
+    <p class="muted">{% blocktranslate with name=app.name %}Diese Seite oder Tabelle der App „{{ name }}“ ist nur für bestimmte Gruppen freigegeben.{% endblocktranslate %}</p>
+    {% if owner %}
+      <p>{% blocktranslate %}Brauchst du Zugriff? Frag {{ owner }} (betreut die App) oder deine Verwaltung, ob du in die passende Gruppe kommst.{% endblocktranslate %}</p>
+    {% else %}
+      <p>{% translate "Brauchst du Zugriff? Frag deine Verwaltung, ob du in die passende Gruppe kommst." %}</p>
+    {% endif %}
+  {% else %}
+    <p class="muted">{% translate "Diese Seite ist nur für bestimmte Personen oder Gruppen freigegeben." %}</p>
+    <p>{% translate "Brauchst du Zugriff? Frag deine Verwaltung, ob du in die passende Gruppe kommst." %}</p>
+  {% endif %}
+  <p class="error-actions">
+    {% if app_url %}<a class="btn" href="{{ app_url }}">{% blocktranslate with name=app.name %}Zur App „{{ name }}“{% endblocktranslate %}</a>{% endif %}
+    <a class="btn {% if app_url %}btn-secondary{% endif %}" href="{% url 'home' %}">{% translate "Zur Startseite" %}</a>
+  </p>
+</section>
+{% endblock %}

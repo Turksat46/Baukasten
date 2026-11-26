@@ -390,6 +390,9 @@ only for the group "Controlling".
 - For everyone else the page is missing from the menu, page links and the
   widgets on the home page; opening it directly is refused (error 403). If the
   first page is locked, the app opens with the first page the person may see.
+- Whoever is refused sees the page "You don't have permission for this". It
+  names the app and who looks after it, and leads back to the app (if the
+  person may use it) or to the home page.
 - The owner, co-editors and administrators always see all pages.
 - A public page ("Reachable without sign-in") is visible to anyone; the groups
   do not matter then.

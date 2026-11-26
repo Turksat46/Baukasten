@@ -5,6 +5,9 @@
     <div class="skeleton" aria-hidden="true"><span></span><span></span><span></span></div>
   </section>
 
+{% elif locked %}
+  <div class="block-locked" role="note"><span aria-hidden="true">🔒</span> {{ locked }}</div>
+
 {% elif error %}
   <div class="block-error">{{ error }}</div>
 
