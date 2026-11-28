@@ -30,7 +30,7 @@ from django.utils.translation import gettext_lazy as _
 
 from . import app_i18n, conditions, hooks, policy
 from .forms import RecordForm
-from .models import CustomBlock, Field, Record, Script
+from .models import CustomBlock, Field, Record, Script, record_labels
 from .page_path import page_url
 from .sanitize import fill_placeholders, sanitize_html, sanitize_html_report
 from .services import HttpNotAllowed, http_json
@@ -162,8 +162,7 @@ def reference_labels(fields, records):
     ids = {i for i in ids if isinstance(i, int)}
     if not ids:
         return {}
-    found = Record.objects.filter(pk__in=ids).prefetch_related("entity__fields")
-    return {r.pk: str(r) for r in found}
+    return record_labels(Record.objects.filter(pk__in=ids).only("pk", "entity_id", "data"))
 
 
 def link_target(f, value):

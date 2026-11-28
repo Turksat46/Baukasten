@@ -22,7 +22,7 @@ from django.utils.translation import gettext, ngettext
 from django.utils.translation import gettext_lazy as _
 
 from .blocks import _entity, display_value, filtered, register
-from .models import Field, Record
+from .models import Field, Record, label_key, record_label, record_labels
 from .page_path import page_url
 
 DAY_PARAM = "datum"     # ?datum=2026-11-19: Tag der Einsatzplanung
@@ -141,21 +141,24 @@ class Plan:
         groups = {}
         if self.group and self.group.type == Field.REFERENCE:
             ids = {_int(r.data.get(self.group.key)) for r in records} - {None}
-            for g in Record.objects.filter(pk__in=ids).select_related("entity"):
+            found = list(Record.objects.filter(pk__in=ids).select_related("entity"))
+            names = record_labels(found)
+            for g in found:
                 prio = _number(g.data.get(self.priority.key)) if self.priority else None
-                groups[g.pk] = {"key": g.pk, "label": str(g), "priority": prio}
+                groups[g.pk] = {"key": g.pk, "label": names[g.pk], "priority": prio}
         elif self.group and self.group.type == Field.CHOICE:
             for index, choice in enumerate(self.group.choice_list(), start=1):
                 groups[choice] = {"key": choice, "label": display_value(self.group, choice), "priority": None,
                                   "order": index}
         result = []
+        name_key = label_key(self.target)
         for r in records:
             raw = r.data.get(self.group.key) if self.group else None
             key = _int(raw) if self.group and self.group.type == Field.REFERENCE else raw
             group = groups.get(key) or {"key": key or "", "label": str(raw or "") or gettext("Ohne Gruppe"),
                                         "priority": None}
             capacity = _int(r.data.get(self.capacity.key)) if self.capacity else None
-            result.append({"id": r.pk, "label": str(r), "capacity": capacity or 0, "group": group})
+            result.append({"id": r.pk, "label": record_label(r, name_key), "capacity": capacity or 0, "group": group})
 
         def order(item):
             g = item["group"]
@@ -193,7 +196,9 @@ class Plan:
             value = display_value(self.source_label, record.data.get(self.source_label.key))
             if value:
                 return value
-        return str(record)
+        if "_source_key" not in self.__dict__:
+            self._source_key = label_key(self.source)  # einmal je Plan statt je Eintrag
+        return record_label(record, self._source_key)
 
 
 # ---------- Einsatzplanung ----------
@@ -358,12 +363,13 @@ def prep_kanban(request, app, block):
     choices = column_field.choice_list()
     columns = {c: {"value": c, "label": display_value(column_field, c), "cards": []} for c in choices}
     loose = {"value": "", "label": gettext("Ohne Zuordnung"), "cards": []}
-    records = list(filtered(request, entity).order_by("id")[:MAX_SOURCES])
+    records = list(filtered(request, entity).select_related("entity").order_by("id")[:MAX_SOURCES])
+    name_key = label_key(entity)
     from .blocks import reference_labels
     refs = reference_labels([detail], records) if detail else {}
     for r in records:
         value = r.data.get(column_field.key)
-        card = {"id": r.pk, "label": str(r),
+        card = {"id": r.pk, "label": record_label(r, name_key),
                 "detail": display_value(detail, r.data.get(detail.key), refs) if detail else ""}
         columns.get(value, loose)["cards"].append(card)
     result = list(columns.values())

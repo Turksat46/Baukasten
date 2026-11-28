@@ -10,7 +10,7 @@ from django.utils.translation import gettext, gettext_lazy as _
 from . import app_i18n, datasources
 from .blocks import (ENTITY, LAZY_WITH_QUERY, _entity, _format_number, decimals_for, display_value, filter_param,
                      filtered, register)
-from .models import DataQuery, Field
+from .models import DataQuery, Field, record_label, record_labels
 from .page_path import page_path
 
 FIELD = {"type": "field"}
@@ -79,8 +79,11 @@ def _load_source_rows(request, app, props, max_rows=1000):
     entity = _entity(app, props.get("entity"))
     if not entity:
         return None, None, {}, None
-    labels = {f.key: app_i18n.t(f.label) for f in entity.fields.all()}
-    rows = [{"_pk": r.pk, "data": r.data, "label": str(r)} for r in filtered(request, entity)[:max_rows]]
+    fields = list(entity.fields.all())
+    labels = {f.key: app_i18n.t(f.label) for f in fields}
+    name_key = fields[0].key if fields else None
+    rows = [{"_pk": r.pk, "data": r.data, "label": record_label(r, name_key)}
+            for r in filtered(request, entity).select_related("entity")[:max_rows]]
     return rows, entity, labels, None
 
 
@@ -567,8 +570,8 @@ def prep_spec_chart(request, app, block):
     if x_field is not None:
         refs = {}
         if x_field.type == Field.REFERENCE and x_field.reference:
-            refs = {r.pk: str(r) for r in x_field.reference.records.prefetch_related("entity__fields").filter(
-                pk__in=[v for v in raw_x.values() if isinstance(v, int)])}
+            refs = record_labels(x_field.reference.records.filter(
+                pk__in=[v for v in raw_x.values() if isinstance(v, int)]))
         series = [(display_value(x_field, raw_x.get(k), refs) or k, v) for k, v in series]
 
     if not series:

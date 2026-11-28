@@ -9,7 +9,7 @@ from django.db import transaction
 from django.utils.translation import gettext
 
 from . import audit
-from .models import Field, Record, apply_formulas
+from .models import Field, Record, apply_formulas, label_key, record_label
 
 MAX_FILE_BYTES = 2 * 1024 * 1024
 MAX_ROWS = 2000
@@ -68,9 +68,10 @@ def _build_ref_lookup(fields):
     for f in fields:
         if f.type == Field.REFERENCE and f.reference_id:
             by_pk, by_label = {}, {}
-            for r in f.reference.records.prefetch_related("entity__fields").order_by("id")[:5000]:
+            name_key = label_key(f.reference)
+            for r in f.reference.records.order_by("id")[:5000]:
                 by_pk[str(r.pk)] = r.pk
-                by_label[str(r).casefold()] = r.pk
+                by_label[record_label(r, name_key).casefold()] = r.pk
             lookups[f.key] = (by_pk, by_label)
     return lookups
 

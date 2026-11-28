@@ -426,3 +426,72 @@ class BugHuntTests(TestCase):
         self.assertNotContains(response, 'value="doppelt"')
         self.client.post(url, {"step": "import", "col_0": "menge", "col_1": ""})
         self.assertEqual(self.entity.records.get().data["doppelt"], 6)
+
+
+class RecordLabelQueryTests(TestCase):
+    """Anzeigetexte von Einträgen dürfen nicht je Eintrag Abfragen kosten (früher 2–3 je Zeile)."""
+
+    def setUp(self):
+        self.app = App.objects.create(name="Werk", slug="werk", published=True)
+        self.user = User.objects.create_user("leser", password="x")
+        self.anlagen = Entity.objects.create(app=self.app, name="Anlagen", slug="anlagen")
+        Field.objects.create(entity=self.anlagen, label="Name", key="name")
+        self.entity = Entity.objects.create(app=self.app, name="Verluste", slug="verluste")
+        Field.objects.create(entity=self.entity, label="Grund", key="grund")
+        Field.objects.create(entity=self.entity, label="Minuten", key="minuten", type=Field.NUMBER)
+        Field.objects.create(entity=self.entity, label="Ausschuss", key="ausschuss", type=Field.NUMBER)
+        Field.objects.create(entity=self.entity, label="Status", key="status", type=Field.CHOICE, choices="offen\nerledigt")
+        Field.objects.create(entity=self.entity, label="Anlage", key="anlage", type=Field.REFERENCE,
+                             reference=self.anlagen)
+        Field.objects.create(entity=self.entity, label="Geprüft", key="geprueft", type=Field.BOOL)
+        self.machines = [Record.objects.create(entity=self.anlagen, data={"name": f"Presse {i}"}).pk for i in range(5)]
+
+    def add_records(self, count):
+        Record.objects.bulk_create([Record(entity=self.entity, data={
+            "grund": f"Stillstand {i}", "minuten": i % 17, "ausschuss": i % 5,
+            "status": "offen" if i % 2 else "erledigt", "anlage": self.machines[i % 5],
+            "geprueft": bool(i % 3),
+        }) for i in range(count)])
+
+    def queries(self):
+        from django.db import connection
+        from django.test import RequestFactory
+        from django.test.utils import CaptureQueriesContext
+
+        from ..blocks import render_block
+
+        request = RequestFactory().get("/")
+        request.user = self.user
+        blocks = [
+            {"id": "s", "type": "scatter", "props": {"entity": "verluste", "x_field": "minuten", "y_field": "ausschuss"}},
+            {"id": "b", "type": "boxplot", "props": {"entity": "verluste", "field": "minuten", "group_field": "status"}},
+            {"id": "c", "type": "spec_chart", "props": {"entity": "verluste", "spec": json.dumps(
+                {"mark": "bar", "encoding": {"x": {"field": "anlage"}, "y": {"field": "minuten", "aggregate": "sum"}}})}},
+            {"id": "k", "type": "kanban", "props": {"entity": "verluste", "field": "status", "detail": "anlage"}},
+            {"id": "l", "type": "checklist", "props": {"entity": "verluste", "field": "geprueft"}},
+        ]
+        with CaptureQueriesContext(connection) as ctx:
+            for block in blocks:
+                html = render_block(request, self.app, block)
+                self.assertNotIn("block-error", html, block["type"])
+        return len(ctx.captured_queries), html
+
+    def test_query_count_does_not_grow_with_records(self):
+        self.add_records(20)
+        self.queries()  # einmal vorweg, damit Zwischenspeicher (Übersetzungen, Einstellungen) gefüllt sind
+        few, _html = self.queries()
+        self.add_records(180)
+        many, _html = self.queries()
+        self.assertEqual(few, many)
+        self.assertLess(many, 100)  # früher über 1000 bei 200 Einträgen
+
+    def test_labels_still_use_first_field(self):
+        from ..models import label_key, record_label, record_labels
+
+        self.add_records(3)
+        record = self.entity.records.order_by("id").first()
+        self.assertEqual(str(record), "Stillstand 0")
+        self.assertEqual(label_key(self.entity), "grund")
+        self.assertEqual(record_label(record, None), f"#{record.pk}")
+        machine = Record.objects.get(pk=self.machines[0])
+        self.assertEqual(record_labels([record, machine]), {record.pk: "Stillstand 0", machine.pk: "Presse 0"})

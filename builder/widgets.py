@@ -17,7 +17,7 @@ from django.utils.translation import gettext_lazy as _
 
 from . import app_i18n
 from .blocks import _entity, _format_number, display_value, filter_param, filtered, reference_labels, register, rich_value
-from .models import Field
+from .models import Field, label_key, record_label, record_labels
 from .page_path import page_url
 
 MONTH_PARAM = "monat"   # ?monat=2026-11
@@ -33,12 +33,16 @@ def _field(entity, key, types=None):
     return f if f and (not types or f.type in types) else None
 
 
-def _label(record, label_field, refs=None):
+_UNSET = object()
+
+
+def _label(record, label_field, refs=None, key=_UNSET):
+    """Anzeigetext; key = label_key(entity), einmal je Tabelle ermittelt (sonst je Eintrag eine Abfrage)."""
     if label_field:
         value = display_value(label_field, record.data.get(label_field.key), refs)
         if value:
             return value
-    return str(record)
+    return str(record) if key is _UNSET else record_label(record, key)
 
 
 def _urls(request, app, block):
@@ -79,7 +83,9 @@ def prep_filter(request, app, block):
         elif f.type == Field.BOOL:
             options = [("1", gettext("Ja")), ("0", gettext("Nein"))]
         elif f.type == Field.REFERENCE and f.reference_id:
-            options = [(str(r.pk), str(r)) for r in f.reference.records.order_by("id")[:MAX_ITEMS]]
+            found = list(f.reference.records.order_by("id")[:MAX_ITEMS])
+            names = record_labels(found)
+            options = [(str(r.pk), names[r.pk]) for r in found]
         else:
             controls.append({"kind": "number" if f.type in (Field.NUMBER, Field.DECIMAL) else "text",
                              "label": label, "name": name, "value": current})
@@ -122,6 +128,7 @@ def prep_calendar(request, app, block):
 
     records = list(filtered(request, entity).order_by("id")[:2000])
     refs = reference_labels([label_field], records) if label_field else {}
+    name_key = label_key(entity)
     colors = {c: i % 6 + 1 for i, c in enumerate(color_field.choice_list())} if color_field else {}
     by_day = {}
     for r in records:
@@ -138,7 +145,7 @@ def prep_calendar(request, app, block):
         end = min(end, begin + timedelta(days=62))
         if end < grid_start or begin > grid_end:
             continue
-        item = {"id": r.pk, "label": _label(r, label_field, refs),
+        item = {"id": r.pk, "label": _label(r, label_field, refs, name_key),
                 "tone": colors.get(r.data.get(color_field.key)) if color_field else None,
                 "multi": end > begin}
         day = max(begin, grid_start)
@@ -187,7 +194,8 @@ def prep_checklist(request, app, block):
     detail_field = _field(entity, props.get("detail"))
     records = list(filtered(request, entity).order_by("id")[:MAX_ITEMS])
     refs = reference_labels([f for f in (label_field, detail_field) if f], records)
-    items = [{"id": r.pk, "label": _label(r, label_field, refs), "done": bool(r.data.get(done_field.key)),
+    name_key = label_key(entity)
+    items = [{"id": r.pk, "label": _label(r, label_field, refs, name_key), "done": bool(r.data.get(done_field.key)),
               "detail": display_value(detail_field, r.data.get(detail_field.key), refs) if detail_field else ""}
              for r in records]
     done = sum(1 for i in items if i["done"])
@@ -249,6 +257,7 @@ def prep_sliders(request, app, block):
     low, high, step = _range(props)
     records = list(filtered(request, entity).order_by("id")[:MAX_ITEMS])
     refs = reference_labels([label_field], records) if label_field else {}
+    name_key = label_key(entity)
     items = []
     for r in records:
         raw = r.data.get(value_field.key)
@@ -257,7 +266,7 @@ def prep_sliders(request, app, block):
         except (TypeError, ValueError):
             value = None
         shown = min(max(value, low), high) if value is not None else low
-        items.append({"id": r.pk, "label": _label(r, label_field, refs), "empty": value is None,
+        items.append({"id": r.pk, "label": _label(r, label_field, refs, name_key), "empty": value is None,
                       "value": int(shown) if float(shown).is_integer() else shown,
                       "percent": round(100 * (shown - low) / (high - low))})
     return {"entity": entity, "items": items, "min": low, "max": high, "step": step,
@@ -442,6 +451,7 @@ def prep_gantt(request, app, block):
     records = list(filtered(request, entity).order_by("id")[:MAX_ITEMS])
     ref_fields = [f for f in (label_field, group_field) if f]
     refs = reference_labels(ref_fields, records) if ref_fields else {}
+    name_key = label_key(entity)
     colors = {c: i % 6 + 1 for i, c in enumerate(color_field.choice_list())} if color_field else {}
 
     days = []
@@ -469,7 +479,7 @@ def prep_gantt(request, app, block):
             group_name = display_value(group_field, r.data.get(group_field.key), refs) or "—"
         items.append({
             "id": r.pk,
-            "label": _label(r, label_field, refs),
+            "label": _label(r, label_field, refs, name_key),
             "group": str(group_name),
             "start": begin,
             "end": end,

@@ -308,14 +308,37 @@ class Record(models.Model):
         ordering = ["-id"]
 
     def __str__(self):
-        first = self.entity.fields.first()
-        value = self.data.get(first.key) if first else None
-        return str(value) if value not in (None, "") else f"#{self.pk}"
+        # Für einzelne Einträge (Admin, Protokoll). In Schleifen record_label/record_labels nehmen,
+        # sonst kostet jeder Eintrag eigene Abfragen.
+        return record_label(self, label_key(self.entity))
 
     def save(self, *args, **kwargs):
         if isinstance(self.data, dict) and self.entity_id:
             apply_formulas(self.entity, self.data)
         super().save(*args, **kwargs)
+
+
+def label_key(entity):
+    """Schlüssel des Felds, das einen Eintrag benennt (das erste Feld), oder None."""
+    first = entity.fields.first()
+    return first.key if first else None
+
+
+def record_label(record, key):
+    """Anzeigetext eines Eintrags ohne Abfrage; key aus label_key(entity), einmal je Tabelle."""
+    value = record.data.get(key) if key else None
+    return str(value) if value not in (None, "") else f"#{record.pk}"
+
+
+def record_labels(records):
+    """{pk: Anzeigetext} für Einträge beliebiger Tabellen, mit einer Abfrage für alle Tabellen."""
+    records = list(records)
+    entity_ids = {r.entity_id for r in records}
+    keys = {}
+    if entity_ids:
+        for entity_id, key in Field.objects.filter(entity_id__in=entity_ids).values_list("entity_id", "key"):
+            keys.setdefault(entity_id, key)  # Field.Meta.ordering: das erste Feld zuerst
+    return {r.pk: record_label(r, keys.get(r.entity_id)) for r in records}
 
 
 FORMULA_FUNCS = {"round": round, "abs": abs, "min": min, "max": max}
