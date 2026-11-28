@@ -3,7 +3,7 @@
   // mit allen Beispiel-Apps. Anmeldung: demo / demo
   "name": "Baukasten",
   "image": "mcr.microsoft.com/devcontainers/python:3.13",
-  "postCreateCommand": "pip install --no-cache-dir -r requirements.txt -r requirements-automation.txt",
+  "postCreateCommand": "pip install --no-cache-dir --require-hashes -r requirements.txt",
   "postStartCommand": "bash .devcontainer/start.sh",
   "forwardPorts": [8000],
   "portsAttributes": {

@@ -32,6 +32,8 @@ jobs:
         run: ruff check --output-format=github .
       - name: Lockdatei passt zu requirements*.in
         run: python tools/lockdatei_pruefen.py
+      - name: Dev Container liest nur vorhandene Dateien ein
+        run: python tools/devcontainer_pruefen.py
 
   tests:
     # Der Name ohne deps muss so bleiben: Die Regeln für main verlangen genau diese Check-Namen.
