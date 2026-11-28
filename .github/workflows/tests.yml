@@ -96,7 +96,7 @@ jobs:
   docker:
     name: Docker-Image baut
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
       - name: Image bauen
@@ -111,3 +111,26 @@ jobs:
           done
           docker logs baukasten
           exit 1
+      # Weg für Firmenproxys (Handbuch, „Firmenproxy und eigene Zertifizierungsstelle“): einmal mit
+      # einer Wegwerf-CA bauen und prüfen, dass Python, requests und pip ihr im Image vertrauen.
+      - name: Image mit eigener Zertifizierungsstelle
+        run: |
+          mkdir -p "$RUNNER_TEMP/firmen-ca"
+          openssl req -x509 -newkey rsa:2048 -nodes -days 1 -subj "/CN=Baukasten CI Test-CA" \
+            -keyout "$RUNNER_TEMP/ca.key" -out "$RUNNER_TEMP/firmen-ca/test-ca.crt"
+          docker build --build-arg FIRMEN_CA=an --build-context firmen-ca="$RUNNER_TEMP/firmen-ca" -t baukasten:ci-ca .
+          docker run --rm baukasten:ci-ca python -c "
+          import os, ssl, requests
+          bundle = '/etc/ssl/certs/ca-certificates.crt'
+          for name in ('PIP_CERT', 'REQUESTS_CA_BUNDLE', 'SSL_CERT_FILE'):
+              assert os.environ.get(name) == bundle, name
+          names = [dict(x[0] for x in c['subject']).get('commonName') for c in ssl.create_default_context().get_ca_certs()]
+          assert 'Baukasten CI Test-CA' in names, 'CA fehlt im Systemspeicher'
+          assert requests.Session().merge_environment_settings('https://x', {}, None, None, None)['verify'] == bundle
+          print('Firmen-CA aktiv,', len(names), 'Zertifikate')
+          "
+          # Ohne FIRMEN_CA bleibt alles wie bisher
+          docker run --rm baukasten:ci python -c "
+          import os
+          assert not any(os.environ.get(n) for n in ('PIP_CERT', 'REQUESTS_CA_BUNDLE', 'SSL_CERT_FILE'))
+          "

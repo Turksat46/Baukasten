@@ -142,6 +142,14 @@ Test prüft, dass die neueste Version hier und `BAUKASTEN_VERSION` übereinstimm
   anderen Browsern nicht erneut von selbst. Ein bisher nur im Browser gemerkter Wert wird beim
   nächsten Besuch einmalig übernommen. Gäste ohne Konto merken es sich weiter im Browser, und das
   Fragezeichen startet die Führung wie bisher erneut.
+- **Firmenproxy und eigene Zertifizierungsstelle:** `docker build --build-arg FIRMEN_CA=an
+  --build-context firmen-ca=<ordner>` nimmt die Firmen-CA (`*.crt`/`*.pem`) ins Image auf und setzt
+  `PIP_CERT`, `REQUESTS_CA_BUNDLE` und `SSL_CERT_FILE`; so klappen `pip install` hinter einem
+  TLS-prüfenden Proxy und zur Laufzeit Keycloak, Teams und Databricks. Ohne die Option baut das
+  Image wie bisher. `k8s/app.yaml` enthält auskommentiert `HTTPS_PROXY`, `HTTP_PROXY`, `NO_PROXY`
+  und ein Beispiel, die CA als ConfigMap in Web, Worker und Migrations-Job einzubinden. Das Handbuch
+  listet alle ausgehenden Verbindungen für Firewall- und Proxy-Regeln. CI baut das Image zusätzlich
+  einmal mit einer Test-CA.
 
 ### Entwicklung
 - **Lockdatei:** `requirements.txt` hält jetzt genaue Versionen mit Prüfsummen und wird aus

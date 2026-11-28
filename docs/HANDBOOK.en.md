@@ -1570,6 +1570,8 @@ Everything environment-specific comes from environment variables.
 | `ALERT_TARGET` | alert destination: Teams webhook URL, email address(es) or API URL |
 | `ALERT_AUTH_HEADER` | optional `Authorization` header for `ALERT_CHANNEL=api` (e.g. `Bearer …`) |
 | `ALERT_REPEAT_MINUTES` | the same failure at most once in this time (minutes, default 60, 0 = every time) |
+| `HTTPS_PROXY`, `HTTP_PROXY`, `NO_PROXY` | corporate proxy for outbound connections, see [Corporate proxy and custom certificate authority](#corporate-proxy-and-custom-certificate-authority) |
+| `REQUESTS_CA_BUNDLE`, `SSL_CERT_FILE` | certificate bundle with a custom CA, see the same section |
 | `LOG_LEVEL` | default `INFO` |
 | `DEBUG` | `1` only locally |
 
@@ -1634,6 +1636,73 @@ First adjust image, host name and ingress class in the manifests. For every new
 version, roll out the migration job first, then the deployment. `/healthz`
 answers the probes. TLS and the redirect from http to https are handled by the
 ingress.
+
+### Corporate proxy and custom certificate authority
+
+Many corporate networks route outbound traffic through a proxy that breaks up
+TLS and re-signs it with its own certificate authority (CA). Without that CA,
+`docker build` already fails at `pip install` with
+`CERTIFICATE_VERIFY_FAILED: self-signed certificate in certificate chain`. At
+runtime the same happens for Keycloak, Teams or Databricks: `requests` only
+trusts its built-in bundle (certifi), not the system store.
+
+**When building:** put the corporate CA certificates (PEM, extension `.crt` or
+`.pem`) in a folder, e.g. `zertifikate/`, and build like this:
+
+```
+docker build --build-arg FIRMEN_CA=an --build-context firmen-ca=./zertifikate \
+  --build-arg HTTPS_PROXY=http://proxy.example.com:3128 \
+  -t registry.example.com/baukasten:1.0.0 .
+```
+
+The Dockerfile adds the CA to the image's system store
+(`update-ca-certificates`) and sets `PIP_CERT`, `REQUESTS_CA_BUNDLE` and
+`SSL_CERT_FILE` to `/etc/ssl/certs/ca-certificates.crt`. This applies to `pip`
+during the build and to all pods at runtime. `HTTPS_PROXY` as a build argument
+does not end up in the image. Without `FIRMEN_CA=an` the image builds exactly as
+before; with `FIRMEN_CA=an` but no certificate in the folder, the build stops.
+BuildKit is required (default since Docker 23 and in Docker Desktop).
+
+**At runtime:** the ConfigMap in `k8s/app.yaml` contains commented-out
+`HTTPS_PROXY`, `HTTP_PROXY` and `NO_PROXY`. The ConfigMap applies to web, worker
+and the migration job. `NO_PROXY` must contain everything reachable directly
+inside the cluster, at least
+`.svc,.cluster.local,localhost,127.0.0.1,baukasten-db,baukasten-redis`, plus
+internal targets that should not go through the proxy. Automations receive the
+proxy and CA variables too, but no other environment variables.
+
+If the CA should come from the cluster rather than the image (e.g. because it
+changes):
+
+```
+kubectl create configmap baukasten-ca --from-file=ca-bundle.crt=./ca-bundle.crt
+```
+
+Then uncomment the lines marked `firmen-ca` in `k8s/app.yaml`,
+`k8s/worker.yaml` and `k8s/migrate-job.yaml` (volume at `/etc/baukasten-ca`)
+and set `REQUESTS_CA_BUNDLE` and `SSL_CERT_FILE` in the ConfigMap to
+`/etc/baukasten-ca/ca-bundle.crt`. **Important:** this file replaces the
+built-in bundle, so it must contain the public CAs **and** the corporate CA,
+e.g. `cat /etc/ssl/certs/ca-certificates.crt firmen-ca.crt > ca-bundle.crt`.
+
+**Outbound connections** – the basis for firewall and proxy rules:
+
+| Target | Who | When | Protocol | Through the HTTP proxy? |
+|---|---|---|---|---|
+| PyPI (`pypi.org`, `files.pythonhosted.org`) | `docker build` | build only, not at runtime | HTTPS | yes (`--build-arg HTTPS_PROXY=…`) |
+| Keycloak (`OIDC_ISSUER`: token, user info, keys) | web | on every Keycloak sign-in | HTTPS | yes |
+| Data sources `DATASOURCE_<NAME>`: Databricks | web, worker | queries and mirroring | HTTPS | yes (the driver uses the proxy variables and `SSL_CERT_FILE`) |
+| Data sources `DATASOURCE_<NAME>`: PostgreSQL, SQL Server, MySQL | web, worker | queries and mirroring | native database protocol (5432, 1433, 3306) | no, allow directly |
+| Own database (`DATABASE_URL`) and Redis (`REDIS_URL`) | web, worker, migration | always | PostgreSQL or Redis | no; add to `NO_PROXY` if reached by name |
+| Hosts from `HTTP_ALLOWED_HOSTS` | web, worker | web request blocks, scripts, extensions | HTTP/HTTPS | yes, except entries in `NO_PROXY` |
+| Any target called by automations | worker | when a script calls it | depends on the script | yes, for `requests` and `urllib` |
+| Teams webhook (`ALERT_CHANNEL=teams`) | web, worker | on failure alerts | HTTPS | yes |
+| API target (`ALERT_CHANNEL=api`) | web, worker | on failure alerts | HTTP/HTTPS | yes |
+| Mail server (`ALERT_CHANNEL=email`) | web, worker | on failure alerts | SMTP | no; Django's defaults apply (`localhost`, port 25) |
+| Tableau (`TABLEAU_HOSTS`) | users' **browsers** | when a dashboard is shown | HTTPS | server: no connection (token is signed locally) |
+
+Beyond this, the server makes no outbound connections; checks, metrics and
+release notes work without internet access.
 
 ### Scaling and load
 

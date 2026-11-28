@@ -36,7 +36,22 @@ data:
   QUERY_PARALLEL: "4"
   QUERY_WAIT: "2"
   LAZY_QUERIES: "true"
+  # ---- Firmenproxy (Handbuch, Abschnitt „Firmenproxy und eigene Zertifizierungsstelle“) ----
+  # Gilt für Web, Worker und Migrations-Job (alle lesen diese ConfigMap). NO_PROXY muss alles
+  # enthalten, was im Cluster direkt erreichbar ist (Datenbank, Redis), sonst läuft es über den Proxy.
+  # HTTPS_PROXY: "http://proxy.example.com:3128"
+  # HTTP_PROXY: "http://proxy.example.com:3128"
+  # NO_PROXY: ".svc,.cluster.local,localhost,127.0.0.1,baukasten-db,baukasten-redis"
+  # Eigene Zertifizierungsstelle zur Laufzeit, falls nicht schon ins Image gebaut
+  # (docker build --build-arg FIRMEN_CA=an …). Die Datei muss das VOLLE Bündel sein (öffentliche CAs
+  # plus Firmen-CA), denn sie ersetzt das eingebaute. Einbinden: Volume „firmen-ca“ unten.
+  # REQUESTS_CA_BUNDLE: "/etc/baukasten-ca/ca-bundle.crt"
+  # SSL_CERT_FILE: "/etc/baukasten-ca/ca-bundle.crt"
 ---
+# Firmen-CA als ConfigMap anlegen (nur bei Bedarf):
+#   kubectl create configmap baukasten-ca --from-file=ca-bundle.crt=./ca-bundle.crt
+# Dann in web (hier), worker (worker.yaml) und migrate (migrate-job.yaml) die mit „firmen-ca“
+# markierten Zeilen einkommentieren.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -95,6 +110,16 @@ spec:
             allowPrivilegeEscalation: false
             capabilities:
               drop: ["ALL"]
+          # firmen-ca:
+          # volumeMounts:
+          #   - name: firmen-ca
+          #     mountPath: /etc/baukasten-ca
+          #     readOnly: true
+      # firmen-ca:
+      # volumes:
+      #   - name: firmen-ca
+      #     configMap:
+      #       name: baukasten-ca
 ---
 apiVersion: v1
 kind: Service

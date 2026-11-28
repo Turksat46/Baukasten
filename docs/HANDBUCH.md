@@ -1656,6 +1656,8 @@ Alles Umgebungsabhängige kommt aus Umgebungsvariablen.
 | `ALERT_TARGET` | Ziel der Alarmierung: Teams-Webhook-URL, E-Mail-Adresse(n) oder API-URL |
 | `ALERT_AUTH_HEADER` | optionaler `Authorization`-Header für `ALERT_CHANNEL=api` (z. B. `Bearer …`) |
 | `ALERT_REPEAT_MINUTES` | derselbe Fehler höchstens einmal in dieser Zeit (Minuten, Standard 60, 0 = jedes Mal) |
+| `HTTPS_PROXY`, `HTTP_PROXY`, `NO_PROXY` | Firmenproxy für ausgehende Verbindungen, siehe [Firmenproxy und eigene Zertifizierungsstelle](#firmenproxy-und-eigene-zertifizierungsstelle) |
+| `REQUESTS_CA_BUNDLE`, `SSL_CERT_FILE` | Zertifikatsbündel mit eigener CA, ebenda |
 | `LOG_LEVEL` | Standard `INFO` |
 | `DEBUG` | nur lokal auf `1` |
 
@@ -1721,6 +1723,76 @@ Vorher in den Manifesten Image, Hostname und Ingress-Klasse anpassen. Bei jeder
 neuen Version zuerst den Migrations-Job, dann das Deployment ausrollen.
 `/healthz` beantwortet die Probes. TLS und die Weiterleitung von http auf https
 übernimmt der Ingress.
+
+### Firmenproxy und eigene Zertifizierungsstelle
+
+In vielen Firmennetzen geht ausgehender Verkehr über einen Proxy, der TLS
+aufbricht und mit einer eigenen Zertifizierungsstelle (CA) neu signiert. Ohne
+diese CA scheitert schon `docker build` bei `pip install` mit
+`CERTIFICATE_VERIFY_FAILED: self-signed certificate in certificate chain`. Zur
+Laufzeit passiert dasselbe bei Keycloak, Teams oder Databricks: `requests`
+vertraut nur seinem eingebauten Zertifikatsbündel (certifi), nicht dem
+System-Speicher.
+
+**Beim Bauen:** Die Zertifikate der Firmen-CA (PEM, Endung `.crt` oder `.pem`)
+in einen Ordner legen, z. B. `zertifikate/`, und so bauen:
+
+```
+docker build --build-arg FIRMEN_CA=an --build-context firmen-ca=./zertifikate \
+  --build-arg HTTPS_PROXY=http://proxy.example.com:3128 \
+  -t registry.example.com/baukasten:1.0.0 .
+```
+
+Das Dockerfile nimmt die CA in den System-Speicher des Images auf
+(`update-ca-certificates`) und setzt `PIP_CERT`, `REQUESTS_CA_BUNDLE` und
+`SSL_CERT_FILE` auf `/etc/ssl/certs/ca-certificates.crt`. Das gilt für `pip`
+beim Bauen und für alle Pods zur Laufzeit. `HTTPS_PROXY` als Build-Argument
+landet nicht im Image. Ohne `FIRMEN_CA=an` baut das Image genau wie bisher;
+mit `FIRMEN_CA=an`, aber ohne Zertifikat im Ordner, bricht der Bau ab. Nötig
+ist BuildKit (Standard seit Docker 23 und in Docker Desktop).
+
+**Zur Laufzeit:** In `k8s/app.yaml` stehen in der ConfigMap auskommentiert
+`HTTPS_PROXY`, `HTTP_PROXY` und `NO_PROXY`. Die ConfigMap gilt für Web,
+Worker und Migrations-Job. `NO_PROXY` muss alles enthalten, was direkt im
+Cluster erreichbar ist, mindestens
+`.svc,.cluster.local,localhost,127.0.0.1,baukasten-db,baukasten-redis`, dazu
+interne Ziele, die nicht über den Proxy laufen sollen. Automatisierungen
+bekommen die Proxy- und CA-Variablen ebenfalls, alle anderen
+Umgebungsvariablen nicht.
+
+Soll die CA nicht ins Image, sondern aus dem Cluster kommen (etwa weil
+sie wechselt):
+
+```
+kubectl create configmap baukasten-ca --from-file=ca-bundle.crt=./ca-bundle.crt
+```
+
+Dann in `k8s/app.yaml`, `k8s/worker.yaml` und `k8s/migrate-job.yaml` die mit
+`firmen-ca` markierten Zeilen einkommentieren (Volume unter
+`/etc/baukasten-ca`) und in der ConfigMap `REQUESTS_CA_BUNDLE` und
+`SSL_CERT_FILE` auf `/etc/baukasten-ca/ca-bundle.crt` setzen. **Wichtig:**
+Diese Datei ersetzt das eingebaute Bündel. Sie muss deshalb die öffentlichen
+CAs **und** die Firmen-CA enthalten, z. B.
+`cat /etc/ssl/certs/ca-certificates.crt firmen-ca.crt > ca-bundle.crt`.
+
+**Ausgehende Verbindungen** – Grundlage für Firewall- und Proxy-Regeln:
+
+| Ziel | Wer | Wann | Protokoll | Über den HTTP-Proxy? |
+|---|---|---|---|---|
+| PyPI (`pypi.org`, `files.pythonhosted.org`) | `docker build` | nur beim Bauen, nicht zur Laufzeit | HTTPS | ja (`--build-arg HTTPS_PROXY=…`) |
+| Keycloak (`OIDC_ISSUER`: Token, Benutzerdaten, Schlüssel) | Web | bei jeder Anmeldung über Keycloak | HTTPS | ja |
+| Datenquellen `DATASOURCE_<NAME>`: Databricks | Web, Worker | Abfragen und Spiegeln | HTTPS | ja (Treiber nutzt die Proxy-Variablen und `SSL_CERT_FILE`) |
+| Datenquellen `DATASOURCE_<NAME>`: PostgreSQL, SQL Server, MySQL | Web, Worker | Abfragen und Spiegeln | eigenes Datenbankprotokoll (5432, 1433, 3306) | nein, direkt freischalten |
+| Eigene Datenbank (`DATABASE_URL`) und Redis (`REDIS_URL`) | Web, Worker, Migration | immer | PostgreSQL bzw. Redis | nein, gehört in `NO_PROXY` falls per Name erreicht |
+| Hosts aus `HTTP_ALLOWED_HOSTS` | Web, Worker | Web-Request-Bausteine, Skripte, Erweiterungen | HTTP/HTTPS | ja, außer Einträge in `NO_PROXY` |
+| Beliebige Ziele aus Automatisierungen | Worker | wenn ein Skript sie aufruft | je nach Skript | ja, für `requests` und `urllib` |
+| Teams-Webhook (`ALERT_CHANNEL=teams`) | Web, Worker | bei Fehler-Alarmen | HTTPS | ja |
+| API-Ziel (`ALERT_CHANNEL=api`) | Web, Worker | bei Fehler-Alarmen | HTTP/HTTPS | ja |
+| Mailserver (`ALERT_CHANNEL=email`) | Web, Worker | bei Fehler-Alarmen | SMTP | nein; es gelten Djangos Standardwerte (`localhost`, Port 25) |
+| Tableau (`TABLEAU_HOSTS`) | **Browser** der Nutzer | beim Anzeigen eines Dashboards | HTTPS | Server: keine Verbindung (Token wird lokal signiert) |
+
+Der Server selbst baut darüber hinaus keine Verbindungen nach außen auf;
+Prüfungen, Kennzahlen und Release Notes laufen ohne Internet.
 
 ### Skalierung und Last
 

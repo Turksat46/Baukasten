@@ -24,3 +24,13 @@ spec:
                 name: baukasten-config
             - secretRef:
                 name: baukasten-secret
+          # firmen-ca (siehe app.yaml):
+          # volumeMounts:
+          #   - name: firmen-ca
+          #     mountPath: /etc/baukasten-ca
+          #     readOnly: true
+      # firmen-ca:
+      # volumes:
+      #   - name: firmen-ca
+      #     configMap:
+      #       name: baukasten-ca
